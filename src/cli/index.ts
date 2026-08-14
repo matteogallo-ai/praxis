@@ -7,6 +7,7 @@
  *   praxis formats list [--org-style <style>]
  *   praxis formats inspect <format-id>
  *   praxis formats validate <path/to/file.yaml>
+ *   praxis brief "<question>" --format <id> [--provider mock] [--json]
  */
 
 import { resolve } from "node:path";
@@ -15,18 +16,30 @@ import { versionCommand } from "./commands/version.ts";
 import { listCommand, parseOrgStyleFlag } from "./commands/list.ts";
 import { inspectCommand } from "./commands/inspect.ts";
 import { validateCommand } from "./commands/validate.ts";
+import { runBriefCli } from "./commands/brief.ts";
 import { c } from "./output.ts";
 import { PRAXIS_VERSION } from "./version-constant.ts";
 import { PraxisError } from "../registry/errors.ts";
 
 /**
- * Formats directory used by `formats list` and `formats inspect`.
- * v0.1: single, hard-coded, relative-to-repo-root path. v0.2 will
- * introduce a resolution algorithm (env var + config file).
+ * Formats directory used by `formats list`, `formats inspect`, and `brief`.
  */
 const DEFAULT_FORMATS_DIR = resolve(import.meta.dir, "..", "..", "formats");
 
-export function run(argv: readonly string[]): number {
+/**
+ * Default fixtures directory for the v0.2 MockLLMProvider. Real
+ * providers arrive in v0.3+ and will not need this path.
+ */
+const DEFAULT_MOCK_FIXTURES_DIR = resolve(
+  import.meta.dir,
+  "..",
+  "..",
+  "tests",
+  "fixtures",
+  "mock-llm"
+);
+
+export async function run(argv: readonly string[]): Promise<number> {
   const args = [...argv];
 
   if (args.length === 0 || args[0] === "help" || args[0] === "--help" || args[0] === "-h") {
@@ -47,6 +60,13 @@ export function run(argv: readonly string[]): number {
       return 1;
     }
     return dispatchFormats(sub, args);
+  }
+
+  if (command === "brief") {
+    return runBriefCli(args, {
+      formatsDir: DEFAULT_FORMATS_DIR,
+      fixturesDir: DEFAULT_MOCK_FIXTURES_DIR,
+    });
   }
 
   process.stderr.write(`${c.red("Unknown command:")} ${command}\n\n`);
@@ -105,13 +125,15 @@ function dispatchFormats(sub: string, rest: string[]): number {
 
 function printHelp(): void {
   process.stdout.write(
-    `praxis v${PRAXIS_VERSION} — Format Registry for consultant-grade analytical briefings\n\n` +
+    `praxis v${PRAXIS_VERSION} — Format Registry + Scoping agent for consultant-grade briefings\n\n` +
       `Usage:\n` +
       `  praxis version\n` +
       `  praxis formats list [--org-style <style>]\n` +
       `  praxis formats inspect <format-id>\n` +
-      `  praxis formats validate <path/to/file.yaml>\n\n` +
-      `Run 'praxis formats list' to see the shipped v0.1 catalogue.\n`
+      `  praxis formats validate <path/to/file.yaml>\n` +
+      `  praxis brief "<question>" --format <id> [--provider mock] [--json]\n\n` +
+      `In v0.2, 'brief' runs the Scoping agent only and prints its JSON output.\n` +
+      `Full briefing generation lands in v0.6+. See ROADMAP.md.\n`
   );
 }
 
@@ -126,6 +148,6 @@ function printFormatsHelp(): void {
 
 // Only run when this file is invoked directly (not when imported by tests).
 if (import.meta.main) {
-  const exitCode = run(process.argv.slice(2));
+  const exitCode = await run(process.argv.slice(2));
   process.exit(exitCode);
 }

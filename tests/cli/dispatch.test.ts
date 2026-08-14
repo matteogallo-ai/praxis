@@ -33,85 +33,98 @@ const stdout = () => stdoutBuf.join("");
 const stderr = () => stderrBuf.join("");
 
 describe("praxis dispatch", () => {
-  test("`praxis version` prints praxis v0.1.0 and returns 0", () => {
-    const code = run(["version"]);
+  test("`praxis version` prints praxis v0.2.0 and returns 0", async () => {
+    const code = await run(["version"]);
     expect(code).toBe(0);
-    expect(stdout()).toBe("praxis v0.1.0\n");
+    expect(stdout()).toBe("praxis v0.2.0\n");
   });
 
-  test("`praxis --version` short-form works", () => {
-    const code = run(["--version"]);
+  test("`praxis --version` short-form works", async () => {
+    const code = await run(["--version"]);
     expect(code).toBe(0);
-    expect(stdout()).toContain("praxis v0.1.0");
+    expect(stdout()).toContain("praxis v0.2.0");
   });
 
-  test("no arguments prints help and returns 0", () => {
-    const code = run([]);
+  test("no arguments prints help and returns 0", async () => {
+    const code = await run([]);
     expect(code).toBe(0);
     expect(stdout()).toContain("Usage:");
     expect(stdout()).toContain("praxis formats list");
   });
 
-  test("`praxis help` prints help and returns 0", () => {
-    const code = run(["help"]);
+  test("help mentions the new brief command", async () => {
+    const code = await run(["help"]);
+    expect(code).toBe(0);
+    expect(stdout()).toContain("praxis brief");
+    expect(stdout()).toContain("v0.6+");
+  });
+
+  test("`praxis help` prints help and returns 0", async () => {
+    const code = await run(["help"]);
     expect(code).toBe(0);
     expect(stdout()).toContain("Usage:");
   });
 
-  test("unknown top-level command returns 1", () => {
-    const code = run(["do-something"]);
+  test("unknown top-level command returns 1", async () => {
+    const code = await run(["do-something"]);
     expect(code).toBe(1);
     expect(stderr()).toContain("Unknown command");
   });
 
-  test("`praxis formats` without subcommand returns 1", () => {
-    const code = run(["formats"]);
+  test("`praxis formats` without subcommand returns 1", async () => {
+    const code = await run(["formats"]);
     expect(code).toBe(1);
     expect(stderr()).toContain("Usage:");
   });
 
-  test("unknown formats subcommand returns 1", () => {
-    const code = run(["formats", "banana"]);
+  test("unknown formats subcommand returns 1", async () => {
+    const code = await run(["formats", "banana"]);
     expect(code).toBe(1);
     expect(stderr()).toContain("Unknown formats subcommand");
   });
 
-  test("`praxis formats inspect` without id returns 1", () => {
-    const code = run(["formats", "inspect"]);
+  test("`praxis formats inspect` without id returns 1", async () => {
+    const code = await run(["formats", "inspect"]);
     expect(code).toBe(1);
     expect(stderr()).toContain("Missing argument");
   });
 
-  test("`praxis formats validate` without path returns 1", () => {
-    const code = run(["formats", "validate"]);
+  test("`praxis formats validate` without path returns 1", async () => {
+    const code = await run(["formats", "validate"]);
     expect(code).toBe(1);
     expect(stderr()).toContain("Missing argument");
   });
 
-  test("`praxis formats list` prints all shipped formats", () => {
-    const code = run(["formats", "list"]);
+  test("`praxis formats list` prints all shipped formats", async () => {
+    const code = await run(["formats", "list"]);
     expect(code).toBe(0);
     expect(stdout()).toContain("executive-pre-read");
     expect(stdout()).toContain("position-paper-corporate");
     expect(stdout()).toContain("mckinsey-style-note");
   });
 
-  test("`praxis formats list --org-style mckinsey` filters", () => {
-    const code = run(["formats", "list", "--org-style", "mckinsey"]);
+  test("`praxis formats list --org-style mckinsey` filters", async () => {
+    const code = await run(["formats", "list", "--org-style", "mckinsey"]);
     expect(code).toBe(0);
     expect(stdout()).toContain("mckinsey-style-note");
     expect(stdout()).not.toContain("executive-pre-read");
   });
 
-  test("`praxis formats list --org-style bogus` returns 1", () => {
-    const code = run(["formats", "list", "--org-style", "deloitte"]);
+  test("`praxis formats list --org-style bogus` returns 1", async () => {
+    const code = await run(["formats", "list", "--org-style", "deloitte"]);
     expect(code).toBe(1);
     expect(stderr()).toContain("must be one of");
   });
 
-  test("`praxis formats inspect <unknown>` returns 1", () => {
-    const code = run(["formats", "inspect", "does-not-exist"]);
+  test("`praxis formats inspect <unknown>` returns 1", async () => {
+    const code = await run(["formats", "inspect", "does-not-exist"]);
     expect(code).toBe(1);
     expect(stderr()).toContain("No format registered");
+  });
+
+  test("`praxis brief` with no arguments returns 1", async () => {
+    const code = await run(["brief"]);
+    expect(code).toBe(1);
+    expect(stderr()).toContain("missing question");
   });
 });
