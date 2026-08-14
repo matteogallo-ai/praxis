@@ -25,30 +25,37 @@ tests pass, all CLI commands smoke-tested, docs complete).
 
 ---
 
-## v0.2 — Agent Scoping
+## v0.2 — Agent Scoping ✅ (shipped 2026-08-14)
 
-- Extract the vendored YAML parser as `@promptlang/yaml-parser`. Replace
-  the `src/vendor/` folder with a proper dependency.
-- Ship the first agent (`scoping`) with its prompt written in PromptLang
-  (dogfooding).
-- Introduce the orchestrator scaffold that consumes a Format from the
-  registry and lays out the per-section execution plan.
-- No other agents yet — scoping produces an execution DAG that the rest
-  of the pipeline will fill in.
+- Vendored YAML parser removed; Praxis now depends on
+  `@promptlang/yaml-parser` (workspace-linked to the sibling
+  `~/dev/promptlang` checkout).
+- First agent (`scoping`) shipped with its prompt in PromptLang
+  (`prompts/scoping.prompt`).
+- `LLMProvider` interface + `MockLLMProvider` — deterministic, offline,
+  fixture-driven. No real network calls yet.
+- `Orchestrator` scaffold with `scope(question, formatId)` implemented
+  and `brief(...)` explicitly throwing `NotImplementedError`.
+- New CLI command: `praxis brief "<question>" --format <id>
+  [--provider mock] [--json]`.
+- 73 new tests (LLM, agents, orchestrator, CLI, end-to-end). Total: 219.
 
-**Exit criteria:** given `--format executive-pre-read` + a topic prompt,
-Praxis produces a JSON execution plan naming which agent handles which
-section.
+**Exit criteria met:** `praxis brief "..." --format executive-pre-read`
+returns a valid `ScopingResult` JSON with the four expected fields.
 
 ---
 
-## v0.3 — Research Agent + Sourcing Policy
+## v0.3 — Research Agent + Real Anthropic Provider
 
+- Replace the `MockLLMProvider` hook in the CLI with a real
+  `AnthropicProvider` (native `fetch`, streaming, token accounting,
+  retries).
 - `research` agent — retrieval (initially: local corpus + web fetch
   adapter), evidence extraction, citation normalization.
 - Enforce `sourcing_policy: strict` — every fact carries a citation or
   the section is rejected.
-- First real end-to-end run: scoping → research on a single section.
+- First real end-to-end run against a live LLM: scoping → research on a
+  single section of `executive-pre-read`.
 
 ---
 

@@ -8,17 +8,27 @@ discipline enforced upstream**: the briefing arrives already shaped like
 the organization's own analysts wrote it, with rigorous sourcing and a
 consistent voice. That is 80% of what a senior reader values.
 
-This release, **v0.1 — Format Registry**, is the declarative foundation.
-It ships:
+The current release, **v0.2 — Agent Scoping**, ships the first agent
+and the orchestrator scaffold on top of the v0.1 Format Registry.
 
-- a canonical schema for a briefing format,
-- a strict YAML loader and validator,
-- an in-memory `FormatRegistry` with lookup and filtering,
-- a CLI to list, inspect, and validate formats,
-- three production-ready formats shipped in `formats/`.
+Highlights:
 
-**Zero LLM calls in v0.1.** No agents. No network. Everything is
-declarative and testable.
+- Everything from v0.1: the canonical Format schema, strict YAML
+  loader/validator, in-memory `FormatRegistry`, three production-ready
+  formats, and the `praxis formats *` CLI subcommands.
+- A minimal `LLMProvider` interface with a deterministic
+  `MockLLMProvider` for offline runs and tests.
+- The **Scoping** agent — its prompt lives at
+  [`prompts/scoping.prompt`](prompts/scoping.prompt) and is written in
+  [PromptLang](https://github.com/matteogallo-ai/promptlang).
+- An `Orchestrator` that reads a Format from the registry, dispatches
+  the scoping agent, and returns a typed `ScopingResult`.
+- A new CLI command:
+  `praxis brief "<question>" --format <id> [--provider mock] [--json]`.
+
+**No real LLM calls in v0.2.** The CLI is wired to the
+`MockLLMProvider` and the whole test suite is deterministic. Real
+providers (starting with Anthropic) land in v0.3.
 
 ---
 
@@ -32,8 +42,22 @@ cd praxis
 bun install
 ```
 
-There are no runtime npm dependencies. `bun install` only pulls the
-TypeScript dev toolchain (`@types/bun`, `typescript`).
+**Development setup.** v0.2 depends on the sibling PromptLang checkout.
+Before `bun install`, clone PromptLang next to Praxis:
+
+```
+~/dev/
+├── praxis/        ← this repo
+└── promptlang/    ← must exist at this exact relative location
+```
+
+`package.json` declares
+`"@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser"`
+and `tsconfig.json` maps the `promptlang/*` import prefix to
+`../promptlang/src/*`. Both paths resolve against the sibling checkout.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full contributor
+walkthrough. This constraint disappears once PromptLang publishes to
+npm — Praxis will switch to `"promptlang": "^1.x"` in `dependencies`.
 
 ---
 
@@ -43,7 +67,7 @@ TypeScript dev toolchain (`@types/bun`, `typescript`).
 
 ```
 $ bun run cli version
-praxis v0.1.0
+praxis v0.2.0
 ```
 
 ### `praxis formats list`
@@ -68,32 +92,75 @@ position-paper-corporate  Corporate Affairs Position Paper  corporate-affairs  e
 Renders the full format tree — metadata, sections, style guide, sourcing
 policy, output targets.
 
-```
-$ bun run cli formats inspect mckinsey-style-note
-McKinsey-Style Note  (mckinsey-style-note v1.0.0)
-
-Metadata
-========
-  author              Matteo Gallo
-  organization_style  mckinsey
-  ...
-```
-
 ### `praxis formats validate <path/to/file.yaml>`
 
 Parses and validates any YAML file against the Format schema. Exit code 0
-on success, 1 on failure with every issue listed:
+on success, 1 on failure with every issue listed.
+
+### `praxis brief "<question>" --format <id>`  *(new in v0.2)*
+
+Runs the Scoping agent for the given question under the selected format
+and prints its JSON output.
 
 ```
-$ bun run cli formats validate formats/executive-pre-read.yaml
-✓ Valid format: executive-pre-read (v1.0.0)
+$ bun run cli brief "Should we enter the German market?" --format executive-pre-read
 
-$ bun run cli formats validate tests/fixtures/invalid-missing-field.yaml
-✗ Validation failed for tests/fixtures/invalid-missing-field.yaml
-  - sections[0].max_length: is required
+Scoping agent output
+====================
+{
+  "reformulated_question": "Should our company enter the German market ...",
+  "hidden_questions": [
+    "What is the minimum viable capital commitment ...",
+    "Which German customer segments are most economically addressable ...",
+    ...
+  ],
+  "scope_boundaries": [ ... ],
+  "assumptions_to_validate": [ ... ]
+}
 
-1 issue found.
+Next: full briefing generation coming in v0.6+.
 ```
+
+Flags:
+
+- `--format <id>` — required. Format id from the registry.
+- `--provider <name>` — optional. Only `mock` is supported in v0.2;
+  passing any other value exits 1 with a clear message. Real providers
+  arrive in v0.3.
+- `--json` — optional. Prints raw JSON only, for piping.
+
+---
+
+## Architecture
+
+v0.2 introduces three new layers on top of the v0.1 Format Registry:
+
+```
+                      ┌─────────────────────────┐
+                      │  Format Registry (v0.1) │
+                      └───────────┬─────────────┘
+                                  │
+                      ┌───────────▼─────────────┐
+                      │      Orchestrator       │
+                      │  scope() / brief()      │
+                      └───────────┬─────────────┘
+                                  │
+                      ┌───────────▼─────────────┐
+                      │     Scoping Agent       │
+                      │ (prompts/scoping.prompt)│
+                      └───────────┬─────────────┘
+                                  │  render + concat
+                                  │  system + user
+                                  ▼
+                      ┌───────────────────────────┐
+                      │       LLMProvider         │
+                      │  MockLLMProvider (v0.2)   │
+                      │  AnthropicProvider (v0.3) │
+                      └───────────────────────────┘
+```
+
+Full detail and design rationale: [`docs/architecture.md`](docs/architecture.md).
+For authoring a new agent prompt: [`docs/writing-a-prompt.md`](docs/writing-a-prompt.md).
 
 ---
 
@@ -118,8 +185,8 @@ sections:
   - id: context
     title: Context
     purpose: ...
-    max_length: { words: 100 }    # (note: v0.1 YAML parser does not accept
-                                  # flow-style; use the block form below)
+    max_length:
+      words: 100
     required_agents: [scoping, research]
     tone_directives: ...
     validation_rules:
@@ -137,10 +204,9 @@ The full schema and an annotated example live in
 for contributing a new format is in
 [`docs/creating-a-format.md`](docs/creating-a-format.md).
 
-> **YAML subset.** v0.1 uses a minimal YAML parser (block-style
-> mappings/sequences only — no flow-style `[..]`/`{..}`, anchors, or
-> block scalars). Every existing format uses the block form. See
-> `src/vendor/yaml-parser/PROVENANCE.md`.
+> **YAML subset.** Praxis parses YAML with `@promptlang/yaml-parser` — a
+> minimal block-style parser (no flow-style `[..]`/`{..}`, no anchors,
+> no block scalars). Every shipped format uses the block form.
 
 ---
 
@@ -150,31 +216,18 @@ Praxis targets a v1.0 release in ten steps.
 
 | Release | Focus |
 | --- | --- |
-| **v0.1** | Format Registry (this release) |
-| v0.2 | Agent scoping — first PromptLang-authored agent + orchestrator scaffold |
-| v0.3 | Research agent — retrieval, citations, sourcing policy enforcement |
+| v0.1 | Format Registry |
+| **v0.2** | Agent scoping — first PromptLang-authored agent + orchestrator scaffold (this release) |
+| v0.3 | Research agent + real Anthropic provider |
 | v0.4 | Stakeholder + Risk agents |
 | v0.5 | Options + Adversarial agents (red-team pass) |
 | v0.6 | Synthesis agent + full 7-agent pipeline |
 | v0.7 | Output targets — PDF/DOCX/MD renderers |
 | v0.8 | Style guide enforcement (forbidden terms, sentence caps, MECE checks) |
 | v0.9 | End-to-end demos on the three shipped formats |
-| **v1.0** | Documentation, CI matrix, external contributor onboarding |
+| v1.0 | Documentation, CI matrix, external contributor onboarding |
 
 Full detail: [`ROADMAP.md`](ROADMAP.md).
-
----
-
-## Technical debt (planned)
-
-Exactly one piece of tech debt is carried by v0.1:
-
-**Vendored YAML parser.** `src/vendor/yaml-parser/` is a verbatim copy of
-PromptLang's minimal YAML parser. It **must** be extracted into a
-standalone package (`@promptlang/yaml-parser`) and consumed via
-`bun add` before Praxis v0.2 ships. See
-[`src/vendor/yaml-parser/PROVENANCE.md`](src/vendor/yaml-parser/PROVENANCE.md)
-for the extraction plan.
 
 ---
 
