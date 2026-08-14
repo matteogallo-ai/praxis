@@ -1,0 +1,28 @@
+id: bad-enum-format
+name: Bad Enum Format
+version: 1.0.0
+metadata:
+  author: Test Author
+  organization_style: deloitte
+  language: en
+  last_reviewed: 2026-08-14
+target_length:
+  pages: 1
+  words: 400
+sections:
+  - id: only-section
+    title: Only Section
+    purpose: Section with an invalid agent id.
+    max_length:
+      words: 400
+    required_agents:
+      - not-a-real-agent
+    tone_directives: neutral
+sourcing_policy: relaxed
+style_guide:
+  voice: neutral
+  sentence_structure: short declarative
+  forbidden_terms:
+    - placeholder
+output_targets:
+  - epub

@@ -1,0 +1,26 @@
+id: missing-field-format
+name: Missing Field Format
+version: 1.0.0
+metadata:
+  author: Test Author
+  organization_style: generic
+  language: en
+  last_reviewed: 2026-08-14
+target_length:
+  pages: 1
+  words: 400
+sections:
+  - id: only-section
+    title: Only Section
+    purpose: Deliberately missing max_length below.
+    required_agents:
+      - synthesis
+    tone_directives: neutral
+sourcing_policy: strict
+style_guide:
+  voice: neutral
+  sentence_structure: short declarative
+  forbidden_terms:
+    - placeholder
+output_targets:
+  - md

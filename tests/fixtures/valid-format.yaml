@@ -1,0 +1,41 @@
+id: sample-format
+name: Sample Format
+version: 1.0.0
+metadata:
+  author: Test Author
+  organization_style: generic
+  language: en
+  last_reviewed: 2026-08-14
+target_length:
+  pages: 2
+  words: 800
+sections:
+  - id: context
+    title: Context
+    purpose: Establish the situation and why it matters right now.
+    max_length:
+      words: 200
+    required_agents:
+      - scoping
+      - research
+    tone_directives: neutral, factual, third-person
+    validation_rules:
+      - "must_contain_recommendation: false"
+  - id: recommendation
+    title: Recommendation
+    purpose: State the single recommended action clearly.
+    max_length:
+      words: 150
+    required_agents:
+      - synthesis
+    tone_directives: authoritative, imperative
+sourcing_policy: strict
+style_guide:
+  voice: authoritative, third-person, no hedging
+  sentence_structure: short declarative, max 20 words
+  forbidden_terms:
+    - it seems
+    - perhaps
+output_targets:
+  - md
+  - pdf

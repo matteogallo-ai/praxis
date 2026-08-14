@@ -1,0 +1,28 @@
+id: non-positive-int-format
+name: Non-Positive Int Format
+version: 1.0.0
+metadata:
+  author: Test Author
+  organization_style: generic
+  language: en
+  last_reviewed: 2026-08-14
+target_length:
+  pages: 0
+  words: -50
+sections:
+  - id: only-section
+    title: Only Section
+    purpose: pages and words are non-positive.
+    max_length:
+      words: 400
+    required_agents:
+      - synthesis
+    tone_directives: neutral
+sourcing_policy: strict
+style_guide:
+  voice: neutral
+  sentence_structure: short declarative
+  forbidden_terms:
+    - placeholder
+output_targets:
+  - md

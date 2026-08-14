@@ -1,0 +1,28 @@
+id: bad-date-format
+name: Bad Date Format
+version: 1.0.0
+metadata:
+  author: Test Author
+  organization_style: generic
+  language: en
+  last_reviewed: 2026-13-45
+target_length:
+  pages: 1
+  words: 400
+sections:
+  - id: only-section
+    title: Only Section
+    purpose: Bad ISO date above.
+    max_length:
+      words: 400
+    required_agents:
+      - synthesis
+    tone_directives: neutral
+sourcing_policy: strict
+style_guide:
+  voice: neutral
+  sentence_structure: short declarative
+  forbidden_terms:
+    - placeholder
+output_targets:
+  - md
