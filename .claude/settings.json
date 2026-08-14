@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Glob(**)",
+      "Grep(**)",
+      "Bash(bun test *)",
+      "Bash(bun run *)",
+      "Bash(bunx tsc *)",
+      "Bash(bunx tsc --noEmit)",
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git branch *)",
+      "Bash(git tag)",
+      "Bash(git tag *)",
+      "Bash(git add *)",
+      "Bash(git commit -m *)",
+      "Bash(git commit *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(mkdir *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(git push *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(chmod 777 *)",
+      "Bash(npm install *)"
+    ]
+  }
+}
