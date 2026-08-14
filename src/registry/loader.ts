@@ -9,7 +9,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { basename } from "node:path";
 
-import { parseYaml, ConfigParseError } from "../vendor/yaml-parser/index.ts";
+import { parseYaml, ConfigParseError } from "@promptlang/yaml-parser";
 import { validateFormat } from "./validator.ts";
 import type { Format } from "./schema.ts";
 import { FileNotFoundError, YamlSyntaxError } from "./errors.ts";

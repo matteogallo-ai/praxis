@@ -10,7 +10,7 @@
  *      per-field checks — no runtime coercion.
  */
 
-import type { YamlValue } from "../vendor/yaml-parser/index.ts";
+import type { YamlValue } from "@promptlang/yaml-parser";
 import {
   AGENT_IDS,
   FORMAT_ALLOWED_KEYS,

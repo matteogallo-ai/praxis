@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { validateFormat } from "../../src/registry/validator.ts";
 import { ValidationError } from "../../src/registry/errors.ts";
-import type { YamlValue } from "../../src/vendor/yaml-parser/index.ts";
+import type { YamlValue } from "@promptlang/yaml-parser";
 
 // ---------------------------------------------------------------------------
 // Test helper: build a fresh, complete, valid parsed-YAML object.
