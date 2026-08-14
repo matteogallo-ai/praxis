@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "praxis",
+      "dependencies": {
+        "@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser",
+      },
       "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^5.6.0",
@@ -11,6 +14,8 @@
     },
   },
   "packages": {
+    "@promptlang/yaml-parser": ["@promptlang/yaml-parser@file:../promptlang/packages/yaml-parser", {}],
+
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 
     "@types/node": ["@types/node@26.2.0", "", { "dependencies": { "undici-types": "~8.3.0" } }, "sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg=="],

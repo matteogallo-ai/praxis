@@ -32,6 +32,9 @@
     "typecheck": "bunx tsc --noEmit",
     "cli": "bun run src/cli/index.ts"
   },
+  "dependencies": {
+    "@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "typescript": "^5.6.0"

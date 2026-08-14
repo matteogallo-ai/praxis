@@ -19,7 +19,16 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "types": ["bun-types"],
-    "lib": ["ES2022"]
+    "lib": ["ES2022"],
+    "paths": {
+      "promptlang": ["../promptlang/src/index.ts"],
+      "promptlang/runtime": ["../promptlang/src/runtime/index.ts"],
+      "promptlang/lexer": ["../promptlang/src/lexer/lexer.ts"],
+      "promptlang/parser": ["../promptlang/src/parser/parser.ts"],
+      "promptlang/ast": ["../promptlang/src/ast/nodes.ts"],
+      "promptlang/parser-errors": ["../promptlang/src/parser/errors.ts"],
+      "promptlang/lexer-errors": ["../promptlang/src/lexer/errors.ts"]
+    }
   },
   "include": ["src/**/*", "tests/**/*"]
 }
