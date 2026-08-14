@@ -1,0 +1,114 @@
+id: mckinsey-style-note
+name: McKinsey-Style Note
+version: 1.0.0
+
+metadata:
+  author: Matteo Gallo
+  organization_style: mckinsey
+  language: en
+  last_reviewed: 2026-08-14
+
+target_length:
+  pages: 3
+  words: 1200
+
+sections:
+  - id: situation
+    title: Situation
+    purpose: Describe the current state of the world relevant to the reader — the shared, non-controversial baseline. If the reader disagrees with the situation as stated, no argument that follows will land.
+    max_length:
+      words: 200
+    required_agents:
+      - scoping
+      - research
+    tone_directives: descriptive, third-person, no evaluation; anchor with dated facts.
+    validation_rules:
+      - "must_reference_time_horizon: true"
+      - "no_evaluative_adjectives: true"
+
+  - id: complication
+    title: Complication
+    purpose: Introduce the disruption to the situation — the new fact, threat, or opportunity that makes the status quo no longer tenable. The complication creates the tension that only this note can resolve.
+    max_length:
+      words: 200
+    required_agents:
+      - research
+      - risk
+    tone_directives: rising, specific; name the disruption in the first sentence.
+    validation_rules:
+      - "must_name_disruption_in_first_sentence: true"
+      - "no_bullet_lists: true"
+
+  - id: key-question
+    title: Key Question
+    purpose: Pose the single question the reader is now forced to answer because of the complication. One question. Closed form. No "and" clauses.
+    max_length:
+      words: 100
+    required_agents:
+      - scoping
+    tone_directives: crisp, closed-form; must be answerable yes/no or "which of the following".
+    validation_rules:
+      - "must_be_single_question: true"
+      - "no_bullet_lists: true"
+
+  - id: answer
+    title: Answer
+    purpose: State the answer to the key question in one sentence, then support with a second sentence naming the mechanism and a third naming the magnitude of impact. This is the top of the pyramid — everything below explains why.
+    max_length:
+      words: 200
+    required_agents:
+      - synthesis
+    tone_directives: MECE-driven, pyramid principle; the answer sentence must stand alone as a headline.
+    validation_rules:
+      - "must_state_answer_in_first_sentence: true"
+      - "no_bullet_lists: true"
+      - "max_sentences_per_paragraph: 3"
+
+  - id: supporting-arguments
+    title: Supporting Arguments
+    purpose: Present three (never two, never four) mutually exclusive and collectively exhaustive arguments that support the answer. Each argument gets its own paragraph led by a governing sentence; the paragraph then supplies evidence for that governing sentence and nothing else.
+    max_length:
+      words: 400
+    required_agents:
+      - research
+      - options
+      - stakeholder
+    tone_directives: MECE, pyramid principle; each paragraph is a self-contained argument; no argument overlaps another.
+    validation_rules:
+      - "argument_count_exactly: 3"
+      - "each_paragraph_leads_with_governing_sentence: true"
+      - "arguments_are_mece: true"
+      - "min_citations: 5"
+
+  - id: so-what
+    title: So What
+    purpose: Convert the answer into the immediate implication for the reader — the single next action they must trigger, by when, and what happens if they do nothing.
+    max_length:
+      words: 100
+    required_agents:
+      - synthesis
+      - adversarial
+    tone_directives: imperative, action-oriented; name the action, the owner, the deadline, and the cost of inaction.
+    validation_rules:
+      - "must_name_action: true"
+      - "must_name_cost_of_inaction: true"
+
+sourcing_policy: strict
+
+style_guide:
+  voice: MECE-driven, pyramid principle, action-oriented, third-person
+  sentence_structure: short declarative, active voice, max 15 words
+  forbidden_terms:
+    - synergy
+    - to leverage
+    - leveraging
+    - circle back
+    - touch base
+    - going forward
+    - at the end of the day
+    - deep dive
+
+output_targets:
+  - pdf
+  - docx
+  - md

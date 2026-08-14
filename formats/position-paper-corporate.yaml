@@ -1,0 +1,112 @@
+id: position-paper-corporate
+name: Corporate Affairs Position Paper
+version: 1.0.0
+
+metadata:
+  author: Matteo Gallo
+  organization_style: corporate-affairs
+  language: en
+  last_reviewed: 2026-08-14
+
+target_length:
+  pages: 4
+  words: 1600
+
+sections:
+  - id: issue-framing
+    title: Issue Framing
+    purpose: Frame the policy or public-affairs issue at stake in institutional terms — what is being decided, by which body, on what timeline, and why the organization has standing to weigh in.
+    max_length:
+      words: 200
+    required_agents:
+      - scoping
+      - research
+    tone_directives: measured, institutional, third-person; treat the reader as a peer institution, not a lay audience; avoid combat metaphors.
+    validation_rules:
+      - "must_name_deciding_body: true"
+      - "must_name_decision_deadline: true"
+      - "no_bullet_lists: true"
+
+  - id: stakeholder-landscape
+    title: Stakeholder Landscape
+    purpose: Map the actors involved and their known positions. Cover at minimum decision-makers, aligned stakeholders, opposing stakeholders, and undecided swing voices whose alignment would move the outcome.
+    max_length:
+      words: 300
+    required_agents:
+      - stakeholder
+      - research
+    tone_directives: descriptive, non-polemical; describe positions without adjectives that impute motive; cite public statements or filings, not private conversations.
+    validation_rules:
+      - "must_cover_supporters_and_opponents: true"
+      - "must_identify_swing_stakeholders: true"
+      - "min_citations: 4"
+
+  - id: our-position
+    title: Our Position
+    purpose: State the organization's position in one paragraph of unambiguous language. No conditional voice, no "we would consider" formulations. This paragraph must be quotable verbatim by an external party.
+    max_length:
+      words: 300
+    required_agents:
+      - synthesis
+    tone_directives: declarative, first-person institutional ("The organization holds that..."), no hedging, no conditional verbs.
+    validation_rules:
+      - "must_state_position_explicitly: true"
+      - "no_conditional_verbs: true"
+      - "no_bullet_lists: true"
+      - "max_sentences_per_paragraph: 5"
+
+  - id: rationale
+    title: Rationale
+    purpose: Walk through the reasoning that supports the position — legal grounds, precedent, empirical evidence, and coherence with the organization's prior public commitments. This is the longest section and does the persuasive work.
+    max_length:
+      words: 400
+    required_agents:
+      - research
+      - options
+    tone_directives: structured argumentation; each paragraph opens with a topic sentence naming the reasoning strand; citations at the end of each strand.
+    validation_rules:
+      - "min_reasoning_strands: 3"
+      - "min_citations: 6"
+      - "must_reference_prior_position: true"
+
+  - id: counter-arguments-addressed
+    title: Counter-Arguments Addressed
+    purpose: Enumerate the strongest opposing arguments and rebut each on its merits. Address the strongest form of the counter-argument, not a caricature. Skipping this section signals weakness to a professional reader.
+    max_length:
+      words: 250
+    required_agents:
+      - adversarial
+      - risk
+    tone_directives: fair-minded, non-dismissive; open each rebuttal by restating the counter-argument in its strongest form before answering it.
+    validation_rules:
+      - "min_counter_arguments: 2"
+      - "each_counter_argument_is_addressed: true"
+      - "no_strawman_paraphrasing: true"
+
+  - id: recommended-actions
+    title: Recommended Actions
+    purpose: List the concrete external and internal actions the organization commits to taking to advance the position. Each action carries a named owner, a deadline, and a public-facing artifact where relevant.
+    max_length:
+      words: 150
+    required_agents:
+      - synthesis
+    tone_directives: imperative, verb-first; distinguish public-facing actions from internal preparatory steps.
+    validation_rules:
+      - "every_action_has_owner_and_deadline: true"
+      - "min_actions: 3"
+
+sourcing_policy: strict
+
+style_guide:
+  voice: diplomatic, measured, third-person institutional; never adversarial in tone, however firm in position
+  sentence_structure: medium-length declarative, active voice, avoid nominalization chains
+  forbidden_terms:
+    - obviously
+    - clearly
+    - everyone knows
+    - as everyone agrees
+    - it goes without saying
+
+output_targets:
+  - pdf
+  - docx

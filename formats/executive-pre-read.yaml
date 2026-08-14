@@ -1,0 +1,107 @@
+id: executive-pre-read
+name: Executive Pre-Read
+version: 1.0.0
+
+metadata:
+  author: Matteo Gallo
+  organization_style: generic
+  language: en
+  last_reviewed: 2026-08-14
+
+target_length:
+  pages: 2
+  words: 800
+
+sections:
+  - id: context
+    title: Context
+    purpose: Establish the situation, the decision at stake, and why it demands the reader's attention now. No history-for-history's-sake.
+    max_length:
+      words: 100
+    required_agents:
+      - scoping
+      - research
+    tone_directives: neutral, factual, third-person; open on the trigger event, not on background.
+    validation_rules:
+      - "must_contain_trigger_event: true"
+      - "max_sentences_per_paragraph: 3"
+
+  - id: key-question
+    title: Key Question
+    purpose: State the single decision the reader must make, phrased as one closed question.
+    max_length:
+      words: 50
+    required_agents:
+      - scoping
+    tone_directives: crisp, closed-form question; no compound "and/or" formulations.
+    validation_rules:
+      - "must_be_single_question: true"
+      - "no_bullet_lists: true"
+
+  - id: recommendation
+    title: Recommendation
+    purpose: Deliver the recommended answer to the key question in the first sentence. The rest justifies scope, timing, and ownership.
+    max_length:
+      words: 150
+    required_agents:
+      - synthesis
+    tone_directives: authoritative, imperative; lead with the verb; name the owner and the deadline.
+    validation_rules:
+      - "must_state_recommendation_in_first_sentence: true"
+      - "must_name_owner: true"
+      - "must_name_deadline: true"
+
+  - id: supporting-evidence
+    title: Supporting Evidence
+    purpose: Present the three to five load-bearing facts that make the recommendation defensible. Each fact carries a source citation.
+    max_length:
+      words: 300
+    required_agents:
+      - research
+      - stakeholder
+    tone_directives: evidentiary, structured; one paragraph per fact; source in parentheses at end of paragraph.
+    validation_rules:
+      - "min_citations: 3"
+      - "max_citations: 7"
+      - "every_paragraph_ends_with_citation: true"
+
+  - id: risks-and-mitigations
+    title: Risks and Mitigations
+    purpose: Name the two or three risks that could invalidate the recommendation and pair each with a concrete mitigation the owner can execute.
+    max_length:
+      words: 150
+    required_agents:
+      - risk
+      - adversarial
+    tone_directives: honest, ungarnished; one line naming the risk, one line naming the mitigation.
+    validation_rules:
+      - "min_risks: 2"
+      - "max_risks: 3"
+      - "each_risk_paired_with_mitigation: true"
+
+  - id: next-steps
+    title: Next Steps
+    purpose: List the immediate actions the reader triggers on approval, with named owner and date for each.
+    max_length:
+      words: 50
+    required_agents:
+      - synthesis
+    tone_directives: imperative, ordered; verb-first bullets are permitted here only.
+    validation_rules:
+      - "every_step_has_owner_and_date: true"
+
+sourcing_policy: strict
+
+style_guide:
+  voice: authoritative, third-person, no hedging language
+  sentence_structure: short declarative sentences, active voice, max 20 words
+  forbidden_terms:
+    - it seems
+    - perhaps
+    - we think
+    - arguably
+    - in our opinion
+
+output_targets:
+  - pdf
+  - md
