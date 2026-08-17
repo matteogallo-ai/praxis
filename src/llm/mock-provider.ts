@@ -1,16 +1,23 @@
 /**
  * `MockLLMProvider` — a deterministic, offline `LLMProvider`
- * implementation for tests and the v0.2 CLI.
+ * implementation for tests and offline CLI runs.
  *
  * Fixtures are JSON files with shape:
  *
- *   { "match_substring": "<snippet the prompt must contain>",
- *     "response": "<string returned verbatim by complete()>" }
+ *   {
+ *     "match_substring": "<snippet the prompt must contain>",
+ *     "response":        "<string returned verbatim by complete()>",
+ *
+ *     // Optional — only read by completeWithTools():
+ *     "tool_calls":  [ { "id", "name", "input" }, ... ],
+ *     "rounds":      2,
+ *     "stop_reason": "end_turn"
+ *   }
  *
  * The provider loads every `.json` under `fixturesDir` on construction.
- * On `complete(prompt)` it returns the response of the first fixture
- * whose `match_substring` appears in `prompt`. If none matches, it
- * throws `MockFixtureNotFoundError`.
+ * On `complete(prompt)` / `completeWithTools(prompt, ...)` it returns
+ * the response of the first fixture whose `match_substring` appears in
+ * `prompt`. If none matches, it throws `MockFixtureNotFoundError`.
  *
  * The design privileges *substring* matching over exact hashing so that
  * cosmetic edits to a `.prompt` (whitespace, phrasing) do not silently
@@ -23,6 +30,12 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 
 import type { LLMProvider, CompleteOptions } from "./provider.ts";
+import type {
+  Tool,
+  ToolCall,
+  CompletionResult,
+  CompleteWithToolsOptions,
+} from "./types.ts";
 import { LLMError, MockFixtureNotFoundError } from "./errors.ts";
 
 export interface MockFixture {
@@ -30,6 +43,12 @@ export interface MockFixture {
   response: string;
   /** Optional label for debugging; not used for matching. */
   label?: string;
+  /** Optional pre-scripted tool calls for `completeWithTools`. */
+  tool_calls?: ToolCall[];
+  /** Optional round count surfaced in `CompletionResult`. Defaults to 1. */
+  rounds?: number;
+  /** Optional stop_reason surfaced in `CompletionResult`. Defaults to "end_turn". */
+  stop_reason?: string;
 }
 
 export interface MockLLMProviderOptions {
@@ -47,9 +66,28 @@ export class MockLLMProvider implements LLMProvider {
   }
 
   async complete(prompt: string, _options?: CompleteOptions): Promise<string> {
+    const fixture = this.matchFixture(prompt);
+    return fixture.response;
+  }
+
+  async completeWithTools(
+    prompt: string,
+    _tools: Tool[],
+    _options?: CompleteWithToolsOptions
+  ): Promise<CompletionResult> {
+    const fixture = this.matchFixture(prompt);
+    return {
+      text: fixture.response,
+      tool_calls: fixture.tool_calls ?? [],
+      rounds: fixture.rounds ?? 1,
+      stop_reason: fixture.stop_reason ?? "end_turn",
+    };
+  }
+
+  private matchFixture(prompt: string): MockFixture {
     for (const fixture of this.fixtures) {
       if (prompt.includes(fixture.match_substring)) {
-        return fixture.response;
+        return fixture;
       }
     }
     const hash = createHash("sha256").update(prompt).digest("hex").slice(0, 12);
@@ -102,5 +140,56 @@ function validateFixture(value: unknown, source: string): MockFixture {
   if (typeof obj["label"] === "string") {
     fixture.label = obj["label"];
   }
+  if (obj["tool_calls"] !== undefined) {
+    fixture.tool_calls = validateToolCalls(obj["tool_calls"], source);
+  }
+  if (typeof obj["rounds"] === "number") {
+    if (!Number.isInteger(obj["rounds"]) || obj["rounds"] < 1) {
+      throw new LLMError(
+        `Mock fixture '${source}' has invalid 'rounds' (must be positive integer)`
+      );
+    }
+    fixture.rounds = obj["rounds"];
+  }
+  if (typeof obj["stop_reason"] === "string") {
+    fixture.stop_reason = obj["stop_reason"];
+  }
   return fixture;
+}
+
+function validateToolCalls(value: unknown, source: string): ToolCall[] {
+  if (!Array.isArray(value)) {
+    throw new LLMError(
+      `Mock fixture '${source}': 'tool_calls' must be an array`
+    );
+  }
+  const out: ToolCall[] = [];
+  for (const [i, item] of value.entries()) {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) {
+      throw new LLMError(
+        `Mock fixture '${source}': tool_calls[${i}] must be an object`
+      );
+    }
+    const obj = item as Record<string, unknown>;
+    const id = obj["id"];
+    const name = obj["name"];
+    const input = obj["input"];
+    if (typeof id !== "string" || id.length === 0) {
+      throw new LLMError(
+        `Mock fixture '${source}': tool_calls[${i}].id must be a non-empty string`
+      );
+    }
+    if (typeof name !== "string" || name.length === 0) {
+      throw new LLMError(
+        `Mock fixture '${source}': tool_calls[${i}].name must be a non-empty string`
+      );
+    }
+    if (typeof input !== "object" || input === null || Array.isArray(input)) {
+      throw new LLMError(
+        `Mock fixture '${source}': tool_calls[${i}].input must be an object`
+      );
+    }
+    out.push({ id, name, input: input as Record<string, unknown> });
+  }
+  return out;
 }

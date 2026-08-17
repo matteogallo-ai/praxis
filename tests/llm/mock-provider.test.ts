@@ -159,3 +159,129 @@ describe("MockLLMProvider", () => {
     expect(await p.complete("prompt contains xyz")).toBe("hit");
   });
 });
+
+describe("MockLLMProvider.completeWithTools", () => {
+  let tmp: string;
+
+  beforeEach(() => {
+    tmp = makeTempDir();
+  });
+
+  afterEach(() => {
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  test("returns text, tool_calls, rounds, stop_reason from a full fixture", async () => {
+    writeFileSync(
+      join(tmp, "a.json"),
+      JSON.stringify({
+        match_substring: "research query",
+        response: '{"findings": []}',
+        tool_calls: [
+          {
+            id: "call_1",
+            name: "web_search",
+            input: { query: "German market entry cost" },
+          },
+        ],
+        rounds: 2,
+        stop_reason: "end_turn",
+      })
+    );
+    const p = new MockLLMProvider({ fixturesDir: tmp });
+    const out = await p.completeWithTools(
+      "please handle this research query",
+      [{ type: "web_search", name: "web_search" }]
+    );
+    expect(out.text).toBe('{"findings": []}');
+    expect(out.tool_calls).toHaveLength(1);
+    expect(out.tool_calls[0]!.name).toBe("web_search");
+    expect(out.tool_calls[0]!.input.query).toBe("German market entry cost");
+    expect(out.rounds).toBe(2);
+    expect(out.stop_reason).toBe("end_turn");
+  });
+
+  test("defaults tool_calls to [], rounds to 1, stop_reason to 'end_turn' when fixture omits them", async () => {
+    writeFileSync(
+      join(tmp, "a.json"),
+      JSON.stringify({ match_substring: "simple", response: "just text" })
+    );
+    const p = new MockLLMProvider({ fixturesDir: tmp });
+    const out = await p.completeWithTools("a simple prompt", []);
+    expect(out.text).toBe("just text");
+    expect(out.tool_calls).toEqual([]);
+    expect(out.rounds).toBe(1);
+    expect(out.stop_reason).toBe("end_turn");
+  });
+
+  test("throws MockFixtureNotFoundError when nothing matches", async () => {
+    writeFileSync(
+      join(tmp, "a.json"),
+      JSON.stringify({ match_substring: "xxx", response: "n/a" })
+    );
+    const p = new MockLLMProvider({ fixturesDir: tmp });
+    await expect(
+      p.completeWithTools("nope", [])
+    ).rejects.toBeInstanceOf(MockFixtureNotFoundError);
+  });
+
+  test("rejects fixtures with non-array tool_calls at load time", () => {
+    writeFileSync(
+      join(tmp, "bad.json"),
+      JSON.stringify({
+        match_substring: "x",
+        response: "y",
+        tool_calls: "not-an-array",
+      })
+    );
+    expect(() => new MockLLMProvider({ fixturesDir: tmp })).toThrow(LLMError);
+  });
+
+  test("rejects tool_call entries missing id", () => {
+    writeFileSync(
+      join(tmp, "bad.json"),
+      JSON.stringify({
+        match_substring: "x",
+        response: "y",
+        tool_calls: [{ name: "web_search", input: {} }],
+      })
+    );
+    expect(() => new MockLLMProvider({ fixturesDir: tmp })).toThrow(LLMError);
+  });
+
+  test("rejects tool_call entries missing name", () => {
+    writeFileSync(
+      join(tmp, "bad.json"),
+      JSON.stringify({
+        match_substring: "x",
+        response: "y",
+        tool_calls: [{ id: "1", input: {} }],
+      })
+    );
+    expect(() => new MockLLMProvider({ fixturesDir: tmp })).toThrow(LLMError);
+  });
+
+  test("rejects tool_call entries where input is not an object", () => {
+    writeFileSync(
+      join(tmp, "bad.json"),
+      JSON.stringify({
+        match_substring: "x",
+        response: "y",
+        tool_calls: [{ id: "1", name: "web_search", input: "nope" }],
+      })
+    );
+    expect(() => new MockLLMProvider({ fixturesDir: tmp })).toThrow(LLMError);
+  });
+
+  test("rejects fixture with invalid rounds value", () => {
+    writeFileSync(
+      join(tmp, "bad.json"),
+      JSON.stringify({
+        match_substring: "x",
+        response: "y",
+        rounds: 0,
+      })
+    );
+    expect(() => new MockLLMProvider({ fixturesDir: tmp })).toThrow(LLMError);
+  });
+});
