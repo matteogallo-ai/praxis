@@ -1,6 +1,6 @@
 {
   "name": "praxis",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Format Registry for producing consultant-grade analytical briefings in the exact codes of the target organization",
   "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
   "license": "MIT",

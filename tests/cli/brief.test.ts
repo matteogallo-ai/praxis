@@ -12,6 +12,7 @@ let stdoutBuf: string[];
 let stderrBuf: string[];
 let originalStdout: typeof process.stdout.write;
 let originalStderr: typeof process.stderr.write;
+let savedApiKey: string | undefined;
 
 beforeEach(() => {
   setColorEnabled(false);
@@ -27,11 +28,17 @@ beforeEach(() => {
     stderrBuf.push(String(chunk));
     return true;
   }) as typeof process.stderr.write;
+  savedApiKey = process.env["ANTHROPIC_API_KEY"];
 });
 
 afterEach(() => {
   process.stdout.write = originalStdout;
   process.stderr.write = originalStderr;
+  if (savedApiKey === undefined) {
+    delete process.env["ANTHROPIC_API_KEY"];
+  } else {
+    process.env["ANTHROPIC_API_KEY"] = savedApiKey;
+  }
 });
 
 const stdout = () => stdoutBuf.join("");
@@ -45,6 +52,7 @@ describe("parseBriefArgs", () => {
     expect(p.formatId).toBe("executive-pre-read");
     expect(p.provider).toBe("mock");
     expect(p.json).toBe(false);
+    expect(p.withResearch).toBe(false);
   });
 
   test("supports --format=<id> equals form", () => {
@@ -64,6 +72,27 @@ describe("parseBriefArgs", () => {
     ]);
     expect(p.provider).toBe("mock");
     expect(p.json).toBe(true);
+  });
+
+  test("parses --with-research", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--with-research",
+    ]);
+    expect(p.withResearch).toBe(true);
+  });
+
+  test("parses --provider anthropic", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--provider",
+      "anthropic",
+    ]);
+    expect(p.provider).toBe("anthropic");
   });
 
   test("errors when question is missing", () => {
@@ -92,7 +121,7 @@ describe("parseBriefArgs", () => {
   });
 });
 
-describe("runBriefCli — nominal", () => {
+describe("runBriefCli — nominal (scoping only, mock provider)", () => {
   test("prints all four ScopingResult fields as pretty JSON", async () => {
     const code = await runBriefCli(
       ["Should we enter the German market?", "--format", "executive-pre-read"],
@@ -135,6 +164,78 @@ describe("runBriefCli — nominal", () => {
   });
 });
 
+describe("runBriefCli — --with-research (mock provider)", () => {
+  test("prints both scoping and research sections", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-research",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain("Scoping agent output");
+    expect(out).toContain("Research agent output");
+    expect(out).toContain("Findings:");
+    expect(out).toContain("Evidence:");
+    expect(out).toContain("Source:");
+  });
+
+  test("--with-research --json emits a combined { scoping, research } object", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-research",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(typeof parsed.scoping.reformulated_question).toBe("string");
+    expect(Array.isArray(parsed.research.findings)).toBe(true);
+    expect(parsed.research.findings.length).toBeGreaterThanOrEqual(3);
+    expect(Array.isArray(parsed.research.search_queries_used)).toBe(true);
+  });
+
+  test("--with-research works with mckinsey-style-note", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter Germany?",
+        "--format",
+        "mckinsey-style-note",
+        "--with-research",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(parsed.research.findings.length).toBeGreaterThanOrEqual(3);
+  });
+
+  test("--with-research works with position-paper-corporate", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "position-paper-corporate",
+        "--with-research",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(parsed.research.findings.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
 describe("runBriefCli — error paths", () => {
   test("unknown format id exits 1 with FormatNotFoundError message", async () => {
     const code = await runBriefCli(
@@ -145,7 +246,7 @@ describe("runBriefCli — error paths", () => {
     expect(stderr()).toContain("No format registered");
   });
 
-  test("unsupported provider exits 1 with ProviderNotSupportedError message", async () => {
+  test("unsupported provider exits 1 with helpful error message", async () => {
     const code = await runBriefCli(
       ["Q", "--format", "executive-pre-read", "--provider", "openai"],
       CTX
@@ -153,8 +254,27 @@ describe("runBriefCli — error paths", () => {
     expect(code).toBe(1);
     const err = stderr();
     expect(err).toContain("openai");
-    expect(err).toContain("v0.2");
     expect(err).toContain("mock");
+    expect(err).toContain("anthropic");
+  });
+
+  test("--provider anthropic without ANTHROPIC_API_KEY exits 1 with clear error", async () => {
+    delete process.env["ANTHROPIC_API_KEY"];
+    const code = await runBriefCli(
+      [
+        "Q",
+        "--format",
+        "executive-pre-read",
+        "--with-research",
+        "--provider",
+        "anthropic",
+      ],
+      CTX
+    );
+    expect(code).toBe(1);
+    const err = stderr();
+    expect(err).toContain("ANTHROPIC_API_KEY");
+    expect(err).toContain("CONTRIBUTING.md");
   });
 
   test("blank question exits 1 with OrchestrationError message", async () => {

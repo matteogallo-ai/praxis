@@ -106,3 +106,63 @@ export function renderKeyValue(key: string, value: string, keyWidth = 20): strin
 export function renderBullet(text: string): string {
   return `  ${c.dim("-")} ${text}`;
 }
+
+// ---------------------------------------------------------------------------
+// Agent output renderers — used by `praxis brief`.
+// ---------------------------------------------------------------------------
+
+import type { ScopingResult, ResearchResult } from "../agents/types.ts";
+import { isSourceMissing } from "../sourcing/types.ts";
+
+export function renderScopingResult(result: ScopingResult): string {
+  const parts: string[] = [];
+  parts.push(`\n${c.bold(c.cyan("Scoping agent output"))}\n`);
+  parts.push(`${c.dim("=".repeat(20))}\n`);
+  parts.push(JSON.stringify(result, null, 2) + "\n");
+  return parts.join("");
+}
+
+export function renderResearchResult(result: ResearchResult): string {
+  const parts: string[] = [];
+  parts.push(`\n${c.bold(c.cyan("Research agent output"))}\n`);
+  parts.push(`${c.dim("=".repeat(21))}\n`);
+  parts.push(
+    `${c.dim(`Findings: ${result.findings.length}  |  ` +
+      `Queries: ${result.search_queries_used.length}  |  ` +
+      `Open questions: ${result.open_questions.length}`)}\n\n`
+  );
+
+  for (const [i, f] of result.findings.entries()) {
+    parts.push(`${c.bold(`[${i + 1}] ${f.claim}`)}\n`);
+    parts.push(`    ${c.dim("Evidence:")} ${f.supporting_evidence}\n`);
+    if (isSourceMissing(f.source)) {
+      parts.push(
+        `    ${c.yellow("Source:")} ${c.yellow("[SOURCE MISSING]")} ${c.dim("searched for:")} ${f.source.searched_for}\n`
+      );
+    } else {
+      parts.push(`    ${c.dim("Source:")} ${c.blue(f.source.url)}\n`);
+      parts.push(`    ${c.dim("Title:")}  ${f.source.title}\n`);
+      parts.push(`    ${c.dim("Excerpt:")} ${truncateForDisplay(f.source.excerpt, 240)}\n`);
+    }
+    parts.push("\n");
+  }
+
+  if (result.open_questions.length > 0) {
+    parts.push(`${c.bold("Open questions")}\n`);
+    for (const q of result.open_questions) {
+      parts.push(`  ${c.dim("-")} ${q}\n`);
+    }
+    parts.push("\n");
+  }
+
+  parts.push(`${c.dim("Search queries used:")}\n`);
+  for (const q of result.search_queries_used) {
+    parts.push(`  ${c.dim("·")} ${q}\n`);
+  }
+
+  return parts.join("");
+}
+
+function truncateForDisplay(s: string, max: number): string {
+  return s.length <= max ? s : s.slice(0, max) + "…";
+}

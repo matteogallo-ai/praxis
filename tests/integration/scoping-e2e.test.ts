@@ -78,7 +78,7 @@ describe("integration — praxis brief (v0.2 scoping-only)", () => {
     expect(res.stderr).toContain("No format registered");
   });
 
-  test("unsupported provider exits 1 with v0.2 hint", () => {
+  test("unsupported provider exits 1 with a clear message", () => {
     const res = runCli([
       "brief",
       "Whatever",
@@ -89,7 +89,8 @@ describe("integration — praxis brief (v0.2 scoping-only)", () => {
     ]);
     expect(res.code).toBe(1);
     expect(res.stderr).toContain("openai");
-    expect(res.stderr).toContain("v0.2");
+    expect(res.stderr).toContain("mock");
+    expect(res.stderr).toContain("anthropic");
   });
 
   test("help mentions the brief command", () => {

@@ -1,31 +1,40 @@
 /**
- * `praxis brief "<question>" --format <id>` — v0.2 mode: scoping only.
+ * `praxis brief "<question>" --format <id> [flags]` — CLI entry point.
  *
- * The command runs the Orchestrator up to the Scoping agent and prints
- * the resulting JSON. Full-briefing generation lands in v0.6+; when
- * asked to run past scoping, the orchestrator itself throws
- * `NotImplementedError` — this command does not simulate progress.
+ * v0.3 modes:
+ *   default          — runs Scoping only and prints the JSON.
+ *   --with-research  — runs Scoping then Research; prints both.
  *
- * Flags:
- *   --format <id>      required. Format id from the registry.
- *   --provider <name>  optional. Only 'mock' is supported in v0.2.
- *   --json             optional. Prints raw JSON only (no headings) for piping.
+ * Providers:
+ *   --provider mock       (default) reads pre-scripted fixtures under
+ *                         `tests/fixtures/mock-llm/`.
+ *   --provider anthropic  live provider. Requires `ANTHROPIC_API_KEY`
+ *                         in the environment. Enables `--with-research`
+ *                         against the real web_search tool.
+ *
+ * Full-briefing generation still throws `NotImplementedError` at the
+ * Orchestrator; that pipeline lands in v0.6+.
  */
 
 import { FormatRegistry } from "../../registry/registry.ts";
 import { Orchestrator } from "../../orchestrator/orchestrator.ts";
 import { MockLLMProvider } from "../../llm/mock-provider.ts";
-import { ProviderNotSupportedError } from "../../llm/errors.ts";
+import { AnthropicLLMProvider } from "../../llm/anthropic-provider.ts";
+import {
+  ProviderNotSupportedError,
+  AnthropicAuthenticationError,
+} from "../../llm/errors.ts";
 import { PraxisError } from "../../registry/errors.ts";
-import { c } from "../output.ts";
+import { c, renderScopingResult, renderResearchResult } from "../output.ts";
 import type { LLMProvider } from "../../llm/provider.ts";
-import type { ScopingResult } from "../../agents/types.ts";
+import type { ScopingResult, ResearchResult } from "../../agents/types.ts";
 
 export interface BriefCommandOptions {
   question: string;
   formatId: string;
   provider: string;
   json: boolean;
+  withResearch: boolean;
   formatsDir: string;
   fixturesDir: string;
 }
@@ -35,18 +44,21 @@ export interface ParsedBriefArgs {
   formatId: string;
   provider: string;
   json: boolean;
+  withResearch: boolean;
   error?: string;
 }
 
 /**
  * Parses the `brief` argument tail: exactly one positional (the
- * question) plus `--format`, optional `--provider`, `--json`.
+ * question) plus `--format`, optional `--provider`, `--json`,
+ * `--with-research`.
  */
 export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   const positional: string[] = [];
   let formatId: string | null = null;
   let provider = "mock";
   let json = false;
+  let withResearch = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
@@ -58,6 +70,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
           formatId: "",
           provider,
           json,
+          withResearch,
           error: "--format expects an id (e.g. --format executive-pre-read)",
         };
       }
@@ -73,6 +86,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
           formatId: "",
           provider,
           json,
+          withResearch,
           error: "--provider expects a name (e.g. --provider mock)",
         };
       }
@@ -82,6 +96,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       provider = a.slice("--provider=".length);
     } else if (a === "--json") {
       json = true;
+    } else if (a === "--with-research") {
+      withResearch = true;
     } else {
       positional.push(a);
     }
@@ -93,6 +109,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       formatId: "",
       provider,
       json,
+      withResearch,
       error: "missing question. Usage: praxis brief \"<question>\" --format <id>",
     };
   }
@@ -102,6 +119,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       formatId: "",
       provider,
       json,
+      withResearch,
       error: "expected exactly one question. Wrap multi-word questions in quotes.",
     };
   }
@@ -111,11 +129,12 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       formatId: "",
       provider,
       json,
+      withResearch,
       error: "--format is required. Usage: praxis brief \"<question>\" --format <id>",
     };
   }
 
-  return { question: positional[0]!, formatId, provider, json };
+  return { question: positional[0]!, formatId, provider, json, withResearch };
 }
 
 export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
@@ -124,8 +143,17 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   registry.loadDirectory(opts.formatsDir);
   const orchestrator = new Orchestrator(registry, llm);
 
-  const result = await orchestrator.scope(opts.question, opts.formatId);
-  printScopingResult(result, opts.json);
+  if (opts.withResearch) {
+    const result = await orchestrator.researchAfterScoping(
+      opts.question,
+      opts.formatId
+    );
+    printCombined(result.scoping, result.research, opts.json);
+    return 0;
+  }
+
+  const scoping = await orchestrator.scope(opts.question, opts.formatId);
+  printScopingOnly(scoping, opts.json);
   return 0;
 }
 
@@ -133,19 +161,36 @@ function selectProvider(name: string, fixturesDir: string): LLMProvider {
   if (name === "mock") {
     return new MockLLMProvider({ fixturesDir });
   }
+  if (name === "anthropic") {
+    return new AnthropicLLMProvider();
+  }
   throw new ProviderNotSupportedError(name);
 }
 
-function printScopingResult(result: ScopingResult, json: boolean): void {
+function printScopingOnly(result: ScopingResult, json: boolean): void {
   if (json) {
     process.stdout.write(JSON.stringify(result, null, 2) + "\n");
     return;
   }
-  process.stdout.write(`\n${c.bold(c.cyan("Scoping agent output"))}\n`);
-  process.stdout.write(`${c.dim("=".repeat(20))}\n`);
-  process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+  process.stdout.write(renderScopingResult(result));
   process.stdout.write(
     `\n${c.dim("Next: full briefing generation coming in v0.6+.")}\n`
+  );
+}
+
+function printCombined(
+  scoping: ScopingResult,
+  research: ResearchResult,
+  json: boolean
+): void {
+  if (json) {
+    process.stdout.write(JSON.stringify({ scoping, research }, null, 2) + "\n");
+    return;
+  }
+  process.stdout.write(renderScopingResult(scoping));
+  process.stdout.write(renderResearchResult(research));
+  process.stdout.write(
+    `\n${c.dim("Next: synthesis, editorial, formatting land from v0.6+.")}\n`
   );
 }
 
@@ -170,10 +215,15 @@ export async function runBriefCli(
       formatId: parsed.formatId,
       provider: parsed.provider,
       json: parsed.json,
+      withResearch: parsed.withResearch,
       formatsDir: ctx.formatsDir,
       fixturesDir: ctx.fixturesDir,
     });
   } catch (err) {
+    if (err instanceof AnthropicAuthenticationError) {
+      process.stderr.write(`${c.red("✗")} ${err.message}\n`);
+      return 1;
+    }
     if (err instanceof PraxisError) {
       process.stderr.write(`${c.red("✗")} ${err.message}\n`);
       return 1;

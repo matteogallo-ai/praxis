@@ -7,7 +7,10 @@
  *   praxis formats list [--org-style <style>]
  *   praxis formats inspect <format-id>
  *   praxis formats validate <path/to/file.yaml>
- *   praxis brief "<question>" --format <id> [--provider mock] [--json]
+ *   praxis brief "<question>" --format <id>
+ *                             [--provider mock|anthropic]
+ *                             [--with-research]
+ *                             [--json]
  */
 
 import { resolve } from "node:path";
@@ -125,14 +128,17 @@ function dispatchFormats(sub: string, rest: string[]): number {
 
 function printHelp(): void {
   process.stdout.write(
-    `praxis v${PRAXIS_VERSION} — Format Registry + Scoping agent for consultant-grade briefings\n\n` +
+    `praxis v${PRAXIS_VERSION} — Format Registry + Scoping/Research agents for consultant-grade briefings\n\n` +
       `Usage:\n` +
       `  praxis version\n` +
       `  praxis formats list [--org-style <style>]\n` +
       `  praxis formats inspect <format-id>\n` +
       `  praxis formats validate <path/to/file.yaml>\n` +
-      `  praxis brief "<question>" --format <id> [--provider mock] [--json]\n\n` +
-      `In v0.2, 'brief' runs the Scoping agent only and prints its JSON output.\n` +
+      `  praxis brief "<question>" --format <id>\n` +
+      `                            [--provider mock|anthropic]\n` +
+      `                            [--with-research]\n` +
+      `                            [--json]\n\n` +
+      `In v0.3, 'brief' runs Scoping (default) or Scoping + Research (with --with-research).\n` +
       `Full briefing generation lands in v0.6+. See ROADMAP.md.\n`
   );
 }

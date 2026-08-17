@@ -33,16 +33,16 @@ const stdout = () => stdoutBuf.join("");
 const stderr = () => stderrBuf.join("");
 
 describe("praxis dispatch", () => {
-  test("`praxis version` prints praxis v0.2.0 and returns 0", async () => {
+  test("`praxis version` prints praxis v0.3.0 and returns 0", async () => {
     const code = await run(["version"]);
     expect(code).toBe(0);
-    expect(stdout()).toBe("praxis v0.2.0\n");
+    expect(stdout()).toBe("praxis v0.3.0\n");
   });
 
   test("`praxis --version` short-form works", async () => {
     const code = await run(["--version"]);
     expect(code).toBe(0);
-    expect(stdout()).toContain("praxis v0.2.0");
+    expect(stdout()).toContain("praxis v0.3.0");
   });
 
   test("no arguments prints help and returns 0", async () => {
