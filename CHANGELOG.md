@@ -5,6 +5,130 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] — 2026-08-17
+
+**Stakeholder Mapping agent.** Third Praxis agent, and the first one
+whose input includes BOTH the Scoping and Research outputs. Also the
+first agent that is "analytical" in the strong sense — it synthesises
+a model of the terrain rather than reformulating or collecting.
+
+The Sourcing & Verification layer grows to cover a second agent
+without duplication: the same `SourceReference | SOURCE_MISSING`
+discipline that governs Research findings now governs Stakeholder
+position evidence.
+
+### Added
+
+- **Stakeholder Mapping agent** (`src/agents/stakeholder.ts`):
+  - `executeStakeholderMapping(ctx, llm)` loads
+    `prompts/stakeholder.prompt`, parses it via PromptLang,
+    interpolates `{{scoping_json}}` / `{{research_json}}` /
+    `{{format_id}}` / `{{sourcing_policy}}`, dispatches to
+    `llm.completeWithTools` with the `web_search` tool, and validates
+    the returned JSON against `StakeholderMapResult`.
+  - Hard caps: minimum 3, maximum 20 stakeholders per mapping. Enforced
+    by the parser as `StakeholderMappingError`.
+  - Every `position_evidence` field must be either a real
+    `SourceReference` or an explicit `SOURCE_MISSING` marker —
+    fabricated evidence is structurally forbidden.
+  - Errors: `StakeholderMappingError`.
+- **Stakeholder types** (`src/agents/types.ts`):
+  - `StakeholderCategory` (decision-maker / influencer / gatekeeper /
+    affected-party / external-observer).
+  - `StakeholderPower` (high | medium | low),
+    `StakeholderPosition` (supportive | neutral | resistant | unknown),
+    `StakeholderPriority` (critical | important | monitor).
+  - `Stakeholder`, `StakeholderMapResult`, `StakeholderContext`.
+- **Sourcing Layer extension** (`src/sourcing/`):
+  - `validateStakeholderSourcing(map, policy)` — same policy semantics
+    as `validateSourcing`, applied to stakeholder position evidence.
+  - `SourcingWarning` is now a discriminated union with two variants:
+    `missing_source` (research finding) and
+    `missing_stakeholder_evidence` (stakeholder position).
+  - `SourcingReport.total_findings` renamed to `SourcingReport.total_items`
+    so the shape works uniformly across agents.
+- **Orchestrator** (`src/orchestrator/orchestrator.ts`):
+  - `mapStakeholdersAfterResearch(question, formatId)` — chains
+    Scoping → Research → Stakeholder Mapping, enforces
+    `format.sourcing_policy` on BOTH research findings and stakeholder
+    positions, returns `{ scoping, research, stakeholders }`.
+  - Refuses to run when the format's sections do not list `research`
+    AND `stakeholder`.
+  - `brief()` still throws `NotImplementedError`.
+- **CLI `brief` command** (`src/cli/commands/brief.ts`):
+  - New flag `--with-stakeholders`. Implies `--with-research`; a note
+    is emitted to stdout when the flag is used alone (suppressed under
+    `--json` to keep the piped stream valid).
+  - `--with-stakeholders --json` emits a combined
+    `{ scoping, research, stakeholders }` object.
+  - `--with-stakeholders --provider anthropic` without
+    `ANTHROPIC_API_KEY` exits 1 with the same clear error as
+    `--with-research`.
+- **CLI output helpers** (`src/cli/output.ts`):
+  - `renderStakeholders(result)` — compact ANSI table
+    (Name | Category | Position | Power | Priority) followed by
+    per-stakeholder interest / engagement / sourced-evidence blocks,
+    plus Key dynamics and Blind spots sections.
+- **New prompt** (`prompts/stakeholder.prompt`) — Stakeholder Mapping
+  prompt with the same anti-hallucination rule as the Research prompt
+  applied to `position_evidence`.
+- **New fixtures** (`tests/fixtures/mock-llm/`):
+  - `stakeholders-executive-pre-read.json`,
+    `stakeholders-mckinsey-style-note.json`,
+    `stakeholders-position-paper-corporate.json` — one realistic
+    mapping per shipped format (7-8 stakeholders each, all fully
+    sourced under the strict policy the shipped formats declare).
+- **Optional live integration test** (`tests/live/stakeholder-agent.live.test.ts`)
+  — end-to-end run against the real Anthropic API, skipped without
+  `ANTHROPIC_API_KEY`.
+- **59 new tests** (30 stakeholder-agent, 5 sourcing extension, 8
+  orchestrator, 9 CLI-brief, 7 integration). **Total: 368 tests + 4
+  optional live tests** (all live tests skip without the key).
+
+### Changed
+
+- **`SourcingReport.total_findings` → `total_items`.** The generic
+  name lets the same report shape describe research-finding
+  validation and stakeholder-position validation. v0.3 consumers that
+  read `total_findings` must rename.
+- **`SourcingWarning` is now a discriminated union.** Existing
+  `missing_source` variant kept unchanged; new
+  `missing_stakeholder_evidence` variant added. Consumers reading
+  variant-specific fields must narrow on `kind`.
+- **`SourcingValidationError` message** updated to use the generic
+  "items" wording so it reads correctly for both agents.
+- **CLI help** now documents `--with-stakeholders`.
+- **Praxis version bumped** to `0.4.0` in `package.json` and
+  `src/cli/version-constant.ts`.
+
+### Security notes
+
+- No new environment variables. `ANTHROPIC_API_KEY` still guards the
+  live provider; the stakeholder agent reuses the same auth path.
+- The prompt's sourcing rule is reinforced with a note about people:
+  fabricated evidence about a real person or organisation is a
+  distinct kind of harm — the agent must default to `SOURCE_MISSING`
+  when in doubt.
+
+### Notes on the design
+
+- Stakeholder Mapping is the first agent whose `AgentContext` includes
+  two prior outputs. The pattern generalises: future agents (Risk,
+  Options, Adversarial) will each declare which prior outputs they
+  consume and the Orchestrator will type-check the sequencing.
+- The category vocabulary (decision-maker / influencer / gatekeeper /
+  affected-party / external-observer) is deliberately coarse. Later
+  releases may add sub-typing for regulator vs media vs union under
+  `external-observer` — the enum extension will be additive.
+
+### Next
+
+- **v0.5 — Risk Analysis agent + hardened Sourcing Layer.** Fourth
+  agent (Risk), extension of the sourcing layer with freshness gates
+  and domain-trust bands.
+
+[0.4.0]: https://github.com/matteogallo-ai/praxis/releases/tag/v0.4.0
+
 ## [0.3.0] — 2026-08-17
 
 **Research agent + real Anthropic provider.** First live LLM backend,

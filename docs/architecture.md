@@ -1,10 +1,12 @@
-# Praxis Architecture — v0.3
+# Praxis Architecture — v0.4
 
-This document maps the layers of Praxis as of v0.3, and explains the
+This document maps the layers of Praxis as of v0.4, and explains the
 responsibilities and boundaries between them. v0.1 shipped the Format
 Registry, v0.2 added the LLM abstraction and the Scoping agent, v0.3
-adds a real Anthropic provider, the Research agent, and the embryonic
-Sourcing & Verification layer.
+added a real Anthropic provider, the Research agent, and the
+embryonic Sourcing & Verification layer. v0.4 adds the Stakeholder
+Mapping agent — the first agent whose input includes both prior
+outputs — and extends the sourcing layer to a second agent.
 
 ---
 
@@ -24,17 +26,20 @@ responsibility. No layer reaches past its immediate neighbours.
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Orchestrator                                    src/orchestrator/  │
 │  reads a Format from the Registry, decides which agents to run     │
-│  v0.3:  scope() and researchAfterScoping() are implemented          │
+│  v0.4:  scope() + researchAfterScoping() +                          │
+│         mapStakeholdersAfterResearch() are implemented              │
 │         brief() throws NotImplementedError (v0.6+)                  │
 └─────────┬────────────────────────┬───────────────┬──────────────────┘
           │                        │               │
           ▼                        ▼               ▼
-┌──────────────────┐     ┌────────────────┐  ┌──────────────────────┐
-│  Agents          │     │ Sourcing Layer │  │ Format Registry (v0.1)│
-│  src/agents/*.ts │     │ src/sourcing/  │  │ src/registry/*.ts     │
-│  scoping,        │     │ validateSourcing│  │ YAML load, validate,  │
-│  research (v0.3) │     │ (strict/permis.)│  │ lookup, filter        │
-└────────┬─────────┘     └────────────────┘  └──────────────────────┘
+┌────────────────────┐   ┌──────────────────┐  ┌──────────────────────┐
+│  Agents            │   │ Sourcing Layer   │  │ Format Registry (v0.1)│
+│  src/agents/*.ts   │   │ src/sourcing/    │  │ src/registry/*.ts     │
+│  scoping,          │   │ validateSourcing │  │ YAML load, validate,  │
+│  research (v0.3),  │   │ + validateStake- │  │ lookup, filter        │
+│  stakeholder (v0.4)│   │ holderSourcing   │  │                       │
+│                    │   │ (v0.4)           │  │                       │
+└────────┬───────────┘   └──────────────────┘  └──────────────────────┘
          │
          ▼
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -51,14 +56,41 @@ External dependency (workspace-linked, sibling checkout of PromptLang):
 │  PromptLang                                    ~/dev/promptlang/    │
 │  used by:                                                           │
 │    - src/registry/loader.ts  → parseYaml    (@promptlang/yaml-parser)│
-│    - src/agents/scoping.ts   → lexer, parser, AST (promptlang/*)    │
-│    - src/agents/research.ts  → lexer, parser, AST (promptlang/*)    │
+│    - src/agents/scoping.ts     → lexer, parser, AST (promptlang/*)  │
+│    - src/agents/research.ts    → lexer, parser, AST (promptlang/*)  │
+│    - src/agents/stakeholder.ts → lexer, parser, AST (promptlang/*)  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. End-to-end flow: `praxis brief --with-research`
+## 2. End-to-end flow: `praxis brief --with-stakeholders`
+
+The v0.4 pipeline extends the v0.3 flow with a third agent stage and a
+second sourcing check. The Orchestrator method is
+`mapStakeholdersAfterResearch`, and the CLI trigger is
+`--with-stakeholders`. All prior modes (`--with-research`, default
+scoping-only) remain unchanged.
+
+The three-agent flow, in condensed form:
+
+```
+argv → CLI dispatch → briefCommand → Orchestrator.mapStakeholdersAfterResearch
+  ├─ doScoping()  → ScopingResult
+  ├─ doResearch(scoping, format)  → ResearchResult
+  ├─ validateSourcing(research, format.sourcing_policy)
+  ├─ doMapStakeholders(scoping, research, format)  → StakeholderMapResult
+  │      (input includes BOTH prior outputs — first agent to do so)
+  ├─ validateStakeholderSourcing(stakeholders, format.sourcing_policy)
+  └─ return { scoping, research, stakeholders }
+```
+
+Under strict sourcing, either validator can throw
+`SourcingValidationError` and abort the pipeline. Under permissive
+sourcing, both return `SourcingReport`s with warnings that later
+releases will surface in the final briefing.
+
+### v0.3 end-to-end flow: `praxis brief --with-research`
 
 ```
 $ praxis brief "Should we enter Germany?" \
@@ -176,6 +208,7 @@ Error
     ├── AgentExecutionError                  (src/agents/errors.ts)
     │   ├── InvalidAgentOutputError
     │   ├── PromptFileError
+    │   ├── StakeholderMappingError           (v0.4)
     │   └── ResearchAgentError                (v0.3)
     │        └── MaxToolRoundsExceededError   (v0.3)
     │

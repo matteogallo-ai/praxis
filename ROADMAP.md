@@ -74,25 +74,52 @@ the live API when the key is present.
 
 ---
 
-## v0.4 — Stakeholder Mapping Agent
+## v0.4 — Stakeholder Mapping Agent ✅ (shipped 2026-08-17)
 
-- `stakeholder` agent — third Praxis agent. First one whose input
-  includes both the Scoping output *and* the Research output.
-- Map actors to interests, positions, and influence bands.
-- Extend the Orchestrator with `mapStakeholdersAfterResearch()`.
-- CLI: add a `--with-stakeholders` flag that chains the three agents
-  end-to-end.
-- Follow-on `risk` agent lands alongside if scope permits, otherwise
-  it moves to v0.5.
+- `stakeholder` agent — third Praxis agent, first one whose input
+  includes BOTH the Scoping output and the Research output. First
+  agent that is analytical in the strong sense (synthesises a model
+  of the terrain).
+- Structured taxonomy: five stakeholder categories
+  (decision-maker / influencer / gatekeeper / affected-party /
+  external-observer), three power bands, four position states,
+  three priority tiers, plus key dynamics and blind spots.
+- Every `position_evidence` follows the Research sourcing discipline:
+  real `SourceReference` OR explicit `SOURCE_MISSING` — never
+  fabricated evidence about a real person or organisation.
+- Sourcing Layer extended: `validateStakeholderSourcing`,
+  `SourcingWarning` becomes a discriminated union so the same policy
+  semantics apply to both agents.
+- `Orchestrator.mapStakeholdersAfterResearch()` chains all three
+  agents and enforces the format's `sourcing_policy` on both research
+  findings and stakeholder positions.
+- CLI: `--with-stakeholders` runs the full pipeline; alone it emits
+  a stdout note and implies `--with-research`.
+- Hard caps: 3-20 stakeholders per mapping, enforced by the parser.
+- 59 new tests. **Total: 368 + 4 optional live.**
+
+**Exit criteria met:** `praxis brief "..." --format executive-pre-read
+--with-stakeholders` prints the three agent sections plus a compact
+stakeholder table, with every position_evidence carrying a source URL
+under the strict-policy shipped formats.
 
 ---
 
-## v0.5 — Options + Adversarial Agents
+## v0.5 — Risk Analysis Agent + Hardened Sourcing Layer
 
-- `options` agent — generate the option space that supports the
-  recommendation.
-- `adversarial` agent — red-team pass that must find at least one
-  substantive weakness per option, or explain why none exists.
+- `risk` agent — fourth Praxis agent. Enumerates risks tied to the
+  recommendation with likelihood and impact bands, and pairs each
+  risk with a mitigation the reader's owner can execute.
+- Consumes Scoping + Research + Stakeholder outputs (first agent with
+  three prior inputs; validates the general pattern for downstream
+  agents).
+- Sourcing Layer extensions: freshness gates (per-format ceiling on
+  source age), domain-trust bands (per-format allow/deny lists),
+  cross-agent citation dedupe.
+- Orchestrator: `assessRisksAfterStakeholders()`.
+- CLI: `--with-risks` flag chains the four agents.
+- Follow-on `options` and `adversarial` agents move to v0.6 if scope
+  demands.
 
 ---
 

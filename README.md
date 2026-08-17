@@ -8,28 +8,31 @@ discipline enforced upstream**: the briefing arrives already shaped like
 the organization's own analysts wrote it, with rigorous sourcing and a
 consistent voice. That is 80% of what a senior reader values.
 
-The current release, **v0.3 — Research agent + real Anthropic
-provider**, adds the second Praxis agent, the first live LLM backend,
-and the embryonic Sourcing & Verification layer.
+The current release, **v0.4 — Stakeholder Mapping agent**, adds the
+third Praxis agent — the first one whose input includes both prior
+outputs (Scoping and Research) and the first analytical agent in the
+strong sense (synthesises a model of the terrain).
 
 Highlights:
 
-- Everything from v0.1 (Format Registry) and v0.2 (Scoping agent,
-  Orchestrator, MockLLMProvider, `praxis brief` CLI).
-- **Real Anthropic provider** — `AnthropicLLMProvider` talks to
-  `POST /v1/messages` via Bun's native `fetch`, with retries,
-  timeout, and server-side tool use. Zero npm dependencies added.
-- **Research agent** — reads Scoping output, calls Anthropic's
-  `web_search` tool, returns evidence-backed `findings` each carrying
-  either a real `SourceReference` (URL, title, excerpt) or an explicit
-  `SOURCE_MISSING` marker. Fabricated sources are structurally
-  prohibited. Prompt: [`prompts/research.prompt`](prompts/research.prompt).
-- **Sourcing & Verification Layer** — `validateSourcing(result, policy)`
-  enforces `strict` (throws on any missing source) or `permissive`
-  (accepts with warnings). Wired in by the Orchestrator.
+- Everything from v0.1 (Format Registry), v0.2 (Scoping agent,
+  Orchestrator), and v0.3 (Research agent, AnthropicLLMProvider,
+  Sourcing & Verification layer).
+- **Stakeholder Mapping agent** — reads Scoping + Research, calls the
+  Anthropic `web_search` tool to confirm public positions, produces a
+  `StakeholderMapResult` with 3-20 stakeholders (hard-capped), each
+  carrying category / interest / position / power / priority and a
+  `position_evidence` field that follows the same sourcing discipline
+  as Research (real `SourceReference` OR explicit `SOURCE_MISSING` —
+  no fabricated evidence about a real person or organisation).
+  Prompt: [`prompts/stakeholder.prompt`](prompts/stakeholder.prompt).
+- **Sourcing Layer extension** — `validateStakeholderSourcing()`
+  enforces the format's policy on stakeholder positions with the same
+  strict/permissive semantics as Research findings.
 - **CLI extension** —
-  `praxis brief "<question>" --format <id> --with-research
-   [--provider mock|anthropic] [--json]` runs both agents end-to-end.
+  `praxis brief "<question>" --format <id> --with-stakeholders
+   [--provider mock|anthropic] [--json]` runs the full three-agent
+  pipeline. `--with-stakeholders` implies `--with-research`.
 
 The test suite still runs offline by default (`MockLLMProvider`); live
 integration tests live under [`tests/live/`](tests/live/README.md) and
@@ -72,7 +75,7 @@ npm — Praxis will switch to `"promptlang": "^1.x"` in `dependencies`.
 
 ```
 $ bun run cli version
-praxis v0.3.0
+praxis v0.4.0
 ```
 
 ### `praxis formats list`
@@ -104,13 +107,22 @@ on success, 1 on failure with every issue listed.
 
 ### `praxis brief "<question>" --format <id>`
 
-Runs the Scoping agent for the given question under the selected format
-and prints its JSON output. In v0.3, add `--with-research` to chain
-Scoping and Research and print both.
+Runs the Scoping agent by default. Add `--with-research` to chain
+Scoping + Research (v0.3), or `--with-stakeholders` to run the full
+Scoping + Research + Stakeholder Mapping pipeline (v0.4).
 
-```
+```bash
+# scoping only
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read
+
+# scoping + research
 $ bun run cli brief "Should we enter the German market?" \
     --format executive-pre-read --with-research
+
+# scoping + research + stakeholder mapping (v0.4)
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --with-stakeholders
 ```
 
 Flags:
@@ -118,10 +130,16 @@ Flags:
 - `--format <id>` — required. Format id from the registry.
 - `--with-research` — optional. Runs Scoping + Research; prints both.
   Enforces the format's `sourcing_policy` on the research findings.
+- `--with-stakeholders` — optional. Runs the full three-agent
+  pipeline. Implies `--with-research` (a stdout note is emitted when
+  the flag is used alone). Prints a compact ANSI stakeholder table
+  plus per-stakeholder details. Enforces the sourcing policy on both
+  research findings and stakeholder position evidence.
 - `--provider <name>` — optional. Values: `mock` (default, fixture-driven)
   and `anthropic` (live API; requires `ANTHROPIC_API_KEY`).
 - `--json` — optional. Prints raw JSON only, for piping. Under
-  `--with-research`, emits `{ scoping, research }`.
+  `--with-research`, emits `{ scoping, research }`. Under
+  `--with-stakeholders`, emits `{ scoping, research, stakeholders }`.
 
 ---
 
@@ -173,38 +191,41 @@ Live tests self-skip when `ANTHROPIC_API_KEY` is unset. See
 
 ## Architecture
 
-v0.3 adds a second agent, a live provider, and the sourcing layer on
-top of the v0.2 pipeline:
+v0.4 adds the Stakeholder Mapping agent — the first one whose input
+includes both prior outputs — and extends the sourcing layer to a
+second agent:
 
 ```
                       ┌─────────────────────────┐
                       │  Format Registry (v0.1) │
                       └───────────┬─────────────┘
                                   │
-                      ┌───────────▼─────────────┐
-                      │      Orchestrator       │
-                      │  scope() / brief() /    │
-                      │  researchAfterScoping() │
-                      └───────────┬─────────────┘
+                      ┌───────────▼──────────────────────────┐
+                      │            Orchestrator              │
+                      │  scope() / brief() /                 │
+                      │  researchAfterScoping() /            │
+                      │  mapStakeholdersAfterResearch()      │
+                      └───────────┬──────────────────────────┘
                                   │
-                       ┌──────────┼──────────┐
-                       ▼          ▼          ▼
-                ┌──────────┐ ┌─────────┐ ┌──────────────┐
-                │  Scoping │ │Research │ │   Sourcing   │
-                │   Agent  │→│  Agent  │→│  Validator   │
-                └────┬─────┘ └────┬────┘ └──────────────┘
-                     │            │
-                     ▼            ▼
-                ┌───────────────────────────────┐
-                │         LLMProvider           │
-                │   MockLLMProvider (offline)   │
-                │   AnthropicLLMProvider (live) │
-                │   .completeWithTools()        │
-                └───────────────────────────────┘
+                       ┌──────────┼──────────┬──────────────┐
+                       ▼          ▼          ▼              ▼
+                ┌──────────┐ ┌─────────┐ ┌─────────────┐ ┌──────────────┐
+                │  Scoping │→│Research │→│ Stakeholder │ │   Sourcing   │
+                │   Agent  │ │  Agent  │ │Mapping Agent│ │  Validator   │
+                └────┬─────┘ └────┬────┘ └──────┬──────┘ └──────────────┘
+                     │            │             │
+                     ▼            ▼             ▼
+                ┌───────────────────────────────────────────┐
+                │              LLMProvider                  │
+                │      MockLLMProvider (offline)            │
+                │      AnthropicLLMProvider (live)          │
+                │      .completeWithTools()                 │
+                └───────────────────────────────────────────┘
 ```
 
 Full detail and design rationale: [`docs/architecture.md`](docs/architecture.md).
 For authoring a new agent prompt: [`docs/writing-a-prompt.md`](docs/writing-a-prompt.md).
+For the stakeholder mapping philosophy: [`docs/stakeholders.md`](docs/stakeholders.md).
 
 ---
 
@@ -262,9 +283,9 @@ Praxis targets a v1.0 release in ten steps.
 | --- | --- |
 | v0.1 | Format Registry |
 | v0.2 | Agent scoping — first PromptLang-authored agent + orchestrator scaffold |
-| **v0.3** | Research agent + real Anthropic provider + sourcing layer (this release) |
-| v0.4 | Stakeholder Mapping agent |
-| v0.5 | Options + Adversarial agents (red-team pass) |
+| v0.3 | Research agent + real Anthropic provider + sourcing layer |
+| **v0.4** | Stakeholder Mapping agent + sourcing extension (this release) |
+| v0.5 | Risk Analysis agent + hardened sourcing (freshness, domain trust) |
 | v0.6 | Synthesis agent + full 7-agent pipeline |
 | v0.7 | Output targets — PDF/DOCX/MD renderers |
 | v0.8 | Style guide enforcement (forbidden terms, sentence caps, MECE checks) |
