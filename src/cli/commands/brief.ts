@@ -1,16 +1,19 @@
 /**
  * `praxis brief "<question>" --format <id> [flags]` — CLI entry point.
  *
- * v0.3 modes:
- *   default          — runs Scoping only and prints the JSON.
- *   --with-research  — runs Scoping then Research; prints both.
+ * v0.4 modes:
+ *   default              Scoping only.
+ *   --with-research      Scoping → Research.
+ *   --with-stakeholders  Scoping → Research → Stakeholder Mapping.
+ *                        Implies --with-research; a note is emitted
+ *                        to stdout if used alone.
  *
  * Providers:
  *   --provider mock       (default) reads pre-scripted fixtures under
  *                         `tests/fixtures/mock-llm/`.
  *   --provider anthropic  live provider. Requires `ANTHROPIC_API_KEY`
- *                         in the environment. Enables `--with-research`
- *                         against the real web_search tool.
+ *                         in the environment. Enables tool-using
+ *                         agents against the real web_search tool.
  *
  * Full-briefing generation still throws `NotImplementedError` at the
  * Orchestrator; that pipeline lands in v0.6+.
@@ -25,9 +28,18 @@ import {
   AnthropicAuthenticationError,
 } from "../../llm/errors.ts";
 import { PraxisError } from "../../registry/errors.ts";
-import { c, renderScopingResult, renderResearchResult } from "../output.ts";
+import {
+  c,
+  renderScopingResult,
+  renderResearchResult,
+  renderStakeholders,
+} from "../output.ts";
 import type { LLMProvider } from "../../llm/provider.ts";
-import type { ScopingResult, ResearchResult } from "../../agents/types.ts";
+import type {
+  ScopingResult,
+  ResearchResult,
+  StakeholderMapResult,
+} from "../../agents/types.ts";
 
 export interface BriefCommandOptions {
   question: string;
@@ -35,6 +47,7 @@ export interface BriefCommandOptions {
   provider: string;
   json: boolean;
   withResearch: boolean;
+  withStakeholders: boolean;
   formatsDir: string;
   fixturesDir: string;
 }
@@ -45,13 +58,14 @@ export interface ParsedBriefArgs {
   provider: string;
   json: boolean;
   withResearch: boolean;
+  withStakeholders: boolean;
   error?: string;
 }
 
 /**
  * Parses the `brief` argument tail: exactly one positional (the
  * question) plus `--format`, optional `--provider`, `--json`,
- * `--with-research`.
+ * `--with-research`, `--with-stakeholders`.
  */
 export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   const positional: string[] = [];
@@ -59,6 +73,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   let provider = "mock";
   let json = false;
   let withResearch = false;
+  let withStakeholders = false;
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
@@ -71,6 +86,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
           provider,
           json,
           withResearch,
+          withStakeholders,
           error: "--format expects an id (e.g. --format executive-pre-read)",
         };
       }
@@ -87,6 +103,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
           provider,
           json,
           withResearch,
+          withStakeholders,
           error: "--provider expects a name (e.g. --provider mock)",
         };
       }
@@ -98,6 +115,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       json = true;
     } else if (a === "--with-research") {
       withResearch = true;
+    } else if (a === "--with-stakeholders") {
+      withStakeholders = true;
     } else {
       positional.push(a);
     }
@@ -110,6 +129,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       provider,
       json,
       withResearch,
+      withStakeholders,
       error: "missing question. Usage: praxis brief \"<question>\" --format <id>",
     };
   }
@@ -120,6 +140,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       provider,
       json,
       withResearch,
+      withStakeholders,
       error: "expected exactly one question. Wrap multi-word questions in quotes.",
     };
   }
@@ -130,11 +151,19 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       provider,
       json,
       withResearch,
+      withStakeholders,
       error: "--format is required. Usage: praxis brief \"<question>\" --format <id>",
     };
   }
 
-  return { question: positional[0]!, formatId, provider, json, withResearch };
+  return {
+    question: positional[0]!,
+    formatId,
+    provider,
+    json,
+    withResearch,
+    withStakeholders,
+  };
 }
 
 export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
@@ -143,12 +172,28 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   registry.loadDirectory(opts.formatsDir);
   const orchestrator = new Orchestrator(registry, llm);
 
+  if (opts.withStakeholders) {
+    // --with-stakeholders implies --with-research. When used alone, emit
+    // a stdout note so users understand what's about to happen.
+    if (!opts.withResearch && !opts.json) {
+      process.stdout.write(
+        `${c.dim("note:")} --with-stakeholders implies --with-research; running the full pipeline.\n`
+      );
+    }
+    const result = await orchestrator.mapStakeholdersAfterResearch(
+      opts.question,
+      opts.formatId
+    );
+    printFullPipeline(result.scoping, result.research, result.stakeholders, opts.json);
+    return 0;
+  }
+
   if (opts.withResearch) {
     const result = await orchestrator.researchAfterScoping(
       opts.question,
       opts.formatId
     );
-    printCombined(result.scoping, result.research, opts.json);
+    printScopingPlusResearch(result.scoping, result.research, opts.json);
     return 0;
   }
 
@@ -178,7 +223,7 @@ function printScopingOnly(result: ScopingResult, json: boolean): void {
   );
 }
 
-function printCombined(
+function printScopingPlusResearch(
   scoping: ScopingResult,
   research: ResearchResult,
   json: boolean
@@ -189,6 +234,26 @@ function printCombined(
   }
   process.stdout.write(renderScopingResult(scoping));
   process.stdout.write(renderResearchResult(research));
+  process.stdout.write(
+    `\n${c.dim("Next: stakeholder mapping (--with-stakeholders), synthesis, editorial land from v0.4+.")}\n`
+  );
+}
+
+function printFullPipeline(
+  scoping: ScopingResult,
+  research: ResearchResult,
+  stakeholders: StakeholderMapResult,
+  json: boolean
+): void {
+  if (json) {
+    process.stdout.write(
+      JSON.stringify({ scoping, research, stakeholders }, null, 2) + "\n"
+    );
+    return;
+  }
+  process.stdout.write(renderScopingResult(scoping));
+  process.stdout.write(renderResearchResult(research));
+  process.stdout.write(renderStakeholders(stakeholders));
   process.stdout.write(
     `\n${c.dim("Next: synthesis, editorial, formatting land from v0.6+.")}\n`
   );
@@ -216,6 +281,7 @@ export async function runBriefCli(
       provider: parsed.provider,
       json: parsed.json,
       withResearch: parsed.withResearch,
+      withStakeholders: parsed.withStakeholders,
       formatsDir: ctx.formatsDir,
       fixturesDir: ctx.fixturesDir,
     });

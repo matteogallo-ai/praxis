@@ -5,6 +5,9 @@
  * v0.2: adds LLM provider abstraction, Scoping agent, Orchestrator.
  * v0.3: adds AnthropicLLMProvider, Research agent, Sourcing Layer,
  *       Orchestrator.researchAfterScoping().
+ * v0.4: adds Stakeholder Mapping agent,
+ *       Orchestrator.mapStakeholdersAfterResearch(), sourcing
+ *       validation for stakeholder positions.
  */
 
 export * from "./registry/schema.ts";
@@ -50,7 +53,10 @@ export type {
   SourcingPolicy,
 } from "./sourcing/types.ts";
 export { isSourceMissing } from "./sourcing/types.ts";
-export { validateSourcing } from "./sourcing/validator.ts";
+export {
+  validateSourcing,
+  validateStakeholderSourcing,
+} from "./sourcing/validator.ts";
 export { SourcingValidationError } from "./sourcing/errors.ts";
 
 // Agents
@@ -60,17 +66,32 @@ export type {
   ResearchContext,
   ResearchResult,
   Finding,
+  StakeholderContext,
+  StakeholderMapResult,
+  Stakeholder,
+  StakeholderCategory,
+  StakeholderPower,
+  StakeholderPosition,
+  StakeholderPriority,
+  CoverageConfidence,
 } from "./agents/types.ts";
 export { executeScoping } from "./agents/scoping.ts";
 export type { ExecuteScopingOptions } from "./agents/scoping.ts";
 export { executeResearch } from "./agents/research.ts";
 export type { ExecuteResearchOptions } from "./agents/research.ts";
 export {
+  executeStakeholderMapping,
+  MIN_STAKEHOLDERS,
+  MAX_STAKEHOLDERS,
+} from "./agents/stakeholder.ts";
+export type { ExecuteStakeholderMappingOptions } from "./agents/stakeholder.ts";
+export {
   AgentExecutionError,
   InvalidAgentOutputError,
   PromptFileError,
   ResearchAgentError,
   MaxToolRoundsExceededError,
+  StakeholderMappingError,
 } from "./agents/errors.ts";
 
 // Orchestrator
@@ -79,5 +100,7 @@ export type {
   ScopeOptions,
   ResearchAfterScopingOptions,
   ResearchAfterScopingResult,
+  MapStakeholdersAfterResearchOptions,
+  MapStakeholdersAfterResearchResult,
 } from "./orchestrator/orchestrator.ts";
 export { NotImplementedError, OrchestrationError } from "./orchestrator/errors.ts";

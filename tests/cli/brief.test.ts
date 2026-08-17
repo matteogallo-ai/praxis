@@ -53,6 +53,7 @@ describe("parseBriefArgs", () => {
     expect(p.provider).toBe("mock");
     expect(p.json).toBe(false);
     expect(p.withResearch).toBe(false);
+    expect(p.withStakeholders).toBe(false);
   });
 
   test("supports --format=<id> equals form", () => {
@@ -82,6 +83,31 @@ describe("parseBriefArgs", () => {
       "--with-research",
     ]);
     expect(p.withResearch).toBe(true);
+  });
+
+  test("parses --with-stakeholders", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--with-stakeholders",
+    ]);
+    expect(p.withStakeholders).toBe(true);
+    // Semantic implication (--with-research) is applied by the runner,
+    // not the parser — the parser preserves the flags as written.
+    expect(p.withResearch).toBe(false);
+  });
+
+  test("parses --with-research --with-stakeholders together", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--with-research",
+      "--with-stakeholders",
+    ]);
+    expect(p.withResearch).toBe(true);
+    expect(p.withStakeholders).toBe(true);
   });
 
   test("parses --provider anthropic", () => {
@@ -233,6 +259,120 @@ describe("runBriefCli — --with-research (mock provider)", () => {
     expect(code).toBe(0);
     const parsed = JSON.parse(stdout().trim());
     expect(parsed.research.findings.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("runBriefCli — --with-stakeholders (mock provider)", () => {
+  test("prints all three agent sections and the stakeholder table", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-research",
+        "--with-stakeholders",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain("Scoping agent output");
+    expect(out).toContain("Research agent output");
+    expect(out).toContain("Stakeholder mapping output");
+    // Table header row is present.
+    expect(out).toContain("Name");
+    expect(out).toContain("Category");
+    expect(out).toContain("Position");
+    expect(out).toContain("Power");
+    expect(out).toContain("Priority");
+    // Should NOT contain the implication note when --with-research is
+    // explicitly passed.
+    expect(out).not.toContain("--with-stakeholders implies --with-research");
+    expect(out).toContain("Key dynamics");
+    expect(out).toContain("Blind spots");
+  });
+
+  test("--with-stakeholders alone emits the implication note and runs the full pipeline", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-stakeholders",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain("--with-stakeholders implies --with-research");
+    expect(out).toContain("Scoping agent output");
+    expect(out).toContain("Research agent output");
+    expect(out).toContain("Stakeholder mapping output");
+  });
+
+  test("--with-stakeholders --json emits a combined { scoping, research, stakeholders } object", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-stakeholders",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(typeof parsed.scoping.reformulated_question).toBe("string");
+    expect(Array.isArray(parsed.research.findings)).toBe(true);
+    expect(Array.isArray(parsed.stakeholders.stakeholders)).toBe(true);
+    expect(parsed.stakeholders.stakeholders.length).toBeGreaterThanOrEqual(5);
+    // strict-policy shipped fixture: every position_evidence must be sourced.
+    for (const s of parsed.stakeholders.stakeholders) {
+      expect(s.position_evidence.status).not.toBe("SOURCE_MISSING");
+      expect(typeof s.position_evidence.url).toBe("string");
+    }
+    // Implication note is written to stdout as prose; --json path suppresses
+    // it so the piped stream stays valid JSON.
+    const raw = stdout().trim();
+    expect(raw.startsWith("{")).toBe(true);
+    expect(raw.endsWith("}")).toBe(true);
+  });
+
+  test("--with-stakeholders works with position-paper-corporate", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "position-paper-corporate",
+        "--with-research",
+        "--with-stakeholders",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(parsed.stakeholders.stakeholders.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test("--with-stakeholders --provider anthropic without ANTHROPIC_API_KEY exits 1 with clear error", async () => {
+    delete process.env["ANTHROPIC_API_KEY"];
+    const code = await runBriefCli(
+      [
+        "Q",
+        "--format",
+        "executive-pre-read",
+        "--with-stakeholders",
+        "--provider",
+        "anthropic",
+      ],
+      CTX
+    );
+    expect(code).toBe(1);
+    const err = stderr();
+    expect(err).toContain("ANTHROPIC_API_KEY");
+    expect(err).toContain("CONTRIBUTING.md");
   });
 });
 

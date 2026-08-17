@@ -111,7 +111,11 @@ export function renderBullet(text: string): string {
 // Agent output renderers — used by `praxis brief`.
 // ---------------------------------------------------------------------------
 
-import type { ScopingResult, ResearchResult } from "../agents/types.ts";
+import type {
+  ScopingResult,
+  ResearchResult,
+  StakeholderMapResult,
+} from "../agents/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
@@ -165,4 +169,82 @@ export function renderResearchResult(result: ResearchResult): string {
 
 function truncateForDisplay(s: string, max: number): string {
   return s.length <= max ? s : s.slice(0, max) + "…";
+}
+
+// ---------------------------------------------------------------------------
+// Stakeholder Mapping renderer (v0.4).
+// ---------------------------------------------------------------------------
+
+/** Cap for stakeholder name column in the compact table (chars). */
+const STAKEHOLDER_NAME_MAX = 40;
+
+export function renderStakeholders(result: StakeholderMapResult): string {
+  const parts: string[] = [];
+  parts.push(`\n${c.bold(c.cyan("Stakeholder mapping output"))}\n`);
+  parts.push(`${c.dim("=".repeat(26))}\n`);
+  parts.push(
+    `${c.dim(
+      `Stakeholders: ${result.stakeholders.length}  |  ` +
+        `Dynamics: ${result.key_dynamics.length}  |  ` +
+        `Blind spots: ${result.blind_spots.length}  |  ` +
+        `Coverage confidence: ${result.coverage_confidence}`
+    )}\n\n`
+  );
+
+  const rows = result.stakeholders.map((s) => ({
+    name: truncateForDisplay(s.name, STAKEHOLDER_NAME_MAX),
+    category: s.category,
+    position: s.position,
+    power: s.power,
+    priority: s.priority,
+  }));
+  const table = renderTable(
+    [
+      { header: "Name", key: "name" },
+      { header: "Category", key: "category" },
+      { header: "Position", key: "position" },
+      { header: "Power", key: "power" },
+      { header: "Priority", key: "priority" },
+    ],
+    rows
+  );
+  parts.push(table + "\n\n");
+
+  for (const [i, s] of result.stakeholders.entries()) {
+    parts.push(`${c.bold(`[${i + 1}] ${s.name}`)}\n`);
+    parts.push(`    ${c.dim("Interest:")} ${s.interest}\n`);
+    parts.push(`    ${c.dim("Engagement:")} ${s.engagement_notes}\n`);
+    if (isSourceMissing(s.position_evidence)) {
+      parts.push(
+        `    ${c.yellow("Evidence:")} ${c.yellow("[SOURCE MISSING]")} ${c.dim(
+          "searched for:"
+        )} ${s.position_evidence.searched_for}\n`
+      );
+    } else {
+      parts.push(`    ${c.dim("Evidence:")} ${c.blue(s.position_evidence.url)}\n`);
+      parts.push(`    ${c.dim("Title:")}    ${s.position_evidence.title}\n`);
+      parts.push(
+        `    ${c.dim("Excerpt:")}  ${truncateForDisplay(s.position_evidence.excerpt, 240)}\n`
+      );
+    }
+    parts.push("\n");
+  }
+
+  if (result.key_dynamics.length > 0) {
+    parts.push(`${c.bold("Key dynamics")}\n`);
+    for (const d of result.key_dynamics) {
+      parts.push(`  ${c.dim("-")} ${d}\n`);
+    }
+    parts.push("\n");
+  }
+
+  if (result.blind_spots.length > 0) {
+    parts.push(`${c.bold("Blind spots")}\n`);
+    for (const b of result.blind_spots) {
+      parts.push(`  ${c.dim("-")} ${b}\n`);
+    }
+    parts.push("\n");
+  }
+
+  return parts.join("");
 }
