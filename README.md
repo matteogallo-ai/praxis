@@ -8,27 +8,32 @@ discipline enforced upstream**: the briefing arrives already shaped like
 the organization's own analysts wrote it, with rigorous sourcing and a
 consistent voice. That is 80% of what a senior reader values.
 
-The current release, **v0.2 — Agent Scoping**, ships the first agent
-and the orchestrator scaffold on top of the v0.1 Format Registry.
+The current release, **v0.3 — Research agent + real Anthropic
+provider**, adds the second Praxis agent, the first live LLM backend,
+and the embryonic Sourcing & Verification layer.
 
 Highlights:
 
-- Everything from v0.1: the canonical Format schema, strict YAML
-  loader/validator, in-memory `FormatRegistry`, three production-ready
-  formats, and the `praxis formats *` CLI subcommands.
-- A minimal `LLMProvider` interface with a deterministic
-  `MockLLMProvider` for offline runs and tests.
-- The **Scoping** agent — its prompt lives at
-  [`prompts/scoping.prompt`](prompts/scoping.prompt) and is written in
-  [PromptLang](https://github.com/matteogallo-ai/promptlang).
-- An `Orchestrator` that reads a Format from the registry, dispatches
-  the scoping agent, and returns a typed `ScopingResult`.
-- A new CLI command:
-  `praxis brief "<question>" --format <id> [--provider mock] [--json]`.
+- Everything from v0.1 (Format Registry) and v0.2 (Scoping agent,
+  Orchestrator, MockLLMProvider, `praxis brief` CLI).
+- **Real Anthropic provider** — `AnthropicLLMProvider` talks to
+  `POST /v1/messages` via Bun's native `fetch`, with retries,
+  timeout, and server-side tool use. Zero npm dependencies added.
+- **Research agent** — reads Scoping output, calls Anthropic's
+  `web_search` tool, returns evidence-backed `findings` each carrying
+  either a real `SourceReference` (URL, title, excerpt) or an explicit
+  `SOURCE_MISSING` marker. Fabricated sources are structurally
+  prohibited. Prompt: [`prompts/research.prompt`](prompts/research.prompt).
+- **Sourcing & Verification Layer** — `validateSourcing(result, policy)`
+  enforces `strict` (throws on any missing source) or `permissive`
+  (accepts with warnings). Wired in by the Orchestrator.
+- **CLI extension** —
+  `praxis brief "<question>" --format <id> --with-research
+   [--provider mock|anthropic] [--json]` runs both agents end-to-end.
 
-**No real LLM calls in v0.2.** The CLI is wired to the
-`MockLLMProvider` and the whole test suite is deterministic. Real
-providers (starting with Anthropic) land in v0.3.
+The test suite still runs offline by default (`MockLLMProvider`); live
+integration tests live under [`tests/live/`](tests/live/README.md) and
+run only when `ANTHROPIC_API_KEY` is set.
 
 ---
 
@@ -42,7 +47,7 @@ cd praxis
 bun install
 ```
 
-**Development setup.** v0.2 depends on the sibling PromptLang checkout.
+**Development setup.** Praxis depends on the sibling PromptLang checkout.
 Before `bun install`, clone PromptLang next to Praxis:
 
 ```
@@ -67,7 +72,7 @@ npm — Praxis will switch to `"promptlang": "^1.x"` in `dependencies`.
 
 ```
 $ bun run cli version
-praxis v0.2.0
+praxis v0.3.0
 ```
 
 ### `praxis formats list`
@@ -97,43 +102,79 @@ policy, output targets.
 Parses and validates any YAML file against the Format schema. Exit code 0
 on success, 1 on failure with every issue listed.
 
-### `praxis brief "<question>" --format <id>`  *(new in v0.2)*
+### `praxis brief "<question>" --format <id>`
 
 Runs the Scoping agent for the given question under the selected format
-and prints its JSON output.
+and prints its JSON output. In v0.3, add `--with-research` to chain
+Scoping and Research and print both.
 
 ```
-$ bun run cli brief "Should we enter the German market?" --format executive-pre-read
-
-Scoping agent output
-====================
-{
-  "reformulated_question": "Should our company enter the German market ...",
-  "hidden_questions": [
-    "What is the minimum viable capital commitment ...",
-    "Which German customer segments are most economically addressable ...",
-    ...
-  ],
-  "scope_boundaries": [ ... ],
-  "assumptions_to_validate": [ ... ]
-}
-
-Next: full briefing generation coming in v0.6+.
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --with-research
 ```
 
 Flags:
 
 - `--format <id>` — required. Format id from the registry.
-- `--provider <name>` — optional. Only `mock` is supported in v0.2;
-  passing any other value exits 1 with a clear message. Real providers
-  arrive in v0.3.
-- `--json` — optional. Prints raw JSON only, for piping.
+- `--with-research` — optional. Runs Scoping + Research; prints both.
+  Enforces the format's `sourcing_policy` on the research findings.
+- `--provider <name>` — optional. Values: `mock` (default, fixture-driven)
+  and `anthropic` (live API; requires `ANTHROPIC_API_KEY`).
+- `--json` — optional. Prints raw JSON only, for piping. Under
+  `--with-research`, emits `{ scoping, research }`.
+
+---
+
+## Configuring providers
+
+Praxis ships two providers:
+
+| Provider | When to use | Requires |
+| --- | --- | --- |
+| `mock` (default) | tests, offline runs, deterministic demos | fixtures under `tests/fixtures/mock-llm/` |
+| `anthropic` | live briefings, real web search | `ANTHROPIC_API_KEY` env var; optional `ANTHROPIC_MODEL` (default `claude-sonnet-4-5`) |
+
+Copy the example env file and fill in your key:
+
+```bash
+cp .env.example .env
+# then edit .env and set ANTHROPIC_API_KEY=sk-ant-...
+```
+
+`.env` is git-ignored; **never commit a real key.** Praxis reads
+`ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`) via
+`process.env` at provider construction time.
+
+Selecting the live provider from the CLI:
+
+```bash
+bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --with-research \
+    --provider anthropic
+```
+
+Cost model, retry policy, and the "add-a-provider" walkthrough live in
+[`docs/providers.md`](docs/providers.md).
+
+### Testing
+
+`bun test` runs the full offline suite (fixture-driven, no network,
+zero cost). Live integration tests are opt-in:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+bun test tests/live/
+```
+
+Live tests self-skip when `ANTHROPIC_API_KEY` is unset. See
+[`tests/live/README.md`](tests/live/README.md).
 
 ---
 
 ## Architecture
 
-v0.2 introduces three new layers on top of the v0.1 Format Registry:
+v0.3 adds a second agent, a live provider, and the sourcing layer on
+top of the v0.2 pipeline:
 
 ```
                       ┌─────────────────────────┐
@@ -142,21 +183,24 @@ v0.2 introduces three new layers on top of the v0.1 Format Registry:
                                   │
                       ┌───────────▼─────────────┐
                       │      Orchestrator       │
-                      │  scope() / brief()      │
+                      │  scope() / brief() /    │
+                      │  researchAfterScoping() │
                       └───────────┬─────────────┘
                                   │
-                      ┌───────────▼─────────────┐
-                      │     Scoping Agent       │
-                      │ (prompts/scoping.prompt)│
-                      └───────────┬─────────────┘
-                                  │  render + concat
-                                  │  system + user
-                                  ▼
-                      ┌───────────────────────────┐
-                      │       LLMProvider         │
-                      │  MockLLMProvider (v0.2)   │
-                      │  AnthropicProvider (v0.3) │
-                      └───────────────────────────┘
+                       ┌──────────┼──────────┐
+                       ▼          ▼          ▼
+                ┌──────────┐ ┌─────────┐ ┌──────────────┐
+                │  Scoping │ │Research │ │   Sourcing   │
+                │   Agent  │→│  Agent  │→│  Validator   │
+                └────┬─────┘ └────┬────┘ └──────────────┘
+                     │            │
+                     ▼            ▼
+                ┌───────────────────────────────┐
+                │         LLMProvider           │
+                │   MockLLMProvider (offline)   │
+                │   AnthropicLLMProvider (live) │
+                │   .completeWithTools()        │
+                └───────────────────────────────┘
 ```
 
 Full detail and design rationale: [`docs/architecture.md`](docs/architecture.md).
@@ -217,9 +261,9 @@ Praxis targets a v1.0 release in ten steps.
 | Release | Focus |
 | --- | --- |
 | v0.1 | Format Registry |
-| **v0.2** | Agent scoping — first PromptLang-authored agent + orchestrator scaffold (this release) |
-| v0.3 | Research agent + real Anthropic provider |
-| v0.4 | Stakeholder + Risk agents |
+| v0.2 | Agent scoping — first PromptLang-authored agent + orchestrator scaffold |
+| **v0.3** | Research agent + real Anthropic provider + sourcing layer (this release) |
+| v0.4 | Stakeholder Mapping agent |
 | v0.5 | Options + Adversarial agents (red-team pass) |
 | v0.6 | Synthesis agent + full 7-agent pipeline |
 | v0.7 | Output targets — PDF/DOCX/MD renderers |

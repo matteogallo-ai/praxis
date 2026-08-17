@@ -1,15 +1,17 @@
-# Praxis Architecture — v0.2
+# Praxis Architecture — v0.3
 
-This document maps the layers introduced by v0.2 (Agent Scoping) on top
-of the v0.1 Format Registry, and explains the responsibilities and
-boundaries between them.
+This document maps the layers of Praxis as of v0.3, and explains the
+responsibilities and boundaries between them. v0.1 shipped the Format
+Registry, v0.2 added the LLM abstraction and the Scoping agent, v0.3
+adds a real Anthropic provider, the Research agent, and the embryonic
+Sourcing & Verification layer.
 
 ---
 
 ## 1. Layer map
 
-Praxis is organised into four layers, each with a single responsibility.
-No layer reaches past its immediate neighbour.
+Praxis is organised into five layers, each with a single
+responsibility. No layer reaches past its immediate neighbours.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -21,23 +23,24 @@ No layer reaches past its immediate neighbour.
                                    ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │  Orchestrator                                    src/orchestrator/  │
-│  reads a Format from the Registry, decides which agents to run,     │
-│  currently: scope() is implemented, brief() throws NotImplemented   │
-└─────────┬────────────────────────────────────────┬──────────────────┘
-          │                                        │
-          ▼                                        ▼
-┌────────────────────────────┐        ┌──────────────────────────────┐
-│  Agents                    │        │  Format Registry (v0.1)      │
-│  src/agents/*.ts           │        │  src/registry/*.ts           │
-│  load prompt → render →    │        │  YAML load, validate,        │
-│  call LLM → parse+validate │        │  lookup, filter              │
-└────────────┬───────────────┘        └──────────────────────────────┘
-             │
-             ▼
+│  reads a Format from the Registry, decides which agents to run     │
+│  v0.3:  scope() and researchAfterScoping() are implemented          │
+│         brief() throws NotImplementedError (v0.6+)                  │
+└─────────┬────────────────────────┬───────────────┬──────────────────┘
+          │                        │               │
+          ▼                        ▼               ▼
+┌──────────────────┐     ┌────────────────┐  ┌──────────────────────┐
+│  Agents          │     │ Sourcing Layer │  │ Format Registry (v0.1)│
+│  src/agents/*.ts │     │ src/sourcing/  │  │ src/registry/*.ts     │
+│  scoping,        │     │ validateSourcing│  │ YAML load, validate,  │
+│  research (v0.3) │     │ (strict/permis.)│  │ lookup, filter        │
+└────────┬─────────┘     └────────────────┘  └──────────────────────┘
+         │
+         ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │  LLM Provider                                          src/llm/     │
-│  LLMProvider interface + MockLLMProvider (v0.2)                     │
-│  Real providers (Anthropic, OpenAI, ...) land in v0.3+              │
+│  LLMProvider interface + optional completeWithTools()               │
+│  MockLLMProvider (offline)  +  AnthropicLLMProvider (v0.3, live)    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -49,15 +52,17 @@ External dependency (workspace-linked, sibling checkout of PromptLang):
 │  used by:                                                           │
 │    - src/registry/loader.ts  → parseYaml    (@promptlang/yaml-parser)│
 │    - src/agents/scoping.ts   → lexer, parser, AST (promptlang/*)    │
+│    - src/agents/research.ts  → lexer, parser, AST (promptlang/*)    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. End-to-end flow: `praxis brief`
+## 2. End-to-end flow: `praxis brief --with-research`
 
 ```
-$ praxis brief "Should we enter Germany?" --format executive-pre-read
+$ praxis brief "Should we enter Germany?" \
+    --format executive-pre-read --with-research
 ```
 
 Step-by-step:
@@ -71,41 +76,46 @@ argv
   │
   ▼
 [2] Brief command (src/cli/commands/brief.ts)
-     parses flags (--format, --provider, --json)
-     selects LLM provider (mock in v0.2)
+     parses flags (--format, --provider, --json, --with-research)
+     selects LLM provider (mock default, or anthropic if requested)
      builds FormatRegistry, loads formats/
      constructs Orchestrator(registry, provider)
+     branches on --with-research
   │
   ▼
-[3] Orchestrator.scope(question, formatId)
-     registry.get(formatId)                → typed Format
-     checks any section requires "scoping"
-     executeScoping({ question, formatId, targetWords }, llm)
+[3] Orchestrator.researchAfterScoping(question, formatId)
+     prepareForScoping: check format has scoping agent required
+     check format has research agent required
+     doScoping(...)  → ScopingResult
+     doResearch(scoping, format)  → ResearchResult
+     validateSourcing(research, format.sourcing_policy)
+     return { scoping, research }
+  │
+  ├─ (a) Scoping ─────────────────────────────────────────────────┐
+  │      executeScoping loads prompts/scoping.prompt              │
+  │      renders {{question}}/{{format_id}}/{{target_words}}      │
+  │      llm.complete(prompt)  → JSON string                      │
+  │      parse+validate → ScopingResult                           │
+  │                                                                │
+  ├─ (b) Research ────────────────────────────────────────────────┤
+  │      executeResearch loads prompts/research.prompt            │
+  │      renders {{scoping_json}}/{{format_id}}/{{sourcing_policy}}/│
+  │              {{target_words}}                                  │
+  │      llm.completeWithTools(prompt, [web_search])              │
+  │        provider handles multi-round tool loop (up to 5)       │
+  │        collects text + tool_calls[]                            │
+  │      parse+validate → ResearchResult (findings, opens, queries)│
+  │                                                                │
+  └─ (c) Sourcing ────────────────────────────────────────────────┘
+         validateSourcing(result, "strict")
+           iterate findings, flag SOURCE_MISSING
+           strict → throw SourcingValidationError if any missing
+           permissive → return SourcingReport with warnings
   │
   ▼
-[4] Scoping agent (src/agents/scoping.ts)
-     reads prompts/scoping.prompt
-     tokenize + parse via PromptLang
-     validates parameter coverage
-     interpolates {{question}} / {{format_id}} / {{target_words}}
-     concatenates: system + "\n\n---\n\n" + user
-  │
-  ▼
-[5] LLMProvider.complete(prompt)
-     MockLLMProvider: scan tests/fixtures/mock-llm/*.json
-                       return response whose match_substring appears
-                       throw MockFixtureNotFoundError otherwise
-  │
-  ▼
-[6] Scoping agent — output validation
-     strip optional ```json fence
-     JSON.parse → assert 4 fields, all strings/arrays of strings
-     return ScopingResult
-  │
-  ▼
-[7] Brief command — render
-     default:  pretty JSON with header + trailer
-     --json:   raw JSON (no header, no trailer) — piping-safe
+[4] Brief command — render
+     default: two sections (Scoping JSON + Research findings with sources)
+     --json:  combined { scoping, research } object
   │
   ▼
 stdout, exit 0
@@ -119,17 +129,27 @@ which the CLI catches and renders with a `✗` marker and exit 1.
 ## 3. Boundaries and invariants
 
 - **Agents do not know about the Format Registry.** They receive an
-  `AgentContext` — a plain object — from the Orchestrator. This keeps
-  agents composable and unit-testable in isolation.
+  `AgentContext` / `ResearchContext` — plain objects — from the
+  Orchestrator. This keeps agents composable and unit-testable in
+  isolation.
 - **The Orchestrator does not touch the LLM directly.** It hands the
   provider to the agent and lets the agent decide how to use it. This
   keeps the Orchestrator provider-agnostic and prompt-agnostic.
 - **The LLM provider does not know about prompts, agents, or formats.**
-  It takes a string and returns a string. Everything above is Praxis's
-  concern; everything below is the model's.
+  It takes a string (and optional tools) and returns a string (or a
+  `CompletionResult`). Everything above is Praxis's concern; everything
+  below is the model's.
+- **Agents do not know about the Sourcing Layer.** They emit findings
+  with typed sources. The Orchestrator is the one who calls
+  `validateSourcing` — sourcing enforcement is a policy decision the
+  Orchestrator owns.
 - **The CLI is a thin dispatcher.** Command modules are pure functions
   over their inputs; nothing about `process.argv`, `stdout`, or
   formatting leaks upward.
+- **Tool identifiers are vendor-neutral.** Agents pass Praxis-side
+  names (`web_search`); providers map them to versioned API strings
+  (`web_search_20250305`). Swapping tool backends does not require
+  touching agent code.
 
 ---
 
@@ -146,11 +166,20 @@ Error
     │
     ├── LLMError                             (src/llm/errors.ts)
     │   ├── ProviderNotSupportedError
-    │   └── MockFixtureNotFoundError
+    │   ├── MockFixtureNotFoundError
+    │   ├── ToolUseNotSupportedError          (v0.3)
+    │   ├── AnthropicAuthenticationError      (v0.3)
+    │   ├── AnthropicAPIError                 (v0.3)
+    │   ├── AnthropicRateLimitError           (v0.3)
+    │   └── AnthropicTimeoutError             (v0.3)
     │
     ├── AgentExecutionError                  (src/agents/errors.ts)
     │   ├── InvalidAgentOutputError
-    │   └── PromptFileError
+    │   ├── PromptFileError
+    │   └── ResearchAgentError                (v0.3)
+    │        └── MaxToolRoundsExceededError   (v0.3)
+    │
+    ├── SourcingValidationError              (src/sourcing/errors.ts, v0.3)
     │
     ├── NotImplementedError                  (src/orchestrator/errors.ts)
     └── OrchestrationError                   (src/orchestrator/errors.ts)
@@ -162,17 +191,22 @@ new subclass automatically gets a clean stderr rendering.
 
 ---
 
-## 5. What is deliberately absent in v0.2
+## 5. What is deliberately absent in v0.3
 
 - **Parallel agent execution.** The Orchestrator runs one agent at a
-  time; scoping is the only one that runs. Parallelism will be added
-  only if profiling shows it's worth the coordination cost.
-- **Prompt-level caching.** The MockLLMProvider is fast; no need. Real
-  providers may need caching in v0.3+.
-- **Streaming.** `LLMProvider.complete` returns the whole string. When
-  we add Anthropic (v0.3), we may add an optional streaming variant.
+  time. Parallelism will be added only if profiling shows it worth the
+  coordination cost.
+- **Prompt-level caching.** No caching yet. Anthropic supports prompt
+  caching server-side, which we may opt into in a later release for
+  large system prompts.
+- **Streaming.** `LLMProvider.complete` / `completeWithTools` return
+  the whole payload. A streaming variant will land when at least one
+  agent's UX depends on it.
 - **Chained agent calls.** No agent calls another agent. Coordination
   is exclusively the Orchestrator's job.
+- **Sourcing beyond `strict` / `permissive`.** Freshness gates,
+  domain-trust bands, dedupe, and retrieval retry are noted in
+  [`docs/sourcing.md`](sourcing.md) as follow-on work.
 
 These will each earn their place when they earn their place.
 
@@ -180,6 +214,10 @@ These will each earn their place when they earn their place.
 
 ## 6. See also
 
+- [`docs/providers.md`](providers.md) — provider interface,
+  configuration, cost model, how to add a new provider.
+- [`docs/sourcing.md`](sourcing.md) — sourcing philosophy, source
+  types, policy semantics.
 - [`docs/writing-a-prompt.md`](writing-a-prompt.md) — how to author a
   new `.prompt` file for a Praxis agent.
 - [`docs/format-schema.md`](format-schema.md) — the Format YAML

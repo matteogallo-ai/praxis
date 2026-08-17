@@ -45,26 +45,45 @@ returns a valid `ScopingResult` JSON with the four expected fields.
 
 ---
 
-## v0.3 — Research Agent + Real Anthropic Provider
+## v0.3 — Research Agent + Real Anthropic Provider ✅ (shipped 2026-08-17)
 
-- Replace the `MockLLMProvider` hook in the CLI with a real
-  `AnthropicProvider` (native `fetch`, streaming, token accounting,
-  retries).
-- `research` agent — retrieval (initially: local corpus + web fetch
-  adapter), evidence extraction, citation normalization.
-- Enforce `sourcing_policy: strict` — every fact carries a citation or
-  the section is rejected.
-- First real end-to-end run against a live LLM: scoping → research on a
-  single section of `executive-pre-read`.
+- Real `AnthropicLLMProvider` — native `fetch`, retries on `429`/`5xx`
+  with exponential backoff, `AbortController` timeout, zero external
+  HTTP libraries, zero npm dependencies added.
+- `LLMProvider` extended with optional `completeWithTools()` for tool
+  use. `MockLLMProvider` covers it too via new fixture fields.
+- `research` agent — reads Scoping output, calls the Anthropic
+  server-side `web_search` tool, produces `findings[]` each carrying
+  either a real `SourceReference` or an explicit `SOURCE_MISSING`
+  marker (never a fabricated URL).
+- **Sourcing & Verification Layer** (embryonic) — `SourceReference`,
+  `SourceMissing`, `validateSourcing(strict|permissive)`, wired in by
+  the Orchestrator after Research runs.
+- `Orchestrator.researchAfterScoping()` — chains both agents and
+  enforces the format's `sourcing_policy`.
+- CLI: `--with-research` runs Scoping + Research; `--provider anthropic`
+  goes live.
+- Optional live tests under `tests/live/` (skipped without
+  `ANTHROPIC_API_KEY`).
+- 90 new tests. **Total: 309 + 3 optional live.**
+
+**Exit criteria met:** `praxis brief "..." --format executive-pre-read
+--with-research` prints both agents' outputs with every finding
+carrying a source URL; `--provider anthropic` runs end-to-end against
+the live API when the key is present.
 
 ---
 
-## v0.4 — Stakeholder + Risk Agents
+## v0.4 — Stakeholder Mapping Agent
 
-- `stakeholder` agent — map actors and positions.
-- `risk` agent — enumerate risks with likelihood/impact bands.
-- Format-driven agent invocation: the registry decides which agents run
-  per section via `required_agents`.
+- `stakeholder` agent — third Praxis agent. First one whose input
+  includes both the Scoping output *and* the Research output.
+- Map actors to interests, positions, and influence bands.
+- Extend the Orchestrator with `mapStakeholdersAfterResearch()`.
+- CLI: add a `--with-stakeholders` flag that chains the three agents
+  end-to-end.
+- Follow-on `risk` agent lands alongside if scope permits, otherwise
+  it moves to v0.5.
 
 ---
 
