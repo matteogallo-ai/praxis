@@ -1,0 +1,30 @@
+{
+  "id": "msg_02",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-4-5",
+  "content": [
+    {
+      "type": "text",
+      "text": "I searched the web for German market entry data. Here is a summary:"
+    },
+    {
+      "type": "server_tool_use",
+      "id": "srvtool_1",
+      "name": "web_search",
+      "input": {
+        "query": "cost of entering German market for B2B SaaS 2026"
+      }
+    },
+    {
+      "type": "text",
+      "text": "Median setup cost is €150k over 6 months."
+    }
+  ],
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 500,
+    "output_tokens": 220
+  }
+}

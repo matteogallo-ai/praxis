@@ -1,0 +1,24 @@
+{
+  "id": "msg_03",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-4-5",
+  "content": [
+    {
+      "type": "text",
+      "text": "Let me search first."
+    },
+    {
+      "type": "server_tool_use",
+      "id": "srvtool_a",
+      "name": "web_search",
+      "input": { "query": "first round query" }
+    }
+  ],
+  "stop_reason": "pause_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 300,
+    "output_tokens": 60
+  }
+}
