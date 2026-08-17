@@ -1,10 +1,12 @@
 /**
- * Sourcing & Verification Layer — types (v0.3 embryonic form).
+ * Sourcing & Verification Layer — types.
  *
  * The Research agent produces findings that either carry a real
  * `SourceReference` (URL, title, excerpt) or are explicitly marked as
- * `SourceMissing`. Fabricated sources are worse than missing ones — the
- * whole point of this layer is to make the distinction structural.
+ * `SourceMissing`. v0.4 extends the layer to Stakeholder positions,
+ * which follow the same sourcing discipline. Fabricated sources are
+ * worse than missing ones — the whole point of this layer is to make
+ * the distinction structural.
  *
  * `SourcingPolicy` is re-exported from the registry schema (defined in
  * v0.1) so that formats and the sourcing layer speak the same language.
@@ -38,17 +40,39 @@ export function isSourceMissing(s: SourceStatus): s is SourceMissing {
 }
 
 /**
- * Warning surfaced by the validator when running in `permissive` mode.
- * Kept as a discriminated union so future warning kinds slot in
- * without breaking consumers.
+ * Warning surfaced by the validators when running in `permissive`
+ * mode. Discriminated union — one variant per agent whose sourcing
+ * the layer validates.
+ *
+ * - `missing_source` — a Research finding lacks a URL.
+ * - `missing_stakeholder_evidence` — a Stakeholder position lacks
+ *    documenting evidence.
  */
 export type SourcingWarning =
-  | { kind: "missing_source"; finding_index: number; searched_for: string };
+  | {
+      kind: "missing_source";
+      finding_index: number;
+      searched_for: string;
+    }
+  | {
+      kind: "missing_stakeholder_evidence";
+      stakeholder_index: number;
+      stakeholder_name: string;
+      searched_for: string;
+    };
 
-/** Summary report returned by `validateSourcing` in permissive mode. */
+/**
+ * Summary report returned by the validators. `total_items` is the
+ * number of items the validator inspected (findings for
+ * `validateSourcing`, stakeholders for `validateStakeholderSourcing`).
+ */
 export interface SourcingReport {
   policy: SourcingPolicy;
-  total_findings: number;
+  /**
+   * Number of items the validator inspected. Named generically so the
+   * same shape works for research findings and stakeholder positions.
+   */
+  total_items: number;
   missing_sources_count: number;
   warnings: SourcingWarning[];
 }

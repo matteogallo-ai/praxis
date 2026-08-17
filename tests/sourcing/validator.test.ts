@@ -1,8 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
-import { validateSourcing } from "../../src/sourcing/validator.ts";
+import {
+  validateSourcing,
+  validateStakeholderSourcing,
+} from "../../src/sourcing/validator.ts";
 import { SourcingValidationError } from "../../src/sourcing/errors.ts";
-import type { ResearchResult } from "../../src/agents/types.ts";
+import type {
+  ResearchResult,
+  StakeholderMapResult,
+  Stakeholder,
+} from "../../src/agents/types.ts";
 
 function sourced(url: string, title: string, excerpt = "…"): ResearchResult["findings"][number] {
   return {
@@ -36,7 +43,7 @@ describe("validateSourcing — strict", () => {
       search_queries_used: [],
     };
     const report = validateSourcing(result, "strict");
-    expect(report.total_findings).toBe(2);
+    expect(report.total_items).toBe(2);
     expect(report.missing_sources_count).toBe(0);
     expect(report.warnings).toEqual([]);
     expect(report.policy).toBe("strict");
@@ -60,8 +67,12 @@ describe("validateSourcing — strict", () => {
     expect(caught).toBeInstanceOf(SourcingValidationError);
     const e = caught as SourcingValidationError;
     expect(e.report.missing_sources_count).toBe(1);
-    expect(e.report.warnings[0]!.finding_index).toBe(1);
-    expect(e.report.warnings[0]!.searched_for).toBe("effect size of X on Y");
+    const w = e.report.warnings[0]!;
+    expect(w.kind).toBe("missing_source");
+    if (w.kind === "missing_source") {
+      expect(w.finding_index).toBe(1);
+      expect(w.searched_for).toBe("effect size of X on Y");
+    }
   });
 
   test("throws when every finding is missing", () => {
@@ -87,7 +98,7 @@ describe("validateSourcing — strict", () => {
       search_queries_used: [],
     };
     const report = validateSourcing(result, "strict");
-    expect(report.total_findings).toBe(0);
+    expect(report.total_items).toBe(0);
     expect(report.missing_sources_count).toBe(0);
   });
 });
@@ -106,10 +117,16 @@ describe("validateSourcing — permissive", () => {
     };
     const report = validateSourcing(result, "permissive");
     expect(report.policy).toBe("permissive");
-    expect(report.total_findings).toBe(4);
+    expect(report.total_items).toBe(4);
     expect(report.missing_sources_count).toBe(2);
-    expect(report.warnings.map((w) => w.finding_index)).toEqual([1, 3]);
-    expect(report.warnings[0]!.searched_for).toBe("what is the CAGR of X");
+    const indices = report.warnings.map((w) =>
+      w.kind === "missing_source" ? w.finding_index : -1
+    );
+    expect(indices).toEqual([1, 3]);
+    const first = report.warnings[0]!;
+    if (first.kind === "missing_source") {
+      expect(first.searched_for).toBe("what is the CAGR of X");
+    }
   });
 
   test("returns clean report when nothing is missing", () => {
@@ -119,6 +136,113 @@ describe("validateSourcing — permissive", () => {
       search_queries_used: [],
     };
     const report = validateSourcing(result, "permissive");
+    expect(report.missing_sources_count).toBe(0);
+    expect(report.warnings).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v0.4 — validateStakeholderSourcing
+// ---------------------------------------------------------------------------
+
+function stakeholder(overrides: Partial<Stakeholder> = {}): Stakeholder {
+  return {
+    name: "Actor",
+    category: "influencer",
+    interest: "Owns the flow.",
+    position: "neutral",
+    position_evidence: {
+      url: "https://a.example",
+      title: "A",
+      accessed_at: "2026-08-17T00:00:00Z",
+      excerpt: "…",
+    },
+    power: "medium",
+    priority: "important",
+    engagement_notes: "Engage carefully.",
+    ...overrides,
+  };
+}
+
+function stakeholderMap(entries: Stakeholder[]): StakeholderMapResult {
+  return {
+    stakeholders: entries,
+    key_dynamics: ["a", "b", "c"],
+    blind_spots: [],
+    coverage_confidence: "medium",
+  };
+}
+
+describe("validateStakeholderSourcing — strict", () => {
+  test("returns clean report when every position_evidence is sourced", () => {
+    const result = stakeholderMap([
+      stakeholder({ name: "Actor 1" }),
+      stakeholder({ name: "Actor 2" }),
+    ]);
+    const report = validateStakeholderSourcing(result, "strict");
+    expect(report.total_items).toBe(2);
+    expect(report.missing_sources_count).toBe(0);
+    expect(report.warnings).toEqual([]);
+    expect(report.policy).toBe("strict");
+  });
+
+  test("throws SourcingValidationError when a single position lacks evidence", () => {
+    const result = stakeholderMap([
+      stakeholder({ name: "Actor 1" }),
+      stakeholder({
+        name: "Anonymous Group",
+        position_evidence: {
+          status: "SOURCE_MISSING",
+          searched_for: "public statement by anonymous group",
+        },
+      }),
+    ]);
+    let caught: unknown;
+    try {
+      validateStakeholderSourcing(result, "strict");
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SourcingValidationError);
+    const e = caught as SourcingValidationError;
+    expect(e.report.missing_sources_count).toBe(1);
+    const w = e.report.warnings[0]!;
+    expect(w.kind).toBe("missing_stakeholder_evidence");
+    if (w.kind === "missing_stakeholder_evidence") {
+      expect(w.stakeholder_index).toBe(1);
+      expect(w.stakeholder_name).toBe("Anonymous Group");
+      expect(w.searched_for).toBe("public statement by anonymous group");
+    }
+  });
+});
+
+describe("validateStakeholderSourcing — permissive", () => {
+  test("accepts missing evidence and reports warnings", () => {
+    const result = stakeholderMap([
+      stakeholder({ name: "A" }),
+      stakeholder({
+        name: "B",
+        position_evidence: { status: "SOURCE_MISSING", searched_for: "q1" },
+      }),
+      stakeholder({ name: "C" }),
+      stakeholder({
+        name: "D",
+        position_evidence: { status: "SOURCE_MISSING", searched_for: "q2" },
+      }),
+    ]);
+    const report = validateStakeholderSourcing(result, "permissive");
+    expect(report.policy).toBe("permissive");
+    expect(report.total_items).toBe(4);
+    expect(report.missing_sources_count).toBe(2);
+    const names = report.warnings.map((w) =>
+      w.kind === "missing_stakeholder_evidence" ? w.stakeholder_name : ""
+    );
+    expect(names).toEqual(["B", "D"]);
+  });
+
+  test("clean report when nothing is missing", () => {
+    const result = stakeholderMap([stakeholder({ name: "A" })]);
+    const report = validateStakeholderSourcing(result, "permissive");
     expect(report.missing_sources_count).toBe(0);
     expect(report.warnings).toEqual([]);
   });

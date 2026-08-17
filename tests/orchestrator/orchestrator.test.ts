@@ -313,3 +313,306 @@ describe("Orchestrator.researchAfterScoping", () => {
     expect(isSourceMissing(out.research.findings[1]!.source)).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.4 — Orchestrator.mapStakeholdersAfterResearch
+// ---------------------------------------------------------------------------
+
+describe("Orchestrator.mapStakeholdersAfterResearch", () => {
+  let registry: FormatRegistry;
+
+  beforeEach(() => {
+    registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+  });
+
+  test("returns scoping + research + stakeholders for executive-pre-read", async () => {
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.mapStakeholdersAfterResearch(
+      "Should we enter the German market?",
+      "executive-pre-read"
+    );
+    expect(out.scoping.reformulated_question.length).toBeGreaterThan(20);
+    expect(out.research.findings.length).toBeGreaterThanOrEqual(3);
+    expect(out.stakeholders.stakeholders.length).toBeGreaterThanOrEqual(5);
+    for (const s of out.stakeholders.stakeholders) {
+      expect(isSourceMissing(s.position_evidence)).toBe(false);
+    }
+    expect(out.stakeholders.key_dynamics.length).toBeGreaterThanOrEqual(3);
+    expect(["high", "medium", "low"]).toContain(out.stakeholders.coverage_confidence);
+  });
+
+  test("works with position-paper-corporate", async () => {
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.mapStakeholdersAfterResearch(
+      "Should we enter the German market?",
+      "position-paper-corporate"
+    );
+    expect(out.stakeholders.stakeholders.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test("throws OrchestrationError when the format doesn't require stakeholder", async () => {
+    // All three shipped formats do require the stakeholder agent, so use a
+    // synthesised format that omits it.
+    const fmt = baseFormat(
+      "no-stakeholder-fmt",
+      ["scoping", "research"],
+      "strict"
+    );
+    const localRegistry = makeRegistryWith(fmt);
+    const orch = new Orchestrator(localRegistry, makeMockProvider());
+    let caught: unknown;
+    try {
+      await orch.mapStakeholdersAfterResearch("Q", "no-stakeholder-fmt");
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(OrchestrationError);
+    expect((caught as Error).message).toContain("stakeholder");
+  });
+
+  test("works with mckinsey-style-note (which does require stakeholder)", async () => {
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.mapStakeholdersAfterResearch(
+      "Should we enter Germany?",
+      "mckinsey-style-note"
+    );
+    expect(out.stakeholders.stakeholders.length).toBeGreaterThanOrEqual(5);
+    expect(out.stakeholders.key_dynamics.length).toBeGreaterThanOrEqual(3);
+  });
+
+  test("throws OrchestrationError when the format doesn't require research", async () => {
+    const fmt = baseFormat(
+      "no-research-fmt",
+      ["scoping", "stakeholder"],
+      "strict"
+    );
+    const localRegistry = makeRegistryWith(fmt);
+    const orch = new Orchestrator(localRegistry, makeMockProvider());
+    let caught: unknown;
+    try {
+      await orch.mapStakeholdersAfterResearch("Q", "no-research-fmt");
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(OrchestrationError);
+    expect((caught as Error).message).toContain("research");
+  });
+
+  test("throws FormatNotFoundError on unknown format", async () => {
+    const orch = new Orchestrator(registry, makeMockProvider());
+    await expect(
+      orch.mapStakeholdersAfterResearch("Q", "not-a-real-format")
+    ).rejects.toBeInstanceOf(FormatNotFoundError);
+  });
+
+  test("throws OrchestrationError on blank question", async () => {
+    const orch = new Orchestrator(registry, makeMockProvider());
+    await expect(
+      orch.mapStakeholdersAfterResearch("  ", "executive-pre-read")
+    ).rejects.toBeInstanceOf(OrchestrationError);
+  });
+
+  test("strict policy: throws SourcingValidationError when a stakeholder lacks position_evidence", async () => {
+    const { mkdtempSync, writeFileSync, cpSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const tmp = mkdtempSync(join(tmpdir(), "praxis-orch-stakeholder-strict-"));
+
+    cpSync(
+      "tests/fixtures/mock-llm/scoping-executive-pre-read.json",
+      join(tmp, "scoping-executive-pre-read.json")
+    );
+    cpSync(
+      "tests/fixtures/mock-llm/research-executive-pre-read.json",
+      join(tmp, "research-executive-pre-read.json")
+    );
+
+    const stakeholderBody = {
+      stakeholders: [
+        {
+          name: "Actor A",
+          category: "influencer",
+          interest: "…",
+          position: "supportive",
+          position_evidence: {
+            url: "https://a.example",
+            title: "A",
+            accessed_at: "2026-08-17T00:00:00Z",
+            excerpt: "e",
+          },
+          power: "medium",
+          priority: "important",
+          engagement_notes: "…",
+        },
+        {
+          name: "Anonymous Group",
+          category: "external-observer",
+          interest: "…",
+          position: "unknown",
+          position_evidence: {
+            status: "SOURCE_MISSING",
+            searched_for: "public statement by anonymous group",
+          },
+          power: "low",
+          priority: "monitor",
+          engagement_notes: "…",
+        },
+        {
+          name: "Actor C",
+          category: "influencer",
+          interest: "…",
+          position: "neutral",
+          position_evidence: {
+            url: "https://c.example",
+            title: "C",
+            accessed_at: "2026-08-17T00:00:00Z",
+            excerpt: "e",
+          },
+          power: "medium",
+          priority: "important",
+          engagement_notes: "…",
+        },
+      ],
+      key_dynamics: ["d1", "d2", "d3"],
+      blind_spots: [],
+      coverage_confidence: "low",
+    };
+    writeFileSync(
+      join(tmp, "stakeholders-executive-pre-read.json"),
+      JSON.stringify({
+        label: "custom",
+        match_substring:
+          "Stakeholder mapping task for briefing 'executive-pre-read' under strict sourcing.",
+        response: JSON.stringify(stakeholderBody),
+      })
+    );
+
+    const provider = new MockLLMProvider({ fixturesDir: tmp });
+    const orch = new Orchestrator(registry, provider);
+    await expect(
+      orch.mapStakeholdersAfterResearch(
+        "Should we enter the German market?",
+        "executive-pre-read"
+      )
+    ).rejects.toBeInstanceOf(SourcingValidationError);
+  });
+
+  test("permissive policy: accepts stakeholders with SOURCE_MISSING", async () => {
+    const fmt = baseFormat(
+      "permissive-stkh-fmt",
+      ["scoping", "research", "stakeholder"],
+      "permissive"
+    );
+    const localRegistry = makeRegistryWith(fmt);
+
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const tmp = mkdtempSync(join(tmpdir(), "praxis-orch-stkh-permissive-"));
+
+    writeFileSync(
+      join(tmp, "scoping.json"),
+      JSON.stringify({
+        label: "scoping/permissive",
+        match_substring: "Briefing format: permissive-stkh-fmt",
+        response: JSON.stringify({
+          reformulated_question: "Reformulated permissive.",
+          hidden_questions: ["h"],
+          scope_boundaries: ["b"],
+          assumptions_to_validate: ["a"],
+        }),
+      })
+    );
+
+    writeFileSync(
+      join(tmp, "research.json"),
+      JSON.stringify({
+        label: "research/permissive",
+        match_substring:
+          "Research task for briefing 'permissive-stkh-fmt' under permissive sourcing.",
+        response: JSON.stringify({
+          findings: [
+            {
+              claim: "c",
+              supporting_evidence: "e",
+              source: {
+                url: "https://r.example",
+                title: "R",
+                accessed_at: "2026-08-17T00:00:00Z",
+                excerpt: "e",
+              },
+            },
+          ],
+          open_questions: [],
+          search_queries_used: ["x"],
+        }),
+      })
+    );
+
+    writeFileSync(
+      join(tmp, "stakeholders.json"),
+      JSON.stringify({
+        label: "stakeholders/permissive",
+        match_substring:
+          "Stakeholder mapping task for briefing 'permissive-stkh-fmt' under permissive sourcing.",
+        response: JSON.stringify({
+          stakeholders: [
+            {
+              name: "Sourced Actor",
+              category: "influencer",
+              interest: "…",
+              position: "supportive",
+              position_evidence: {
+                url: "https://x.example",
+                title: "X",
+                accessed_at: "2026-08-17T00:00:00Z",
+                excerpt: "e",
+              },
+              power: "medium",
+              priority: "important",
+              engagement_notes: "…",
+            },
+            {
+              name: "Unsourced Actor",
+              category: "external-observer",
+              interest: "…",
+              position: "unknown",
+              position_evidence: {
+                status: "SOURCE_MISSING",
+                searched_for: "unknown stance",
+              },
+              power: "low",
+              priority: "monitor",
+              engagement_notes: "…",
+            },
+            {
+              name: "Third Actor",
+              category: "influencer",
+              interest: "…",
+              position: "neutral",
+              position_evidence: {
+                url: "https://y.example",
+                title: "Y",
+                accessed_at: "2026-08-17T00:00:00Z",
+                excerpt: "e",
+              },
+              power: "medium",
+              priority: "important",
+              engagement_notes: "…",
+            },
+          ],
+          key_dynamics: ["d1", "d2", "d3"],
+          blind_spots: [],
+          coverage_confidence: "medium",
+        }),
+      })
+    );
+
+    const provider = new MockLLMProvider({ fixturesDir: tmp });
+    const orch = new Orchestrator(localRegistry, provider);
+    const out = await orch.mapStakeholdersAfterResearch("Q", "permissive-stkh-fmt");
+    expect(out.stakeholders.stakeholders).toHaveLength(3);
+    expect(isSourceMissing(out.stakeholders.stakeholders[1]!.position_evidence)).toBe(true);
+  });
+});

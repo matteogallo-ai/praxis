@@ -1,9 +1,9 @@
 /**
  * `Orchestrator` — the Praxis pipeline coordinator.
  *
- * v0.2 shipped `scope()`. v0.3 adds `researchAfterScoping()`: chains
- * the Scoping and Research agents in a single call, then enforces the
- * format's sourcing policy on the research output.
+ * v0.2 shipped `scope()`. v0.3 added `researchAfterScoping()`.
+ * v0.4 adds `mapStakeholdersAfterResearch()` — the first pipeline
+ * step whose input includes BOTH the Scoping and Research outputs.
  *
  * `brief()` remains stubbed as `NotImplementedError` — the full
  * agent pipeline (synthesis, editorial, formatter) still lands from
@@ -12,11 +12,19 @@
 
 import type { FormatRegistry } from "../registry/registry.ts";
 import type { LLMProvider } from "../llm/provider.ts";
-import type { ScopingResult, ResearchResult } from "../agents/types.ts";
+import type {
+  ScopingResult,
+  ResearchResult,
+  StakeholderMapResult,
+} from "../agents/types.ts";
 import type { Format } from "../registry/schema.ts";
 import { executeScoping } from "../agents/scoping.ts";
 import { executeResearch } from "../agents/research.ts";
-import { validateSourcing } from "../sourcing/validator.ts";
+import { executeStakeholderMapping } from "../agents/stakeholder.ts";
+import {
+  validateSourcing,
+  validateStakeholderSourcing,
+} from "../sourcing/validator.ts";
 import { NotImplementedError, OrchestrationError } from "./errors.ts";
 
 export interface ScopeOptions {
@@ -31,9 +39,23 @@ export interface ResearchAfterScopingOptions extends ScopeOptions {
   researchMaxToolRounds?: number;
 }
 
+export interface MapStakeholdersAfterResearchOptions
+  extends ResearchAfterScopingOptions {
+  /** Overrides the stakeholder prompt file path — used in tests. */
+  stakeholderPromptPath?: string;
+  /** Hard cap on tool-use rounds for the Stakeholder Mapping agent. */
+  stakeholderMaxToolRounds?: number;
+}
+
 export interface ResearchAfterScopingResult {
   scoping: ScopingResult;
   research: ResearchResult;
+}
+
+export interface MapStakeholdersAfterResearchResult {
+  scoping: ScopingResult;
+  research: ResearchResult;
+  stakeholders: StakeholderMapResult;
 }
 
 export class Orchestrator {
@@ -63,14 +85,13 @@ export class Orchestrator {
 
   /**
    * Runs Scoping, then Research, and enforces the format's sourcing
-   * policy. Returns both structured outputs.
+   * policy on the research findings. Returns both structured outputs.
    *
    * Throws:
    *   - `OrchestrationError` if the format does not require both
    *     `scoping` and `research` in any of its sections.
-   *   - `SourcingValidationError` (from the sourcing layer) when
-   *     `sourcing_policy === "strict"` and one or more findings are
-   *     marked `SOURCE_MISSING`.
+   *   - `SourcingValidationError` when `sourcing_policy === "strict"`
+   *     and one or more findings are marked `SOURCE_MISSING`.
    *   - Any typed error surfaced by the underlying agents / LLM.
    */
   async researchAfterScoping(
@@ -92,7 +113,52 @@ export class Orchestrator {
   }
 
   /**
-   * Runs the full briefing pipeline. Not implemented in v0.3 — the
+   * Runs Scoping → Research → Stakeholder Mapping and enforces the
+   * format's sourcing policy on BOTH research findings and stakeholder
+   * position evidence. Returns the three structured outputs.
+   *
+   * Throws:
+   *   - `OrchestrationError` if the format does not require `scoping`,
+   *     `research`, AND `stakeholder` in its sections.
+   *   - `SourcingValidationError` when `sourcing_policy === "strict"`
+   *     and one or more research findings OR stakeholder positions
+   *     lack a source.
+   *   - Any typed error surfaced by the underlying agents / LLM.
+   */
+  async mapStakeholdersAfterResearch(
+    question: string,
+    formatId: string,
+    options: MapStakeholdersAfterResearchOptions = {}
+  ): Promise<MapStakeholdersAfterResearchResult> {
+    const format = this.prepareForScoping(question, formatId);
+    if (!formatRequiresAgent(format, "research")) {
+      throw new OrchestrationError(
+        `Format '${formatId}' does not list 'research' in any section's required_agents; nothing to research.`
+      );
+    }
+    if (!formatRequiresAgent(format, "stakeholder")) {
+      throw new OrchestrationError(
+        `Format '${formatId}' does not list 'stakeholder' in any section's required_agents; nothing to map.`
+      );
+    }
+
+    const scoping = await this.doScoping(question, format, options);
+    const research = await this.doResearch(scoping, format, options);
+    validateSourcing(research, format.sourcing_policy);
+
+    const stakeholders = await this.doMapStakeholders(
+      scoping,
+      research,
+      format,
+      options
+    );
+    validateStakeholderSourcing(stakeholders, format.sourcing_policy);
+
+    return { scoping, research, stakeholders };
+  }
+
+  /**
+   * Runs the full briefing pipeline. Not implemented in v0.4 — the
    * remaining agents (synthesis, editorial, style, formatter) land
    * progressively from v0.6.
    */
@@ -150,6 +216,23 @@ export class Orchestrator {
       execOpts.maxToolRounds = options.researchMaxToolRounds;
     }
     return executeResearch(ctx, this.llm, execOpts);
+  }
+
+  private doMapStakeholders(
+    scoping: ScopingResult,
+    research: ResearchResult,
+    format: Format,
+    options: MapStakeholdersAfterResearchOptions
+  ): Promise<StakeholderMapResult> {
+    const ctx = { scoping, research, format };
+    const execOpts: Parameters<typeof executeStakeholderMapping>[2] = {};
+    if (options.stakeholderPromptPath !== undefined) {
+      execOpts.promptPath = options.stakeholderPromptPath;
+    }
+    if (options.stakeholderMaxToolRounds !== undefined) {
+      execOpts.maxToolRounds = options.stakeholderMaxToolRounds;
+    }
+    return executeStakeholderMapping(ctx, this.llm, execOpts);
   }
 }
 
