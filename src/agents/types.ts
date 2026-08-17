@@ -1,17 +1,18 @@
 /**
  * Shared types for Praxis agents.
  *
- * v0.2 ships only the Scoping agent. As new agents land, their input /
- * output types live in this file (or in per-agent modules that
- * re-export from here).
+ * v0.2 shipped the Scoping agent. v0.3 adds Research (with sourcing).
+ * As new agents land their input/output types live in this file (or in
+ * per-agent modules that re-export from here).
  */
 
+import type { SourceStatus } from "../sourcing/types.ts";
+
 /**
- * Inputs a Praxis agent receives at execution time.
+ * Inputs the Scoping agent receives at execution time.
  *
- * `input` is a free-form record whose keys must match the parameter
- * names declared in the agent's `.prompt` file. The runtime validates
- * this mapping before rendering the template.
+ * The runtime validates this against the parameters declared in the
+ * agent's `.prompt` file before rendering the template.
  */
 export interface AgentContext {
   question: string;
@@ -28,4 +29,37 @@ export interface ScopingResult {
   hidden_questions: string[];
   scope_boundaries: string[];
   assumptions_to_validate: string[];
+}
+
+/**
+ * Inputs the Research agent receives at execution time. Built by the
+ * Orchestrator from the format and the Scoping agent's output.
+ */
+export interface ResearchContext {
+  scoping: ScopingResult;
+  formatId: string;
+  sourcingPolicy: "strict" | "permissive";
+  targetWords: number;
+}
+
+/**
+ * A single evidence-backed claim produced by the Research agent. Each
+ * finding is either sourced (`SourceReference`) or explicitly marked
+ * missing (`SourceMissing`). The sourcing layer validates this.
+ */
+export interface Finding {
+  claim: string;
+  supporting_evidence: string;
+  source: SourceStatus;
+}
+
+/**
+ * The structured output of the Research agent.
+ */
+export interface ResearchResult {
+  findings: Finding[];
+  /** Scoping questions still unanswered after research. */
+  open_questions: string[];
+  /** Every search query the agent issued, in order. Audit trail. */
+  search_queries_used: string[];
 }

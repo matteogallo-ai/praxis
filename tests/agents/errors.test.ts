@@ -4,6 +4,8 @@ import {
   AgentExecutionError,
   InvalidAgentOutputError,
   PromptFileError,
+  ResearchAgentError,
+  MaxToolRoundsExceededError,
 } from "../../src/agents/errors.ts";
 import { PraxisError } from "../../src/registry/errors.ts";
 
@@ -37,5 +39,27 @@ describe("PromptFileError", () => {
     expect(err.message).toContain("prompts/x.prompt");
     expect(err.message).toContain("parse failed");
     expect(err.name).toBe("PromptFileError");
+  });
+});
+
+describe("ResearchAgentError", () => {
+  test("carries the research agent id", () => {
+    const err = new ResearchAgentError("something broke");
+    expect(err).toBeInstanceOf(AgentExecutionError);
+    expect(err.agentId).toBe("research");
+    expect(err.name).toBe("ResearchAgentError");
+    expect(err.message).toContain("something broke");
+    expect(err.message).toContain("research");
+  });
+});
+
+describe("MaxToolRoundsExceededError", () => {
+  test("names the cap and extends ResearchAgentError", () => {
+    const err = new MaxToolRoundsExceededError(5);
+    expect(err).toBeInstanceOf(ResearchAgentError);
+    expect(err.maxRounds).toBe(5);
+    expect(err.message).toContain("5");
+    expect(err.message).toContain("max_tool_rounds");
+    expect(err.name).toBe("MaxToolRoundsExceededError");
   });
 });

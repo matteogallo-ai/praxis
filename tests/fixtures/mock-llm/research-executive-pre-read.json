@@ -1,0 +1,29 @@
+{
+  "label": "research/executive-pre-read",
+  "match_substring": "Research task for briefing 'executive-pre-read' under strict sourcing.",
+  "tool_calls": [
+    {
+      "id": "srvtool_1",
+      "name": "web_search",
+      "input": { "query": "cost of entering German B2B SaaS market 2026" }
+    },
+    {
+      "id": "srvtool_2",
+      "name": "web_search",
+      "input": { "query": "Germany SaaS market size and CAGR 2025" }
+    },
+    {
+      "id": "srvtool_3",
+      "name": "web_search",
+      "input": { "query": "GDPR compliance cost SaaS entrant" }
+    },
+    {
+      "id": "srvtool_4",
+      "name": "web_search",
+      "input": { "query": "top B2B SaaS competitors in Germany DACH 2026" }
+    }
+  ],
+  "rounds": 1,
+  "stop_reason": "end_turn",
+  "response": "{\n  \"findings\": [\n    {\n      \"claim\": \"The German B2B SaaS market grew at a 12% CAGR between 2022 and 2025, outpacing the wider EU average of 9%.\",\n      \"supporting_evidence\": \"Bitkom's 2026 SaaS market report tracks German B2B SaaS revenue rising from €18.3bn in 2022 to €25.8bn in 2025.\",\n      \"source\": {\n        \"url\": \"https://www.bitkom.org/publikationen/saas-markt-deutschland-2026\",\n        \"title\": \"SaaS-Markt Deutschland 2026 — Kennzahlen & Prognose\",\n        \"accessed_at\": \"2026-08-17T09:14:00Z\",\n        \"excerpt\": \"Der deutsche B2B-SaaS-Markt wuchs zwischen 2022 und 2025 mit einer durchschnittlichen jährlichen Rate von 12 Prozent auf 25,8 Milliarden Euro.\"\n      }\n    },\n    {\n      \"claim\": \"Median first-year setup cost for a foreign B2B SaaS entrant is €140k to €180k, dominated by localised sales, legal, and GDPR compliance.\",\n      \"supporting_evidence\": \"McKinsey Germany's 2025 market-entry benchmark of 42 foreign SaaS entrants over 2022-2024.\",\n      \"source\": {\n        \"url\": \"https://www.mckinsey.com/de/our-insights/germany-saas-entry-benchmark-2025\",\n        \"title\": \"Germany SaaS Market-Entry Benchmark 2025\",\n        \"accessed_at\": \"2026-08-17T09:22:00Z\",\n        \"excerpt\": \"Across 42 foreign B2B SaaS entrants tracked between 2022 and 2024, median first-year operating cost sat at €160k, ranging from €140k to €180k depending on regulated-sector exposure.\"\n      }\n    },\n    {\n      \"claim\": \"GDPR enforcement in Germany carries the highest per-incident fine in the EU, averaging €780k against SaaS firms in 2024.\",\n      \"supporting_evidence\": \"European Data Protection Board 2024 annual enforcement report.\",\n      \"source\": {\n        \"url\": \"https://edpb.europa.eu/annual-report-2024\",\n        \"title\": \"EDPB Annual Report 2024 — Enforcement Statistics\",\n        \"accessed_at\": \"2026-08-17T09:31:00Z\",\n        \"excerpt\": \"Germany recorded the highest average per-incident fine against SaaS providers in 2024 at €780k, driven by 27 enforcement actions from BfDI and Länder authorities.\"\n      }\n    },\n    {\n      \"claim\": \"Three incumbents (SAP, DATEV, Personio) hold approximately 41% of the German mid-market B2B SaaS wallet, leaving a fragmented long tail.\",\n      \"supporting_evidence\": \"IDC Germany Mid-Market SaaS tracker Q1 2026.\",\n      \"source\": {\n        \"url\": \"https://www.idc.com/getdoc.jsp?containerId=DE-MidMarket-SaaS-Q1-2026\",\n        \"title\": \"IDC Germany Mid-Market SaaS Tracker — Q1 2026\",\n        \"accessed_at\": \"2026-08-17T09:44:00Z\",\n        \"excerpt\": \"SAP, DATEV, and Personio jointly accounted for 41.2% of the German mid-market B2B SaaS wallet in Q1 2026; the remaining share is spread across more than 400 tracked vendors.\"\n      }\n    }\n  ],\n  \"open_questions\": [\n    \"Which internal team owns the operation, and do we have the leadership bench?\"\n  ],\n  \"search_queries_used\": [\n    \"cost of entering German B2B SaaS market 2026\",\n    \"Germany SaaS market size and CAGR 2025\",\n    \"GDPR compliance cost SaaS entrant\",\n    \"top B2B SaaS competitors in Germany DACH 2026\"\n  ]\n}"
+}

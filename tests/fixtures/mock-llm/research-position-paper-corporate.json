@@ -1,0 +1,24 @@
+{
+  "label": "research/position-paper-corporate",
+  "match_substring": "Research task for briefing 'position-paper-corporate' under strict sourcing.",
+  "tool_calls": [
+    {
+      "id": "srvtool_1",
+      "name": "web_search",
+      "input": { "query": "German regulatory stance foreign SaaS market entry 2026" }
+    },
+    {
+      "id": "srvtool_2",
+      "name": "web_search",
+      "input": { "query": "BfDI enforcement priorities 2026 SaaS" }
+    },
+    {
+      "id": "srvtool_3",
+      "name": "web_search",
+      "input": { "query": "Bundestag digital sovereignty debate 2026" }
+    }
+  ],
+  "rounds": 1,
+  "stop_reason": "end_turn",
+  "response": "{\n  \"findings\": [\n    {\n      \"claim\": \"The German Federal Ministry for Digital Affairs has publicly encouraged foreign SaaS entrants that commit to EU-based data residency in 2026.\",\n      \"supporting_evidence\": \"Ministry press release from 12 March 2026 stating openness paired with residency expectations.\",\n      \"source\": {\n        \"url\": \"https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang\",\n        \"title\": \"Bundesministerium für Digitales — Pressemitteilung 12.03.2026\",\n        \"accessed_at\": \"2026-08-17T11:04:00Z\",\n        \"excerpt\": \"Ausländische SaaS-Anbieter sind willkommen, sofern sie sich zu einer EU-basierten Datenhaltung und transparenter Governance verpflichten.\"\n      }\n    },\n    {\n      \"claim\": \"BfDI's 2026 enforcement plan names foreign SaaS providers as a priority sector for GDPR audits.\",\n      \"supporting_evidence\": \"BfDI Tätigkeitsbericht 2026 chapter 4.\",\n      \"source\": {\n        \"url\": \"https://www.bfdi.bund.de/DE/Fachthemen/Inhalte/TB-2026/Kapitel-4.html\",\n        \"title\": \"BfDI Tätigkeitsbericht 2026 — Kapitel 4\",\n        \"accessed_at\": \"2026-08-17T11:12:00Z\",\n        \"excerpt\": \"Prüfungsschwerpunkt 2026: internationale SaaS-Anbieter, insbesondere hinsichtlich Auftragsverarbeitung, Datentransfer und Betroffenenrechten.\"\n      }\n    },\n    {\n      \"claim\": \"Cross-party Bundestag support for 'digital sovereignty' means procurement preferences may tilt toward EU vendors in 2026-2027.\",\n      \"supporting_evidence\": \"Bundestag protocol 20/187 debate on digital sovereignty (18 June 2026).\",\n      \"source\": {\n        \"url\": \"https://www.bundestag.de/protokolle/20-187-digital-sovereignty\",\n        \"title\": \"Plenarprotokoll 20/187 — Debatte Digitale Souveränität\",\n        \"accessed_at\": \"2026-08-17T11:20:00Z\",\n        \"excerpt\": \"Fraktionsübergreifender Konsens: bei der öffentlichen Beschaffung sollen europäische SaaS-Anbieter im Zweifel bevorzugt werden.\"\n      }\n    },\n    {\n      \"claim\": \"Corporate affairs teams entering Germany typically need 6 to 9 months to establish credible standing with Berlin policy stakeholders.\",\n      \"supporting_evidence\": \"Public Affairs Council 2025 handbook on entering the German policy environment.\",\n      \"source\": {\n        \"url\": \"https://pac.org/handbook/germany-entry-2025\",\n        \"title\": \"Entering the German Policy Environment — 2025 Handbook\",\n        \"accessed_at\": \"2026-08-17T11:33:00Z\",\n        \"excerpt\": \"Newly established teams in Berlin typically require 6 to 9 months of dedicated stakeholder engagement to achieve routine access to relevant ministries and committees.\"\n      }\n    }\n  ],\n  \"open_questions\": [\n    \"What competitive and regulatory reaction should we prepare for in the first 18 months?\"\n  ],\n  \"search_queries_used\": [\n    \"German regulatory stance foreign SaaS market entry 2026\",\n    \"BfDI enforcement priorities 2026 SaaS\",\n    \"Bundestag digital sovereignty debate 2026\"\n  ]\n}"
+}

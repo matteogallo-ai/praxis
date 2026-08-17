@@ -44,3 +44,32 @@ export class PromptFileError extends AgentExecutionError {
     this.path = path;
   }
 }
+
+/**
+ * Raised by the Research agent when a specific stage fails and cannot
+ * be attributed to an LLM output problem or a prompt file problem —
+ * e.g. the max tool-use round cap was hit.
+ */
+export class ResearchAgentError extends AgentExecutionError {
+  constructor(message: string) {
+    super("research", message);
+    this.name = "ResearchAgentError";
+  }
+}
+
+/**
+ * Raised when the tool-use loop exceeds `max_tool_rounds` without the
+ * model producing a final answer. Includes the cap value so the CLI
+ * can suggest tuning it.
+ */
+export class MaxToolRoundsExceededError extends ResearchAgentError {
+  readonly maxRounds: number;
+
+  constructor(maxRounds: number) {
+    super(
+      `tool-use loop exceeded max_tool_rounds=${maxRounds} without a final answer`
+    );
+    this.name = "MaxToolRoundsExceededError";
+    this.maxRounds = maxRounds;
+  }
+}

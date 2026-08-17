@@ -43,10 +43,15 @@ parses it via PromptLang, renders `system` and `user`, concatenates
 them into a single prompt string, and passes it to the injected
 `LLMProvider`.
 
-## v0.2 scope
+## v0.3 scope
 
-Only `scoping.prompt` exists in this release. `research`, `counter`,
-`synthesis`, `editorial`, `style`, and `formatter` are on the ROADMAP.
+`scoping.prompt` (v0.2) and `research.prompt` (v0.3) exist. The
+Research prompt is the reference for tool-using agents — it declares
+`web_search` behaviour and the anti-hallucination sourcing contract
+Praxis enforces at the parse step.
+
+`stakeholder`, `risk`, `options`, `adversarial`, `synthesis`,
+`editorial`, `style`, and `formatter` are still on the ROADMAP.
 
 ## Authoring guide
 
