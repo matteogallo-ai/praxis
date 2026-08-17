@@ -6,6 +6,7 @@ import {
   PromptFileError,
   ResearchAgentError,
   MaxToolRoundsExceededError,
+  StakeholderMappingError,
 } from "../../src/agents/errors.ts";
 import { PraxisError } from "../../src/registry/errors.ts";
 
@@ -61,5 +62,16 @@ describe("MaxToolRoundsExceededError", () => {
     expect(err.message).toContain("5");
     expect(err.message).toContain("max_tool_rounds");
     expect(err.name).toBe("MaxToolRoundsExceededError");
+  });
+});
+
+describe("StakeholderMappingError", () => {
+  test("carries the stakeholder agent id and message", () => {
+    const err = new StakeholderMappingError("count 2 below min 3");
+    expect(err).toBeInstanceOf(AgentExecutionError);
+    expect(err.agentId).toBe("stakeholder");
+    expect(err.name).toBe("StakeholderMappingError");
+    expect(err.message).toContain("count 2 below min 3");
+    expect(err.message).toContain("stakeholder");
   });
 });

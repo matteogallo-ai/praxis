@@ -60,7 +60,8 @@ export class ResearchAgentError extends AgentExecutionError {
 /**
  * Raised when the tool-use loop exceeds `max_tool_rounds` without the
  * model producing a final answer. Includes the cap value so the CLI
- * can suggest tuning it.
+ * can suggest tuning it. Applies to any tool-using agent — the name
+ * is kept from v0.3 for compatibility.
  */
 export class MaxToolRoundsExceededError extends ResearchAgentError {
   readonly maxRounds: number;
@@ -71,5 +72,18 @@ export class MaxToolRoundsExceededError extends ResearchAgentError {
     );
     this.name = "MaxToolRoundsExceededError";
     this.maxRounds = maxRounds;
+  }
+}
+
+/**
+ * Raised by the Stakeholder Mapping agent for structural failures that
+ * belong neither to LLM output parsing (`InvalidAgentOutputError`) nor
+ * to prompt-file loading (`PromptFileError`). Examples: fewer
+ * stakeholders than the hard minimum, more than the hard maximum.
+ */
+export class StakeholderMappingError extends AgentExecutionError {
+  constructor(message: string) {
+    super("stakeholder", message);
+    this.name = "StakeholderMappingError";
   }
 }
