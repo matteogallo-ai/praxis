@@ -2,21 +2,25 @@
  * `Orchestrator` — the Praxis pipeline coordinator.
  *
  * v0.2 shipped `scope()`. v0.3 added `researchAfterScoping()`.
- * v0.4 adds `mapStakeholdersAfterResearch()` — the first pipeline
- * step whose input includes BOTH the Scoping and Research outputs.
+ * v0.4 added `mapStakeholdersAfterResearch()`. v0.5 added
+ * `assessRisksAfterStakeholders()` and the hardened sourcing
+ * pipeline.
  *
- * `brief()` remains stubbed as `NotImplementedError` — the full
- * agent pipeline (synthesis, editorial, formatter) still lands from
- * v0.6 onward.
+ * v0.6 finally implements `brief()` — the full six-agent pipeline
+ * that produces a complete, formatted briefing (Scoping → Research
+ * → Stakeholders → Risks → Options → Synthesis) with the aggregated
+ * cross-agent sourcing report attached.
  */
 
 import type { FormatRegistry } from "../registry/registry.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
-  ScopingResult,
+  OptionsGenerationResult,
   ResearchResult,
-  StakeholderMapResult,
   RiskAnalysisResult,
+  ScopingResult,
+  StakeholderMapResult,
+  SynthesisResult,
 } from "../agents/types.ts";
 import type { Format } from "../registry/schema.ts";
 import type {
@@ -27,6 +31,8 @@ import { executeScoping } from "../agents/scoping.ts";
 import { executeResearch } from "../agents/research.ts";
 import { executeStakeholderMapping } from "../agents/stakeholder.ts";
 import { executeRiskAnalysis } from "../agents/risk.ts";
+import { executeOptionsGeneration } from "../agents/options.ts";
+import { executeSynthesis } from "../agents/synthesis.ts";
 import {
   validateRiskSourcing,
   validateSourcing,
@@ -37,7 +43,7 @@ import {
   NoopSourcingAccumulator,
 } from "../sourcing/dedupe.ts";
 import { mergeReports } from "../sourcing/report.ts";
-import { NotImplementedError, OrchestrationError } from "./errors.ts";
+import { OrchestrationError } from "./errors.ts";
 
 export interface ScopeOptions {
   /** Overrides the scoping prompt file path — used in tests. */
@@ -72,6 +78,20 @@ export interface AssessRisksAfterStakeholdersOptions
   now?: Date;
 }
 
+export interface BriefOptions extends AssessRisksAfterStakeholdersOptions {
+  /** Overrides the options prompt file path — used in tests. */
+  optionsPromptPath?: string;
+  /** Hard cap on tool-use rounds for the Options agent. */
+  optionsMaxToolRounds?: number;
+  /** Overrides the synthesis prompt file path — used in tests. */
+  synthesisPromptPath?: string;
+  /**
+   * Provider name to attach to the returned `BriefResult` (audit
+   * trail). Defaults to the LLM provider's `name` field.
+   */
+  providerName?: string;
+}
+
 export interface ResearchAfterScopingResult {
   scoping: ScopingResult;
   research: ResearchResult;
@@ -90,6 +110,27 @@ export interface AssessRisksAfterStakeholdersResult {
   risks: RiskAnalysisResult;
   /** Aggregated cross-agent sourcing report (v0.5). */
   sourcing_report: SourcingReport;
+}
+
+/**
+ * Full briefing payload returned by `Orchestrator.brief()` — the
+ * complete pipeline output plus the audit metadata a downstream
+ * consumer (CLI, report renderer, human reviewer) needs to reason
+ * about the run.
+ */
+export interface BriefResult {
+  scoping: ScopingResult;
+  research: ResearchResult;
+  stakeholders: StakeholderMapResult;
+  risks: RiskAnalysisResult;
+  options: OptionsGenerationResult;
+  synthesis: SynthesisResult;
+  sourcing_report: SourcingReport;
+  /** ISO 8601 UTC timestamp of pipeline start. */
+  generated_at: string;
+  format_id: string;
+  question: string;
+  provider_name: string;
 }
 
 export class Orchestrator {
@@ -286,15 +327,127 @@ export class Orchestrator {
   }
 
   /**
-   * Runs the full briefing pipeline. Not implemented in v0.5 — the
-   * remaining agents (options, adversarial, synthesis, editorial,
-   * style, formatter) land progressively from v0.6.
+   * Runs the full v0.6 briefing pipeline end to end:
+   *
+   *   Scoping → Research → Stakeholders → Risks → Options → Synthesis
+   *
+   * A single `SourcingAccumulator` is threaded through every
+   * sourcing validation so cross-agent dedupe and freshness/trust
+   * rules apply consistently across the run. The returned payload
+   * carries all six structured artefacts, the aggregated
+   * `sourcing_report`, and audit metadata (generated_at, format_id,
+   * question, provider_name).
+   *
+   * Throws:
+   *   - `OrchestrationError` if the format does not require every
+   *     agent from `scoping` through `synthesis` in its sections'
+   *     `required_agents`.
+   *   - Any typed subclass of `SourcingValidationError` under strict
+   *     policy when a source fails validation.
+   *   - Any typed agent error (`RiskAnalysisError`,
+   *     `OptionsGenerationError`, `SynthesisError`, etc.) from the
+   *     underlying execution.
    */
-  async brief(_question: string, _formatId: string): Promise<never> {
-    throw new NotImplementedError(
-      "Orchestrator.brief() — full briefing generation",
-      "v0.6+"
+  async brief(
+    question: string,
+    formatId: string,
+    options: BriefOptions = {}
+  ): Promise<BriefResult> {
+    const format = this.prepareForScoping(question, formatId);
+    for (const agent of ["research", "stakeholder", "risk", "options", "synthesis"] as const) {
+      if (!formatRequiresAgent(format, agent)) {
+        throw new OrchestrationError(
+          `Format '${formatId}' does not list '${agent}' in any section's required_agents; the full brief pipeline requires it.`
+        );
+      }
+    }
+
+    const generated_at = (options.now ?? new Date()).toISOString();
+    const providerName = options.providerName ?? this.llm.name;
+
+    const rules = format.sourcing_rules;
+    const accumulator: SourcingAccumulator =
+      rules?.dedupe?.cross_agent === true
+        ? new InMemorySourcingAccumulator(rules.dedupe)
+        : new NoopSourcingAccumulator();
+    const now = options.now ?? new Date();
+    const validateOpts: Parameters<typeof validateSourcing>[2] = {
+      accumulator,
+      now,
+    };
+    if (rules !== undefined) validateOpts.rules = rules;
+
+    const scoping = await this.doScoping(question, format, options);
+    const research = await this.doResearch(scoping, format, options);
+    const researchReport = validateSourcing(
+      research,
+      format.sourcing_policy,
+      validateOpts
     );
+
+    const stakeholders = await this.doMapStakeholders(
+      scoping,
+      research,
+      format,
+      options
+    );
+    const stakeholderReport = validateStakeholderSourcing(
+      stakeholders,
+      format.sourcing_policy,
+      validateOpts
+    );
+
+    const risks = await this.doAssessRisks(
+      scoping,
+      research,
+      stakeholders,
+      format,
+      options
+    );
+    const riskReport = validateRiskSourcing(
+      risks,
+      format.sourcing_policy,
+      validateOpts
+    );
+
+    const optionsResult = await this.doGenerateOptions(
+      scoping,
+      research,
+      stakeholders,
+      risks,
+      format,
+      options
+    );
+
+    const synthesis = await this.doSynthesize(
+      scoping,
+      research,
+      stakeholders,
+      risks,
+      optionsResult,
+      format,
+      options
+    );
+
+    const sourcing_report = mergeReports(format.sourcing_policy, [
+      researchReport,
+      stakeholderReport,
+      riskReport,
+    ]);
+
+    return {
+      scoping,
+      research,
+      stakeholders,
+      risks,
+      options: optionsResult,
+      synthesis,
+      sourcing_report,
+      generated_at,
+      format_id: formatId,
+      question,
+      provider_name: providerName,
+    };
   }
 
   private prepareForScoping(question: string, formatId: string): Format {
@@ -379,6 +532,49 @@ export class Orchestrator {
       execOpts.maxToolRounds = options.riskMaxToolRounds;
     }
     return executeRiskAnalysis(ctx, this.llm, execOpts);
+  }
+
+  private doGenerateOptions(
+    scoping: ScopingResult,
+    research: ResearchResult,
+    stakeholders: StakeholderMapResult,
+    risks: RiskAnalysisResult,
+    format: Format,
+    options: BriefOptions
+  ): Promise<OptionsGenerationResult> {
+    const ctx = { scoping, research, stakeholders, risks, format };
+    const execOpts: Parameters<typeof executeOptionsGeneration>[2] = {};
+    if (options.optionsPromptPath !== undefined) {
+      execOpts.promptPath = options.optionsPromptPath;
+    }
+    if (options.optionsMaxToolRounds !== undefined) {
+      execOpts.maxToolRounds = options.optionsMaxToolRounds;
+    }
+    return executeOptionsGeneration(ctx, this.llm, execOpts);
+  }
+
+  private doSynthesize(
+    scoping: ScopingResult,
+    research: ResearchResult,
+    stakeholders: StakeholderMapResult,
+    risks: RiskAnalysisResult,
+    optionsResult: OptionsGenerationResult,
+    format: Format,
+    options: BriefOptions
+  ): Promise<SynthesisResult> {
+    const ctx = {
+      scoping,
+      research,
+      stakeholders,
+      risks,
+      options: optionsResult,
+      format,
+    };
+    const execOpts: Parameters<typeof executeSynthesis>[2] = {};
+    if (options.synthesisPromptPath !== undefined) {
+      execOpts.promptPath = options.synthesisPromptPath;
+    }
+    return executeSynthesis(ctx, this.llm, execOpts);
   }
 }
 

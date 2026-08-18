@@ -733,3 +733,170 @@ describe("Orchestrator.assessRisksAfterStakeholders", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.6 — Orchestrator.brief() end-to-end (full six-agent pipeline)
+// ---------------------------------------------------------------------------
+
+describe("Orchestrator.brief() — end-to-end", () => {
+  test("chains all six agents and returns a BriefResult with audit metadata", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.brief(
+      "Should we enter the German market?",
+      "executive-pre-read",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    // Every artefact is present.
+    expect(out.scoping.reformulated_question.length).toBeGreaterThan(20);
+    expect(out.research.findings.length).toBeGreaterThan(0);
+    expect(out.stakeholders.stakeholders.length).toBeGreaterThan(3);
+    expect(out.risks.risks.length).toBeGreaterThanOrEqual(5);
+    expect(out.options.options.length).toBeGreaterThanOrEqual(2);
+    expect(out.synthesis.sections.length).toBe(6);
+    // Audit metadata.
+    expect(out.format_id).toBe("executive-pre-read");
+    expect(out.question).toBe("Should we enter the German market?");
+    expect(out.provider_name).toBe("mock");
+    expect(out.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+    // Sourcing report reconciles.
+    const sr = out.sourcing_report;
+    const sum =
+      sr.counts.ok +
+      sr.counts.stale +
+      sr.counts.untrusted +
+      sr.counts.duplicated +
+      sr.counts.missing;
+    expect(sum).toBe(sr.total_items);
+  });
+
+  test("synthesis sections mirror format.sections[] in declared order", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.brief(
+      "Should we enter the German market?",
+      "executive-pre-read",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    const expected = [
+      "context",
+      "key-question",
+      "recommendation",
+      "supporting-evidence",
+      "risks-and-mitigations",
+      "next-steps",
+    ];
+    expect(out.synthesis.sections.map((s) => s.section_id)).toEqual(expected);
+  });
+
+  test("recommended option is exactly one and matches recommended_option_id", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.brief(
+      "Should we enter the German market?",
+      "executive-pre-read",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    const recs = out.options.options.filter(
+      (o) => o.recommendation_level === "recommended"
+    );
+    expect(recs).toHaveLength(1);
+    expect(recs[0]!.id).toBe(out.options.recommended_option_id);
+  });
+
+  test("works with mckinsey-style-note", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.brief(
+      "Should we enter Germany?",
+      "mckinsey-style-note",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    expect(out.synthesis.sections.length).toBe(6);
+    expect(out.synthesis.total_word_count).toBeGreaterThan(0);
+  });
+
+  test("works with position-paper-corporate", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.brief(
+      "Should we enter the German market?",
+      "position-paper-corporate",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    expect(out.synthesis.sections.length).toBe(6);
+    expect(out.format_id).toBe("position-paper-corporate");
+  });
+
+  test("format missing 'options' in required_agents triggers OrchestrationError", async () => {
+    // Build a format that has scoping/research/stakeholder/risk/synthesis
+    // but NO options — brief() must refuse.
+    const format = baseFormat(
+      "no-options-fmt",
+      [
+        "scoping",
+        "research",
+        "stakeholder",
+        "risk",
+        "synthesis",
+      ] as string[],
+      "strict"
+    );
+    const registry = makeRegistryWith(format);
+    const orch = new Orchestrator(registry, makeMockProvider());
+    let caught: unknown;
+    try {
+      await orch.brief("Q", "no-options-fmt");
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(OrchestrationError);
+    expect((caught as OrchestrationError).message).toContain("options");
+  });
+
+  test("format missing 'synthesis' in required_agents triggers OrchestrationError", async () => {
+    const format = baseFormat(
+      "no-synthesis-fmt",
+      ["scoping", "research", "stakeholder", "risk", "options"] as string[],
+      "strict"
+    );
+    const registry = makeRegistryWith(format);
+    const orch = new Orchestrator(registry, makeMockProvider());
+    let caught: unknown;
+    try {
+      await orch.brief("Q", "no-synthesis-fmt");
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(OrchestrationError);
+    expect((caught as OrchestrationError).message).toContain("synthesis");
+  });
+
+  test("brief carries a stable provider_name (defaults to llm.name)", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.brief(
+      "Should we enter the German market?",
+      "executive-pre-read"
+    );
+    expect(out.provider_name).toBe("mock");
+  });
+
+  test("brief accepts an explicit providerName override", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.brief(
+      "Should we enter the German market?",
+      "executive-pre-read",
+      { providerName: "explicit-name" }
+    );
+    expect(out.provider_name).toBe("explicit-name");
+  });
+});

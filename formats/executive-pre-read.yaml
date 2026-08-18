@@ -44,6 +44,7 @@ sections:
     max_length:
       words: 150
     required_agents:
+      - options
       - synthesis
     tone_directives: authoritative, imperative; lead with the verb; name the owner and the deadline.
     validation_rules:

@@ -148,4 +148,49 @@ describe("shipped formats — structural invariants", () => {
       expect(f.sourcing_rules?.dedupe?.cross_agent).toBe(true);
     }
   });
+
+  // -------------------------------------------------------------------------
+  // v0.6 — every shipped format must support the six-agent pipeline
+  // (Scoping, Research, Stakeholder, Risk, Options, Synthesis). This is
+  // the pre-flight check for `Orchestrator.brief()`.
+  // -------------------------------------------------------------------------
+
+  const SIX_AGENT_PIPELINE = [
+    "scoping",
+    "research",
+    "stakeholder",
+    "risk",
+    "options",
+    "synthesis",
+  ] as const;
+
+  test("every shipped format lists every six-agent-pipeline agent in some section", () => {
+    for (const f of all) {
+      const agentsUsed = new Set<string>();
+      for (const s of f.sections) {
+        for (const a of s.required_agents) agentsUsed.add(a);
+      }
+      for (const requiredAgent of SIX_AGENT_PIPELINE) {
+        expect(agentsUsed.has(requiredAgent)).toBe(true);
+      }
+    }
+  });
+
+  test("every shipped format's synthesis section appears at least once", () => {
+    for (const f of all) {
+      const hasSynthesis = f.sections.some((s) =>
+        (s.required_agents as readonly string[]).includes("synthesis")
+      );
+      expect(hasSynthesis).toBe(true);
+    }
+  });
+
+  test("every shipped format's options section appears at least once", () => {
+    for (const f of all) {
+      const hasOptions = f.sections.some((s) =>
+        (s.required_agents as readonly string[]).includes("options")
+      );
+      expect(hasOptions).toBe(true);
+    }
+  });
 });
