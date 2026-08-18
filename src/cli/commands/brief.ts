@@ -81,6 +81,8 @@ export interface BriefCommandOptions {
   full: boolean;
   outputPath: string | null;
   critique: boolean;
+  /** v0.8 — enables the editorial re-run loop (implies --critique). */
+  withRerun: boolean;
   renderTarget: string | null;
   theme: string | null;
   includeToc: boolean;
@@ -101,6 +103,7 @@ export interface ParsedBriefArgs {
   full: boolean;
   outputPath: string | null;
   critique: boolean;
+  withRerun: boolean;
   renderTarget: string | null;
   theme: string | null;
   includeToc: boolean;
@@ -125,6 +128,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   let full = false;
   let outputPath: string | null = null;
   let critique = false;
+  let withRerun = false;
   let renderTarget: string | null = null;
   let theme: string | null = null;
   let includeToc = false;
@@ -142,6 +146,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     full,
     outputPath,
     critique,
+    withRerun,
     renderTarget,
     theme,
     includeToc,
@@ -199,6 +204,10 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       sourcingReport = true;
     } else if (a === "--critique") {
       critique = true;
+    } else if (a === "--with-rerun") {
+      withRerun = true;
+      // --with-rerun implies --critique (the rerun consumes the critique output).
+      critique = true;
     } else if (a === "--render") {
       const next = args[i + 1];
       if (next === undefined) {
@@ -253,6 +262,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       full,
       outputPath,
       critique,
+      withRerun,
       renderTarget,
       theme,
       includeToc,
@@ -274,6 +284,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       full,
       outputPath,
       critique,
+      withRerun,
       renderTarget,
       theme,
       includeToc,
@@ -294,6 +305,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       full,
       outputPath,
       critique,
+      withRerun,
       renderTarget,
       theme,
       includeToc,
@@ -315,12 +327,35 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       full,
       outputPath,
       critique,
+      withRerun,
       renderTarget,
       theme,
       includeToc,
       includeAppendices,
       error:
         "--render requires --output <path>. Binary formats (pdf, docx) cannot be piped to stdout.",
+    };
+  }
+  if (withRerun && !full) {
+    return {
+      question: positional[0]!,
+      formatId,
+      provider,
+      json,
+      withResearch,
+      withStakeholders,
+      withRisks,
+      sourcingReport,
+      full,
+      outputPath,
+      critique,
+      withRerun,
+      renderTarget,
+      theme,
+      includeToc,
+      includeAppendices,
+      error:
+        "--with-rerun requires --full (the editorial re-run loop only applies to the full briefing).",
     };
   }
 
@@ -336,6 +371,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     full,
     outputPath,
     critique,
+    withRerun,
     renderTarget,
     theme,
     includeToc,
@@ -350,10 +386,29 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   const orchestrator = new Orchestrator(registry, llm);
 
   if (opts.full) {
-    // Run brief() OR briefWithCritique() depending on --critique.
-    const result = opts.critique
-      ? await orchestrator.briefWithCritique(opts.question, opts.formatId)
-      : await orchestrator.brief(opts.question, opts.formatId);
+    // Run brief() OR briefWithCritique() OR briefWithCritiqueAndRerun().
+    // --with-rerun implies --critique (parser enforces).
+    const result = opts.withRerun
+      ? await orchestrator.briefWithCritiqueAndRerun(opts.question, opts.formatId)
+      : opts.critique
+        ? await orchestrator.briefWithCritique(opts.question, opts.formatId)
+        : await orchestrator.brief(opts.question, opts.formatId);
+
+    // Surface a one-line rerun note to stderr so operators know the
+    // editorial re-run loop fired without having to inspect the JSON.
+    if (opts.withRerun && hasRerunMetadata(result) && result.rerun_performed) {
+      const meta = result.rerun_metadata;
+      const changed = meta.re_synthesis_deviations.length;
+      const critIds = meta.critiques_addressed.join(", ");
+      process.stderr.write(
+        `${c.dim("rerun:")} synthesis rewritten to address ${critIds} — ` +
+          `${changed} section(s) changed substantially.\n`
+      );
+    } else if (opts.withRerun && hasRerunMetadata(result) && !result.rerun_performed) {
+      process.stderr.write(
+        `${c.dim("rerun:")} adversarial critique did not require a rerun.\n`
+      );
+    }
 
     // --render <target> — dispatch to the renderer, write binary/text
     // to --output.
@@ -479,6 +534,15 @@ function hasCritiqueField(
   v: object
 ): v is { adversarial: AdversarialCritiqueResult } {
   return "adversarial" in v && (v as { adversarial: unknown }).adversarial !== undefined;
+}
+
+function hasRerunMetadata(
+  v: object
+): v is {
+  rerun_performed: boolean;
+  rerun_metadata: { critiques_addressed: string[]; re_synthesis_deviations: string[] };
+} {
+  return "rerun_performed" in v;
 }
 
 function selectProvider(name: string, fixturesDir: string): LLMProvider {
@@ -658,6 +722,7 @@ export async function runBriefCli(
       full: parsed.full,
       outputPath: parsed.outputPath,
       critique: parsed.critique,
+      withRerun: parsed.withRerun,
       renderTarget: parsed.renderTarget,
       theme: parsed.theme,
       includeToc: parsed.includeToc,

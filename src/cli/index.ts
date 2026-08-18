@@ -143,6 +143,7 @@ function printHelp(): void {
       `                            [--sourcing-report]\n` +
       `                            [--full]\n` +
       `                            [--critique]\n` +
+      `                            [--with-rerun]\n` +
       `                            [--render md-enhanced|docx|pdf]\n` +
       `                            [--output <path>]\n` +
       `                            [--theme professional|government|consulting]\n` +
@@ -157,7 +158,9 @@ function printHelp(): void {
       `output formats (Markdown-enhanced with TOC and sources, DOCX from-scratch, or\n` +
       `PDF via pdfkit); --render requires --output <path>. --theme picks the PDF\n` +
       `look. --include-toc and --include-appendices control optional renderer\n` +
-      `sections.\n`
+      `sections. --with-rerun (v0.8) enables the editorial re-run loop —\n` +
+      `implies --critique, requires --full, and re-invokes Synthesis in REVISION\n` +
+      `MODE if the critique flags a revised recommendation. Hard cap: one rerun.\n`
   );
 }
 

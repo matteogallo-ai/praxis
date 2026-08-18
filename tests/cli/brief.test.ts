@@ -1135,3 +1135,81 @@ describe("briefCommand — v0.7 --render", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.8 — --with-rerun flag (editorial re-run loop)
+// ---------------------------------------------------------------------------
+
+describe("parseBriefArgs — v0.8 --with-rerun flag", () => {
+  test("parses --with-rerun and infers --critique", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read", "--full", "--with-rerun",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.withRerun).toBe(true);
+    // --with-rerun implies --critique (rerun consumes the critique output).
+    expect(p.critique).toBe(true);
+  });
+
+  test("--with-rerun with --critique explicitly set is idempotent", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read", "--full", "--critique", "--with-rerun",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.withRerun).toBe(true);
+    expect(p.critique).toBe(true);
+  });
+
+  test("--with-rerun without --full is a parse error", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read", "--with-rerun",
+    ]);
+    expect(p.error).toContain("--with-rerun requires --full");
+  });
+
+  test("default withRerun is false when the flag is absent", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read", "--full",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.withRerun).toBe(false);
+  });
+});
+
+describe("briefCommand — v0.8 --with-rerun", () => {
+  test("--full --with-rerun prints a rerun note to stderr when the rerun fires", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format", "executive-pre-read",
+        "--full", "--with-rerun",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    // stderr carries the one-line rerun summary.
+    const err = stderr();
+    expect(err).toContain("rerun:");
+    expect(err).toContain("synthesis rewritten");
+    // The Markdown briefing still lands on stdout.
+    expect(stdout()).toContain("# Should we enter the German market?");
+  });
+
+  test("--full --with-rerun --json emits a payload carrying rerun metadata", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format", "executive-pre-read",
+        "--full", "--with-rerun", "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const payload = JSON.parse(stdout());
+    expect(payload.rerun_performed).toBe(true);
+    expect(payload.rerun_metadata).not.toBeNull();
+    expect(payload.rerun_metadata.critiques_addressed.length).toBeGreaterThan(0);
+    expect(payload.original_synthesis).not.toBeNull();
+    expect(payload.sourcing_report.edited_after_critique).toBe(true);
+  });
+});
