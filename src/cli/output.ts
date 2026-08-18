@@ -406,3 +406,88 @@ function describeWarning(w: SourcingReport["warnings"][number]): string {
       return `[${w.agent}] duplicate source: ${w.url} collides with [${w.previous_agent}] ${w.previous_url}`;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Full briefing renderer (v0.6) — YAML front-matter + Markdown sections.
+// ---------------------------------------------------------------------------
+
+import type { BriefResult } from "../orchestrator/orchestrator.ts";
+
+/**
+ * Render a `BriefResult` as a self-contained Markdown document with a
+ * YAML front-matter header. The header carries the audit trail
+ * (question, format, provider, date, sourcing summary); the body is
+ * the assembled sections in the format's declared order.
+ *
+ * The output is deliberately COLOR-FREE — it is meant to be piped to
+ * a file, opened in an editor, or fed to a Markdown-to-PDF pipeline.
+ * ANSI codes would corrupt those downstream consumers.
+ */
+export function renderFullBrief(result: BriefResult): string {
+  const parts: string[] = [];
+
+  parts.push("---\n");
+  parts.push(`question: ${yamlString(result.question)}\n`);
+  parts.push(`format: ${yamlString(result.format_id)}\n`);
+  parts.push(`provider: ${yamlString(result.provider_name)}\n`);
+  parts.push(`generated_at: ${yamlString(result.generated_at)}\n`);
+  parts.push(`recommended_option: ${yamlString(result.options.recommended_option_id)}\n`);
+  parts.push(`aggregated_risk: ${yamlString(result.risks.aggregated_risk_score.overall)}\n`);
+  parts.push(
+    `sourcing_summary: "total=${result.sourcing_report.total_items} ` +
+      `ok=${result.sourcing_report.counts.ok} ` +
+      `stale=${result.sourcing_report.counts.stale} ` +
+      `untrusted=${result.sourcing_report.counts.untrusted} ` +
+      `duplicated=${result.sourcing_report.counts.duplicated} ` +
+      `missing=${result.sourcing_report.counts.missing}"\n`
+  );
+  parts.push(`total_word_count: ${result.synthesis.total_word_count}\n`);
+  parts.push(
+    `target_word_count: ${result.synthesis.format_conformance.target_words}\n`
+  );
+  parts.push(
+    `word_deviation_pct: ${result.synthesis.format_conformance.deviation_pct}\n`
+  );
+  parts.push("---\n\n");
+
+  parts.push(`# ${escapeMarkdownHeading(result.question)}\n\n`);
+
+  for (const section of result.synthesis.sections) {
+    parts.push(`## ${escapeMarkdownHeading(section.title)}\n\n`);
+    parts.push(section.content_markdown.trim() + "\n\n");
+    if (section.sources_cited.length > 0) {
+      parts.push("**Sources:**\n\n");
+      for (const s of section.sources_cited) {
+        parts.push(`- [${escapeMarkdownLinkText(s.title)}](${s.url})\n`);
+      }
+      parts.push("\n");
+    }
+    if (section.validation_issues.length > 0) {
+      parts.push("<!-- Validation issues:\n");
+      for (const issue of section.validation_issues) {
+        parts.push(`  - ${issue}\n`);
+      }
+      parts.push("-->\n\n");
+    }
+  }
+
+  return parts.join("");
+}
+
+/**
+ * A safe YAML string encoder for scalar values that may contain
+ * quotes or colons. Uses double-quotes and escapes embedded quotes
+ * and backslashes.
+ */
+function yamlString(v: string): string {
+  const escaped = v.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  return `"${escaped}"`;
+}
+
+function escapeMarkdownHeading(v: string): string {
+  return v.replace(/[\r\n]+/g, " ");
+}
+
+function escapeMarkdownLinkText(v: string): string {
+  return v.replace(/\[/g, "\\[").replace(/\]/g, "\\]");
+}
