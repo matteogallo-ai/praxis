@@ -257,5 +257,101 @@ These will each earn their place when they earn their place.
   contract.
 - [`docs/creating-a-format.md`](creating-a-format.md) — walkthrough for
   adding a new briefing format.
+
+---
+
+## 7. Final pipeline (v0.9)
+
+Diagram of the complete pipeline as of v0.9. The v0.5-v0.8
+additions layered onto the v0.4 baseline are the hardened
+sourcing layer, the Options and Synthesis agents, the
+Adversarial Critique agent, and the v0.8 editorial re-run loop
+(hard-cap 1). The v0.9 release adds no agent — only CLI polish,
+`--format auto`, and the benchmarks framework.
+
+```
+    question, --format <id> (or --format auto)
+                │
+                ▼
+        ┌───────────────┐
+        │   Scoping     │            (v0.2)
+        └───────────────┘
+                │ScopingResult
+                ▼
+        ┌───────────────┐
+        │   Research    │◀───── web_search (tool)
+        └───────────────┘            (v0.3)
+                │ResearchResult
+                ▼
+        ┌───────────────┐
+        │ Stakeholders  │            (v0.4)
+        └───────────────┘
+                │StakeholderMapResult
+                ▼
+        ┌───────────────────────────────────┐
+        │   Hardened sourcing layer         │ (v0.5)
+        │   freshness · trust · dedupe      │
+        └───────────────────────────────────┘
+                │
+                ▼
+        ┌───────────────┐
+        │     Risks     │            (v0.5)
+        └───────────────┘
+                │RiskAnalysisResult
+                ▼
+        ┌───────────────┐
+        │    Options    │            (v0.6)
+        └───────────────┘
+                │OptionsGenerationResult
+                ▼
+        ┌───────────────┐
+        │   Synthesis   │◀───── strict_editorial retry (v0.8)
+        │               │       max_regeneration_attempts
+        └───────────────┘            (v0.6 + v0.8)
+                │SynthesisResult
+                ▼
+        ┌───────────────┐
+        │  Adversarial  │            (v0.7)
+        │   Critique    │
+        └───────────────┘
+                │AdversarialCritiqueResult
+                │
+                │  revised_recommendation_needed?
+                ├──── no ──▶ (done)
+                │
+                yes (hard cap: exactly 1 iteration)
+                │
+                ▼
+        ┌───────────────┐
+        │   Synthesis   │  REVISION MODE — critiques + steelman
+        │  (2nd pass)   │  (v0.8)
+        └───────────────┘
+                │SynthesisResult (post-rerun)
+                ▼
+        BriefWithCritiqueAndRerunResult
+                │
+                ▼
+        ┌───────────────────────────────────┐
+        │   Renderers dispatcher            │ (v0.7)
+        │   md-enhanced · docx · pdf        │
+        └───────────────────────────────────┘
+                │
+                ▼
+       Buffer  ──▶  --output <path>
+```
+
+Invariants worth stressing:
+
+- **No recursion in the rerun loop.** Exactly one 2nd Synthesis
+  pass. A hypothetical critique on the post-rerun output is
+  ignored — the caller can invoke the method again if they want
+  another pass, but the library never loops on its own.
+- **No agent calls another agent.** The Orchestrator is the sole
+  coordinator. The `revision_context` and strict_editorial
+  retry inputs are Orchestrator-owned inputs to the Synthesis
+  agent, not agent-to-agent calls.
+- **Rendering is always the last stage.** No agent writes files
+  during the pipeline; every artefact is produced by the
+  renderers after the pipeline returns.
 - [PromptLang syntax reference](https://github.com/matteogallo-ai/promptlang/blob/main/docs/syntax-reference.md)
   — the DSL used by every Praxis prompt.
