@@ -140,3 +140,111 @@ export class RiskInflationError extends RiskAnalysisError {
     this.max = max;
   }
 }
+
+// ---------------------------------------------------------------------------
+// v0.6 — Options Generation agent
+// ---------------------------------------------------------------------------
+
+/**
+ * Raised by the Options Generation agent for structural failures that
+ * belong to the domain-specific rules of the agent (bad option count,
+ * missing recommended option, non-unique tradeoff dimensions,
+ * invalid recommended_option_id). Distinct from
+ * `InvalidOption*Reference` (specifically: cross-artefact reference
+ * failed).
+ */
+export class OptionsGenerationError extends AgentExecutionError {
+  constructor(message: string) {
+    super("options", message);
+    this.name = "OptionsGenerationError";
+  }
+}
+
+/**
+ * Raised when an Option names a stakeholder not in the supplied
+ * `StakeholderMapResult`. Same discipline as
+ * `InvalidRiskStakeholderReference`.
+ */
+export class InvalidOptionStakeholderReference extends OptionsGenerationError {
+  readonly optionId: string;
+  readonly unknownStakeholder: string;
+
+  constructor(
+    optionId: string,
+    unknownStakeholder: string,
+    knownNames: readonly string[]
+  ) {
+    super(
+      `Option '${optionId}' references unknown stakeholder '${unknownStakeholder}'. ` +
+        `Known: [${knownNames.join(", ")}]`
+    );
+    this.name = "InvalidOptionStakeholderReference";
+    this.optionId = optionId;
+    this.unknownStakeholder = unknownStakeholder;
+  }
+}
+
+/**
+ * Raised when an Option's `risks_mitigated[]` or `risks_introduced[]`
+ * lists a risk id absent from the supplied `RiskAnalysisResult`.
+ */
+export class InvalidOptionRiskReference extends OptionsGenerationError {
+  readonly optionId: string;
+  readonly unknownRiskId: string;
+  readonly field: "risks_mitigated" | "risks_introduced";
+
+  constructor(
+    optionId: string,
+    unknownRiskId: string,
+    field: "risks_mitigated" | "risks_introduced",
+    knownIds: readonly string[]
+  ) {
+    super(
+      `Option '${optionId}' ${field} references unknown risk id '${unknownRiskId}'. ` +
+        `Known: [${knownIds.join(", ")}]`
+    );
+    this.name = "InvalidOptionRiskReference";
+    this.optionId = optionId;
+    this.unknownRiskId = unknownRiskId;
+    this.field = field;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// v0.6 — Synthesis agent
+// ---------------------------------------------------------------------------
+
+/**
+ * Raised by the Synthesis agent for structural failures — missing
+ * section in output, extra section not declared in the format,
+ * section_id / title mismatch, malformed JSON per section.
+ *
+ * `validation_issues` on `SynthesizedSection` are soft warnings and
+ * do NOT raise this error. See `SynthesisValidationError` if a
+ * failure classification is desired.
+ */
+export class SynthesisError extends AgentExecutionError {
+  constructor(message: string) {
+    super("synthesis", message);
+    this.name = "SynthesisError";
+  }
+}
+
+/**
+ * Raised if a caller explicitly opts into strict format conformance —
+ * i.e. wants `SynthesisResult.format_conformance` failures to be
+ * throwable rather than surfaced as warnings. Not raised from the
+ * agent's default execution path, but kept in the hierarchy so
+ * downstream consumers (e.g. a future editorial gate) can use it.
+ */
+export class SynthesisValidationError extends SynthesisError {
+  readonly issues: readonly string[];
+
+  constructor(issues: readonly string[]) {
+    super(
+      `Synthesis format conformance failed: ${issues.length} issue(s) — ${issues[0] ?? ""}`
+    );
+    this.name = "SynthesisValidationError";
+    this.issues = issues;
+  }
+}

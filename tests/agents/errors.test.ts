@@ -3,13 +3,18 @@ import { describe, expect, test } from "bun:test";
 import {
   AgentExecutionError,
   InvalidAgentOutputError,
+  InvalidOptionRiskReference,
+  InvalidOptionStakeholderReference,
   InvalidRiskStakeholderReference,
+  MaxToolRoundsExceededError,
+  OptionsGenerationError,
   PromptFileError,
   ResearchAgentError,
-  MaxToolRoundsExceededError,
   RiskAnalysisError,
   RiskInflationError,
   StakeholderMappingError,
+  SynthesisError,
+  SynthesisValidationError,
 } from "../../src/agents/errors.ts";
 import { PraxisError } from "../../src/registry/errors.ts";
 
@@ -115,5 +120,94 @@ describe("RiskInflationError", () => {
     expect(err.max).toBe(25);
     expect(err.message).toContain("30");
     expect(err.message).toContain("25");
+  });
+});
+
+describe("OptionsGenerationError", () => {
+  test("carries the options agent id and message", () => {
+    const err = new OptionsGenerationError("no recommended option found");
+    expect(err).toBeInstanceOf(AgentExecutionError);
+    expect(err.agentId).toBe("options");
+    expect(err.name).toBe("OptionsGenerationError");
+    expect(err.message).toContain("no recommended option found");
+    expect(err.message).toContain("options");
+  });
+});
+
+describe("InvalidOptionStakeholderReference", () => {
+  test("mentions the option id, unknown name, and known set", () => {
+    const err = new InvalidOptionStakeholderReference(
+      "OPT-B",
+      "Ghost Actor",
+      ["Alice", "Bob"]
+    );
+    expect(err).toBeInstanceOf(OptionsGenerationError);
+    expect(err.optionId).toBe("OPT-B");
+    expect(err.unknownStakeholder).toBe("Ghost Actor");
+    expect(err.message).toContain("OPT-B");
+    expect(err.message).toContain("Ghost Actor");
+    expect(err.message).toContain("Alice");
+    expect(err.message).toContain("Bob");
+  });
+});
+
+describe("InvalidOptionRiskReference", () => {
+  test("mentions the option id, unknown risk id, and field", () => {
+    const err = new InvalidOptionRiskReference(
+      "OPT-A",
+      "RISK-999",
+      "risks_mitigated",
+      ["RISK-001", "RISK-002"]
+    );
+    expect(err).toBeInstanceOf(OptionsGenerationError);
+    expect(err.optionId).toBe("OPT-A");
+    expect(err.unknownRiskId).toBe("RISK-999");
+    expect(err.field).toBe("risks_mitigated");
+    expect(err.message).toContain("OPT-A");
+    expect(err.message).toContain("RISK-999");
+    expect(err.message).toContain("risks_mitigated");
+    expect(err.message).toContain("RISK-001");
+  });
+
+  test("also works for risks_introduced field", () => {
+    const err = new InvalidOptionRiskReference(
+      "OPT-C",
+      "RISK-042",
+      "risks_introduced",
+      []
+    );
+    expect(err.field).toBe("risks_introduced");
+    expect(err.message).toContain("risks_introduced");
+  });
+});
+
+describe("SynthesisError", () => {
+  test("carries the synthesis agent id and message", () => {
+    const err = new SynthesisError("missing section 'answer' in output");
+    expect(err).toBeInstanceOf(AgentExecutionError);
+    expect(err.agentId).toBe("synthesis");
+    expect(err.name).toBe("SynthesisError");
+    expect(err.message).toContain("missing section 'answer'");
+    expect(err.message).toContain("synthesis");
+  });
+});
+
+describe("SynthesisValidationError", () => {
+  test("carries the issue list and extends SynthesisError", () => {
+    const err = new SynthesisValidationError([
+      "section 'recommendation' exceeds max_length",
+      "forbidden term 'obviously' found 2 times in 'issue-framing'",
+    ]);
+    expect(err).toBeInstanceOf(SynthesisError);
+    expect(err.name).toBe("SynthesisValidationError");
+    expect(err.issues).toHaveLength(2);
+    expect(err.message).toContain("2 issue");
+    expect(err.message).toContain("recommendation");
+  });
+
+  test("handles the empty-issues case gracefully", () => {
+    const err = new SynthesisValidationError([]);
+    expect(err.issues).toEqual([]);
+    expect(err.message).toContain("0 issue");
   });
 });

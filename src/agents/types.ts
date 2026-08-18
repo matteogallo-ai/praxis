@@ -9,7 +9,7 @@
  * in per-agent modules that re-export from here).
  */
 
-import type { SourceStatus } from "../sourcing/types.ts";
+import type { SourceReference, SourceStatus } from "../sourcing/types.ts";
 import type { Format } from "../registry/schema.ts";
 
 /**
@@ -303,5 +303,195 @@ export interface RiskContext {
   scoping: ScopingResult;
   research: ResearchResult;
   stakeholders: StakeholderMapResult;
+  format: Format;
+}
+
+// ---------------------------------------------------------------------------
+// v0.6 — Options Generation agent
+// ---------------------------------------------------------------------------
+
+/**
+ * How the agent frames each option to the reader. Only one option in a
+ * `OptionsGenerationResult` may be `recommended` — the parser enforces
+ * this. `not-recommended` is a valid downgrade for options that were
+ * considered and dismissed on their merits (the reader wants to know
+ * they were considered).
+ */
+export type OptionRecommendationLevel =
+  | "recommended"
+  | "acceptable"
+  | "not-recommended";
+
+export const OPTION_RECOMMENDATION_LEVELS: readonly OptionRecommendationLevel[] = [
+  "recommended",
+  "acceptable",
+  "not-recommended",
+] as const;
+
+/**
+ * One tradeoff dimension along which an option is assessed. `dimension`
+ * must be a concrete word (e.g. `cost`, `time-to-market`,
+ * `regulatory-exposure`) — vague labels like `pros` / `cons` are
+ * rejected by the parser as a quality safeguard.
+ */
+export interface OptionTradeoff {
+  dimension: string;
+  assessment: string;
+}
+
+/** Stakeholder-specific prediction attached to an option. */
+export interface OptionStakeholderImpact {
+  /** Must reference a name in `StakeholderMapResult.stakeholders[].name`. */
+  stakeholder_name: string;
+  predicted_reaction: StakeholderPosition;
+  impact_description: string;
+}
+
+/**
+ * A single course of action. Every `Option` must:
+ *   - carry a distinct `id` (`OPT-A`, `OPT-B`, `OPT-C`, `OPT-D`);
+ *   - reference existing stakeholder names in `stakeholder_impact[]`
+ *     (parser rejects fabricated names);
+ *   - reference existing risk IDs in `risks_mitigated[]` and
+ *     `risks_introduced[]` (parser rejects fabricated IDs);
+ *   - carry a `supporting_evidence` that is either a real
+ *     `SourceReference` or an explicit `SOURCE_MISSING` marker.
+ */
+export interface Option {
+  /** `OPT-A`, `OPT-B`, `OPT-C`, `OPT-D` — assigned sequentially by the parser. */
+  id: string;
+  /** Short, descriptive title (used as a headline in the briefing). */
+  title: string;
+  /** Two or three sentences describing the option. */
+  summary: string;
+  /** 3-6 dimensions. Vague labels (`pros`, `cons`) are rejected. */
+  tradeoffs: OptionTradeoff[];
+  /** Cross-referenced stakeholder predictions. */
+  stakeholder_impact: OptionStakeholderImpact[];
+  /** IDs of risks this option would mitigate. Cross-checked. */
+  risks_mitigated: string[];
+  /** IDs of risks this option would introduce. Cross-checked. */
+  risks_introduced: string[];
+  /** Prerequisites needed to execute this option. */
+  dependencies: string[];
+  time_horizon: RiskTimeframe;
+  recommendation_level: OptionRecommendationLevel;
+  supporting_evidence: SourceStatus;
+}
+
+/**
+ * The structured output of the Options Generation agent.
+ *
+ * Hard caps enforced by `parseOptionsGenerationResult`:
+ *   - `options.length` must satisfy `MIN_OPTIONS <= n <= MAX_OPTIONS`
+ *     (2-4). Fewer than 2 undermines the "genuine choice" discipline;
+ *     more than 4 is padding.
+ *   - `recommended_option_id` must reference an existing `Option.id`.
+ *   - Exactly one option must carry `recommendation_level === "recommended"`.
+ */
+export interface OptionsGenerationResult {
+  options: Option[];
+  recommended_option_id: string;
+  /** 3-5 sentences explaining why the recommended option won. */
+  rationale_for_recommendation: string;
+  /** Why the other options were considered and set aside. */
+  counter_arguments_considered: string[];
+  unresolved_uncertainties: string[];
+}
+
+/**
+ * Inputs the Options Generation agent receives at execution time.
+ * Consumes ALL four prior outputs — the first agent whose context is
+ * the full upstream stack.
+ */
+export interface OptionsContext {
+  scoping: ScopingResult;
+  research: ResearchResult;
+  stakeholders: StakeholderMapResult;
+  risks: RiskAnalysisResult;
+  format: Format;
+}
+
+// ---------------------------------------------------------------------------
+// v0.6 — Synthesis agent
+// ---------------------------------------------------------------------------
+
+/**
+ * One section of the final briefing, produced by the Synthesis agent.
+ * `section_id` and `title` mirror the `Format.sections[]` entry the
+ * synthesis is targeting; the synthesis loop drives one call per
+ * section.
+ *
+ * `validation_issues` is a list of soft warnings (max_length exceeded,
+ * forbidden_terms detected, unmet validation_rule). They are surfaced
+ * to the reader but do not fail the pipeline — the point is
+ * transparency, not censorship.
+ */
+export interface SynthesizedSection {
+  section_id: string;
+  title: string;
+  /** The section text, in Markdown. Trailing newline optional. */
+  content_markdown: string;
+  word_count: number;
+  /** Sources cited in this section, lifted from upstream artefacts. */
+  sources_cited: SourceReference[];
+  validation_issues: string[];
+}
+
+/**
+ * Per-section forbidden-term hit. `count` is how many times the term
+ * appeared in the section, case-insensitive.
+ */
+export interface ForbiddenTermHit {
+  term: string;
+  section_id: string;
+  count: number;
+}
+
+/** Per-section validation_rules string that the synthesis failed. */
+export interface FailedValidationRule {
+  section_id: string;
+  rule: string;
+}
+
+/**
+ * Aggregated format-conformance report attached to a synthesis run.
+ * `deviation_pct` is the signed relative deviation from
+ * `target_words` (positive = over, negative = under).
+ */
+export interface FormatConformance {
+  target_words: number;
+  actual_words: number;
+  deviation_pct: number;
+  sections_over_length: string[];
+  forbidden_terms_found: ForbiddenTermHit[];
+  failed_validation_rules: FailedValidationRule[];
+}
+
+/**
+ * The structured output of the Synthesis agent.
+ *
+ * `sections` are in the SAME ORDER as `format.sections[]` — the
+ * synthesis loop drives that ordering deterministically. Every
+ * section id in the format must appear exactly once; the parser
+ * rejects missing or extra sections.
+ */
+export interface SynthesisResult {
+  sections: SynthesizedSection[];
+  total_word_count: number;
+  format_conformance: FormatConformance;
+}
+
+/**
+ * Inputs the Synthesis agent receives at execution time. Consumes ALL
+ * five prior artefacts — synthesis has no analytical latitude of its
+ * own, it only assembles.
+ */
+export interface SynthesisContext {
+  scoping: ScopingResult;
+  research: ResearchResult;
+  stakeholders: StakeholderMapResult;
+  risks: RiskAnalysisResult;
+  options: OptionsGenerationResult;
   format: Format;
 }
