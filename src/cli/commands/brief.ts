@@ -1,12 +1,20 @@
 /**
  * `praxis brief "<question>" --format <id> [flags]` — CLI entry point.
  *
- * v0.4 modes:
+ * v0.5 modes:
  *   default              Scoping only.
  *   --with-research      Scoping → Research.
  *   --with-stakeholders  Scoping → Research → Stakeholder Mapping.
  *                        Implies --with-research; a note is emitted
  *                        to stdout if used alone.
+ *   --with-risks         Scoping → Research → Stakeholders → Risks.
+ *                        Implies --with-stakeholders (and therefore
+ *                        --with-research); notes emitted to stdout if
+ *                        used alone.
+ *   --sourcing-report    Prints ONLY the aggregated cross-agent
+ *                        sourcing report (useful for audit). Implies
+ *                        --with-risks (the full pipeline is what
+ *                        produces the report).
  *
  * Providers:
  *   --provider mock       (default) reads pre-scripted fixtures under
@@ -33,13 +41,17 @@ import {
   renderScopingResult,
   renderResearchResult,
   renderStakeholders,
+  renderRisks,
+  renderSourcingReport,
 } from "../output.ts";
 import type { LLMProvider } from "../../llm/provider.ts";
 import type {
   ScopingResult,
   ResearchResult,
   StakeholderMapResult,
+  RiskAnalysisResult,
 } from "../../agents/types.ts";
+import type { SourcingReport } from "../../sourcing/types.ts";
 
 export interface BriefCommandOptions {
   question: string;
@@ -48,6 +60,8 @@ export interface BriefCommandOptions {
   json: boolean;
   withResearch: boolean;
   withStakeholders: boolean;
+  withRisks: boolean;
+  sourcingReport: boolean;
   formatsDir: string;
   fixturesDir: string;
 }
@@ -59,6 +73,8 @@ export interface ParsedBriefArgs {
   json: boolean;
   withResearch: boolean;
   withStakeholders: boolean;
+  withRisks: boolean;
+  sourcingReport: boolean;
   error?: string;
 }
 
@@ -74,21 +90,29 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   let json = false;
   let withResearch = false;
   let withStakeholders = false;
+  let withRisks = false;
+  let sourcingReport = false;
+
+  const errorReturn = (error: string): ParsedBriefArgs => ({
+    question: "",
+    formatId: "",
+    provider,
+    json,
+    withResearch,
+    withStakeholders,
+    withRisks,
+    sourcingReport,
+    error,
+  });
 
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     if (a === "--format") {
       const next = args[i + 1];
       if (next === undefined) {
-        return {
-          question: "",
-          formatId: "",
-          provider,
-          json,
-          withResearch,
-          withStakeholders,
-          error: "--format expects an id (e.g. --format executive-pre-read)",
-        };
+        return errorReturn(
+          "--format expects an id (e.g. --format executive-pre-read)"
+        );
       }
       formatId = next;
       i++;
@@ -97,15 +121,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     } else if (a === "--provider") {
       const next = args[i + 1];
       if (next === undefined) {
-        return {
-          question: "",
-          formatId: "",
-          provider,
-          json,
-          withResearch,
-          withStakeholders,
-          error: "--provider expects a name (e.g. --provider mock)",
-        };
+        return errorReturn("--provider expects a name (e.g. --provider mock)");
       }
       provider = next;
       i++;
@@ -117,32 +133,24 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       withResearch = true;
     } else if (a === "--with-stakeholders") {
       withStakeholders = true;
+    } else if (a === "--with-risks") {
+      withRisks = true;
+    } else if (a === "--sourcing-report") {
+      sourcingReport = true;
     } else {
       positional.push(a);
     }
   }
 
   if (positional.length === 0) {
-    return {
-      question: "",
-      formatId: "",
-      provider,
-      json,
-      withResearch,
-      withStakeholders,
-      error: "missing question. Usage: praxis brief \"<question>\" --format <id>",
-    };
+    return errorReturn(
+      "missing question. Usage: praxis brief \"<question>\" --format <id>"
+    );
   }
   if (positional.length > 1) {
-    return {
-      question: "",
-      formatId: "",
-      provider,
-      json,
-      withResearch,
-      withStakeholders,
-      error: "expected exactly one question. Wrap multi-word questions in quotes.",
-    };
+    return errorReturn(
+      "expected exactly one question. Wrap multi-word questions in quotes."
+    );
   }
   if (formatId === null) {
     return {
@@ -152,6 +160,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       json,
       withResearch,
       withStakeholders,
+      withRisks,
+      sourcingReport,
       error: "--format is required. Usage: praxis brief \"<question>\" --format <id>",
     };
   }
@@ -163,6 +173,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     json,
     withResearch,
     withStakeholders,
+    withRisks,
+    sourcingReport,
   };
 }
 
@@ -171,6 +183,40 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   const registry = new FormatRegistry();
   registry.loadDirectory(opts.formatsDir);
   const orchestrator = new Orchestrator(registry, llm);
+
+  // --sourcing-report implies --with-risks (the full pipeline is what
+  // produces the aggregated report).
+  const wantsRisks = opts.withRisks || opts.sourcingReport;
+
+  if (wantsRisks) {
+    if (!opts.withStakeholders && !opts.json) {
+      process.stdout.write(
+        `${c.dim("note:")} --with-risks implies --with-stakeholders (and --with-research); running the full pipeline.\n`
+      );
+    }
+    const result = await orchestrator.assessRisksAfterStakeholders(
+      opts.question,
+      opts.formatId
+    );
+    if (opts.sourcingReport && !opts.withRisks && !opts.json) {
+      process.stdout.write(
+        `${c.dim("note:")} --sourcing-report implies --with-risks; running the full pipeline.\n`
+      );
+    }
+    if (opts.sourcingReport && !opts.withRisks) {
+      printSourcingReportOnly(result.sourcing_report, opts.json);
+    } else {
+      printFullPipelineWithRisks(
+        result.scoping,
+        result.research,
+        result.stakeholders,
+        result.risks,
+        result.sourcing_report,
+        opts.json
+      );
+    }
+    return 0;
+  }
 
   if (opts.withStakeholders) {
     // --with-stakeholders implies --with-research. When used alone, emit
@@ -255,8 +301,44 @@ function printFullPipeline(
   process.stdout.write(renderResearchResult(research));
   process.stdout.write(renderStakeholders(stakeholders));
   process.stdout.write(
-    `\n${c.dim("Next: synthesis, editorial, formatting land from v0.6+.")}\n`
+    `\n${c.dim("Next: risk analysis (--with-risks), synthesis, editorial land from v0.5+.")}\n`
   );
+}
+
+function printFullPipelineWithRisks(
+  scoping: ScopingResult,
+  research: ResearchResult,
+  stakeholders: StakeholderMapResult,
+  risks: RiskAnalysisResult,
+  sourcing_report: SourcingReport,
+  json: boolean
+): void {
+  if (json) {
+    process.stdout.write(
+      JSON.stringify(
+        { scoping, research, stakeholders, risks, sourcing_report },
+        null,
+        2
+      ) + "\n"
+    );
+    return;
+  }
+  process.stdout.write(renderScopingResult(scoping));
+  process.stdout.write(renderResearchResult(research));
+  process.stdout.write(renderStakeholders(stakeholders));
+  process.stdout.write(renderRisks(risks));
+  process.stdout.write(renderSourcingReport(sourcing_report));
+  process.stdout.write(
+    `\n${c.dim("Next: options generation lands in v0.6; synthesis and editorial follow.")}\n`
+  );
+}
+
+function printSourcingReportOnly(report: SourcingReport, json: boolean): void {
+  if (json) {
+    process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+    return;
+  }
+  process.stdout.write(renderSourcingReport(report));
 }
 
 /**
@@ -282,6 +364,8 @@ export async function runBriefCli(
       json: parsed.json,
       withResearch: parsed.withResearch,
       withStakeholders: parsed.withStakeholders,
+      withRisks: parsed.withRisks,
+      sourcingReport: parsed.sourcingReport,
       formatsDir: ctx.formatsDir,
       fixturesDir: ctx.fixturesDir,
     });

@@ -115,7 +115,9 @@ import type {
   ScopingResult,
   ResearchResult,
   StakeholderMapResult,
+  RiskAnalysisResult,
 } from "../agents/types.ts";
+import type { SourcingReport } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
@@ -247,4 +249,160 @@ export function renderStakeholders(result: StakeholderMapResult): string {
   }
 
   return parts.join("");
+}
+
+// ---------------------------------------------------------------------------
+// Risk Analysis renderer (v0.5).
+// ---------------------------------------------------------------------------
+
+/** Cap for risk-description column in the compact table. */
+const RISK_DESC_MAX = 60;
+
+export function renderRisks(result: RiskAnalysisResult): string {
+  const parts: string[] = [];
+  parts.push(`\n${c.bold(c.cyan("Risk analysis output"))}\n`);
+  parts.push(`${c.dim("=".repeat(20))}\n`);
+  parts.push(
+    `${c.dim(
+      `Risks: ${result.risks.length}  |  ` +
+        `Overall: ${result.aggregated_risk_score.overall}  |  ` +
+        `Top-3: ${result.top_3_priorities.join(", ")}  |  ` +
+        `Uncertainties: ${result.unresolved_uncertainties.length}`
+    )}\n\n`
+  );
+
+  const rows = result.risks.map((r) => ({
+    id: r.id,
+    category: r.category,
+    likelihood: r.likelihood,
+    impact: r.impact,
+    timeframe: r.timeframe,
+    description: truncateForDisplay(r.description, RISK_DESC_MAX),
+  }));
+  const table = renderTable(
+    [
+      { header: "ID", key: "id" },
+      { header: "Category", key: "category" },
+      { header: "Likelihood", key: "likelihood" },
+      { header: "Impact", key: "impact" },
+      { header: "Timeframe", key: "timeframe" },
+      { header: "Description", key: "description" },
+    ],
+    rows
+  );
+  parts.push(table + "\n\n");
+
+  parts.push(`${c.bold("Aggregated risk score")}\n`);
+  parts.push(`  ${c.dim("Overall:")}   ${result.aggregated_risk_score.overall}\n`);
+  for (const [cat, level] of Object.entries(
+    result.aggregated_risk_score.by_category
+  )) {
+    parts.push(`  ${c.dim(`${cat}:`.padEnd(20))}${level}\n`);
+  }
+  parts.push("\n");
+
+  parts.push(`${c.bold("Top-3 priorities")}\n`);
+  for (const id of result.top_3_priorities) {
+    const r = result.risks.find((x) => x.id === id);
+    const label = r ? `${id} — ${truncateForDisplay(r.description, 80)}` : id;
+    parts.push(`  ${c.dim("-")} ${label}\n`);
+  }
+  parts.push("\n");
+
+  for (const [i, r] of result.risks.entries()) {
+    parts.push(`${c.bold(`[${i + 1}] ${r.id} — ${r.description}`)}\n`);
+    parts.push(
+      `    ${c.dim("Category:")}    ${r.category}  |  ${c.dim("Timeframe:")} ${r.timeframe}\n`
+    );
+    parts.push(
+      `    ${c.dim("Likelihood:")} ${r.likelihood}  |  ${c.dim("Impact:")} ${r.impact}  |  ${c.dim("Residual:")} ${r.residual_risk_after_mitigation}\n`
+    );
+    parts.push(
+      `    ${c.dim("Affects:")}    ${r.affected_stakeholders.join(", ")}\n`
+    );
+    parts.push(`    ${c.dim("Mitigations:")}\n`);
+    for (const m of r.mitigations) parts.push(`      ${c.dim("·")} ${m}\n`);
+    if (isSourceMissing(r.likelihood_evidence)) {
+      parts.push(
+        `    ${c.yellow("Likelihood evidence:")} ${c.yellow("[SOURCE MISSING]")} ${c.dim(
+          "searched for:"
+        )} ${r.likelihood_evidence.searched_for}\n`
+      );
+    } else {
+      parts.push(
+        `    ${c.dim("Likelihood evidence:")} ${c.blue(r.likelihood_evidence.url)}\n`
+      );
+    }
+    if (isSourceMissing(r.impact_evidence)) {
+      parts.push(
+        `    ${c.yellow("Impact evidence:")}     ${c.yellow("[SOURCE MISSING]")} ${c.dim(
+          "searched for:"
+        )} ${r.impact_evidence.searched_for}\n`
+      );
+    } else {
+      parts.push(
+        `    ${c.dim("Impact evidence:")}     ${c.blue(r.impact_evidence.url)}\n`
+      );
+    }
+    parts.push("\n");
+  }
+
+  if (result.unresolved_uncertainties.length > 0) {
+    parts.push(`${c.bold("Unresolved uncertainties")}\n`);
+    for (const u of result.unresolved_uncertainties) {
+      parts.push(`  ${c.dim("-")} ${u}\n`);
+    }
+    parts.push("\n");
+  }
+
+  return parts.join("");
+}
+
+// ---------------------------------------------------------------------------
+// Sourcing report renderer (v0.5, cross-agent aggregated).
+// ---------------------------------------------------------------------------
+
+export function renderSourcingReport(report: SourcingReport): string {
+  const parts: string[] = [];
+  parts.push(`\n${c.bold(c.cyan("Sourcing report"))}\n`);
+  parts.push(`${c.dim("=".repeat(15))}\n`);
+  parts.push(
+    `${c.dim(
+      `Policy: ${report.policy}  |  ` +
+        `Total items: ${report.total_items}  |  ` +
+        `OK: ${report.counts.ok}  |  ` +
+        `Stale: ${report.counts.stale}  |  ` +
+        `Untrusted: ${report.counts.untrusted}  |  ` +
+        `Duplicated: ${report.counts.duplicated}  |  ` +
+        `Missing: ${report.counts.missing}`
+    )}\n\n`
+  );
+
+  if (report.warnings.length === 0) {
+    parts.push(`${c.green("✓")} No warnings — every inspected item passed.\n`);
+    return parts.join("");
+  }
+
+  parts.push(`${c.bold("Warnings")}\n`);
+  for (const w of report.warnings) {
+    parts.push(`  ${c.dim("-")} ${describeWarning(w)}\n`);
+  }
+  return parts.join("");
+}
+
+function describeWarning(w: SourcingReport["warnings"][number]): string {
+  switch (w.kind) {
+    case "missing_source":
+      return `[research] finding[${w.finding_index}] SOURCE_MISSING — searched for: ${w.searched_for}`;
+    case "missing_stakeholder_evidence":
+      return `[stakeholder] '${w.stakeholder_name}' (index ${w.stakeholder_index}) SOURCE_MISSING — searched for: ${w.searched_for}`;
+    case "missing_risk_evidence":
+      return `[risk] ${w.risk_id} .${w.evidence_field} SOURCE_MISSING — searched for: ${w.searched_for}`;
+    case "stale_source":
+      return `[${w.agent}] stale source (${w.age_days} days${w.exceeds_max ? "; past max" : ""}): ${w.url}`;
+    case "untrusted_domain":
+      return `[${w.agent}] untrusted domain: ${w.url} — ${w.reason}`;
+    case "duplicate_source":
+      return `[${w.agent}] duplicate source: ${w.url} collides with [${w.previous_agent}] ${w.previous_url}`;
+  }
 }

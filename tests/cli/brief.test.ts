@@ -438,3 +438,205 @@ describe("runBriefCli — error paths", () => {
     expect(stderr()).toContain("missing question");
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.5 — --with-risks and --sourcing-report
+// ---------------------------------------------------------------------------
+
+describe("parseBriefArgs — v0.5 flags", () => {
+  test("parses --with-risks alone", () => {
+    const p = parseBriefArgs(["Q", "--format", "executive-pre-read", "--with-risks"]);
+    expect(p.error).toBeUndefined();
+    expect(p.withRisks).toBe(true);
+    expect(p.sourcingReport).toBe(false);
+  });
+
+  test("parses --sourcing-report alone", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--sourcing-report",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.sourcingReport).toBe(true);
+    expect(p.withRisks).toBe(false);
+  });
+
+  test("parses --with-research --with-stakeholders --with-risks together", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--with-research",
+      "--with-stakeholders",
+      "--with-risks",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.withRisks).toBe(true);
+    expect(p.withStakeholders).toBe(true);
+    expect(p.withResearch).toBe(true);
+  });
+});
+
+describe("briefCommand — --with-risks (v0.5)", () => {
+  test("runs the full pipeline and prints all four agent sections plus the sourcing report", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-research",
+        "--with-stakeholders",
+        "--with-risks",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain("Scoping agent output");
+    expect(out).toContain("Research agent output");
+    expect(out).toContain("Stakeholder mapping output");
+    expect(out).toContain("Risk analysis output");
+    expect(out).toContain("Sourcing report");
+    // Risk table headers.
+    expect(out).toContain("Likelihood");
+    expect(out).toContain("Impact");
+    expect(out).toContain("Timeframe");
+    // Aggregated score + top-3 sections rendered.
+    expect(out).toContain("Aggregated risk score");
+    expect(out).toContain("Top-3 priorities");
+  });
+
+  test("--with-risks alone implies the earlier stages and emits a stdout note", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-risks",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain(
+      "--with-risks implies --with-stakeholders (and --with-research)"
+    );
+    expect(out).toContain("Risk analysis output");
+  });
+
+  test("--with-risks --json emits a combined JSON object with all agents and the report", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-risks",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(parsed.scoping).toBeDefined();
+    expect(parsed.research).toBeDefined();
+    expect(parsed.stakeholders).toBeDefined();
+    expect(parsed.risks).toBeDefined();
+    expect(parsed.sourcing_report).toBeDefined();
+    expect(Array.isArray(parsed.risks.risks)).toBe(true);
+    expect(parsed.risks.top_3_priorities).toHaveLength(3);
+    expect(parsed.sourcing_report.total_items).toBeGreaterThan(0);
+    expect(parsed.sourcing_report.counts.ok).toBeGreaterThan(0);
+  });
+
+  test("--with-risks works with mckinsey-style-note", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter Germany?",
+        "--format",
+        "mckinsey-style-note",
+        "--with-risks",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(parsed.risks.risks.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test("--with-risks works with position-paper-corporate", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "position-paper-corporate",
+        "--with-risks",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(parsed.risks.risks.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe("briefCommand — --sourcing-report (v0.5)", () => {
+  test("--sourcing-report alone prints ONLY the sourcing report (no agent output)", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--sourcing-report",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain("Sourcing report");
+    expect(out).not.toContain("Risk analysis output");
+    expect(out).not.toContain("Stakeholder mapping output");
+    expect(out).toContain(
+      "--sourcing-report implies --with-risks"
+    );
+  });
+
+  test("--sourcing-report --json emits the report as JSON", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--sourcing-report",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(parsed.policy).toBe("strict");
+    expect(parsed.counts).toBeDefined();
+    expect(parsed.total_items).toBeGreaterThan(0);
+    expect(Array.isArray(parsed.warnings)).toBe(true);
+  });
+
+  test("--with-risks --sourcing-report prints both agent sections AND the report", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--with-risks",
+        "--sourcing-report",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain("Risk analysis output");
+    expect(out).toContain("Sourcing report");
+  });
+});

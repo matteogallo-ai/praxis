@@ -129,7 +129,7 @@ function dispatchFormats(sub: string, rest: string[]): number {
 
 function printHelp(): void {
   process.stdout.write(
-    `praxis v${PRAXIS_VERSION} — Format Registry + Scoping/Research/Stakeholder agents for consultant-grade briefings\n\n` +
+    `praxis v${PRAXIS_VERSION} — Format Registry + Scoping/Research/Stakeholder/Risk agents for consultant-grade briefings\n\n` +
       `Usage:\n` +
       `  praxis version\n` +
       `  praxis formats list [--org-style <style>]\n` +
@@ -139,9 +139,13 @@ function printHelp(): void {
       `                            [--provider mock|anthropic]\n` +
       `                            [--with-research]\n` +
       `                            [--with-stakeholders]\n` +
+      `                            [--with-risks]\n` +
+      `                            [--sourcing-report]\n` +
       `                            [--json]\n\n` +
-      `In v0.4, 'brief' runs Scoping (default), Scoping + Research (--with-research),\n` +
-      `or the full Scoping + Research + Stakeholder Mapping pipeline (--with-stakeholders).\n` +
+      `In v0.5, 'brief' runs Scoping (default), or progressively adds Research,\n` +
+      `Stakeholder Mapping, and Risk Analysis via --with-research /\n` +
+      `--with-stakeholders / --with-risks. --sourcing-report prints only the\n` +
+      `aggregated cross-agent sourcing report (implies --with-risks).\n` +
       `Full briefing generation lands in v0.6+. See ROADMAP.md.\n`
   );
 }
