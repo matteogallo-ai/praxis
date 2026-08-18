@@ -8,26 +8,33 @@ discipline enforced upstream**: the briefing arrives already shaped like
 the organization's own analysts wrote it, with rigorous sourcing and a
 consistent voice. That is 80% of what a senior reader values.
 
-The current release, **v0.6 — Options Generation agent + Synthesis
-agent + `brief()` implemented**, is the release where Praxis
-crosses from "pipeline components" to "pipeline output". Three
-tightly coupled bricks land together: the fifth agent (Options,
-first to consume all four prior artefacts), the sixth agent
-(Synthesis, which assembles the final briefing text respecting the
-format's tone directives / max_length / forbidden_terms /
-validation_rules), and `Orchestrator.brief()` — the
-`NotImplementedError` stub that has been in the code since v0.2 is
-finally replaced by the real six-agent pipeline that rolls the
-first complete, sourced, format-conformant briefing off the
-assembly line.
+The current release, **v0.7 — Adversarial Critique agent + PDF /
+DOCX / Markdown-enhanced renderers**, closes the seven-agent
+pipeline (v0.6's `brief()` gains its stress-testing companion) and
+turns the raw Markdown briefing into calibrated executive
+deliverables in three formats. It also introduces the one and only
+external npm runtime dependency in Praxis: **pdfkit** (explicitly
+listed as the planned exception in the v0.1 migration prompt; see
+CHANGELOG for the full justification). Every other v0.7 renderer
+is from-scratch — the DOCX renderer emits Open Packaging
+Convention parts by hand and uses `node:zlib` for DEFLATE.
 
 New CLI:
 
 ```
+# v0.6 flows still work unchanged
 praxis brief "<question>" --format executive-pre-read --full
 praxis brief "<question>" --format executive-pre-read --full --output brief.md
-praxis brief "<question>" --format executive-pre-read --full --with-sourcing-report
 praxis brief "<question>" --format executive-pre-read --full --json
+
+# v0.7: seventh agent + rendered deliverables
+praxis brief "<question>" --format executive-pre-read --full --critique
+praxis brief "<question>" --format executive-pre-read --full --render md-enhanced --output brief.md
+praxis brief "<question>" --format mckinsey-style-note --full --render docx --output brief.docx
+praxis brief "<question>" --format executive-pre-read --full --render pdf --output brief.pdf
+praxis brief "<question>" --format executive-pre-read --full --critique \
+     --render pdf --include-toc --include-appendices \
+     --theme consulting --output brief.pdf
 ```
 
 Sample output (truncated, mock provider):
@@ -65,11 +72,34 @@ SAP's likely bundled counter-offer is the largest strategic risk …
 
 Highlights:
 
-- Everything from v0.1 (Format Registry), v0.2 (Scoping agent,
-  Orchestrator), v0.3 (Research agent, AnthropicLLMProvider,
-  embryonic sourcing), v0.4 (Stakeholder Mapping agent), and v0.5
-  (Risk Analysis agent + hardened sourcing).
-- **Options Generation agent** — reads Scoping + Research +
+- Everything from v0.1 (Format Registry) through v0.6 (six-agent
+  `brief()` pipeline with sourced Markdown output).
+- **Adversarial Critique agent** — the seventh and last Praxis
+  agent before v1.0. Reads the completed `BriefResult` and
+  produces 3-10 steelmanned critiques targeting specific sections,
+  options, risks, stakeholders, or findings. 20-word minimum on
+  every `steelmanned_position` (bâclé critiques are rejected at
+  parse time). `revised_recommendation_needed` is derived from
+  severity counts and must match; when true, a non-empty
+  `steelmanned_alternative` is required. Prompt:
+  [`prompts/adversarial.prompt`](prompts/adversarial.prompt).
+  Design guide: [`docs/adversarial.md`](docs/adversarial.md).
+- **`Orchestrator.briefWithCritique()`** — chains the six-agent
+  `brief()` and feeds the completed brief to the critique agent.
+  Returns a `BriefWithCritiqueResult` with re-aggregated sourcing
+  report. `brief()` itself is API-unchanged.
+- **Three renderers** — enhanced Markdown (TOC, footnotes,
+  domain-grouped sources, optional appendices), DOCX from-scratch
+  (Open Packaging Convention parts assembled by hand, no npm
+  dep), and PDF via `pdfkit` (three themes: `professional` /
+  `government` / `consulting`, page footers, cover page,
+  optional TOC / critique / appendices). Dispatcher cross-checks
+  the target against `format.output_targets[]`. Design guide:
+  [`docs/renderers.md`](docs/renderers.md).
+- **First and only planned external npm runtime dependency**:
+  pdfkit. See CHANGELOG v0.7 for the justification. Every other
+  v0.7 renderer stays from-scratch.
+- **Options Generation agent (v0.6)** — reads Scoping + Research +
   Stakeholders + Risks, calls `web_search` for precedent, produces
   2-4 mutually-exclusive options with concrete tradeoff dimensions
   (vague labels like `pros`/`cons` are structurally rejected),
@@ -179,7 +209,7 @@ npm — Praxis will switch to `"promptlang": "^1.x"` in `dependencies`.
 
 ```
 $ bun run cli version
-praxis v0.6.0
+praxis v0.7.0
 ```
 
 ### `praxis formats list`
@@ -208,6 +238,34 @@ policy, output targets.
 
 Parses and validates any YAML file against the Format schema. Exit code 0
 on success, 1 on failure with every issue listed.
+
+### Rendering targets (v0.7)
+
+Every shipped format declares one or more `output_targets`. The
+`--render <target>` flag on `praxis brief --full` dispatches to
+the matching renderer; the dispatcher rejects targets the format
+does not declare.
+
+| Format                        | Allowed targets    | Notes                                     |
+| ----------------------------- | ------------------ | ----------------------------------------- |
+| `executive-pre-read`          | `md`, `pdf`        | 2-page briefing (`md` renders enhanced).  |
+| `mckinsey-style-note`         | `docx`, `pdf`      | 3-page pyramid-principle note.            |
+| `position-paper-corporate`    | `docx`, `pdf`      | 4-page institutional position paper.      |
+
+Renderer semantics:
+
+- **`md-enhanced`** (short form `md`) — YAML front-matter, TOC
+  (optional), section body, per-section Sources block,
+  domain-grouped Sources footer, optional appendices, optional
+  critique block. No external dep.
+- **`docx`** — from-scratch OOXML. Opens in Word / LibreOffice.
+  No external dep (uses `node:zlib` for DEFLATE).
+- **`pdf`** — via `pdfkit` (the one external runtime dep).
+  Three themes: `professional` (default; navy accent),
+  `government` (Times + maroon), `consulting` (amber accent).
+  Cover page, optional TOC, section pages, options / risks /
+  stakeholders tables, optional critique / appendices / sources
+  / sourcing report, page footers with numbering.
 
 ### `praxis brief "<question>" --format <id>`
 
@@ -438,9 +496,9 @@ Praxis targets a v1.0 release in ten steps.
 | v0.3 | Research agent + real Anthropic provider + embryonic sourcing layer |
 | v0.4 | Stakeholder Mapping agent + sourcing extension |
 | v0.5 | Risk Analysis agent + hardened sourcing (freshness, domain trust, dedupe) |
-| **v0.6** | Options + Synthesis agents; `brief()` implemented; first end-to-end briefing (this release) |
-| v0.7 | Adversarial Critique agent + output renderers (PDF/DOCX/MD) |
-| v0.8 | Style guide enforcement (forbidden terms, sentence caps, MECE checks) |
+| v0.6 | Options + Synthesis agents; `brief()` implemented; first end-to-end briefing |
+| **v0.7** | Adversarial Critique agent + PDF/DOCX/MD renderers + first (planned) external npm dep (this release) |
+| v0.8 | Polish; editorial re-run loop; minimal Web UI |
 | v0.9 | End-to-end demos on the three shipped formats |
 | v1.0 | Documentation, CI matrix, external contributor onboarding |
 

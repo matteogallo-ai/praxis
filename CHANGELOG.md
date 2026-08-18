@@ -5,6 +5,217 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] — 2026-08-18
+
+**Adversarial Critique agent + PDF/DOCX/MD renderers + first (and only planned) external npm dependency.**
+
+Two bricks in this release: the seventh (and last-before-v1.0)
+Praxis agent stress-tests the completed briefing against its
+strongest counter-arguments; and the render pipeline finally
+converts the Markdown produced by Synthesis into calibrated
+executive deliverables in three formats.
+
+### Notes on the first external npm dependency
+
+**`pdfkit` (^0.19.1) is the SOLE external runtime dependency
+added to Praxis in this release.** This was explicitly listed as
+the one planned exception to the zero-npm-dep rule in the
+migration prompt that shipped v0.1 — the alternative would be a
+from-scratch PDF writer that would triple the renderer LOC and
+require font-embedding (AFM parsing, Type 1 programs, encoding
+tables) for zero incremental capability.
+
+Every other renderer in this release stays from-scratch:
+
+- The DOCX renderer emits Open Packaging Convention parts by
+  hand (`docx-internals/{xml-builder,zip-builder,document-xml,styles-xml,content-types}.ts`)
+  and uses `node:zlib` (bundled in Bun) for DEFLATE. No `docx`
+  npm library was added.
+- The enhanced Markdown renderer is 300 lines of TypeScript with
+  no dependencies beyond `node:url` (Bun built-in).
+
+The `dependencies` field in `package.json` is now exactly:
+
+```json
+{
+  "@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser",
+  "pdfkit": "^0.19.1"
+}
+```
+
+No further external runtime deps are anticipated for v0.8+. The
+v0.1 promise of "essentially no dependencies" holds — pdfkit is
+the one exception, justified above, and the CHANGELOG will
+mention it every time a new dep is proposed.
+
+### Added
+
+- **Adversarial Critique agent** (`src/agents/adversarial.ts`) —
+  seventh and last Praxis agent before v1.0:
+  - `executeAdversarialCritique(ctx, llm)` loads
+    `prompts/adversarial.prompt`, dispatches to
+    `llm.completeWithTools` with the `web_search` tool, and
+    validates the returned JSON against
+    `AdversarialCritiqueResult`.
+  - Hard caps: `MIN_CRITIQUES = 3`, `MAX_CRITIQUES = 15`,
+    `MIN_STEELMAN_WORDS = 20` (steelmanned positions under 20
+    words are rejected — a steelman needs room to breathe).
+  - **Every `target` field cross-checked**: `section_id`,
+    `option_id`, `risk_id`, `stakeholder_name`, `finding_index`
+    must resolve to actual artefacts in the supplied
+    `BriefResult`. Empty targets and unknown references raise
+    `InvalidCritiqueTargetError`.
+  - **Severity aggregation + revision derivation are enforced**:
+    the parser recomputes `critical_count` /`material_count` /
+    `minor_count` and rejects mismatches;
+    `revised_recommendation_needed` is derived (`critical ≥ 1` OR
+    `material ≥ 3`) and mismatches raise
+    `AdversarialCritiqueError`; when true,
+    `steelmanned_alternative` must be non-null or
+    `MissingAlternativeError` is raised.
+  - Errors: `AdversarialCritiqueError`,
+    `InvalidCritiqueTargetError`, `MissingAlternativeError`.
+- **Adversarial types** (`src/agents/types.ts`):
+  `CritiqueCategory` (8 values), `CritiqueSeverity` (3 bands),
+  `CritiqueTarget`, `Critique`, `AdversarialCritiqueResult`,
+  `AdversarialContext`.
+- **Orchestrator.briefWithCritique()** — chains the six-agent
+  `brief()` pipeline and feeds the completed `BriefResult` to
+  the adversarial agent. Returns a `BriefWithCritiqueResult`
+  (superset of `BriefResult`) plus a re-aggregated
+  `sourcing_report` that now covers the critique's counter-
+  evidence sources. **`brief()` itself is unchanged** —
+  API-compatible with v0.6.
+- **Enhanced Markdown renderer** (`src/renderers/markdown-enhanced.ts`)
+  — extends the v0.6 `renderFullBrief()` with:
+  - Table of Contents (opt-in via `include_toc`).
+  - Dedicated Sources section with de-duplicated,
+    domain-grouped, alphabetically-sorted references.
+  - Optional Adversarial Critique section (when the brief
+    carries one and `include_critique` is set).
+  - Optional Appendices (findings, stakeholder table, risk
+    register).
+  - Richer YAML front-matter (adds `critique_summary` when
+    critique is attached).
+- **DOCX renderer** (`src/renderers/docx.ts`) — from-scratch OOXML
+  (no npm dep). Emits Content_Types, root and document rels,
+  styles.xml (Heading1/2/3, Normal, PraxisTable), and
+  document.xml with the six-section body, options / risks /
+  stakeholders tables, optional critique / appendices / sources
+  / sourcing-report sections. ZIP writer uses `node:zlib`
+  DEFLATE and pinned timestamps for byte-reproducible archives.
+- **PDF renderer** (`src/renderers/pdf.ts`) — via pdfkit. Three
+  themes (`professional` / `government` / `consulting`) affect
+  accent colour and headline font. Layout: cover page, optional
+  TOC, section pages, options / risks / stakeholders tables,
+  optional critique, optional appendices, sources (grouped by
+  domain), optional sourcing report, page footers with
+  numbering. Supports `compress_pdf_streams: false` for tests
+  that need to grep the raw buffer.
+- **Renderers dispatcher** (`src/renderers/index.ts`) — one-line
+  entry `render(brief, target, format, options)` that resolves
+  the target against `format.output_targets[]` (accepts both
+  the short YAML spelling `"md"` and the renderer-native
+  `"md-enhanced"`) and dispatches to the right implementation.
+  Unknown or format-disallowed targets raise
+  `UnsupportedRenderTargetError`.
+- **CLI `brief` command** extended with five new flags:
+  - `--critique` — runs `briefWithCritique()` instead of
+    `brief()`; renders the critique inline on stdout.
+  - `--render <target>` — dispatches to the renderer; requires
+    `--output <path>` (binary formats do not stream to stdout).
+    Requires `--full`.
+  - `--theme <name>` — picks the PDF theme
+    (`professional` | `government` | `consulting`).
+  - `--include-toc` — passes `include_toc: true` to the renderer.
+  - `--include-appendices` — passes `include_appendices: true`
+    to the renderer.
+- **New prompt** (`prompts/adversarial.prompt`) — steelmanning
+  discipline, precise-reference rule, severity calibration, and
+  the derived `revised_recommendation_needed` logic explained
+  in full to the model.
+- **New fixtures** (`tests/fixtures/mock-llm/`):
+  - `adversarial-{executive-pre-read,mckinsey-style-note,position-paper-corporate}.json`
+    — five-critique analyses per shipped format calibrated on
+    the German-market-entry test question, mixing minor,
+    material, and critical severities. Every target
+    cross-references a real artefact from the corresponding
+    mock brief.
+  - `adversarial-critical-triggering-revision.json` — three
+    critical critiques force
+    `revised_recommendation_needed=true`.
+  - `adversarial-invalid-target.json` — references a
+    non-existent `section_id` to exercise the cross-reference
+    rejection path.
+- **Optional live tests** (`tests/live/`):
+  - `adversarial-agent.live.test.ts` — runs the critique agent
+    against the real Anthropic API on a synthetic brief.
+  - `full-brief-with-critique.live.test.ts` — runs the full
+    seven-agent pipeline and writes the deliverable to
+    `/tmp/praxis-live-brief-with-critique-<ts>.{md,pdf,docx}`
+    for post-hoc human review.
+- **~140 new tests** across adversarial-agent (39),
+  briefWithCritique orchestrator (6), CLI v0.7 flags (13),
+  markdown-enhanced renderer (23), DOCX renderer (17), PDF
+  renderer (14), dispatcher (16), adversarial-e2e (5),
+  render-pipeline-e2e (10), errors (3). **Total: 826 tests +
+  11 optional live tests** (skipped without ANTHROPIC_API_KEY).
+
+### Changed
+
+- **`package.json.dependencies`** gains pdfkit (see justification
+  above). `devDependencies` gains `@types/pdfkit`.
+  `@promptlang/yaml-parser` remains a workspace dep.
+- **CLI help** now advertises `--critique`, `--render`, `--theme`,
+  `--include-toc`, `--include-appendices`.
+- **Praxis version bumped** to `0.7.0` in `package.json` and
+  `src/cli/version-constant.ts`.
+
+### Notes on the design
+
+- **`brief()` API unchanged.** v0.7 adds `briefWithCritique()`
+  as a superset method. A v0.6-era consumer of `brief()` keeps
+  working with zero code changes.
+- **Steelman is structural, not stylistic.** The 20-word
+  minimum on `steelmanned_position` is enforced at parse time
+  because a critique the reviewer could not spend 20 words
+  defending is not a critique — it is a complaint. The
+  discipline is the whole point of the agent.
+- **`revised_recommendation_needed` is derived, not asked.**
+  The model classifies severity; the parser derives the
+  revision signal from the count thresholds. Mismatches raise.
+- **DOCX is from-scratch on purpose.** Adding a Word-writer
+  library would double the runtime dep footprint for a format
+  we render with three sections and one table style. From-scratch
+  is ~500 lines and gives us full control.
+- **PDF via pdfkit is the one exception.** Rendering PDF
+  from-scratch would triple the LOC and require font-embedding.
+  pdfkit was explicitly listed as the planned exception in the
+  v0.1 migration prompt.
+
+### Security notes
+
+- No new environment variables. `ANTHROPIC_API_KEY` still guards
+  the live provider; the adversarial agent reuses the same auth
+  path.
+- `--output` writes to any path the process can write to —
+  automation callers should validate paths themselves; the CLI
+  does not sandbox.
+- pdfkit does not execute arbitrary code paths: only the
+  metadata info dict includes user-provided strings, which
+  pdfkit escapes for PDF syntax.
+
+### Next
+
+- **v0.8 — Polish + Web UI minimaliste.** Options: a minimal
+  web UI that runs the pipeline in the browser (via a small
+  server backend), an editorial re-run loop that feeds
+  adversarial critiques back into a second Synthesis pass, or
+  a Praxis-as-library API package. Priorities set by
+  post-v0.7 dogfooding.
+
+[0.7.0]: https://github.com/matteogallo-ai/praxis/releases/tag/v0.7.0
+
 ## [0.6.0] — 2026-08-18
 
 **Options Generation agent + Synthesis agent + `brief()` finally

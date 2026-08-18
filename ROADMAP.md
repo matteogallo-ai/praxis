@@ -164,25 +164,49 @@ under the strict-policy shipped formats.
 
 ---
 
-## v0.7 — Adversarial Critique Agent + Output Renderers
+## v0.7 — Adversarial Critique Agent + Output Renderers ✅ (shipped 2026-08-18)
 
-- `adversarial` agent — seventh Praxis agent. Reads the completed
-  brief and stress-tests the recommendation against the strongest
-  counter-arguments (steelmanned, not strawmanned). Feeds into the
-  `counter-arguments-addressed` section of formats that require it.
-- Renderers for the three declared `output_targets`: `md`, `docx`,
-  `pdf`.
-- PDF pipeline builds on a headless typesetter (no external SaaS).
-- CLI: `praxis produce --format <id> --topic <path> --out <path>`.
+- `adversarial` agent — seventh and last Praxis agent before v1.0.
+  Reads the completed brief and stress-tests the recommendation
+  against the strongest counter-arguments (steelmanned, never
+  strawmanned). Eight fixed categories; 3-15 critiques per run;
+  20-word minimum on `steelmanned_position`; every target
+  cross-referenced against the brief.
+- `Orchestrator.briefWithCritique()` — chains the six-agent
+  `brief()` and feeds the result to the critique agent. Returns a
+  `BriefWithCritiqueResult` with re-aggregated sourcing report.
+  `brief()` itself is API-unchanged.
+- Renderers for the three declared `output_targets`: `md-enhanced`,
+  `docx`, `pdf`. Enhanced Markdown has TOC + de-duplicated
+  Sources; DOCX is from-scratch OOXML (no npm dep); PDF is via
+  `pdfkit` — the ONE external npm runtime dep Praxis takes on,
+  explicitly listed as the planned exception in the v0.1
+  migration prompt.
+- CLI: `--critique`, `--render <target>`, `--output <path>`,
+  `--theme <name>`, `--include-toc`, `--include-appendices`.
 
 ---
 
-## v0.8 — Style Guide Enforcement
+## v0.8 — Polish, editorial re-run loop, minimal Web UI
 
-- Post-generation linter: forbidden-terms scan, sentence-length caps,
+Concrete options (priorities set post-v0.7 dogfooding):
+
+- **Editorial re-run loop** — feed the adversarial critique back
+  into a second Synthesis pass so the shipped briefing already
+  addresses its own critiques. Requires a
+  `format_conformance` gate before the second pass so the loop
+  cannot infinitely oscillate.
+- **Post-generation linter** — forbidden-terms hard-reject
+  (currently a soft warning), sentence-length caps,
   paragraph-length caps, MECE checks on argument sections.
-- Violations trigger a re-generation loop with the specific violation
-  fed back as a constraint.
+  Violations trigger a re-generation loop with the specific
+  violation fed back as a constraint.
+- **Minimal Web UI** — small server backend (Bun) + single-page
+  HTML that runs the pipeline in the browser and streams the
+  Markdown/PDF back. No frontend framework — plain HTML.
+- **Praxis-as-library API** — an installable npm package that
+  ships the Orchestrator, agents, and renderers behind a stable
+  API surface for programmatic callers.
 
 ---
 
