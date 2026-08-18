@@ -222,24 +222,62 @@ Deliberately deferred (moved to a later release):
 
 ---
 
-## v0.9 — End-to-End Demos
+## v0.9 — Release readiness: CLI polish, calibrated benchmarks, docs ✅ (shipped 2026-08-18)
 
-- Three fully worked demo briefings, one per shipped format.
-- Reproducible from a single CLI command; artefacts checked into
-  `examples/`.
-- Public dogfood: Matteo uses Praxis to produce a real briefing and
-  ships it as a public case study.
+The final consolidation release before v1.0. No new agent, no
+new npm dep, no breaking change.
+
+- **CLI polish** — new `symbols`, `log`, `progress`, and
+  `errorWithContext` helpers unify the user-facing surface.
+  Global `--verbose` and `--quiet` flags stripped by the
+  dispatcher and honoured across every command. Structured
+  error blocks (cause / suggestion / see) upgrade the three
+  most common actionable failures (`FormatNotFoundError`,
+  `AnthropicAuthenticationError`, `UnsupportedRenderTargetError`).
+- **`--format auto`** — deterministic keyword-based format
+  router. Matches on `board` / `executive` / `leadership
+  decision` → `executive-pre-read`; `position` / `regulatory`
+  / `policy` / `association` → `position-paper-corporate`;
+  `should we` / `market entry` / `M&A` / `acquisition` /
+  `strategic` → `mckinsey-style-note`. Ambiguous or no-match
+  paths emit actionable errors. Documented as an opinionated
+  shortcut, not an LLM router.
+- **Ten calibrated benchmarks** — `benchmarks/questions.yaml`
+  ships the manifest; `benchmarks/run-all.ts` produces
+  `brief.md` / `brief.pdf` / `brief.docx` / `metadata.json`
+  per entry under `benchmarks/outputs/{mock|live}/`. Mock
+  runs are reproducible bit-for-bit; live runs are refreshed
+  by the release owner when they have API access. Objective
+  checks (100% pass at v0.9.0) filled automatically;
+  qualitative axes (5 scores × 10 benchmarks) filled by
+  human review after tag.
+- **Documentation** — new `docs/getting-started.md` (5-min
+  walkthrough), `docs/cookbook.md` (10 recipes),
+  `docs/troubleshooting.md` (12 common errors), refreshed
+  `README.md` (v1.0-ready landing page with badges, tagline,
+  ASCII pipeline diagram), and `docs/architecture.md § 7`
+  (final v0.9 pipeline diagram with invariants).
+
+**Metrics**: 1100+ tests pass (+60 vs v0.8 baseline of 1042),
+0 fail, `bunx tsc --noEmit` clean, 0 new dependencies.
 
 ---
 
-## v1.0 — General Availability
+## v1.0 — General Availability (target)
 
-- Documentation complete: architecture, contributor guide, style guide
-  authoring, format authoring, deployment.
-- CI matrix: Bun 1.3.x on macOS + Linux, TypeScript strictness gate.
-- External contributor onboarding: first three merged community PRs.
-- Semantic versioning contract locked; breaking changes go through the
-  proposal template.
+- **SemVer contract locked.** `src/index.ts` is the surface;
+  every named export is bound by the contract established at
+  v0.8. Removing an export or changing a method signature is a
+  major bump, forever.
+- **Public release.** LinkedIn / community launch. First three
+  external contributor PRs merged.
+- **CI matrix.** Bun 1.3.x on macOS + Linux, TypeScript
+  strictness gate, `bun run bench:mock` as a pre-merge smoke.
+- **Breaking-change process.** Proposal template + review
+  cadence for any future major bump.
+
+No new pipeline capability planned for v1.0 — the seven-agent
+pipeline is final. v1.0 is the stability tag.
 
 ---
 

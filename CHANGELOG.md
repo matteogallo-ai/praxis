@@ -5,6 +5,142 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] — 2026-08-18
+
+**Release-readiness release: CLI polish, `--format auto`, ten
+calibrated benchmarks, refreshed documentation.**
+
+The final consolidation before v1.0. No new agent. No new npm
+dep. No breaking API change. The v0.8 baseline of 1042 tests is
+preserved verbatim; v0.9 adds ~60 new tests around the CLI
+polish and the benchmarks framework.
+
+Dependencies remain exactly `{ @promptlang/yaml-parser (workspace),
+pdfkit }`.
+
+### Added — CLI polish
+
+- New helpers in `src/cli/output.ts`:
+  - `symbols` and `styledSymbols` — the canonical glyph set
+    (`✓`, `✗`, `⚠`, `ℹ`, `•`, `→`) with colour-styled variants.
+  - `log(level, message)` — leveled stderr logger with a
+    verbosity gate (info/success suppressed under `--quiet`,
+    verbose messages gated on `--verbose`, errors always
+    pass).
+  - `progress(step, detail?)` — one-line stderr step marker,
+    suppressed under `--quiet`, brightened under `--verbose`.
+  - `errorWithContext({ what, cause?, suggestion?, see? })` —
+    structured error block with actionable guidance.
+- **`--verbose` / `--quiet` global flags** — stripped by the
+  dispatcher before command parsing; can appear anywhere on the
+  command line.
+- **`--format auto`** — opinionated keyword-based format
+  router. Matches on:
+  - `board`, `executive`, `leadership decision`
+    → `executive-pre-read`
+  - `position`, `regulatory`, `policy`, `association`
+    → `position-paper-corporate`
+  - `should we`, `market entry`, `M&A`, `acquisition`,
+    `strategic` → `mckinsey-style-note`
+  - Ambiguous matches surface as an actionable error naming
+    the candidates. No matches also error out. Deterministic
+    substring / word-boundary matching, not an LLM router.
+- The `brief` command now uses `progress()` markers at every
+  major pipeline stage and upgrades the three most common
+  actionable failures to structured error blocks:
+  - `FormatNotFoundError` → suggests `praxis formats list`.
+  - `AnthropicAuthenticationError` → suggests `--provider mock`.
+  - `UnsupportedRenderTargetError` → suggests a valid target.
+
+### Added — benchmarks framework
+
+- **`benchmarks/questions.yaml`** — 10 calibrated benchmark
+  questions distributed across the three shipped formats. The
+  set is closed at v0.9; adding an 11th requires a v-plus-1
+  release.
+- **`benchmarks/run-all.ts`** — the runner. Modes:
+  - default: mock always, live if `ANTHROPIC_API_KEY` is set.
+  - `--mock-only`: mock only, ignore the key.
+  - `--live-only`: live only, error if no key.
+  - `--dry-run`: manifest × modes → outcome list without
+    dispatching the pipeline (used by the unit tests).
+  - `--root <path>`: override the repo root.
+- **`benchmarks/CHECKLIST.md`** — scoring rubric with two
+  blocks: objective checks (automated) and qualitative axes
+  (five, human review only, 1–5 scale).
+- **`benchmarks/RESULTS.md`** — running scoreboard. v0.9.0
+  objective check row: 10/10 pass on the mock briefings; live
+  block populated when a maintainer with API access runs the
+  live path.
+- **`benchmarks/outputs/mock/`** — 10 mock briefings committed
+  at v0.9.0 (`brief.md` where the format declares `md`,
+  `brief.pdf`, `brief.docx` where the format declares `docx`,
+  and `metadata.json`). Total on disk: 740 KB, well under the
+  10 MiB target; largest single artefact ≤ 50 KB, well under
+  the 500 KB per-file ceiling.
+- **`benchmarks/outputs/live/`** — placeholder + README
+  explaining regeneration. Populated when a maintainer with
+  API access runs `bun run bench:live`.
+- New package.json scripts: `bench`, `bench:mock`, `bench:live`.
+
+### Added — documentation
+
+- `docs/getting-started.md` — the 5-minute walkthrough (clone,
+  install, first brief, formats, rendering, verbosity, live
+  provider).
+- `docs/cookbook.md` — 10 recipes (adding a format, adding a
+  provider, embedding as a library, configuring
+  `strict_editorial`, interpreting a `SourcingReport`,
+  debugging `EditorialFailureError`, interpreting critiques,
+  chaining briefings, using `--with-rerun`, generating own
+  benchmarks).
+- `docs/troubleshooting.md` — 12 common errors with cause and
+  fix (format not found, ambiguous auto-router, missing key,
+  rate limits, timeouts, sourcing failures, editorial
+  exhaustion, render targets, YAML restrictions, PromptLang
+  parse errors, adversarial parser rejections).
+- `README.md` refreshed as a v1.0-ready landing page (badges,
+  tagline, sample output, quick start, ASCII pipeline
+  diagram, formats table, library snippet, dev setup, FAQ).
+- `docs/architecture.md` gains a `§ 7. Final pipeline (v0.9)`
+  section with the complete pipeline diagram and the invariants
+  worth stressing (no recursion in the rerun loop, no
+  agent-to-agent calls, rendering is always last).
+
+### Changed
+
+- CLI output style unified across `brief`, format helpers, and
+  the top-level dispatcher — every user-facing error now goes
+  through `errorWithContext` or the plain `✗` prefix; every
+  progress marker goes through `progress()` with a consistent
+  arrow glyph.
+- `src/cli/index.ts` gains `stripVerbosityFlags(argv)` as an
+  exported helper so tests can pin the verbosity dispatch
+  discipline.
+
+### Not changed (v0.8 baseline preserved)
+
+- Every v0.8 public API method signature is unchanged.
+  `briefWithCritiqueAndRerun()` produces the same output as at
+  v0.8.0.
+- Dependencies: `@promptlang/yaml-parser` (workspace) + `pdfkit`.
+- The seven shipped agents. No new agent in v0.9, and none
+  planned for v1.0 either.
+
+### Migration notes
+
+- **Library callers**: no change. Every new symbol
+  (`stripVerbosityFlags`, `symbols`, `progress`, `log`,
+  `errorWithContext`, `detectFormatFromQuestion`,
+  `AUTO_FORMAT_IDS`, `AUTO_FORMAT_KEYWORDS`) is additive.
+- **Format authors**: no change. Existing formats work
+  unchanged. `--format auto` is a shortcut, not a replacement.
+- **CI**: `bun test` should still pass in ~5 seconds against
+  the mock provider. `bun run bench:mock` takes ~200 ms and is
+  a useful pre-merge smoke test.
+
+---
+
 ## [0.8.0] — 2026-08-18
 
 **Consolidation release: editorial re-run loop (hard-cap 1), `strict_editorial` retry mode, Praxis-as-library API surface.**
