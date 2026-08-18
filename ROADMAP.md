@@ -263,6 +263,52 @@ new npm dep, no breaking change.
 
 ---
 
+## v0.10 — AI-assisted qualitative scoring framework ✅ (shipped 2026-08-18)
+
+Framework release. Ships the entire scoring infrastructure but
+defers the empirical mock-vs-live delta table to v0.10.1 (a
+maintainer with API credits runs `bun run score` and commits
+the resulting `RESULTS.md` diff).
+
+- **`benchmarks/score-all.ts`** — reads every `brief.md` +
+  `metadata.json` under `benchmarks/outputs/*/`, calls Claude
+  Sonnet 4.5 with the calibrated prompt, validates the JSON
+  payload, caches under `.scoring-cache/` (24h TTL,
+  gitignored), aggregates, rewrites the "AI-Assisted
+  Qualitative Scoring" block in `RESULTS.md`. Modes:
+  `--mock-only`, `--live-only`, `--refresh <slug>`,
+  `--dry-run`.
+- **`benchmarks/scoring-prompt.txt`** — the anti-complaisance
+  calibrated prompt (7 criteria × 1–5, "3/5 is normal",
+  per-criterion example + improvement, free-text weakest /
+  strongest / comparative note).
+- **41 unit tests** covering flag parsing, payload validation,
+  aggregation, systematic observations, section rewriting,
+  cache TTL, and `--dry-run` end-to-end. All fixture-driven;
+  **zero real API calls in `bun test`**.
+- **`docs/benchmarking-methodology.md`** — rubric, prompt
+  design, model choice, known biases (same-family scoring,
+  deterministic mock content), reproduction, budget ($5-7 per
+  full pass), interpretation guide.
+
+**Metrics**: 1146 tests pass (+41 vs v0.9 baseline of 1105),
+0 fail, `bunx tsc --noEmit` clean, 0 new dependencies.
+
+### v0.10.1 (chore) — empirical validation
+
+A maintainer with `ANTHROPIC_API_KEY` and ~$10 credit runs:
+
+```
+bun run bench:live
+bun run score
+```
+
+The resulting `benchmarks/outputs/live/*` artefacts +
+`benchmarks/RESULTS.md` diff (mock-vs-live delta table +
+systematic observations) land as v0.10.1. No code change.
+
+---
+
 ## v1.0 — General Availability (target)
 
 - **SemVer contract locked.** `src/index.ts` is the surface;

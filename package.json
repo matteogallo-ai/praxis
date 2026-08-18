@@ -1,6 +1,6 @@
 {
   "name": "praxis",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Format Registry for producing consultant-grade analytical briefings in the exact codes of the target organization",
   "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
   "license": "MIT",
@@ -33,7 +33,11 @@
     "cli": "bun run src/cli/index.ts",
     "bench": "bun run benchmarks/run-all.ts",
     "bench:mock": "bun run benchmarks/run-all.ts --mock-only",
-    "bench:live": "bun run benchmarks/run-all.ts --live-only"
+    "bench:live": "bun run benchmarks/run-all.ts --live-only",
+    "score": "bun run benchmarks/score-all.ts",
+    "score:mock": "bun run benchmarks/score-all.ts --mock-only",
+    "score:live": "bun run benchmarks/score-all.ts --live-only",
+    "score:dry": "bun run benchmarks/score-all.ts --dry-run"
   },
   "dependencies": {
     "@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser",
