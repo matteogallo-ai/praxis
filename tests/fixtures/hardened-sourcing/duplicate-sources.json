@@ -1,0 +1,71 @@
+{
+  "description": "ResearchResult and StakeholderMapResult sharing the same URL. Used by tests/integration/sourcing-hardened-e2e.test.ts to exercise the cross-agent dedupe rule.",
+  "research": {
+    "findings": [
+      {
+        "claim": "Reuters reports something.",
+        "supporting_evidence": "…",
+        "source": {
+          "url": "https://www.reuters.com/business/example-story-2026",
+          "title": "Example story",
+          "accessed_at": "2026-08-15T09:00:00Z",
+          "excerpt": "Example excerpt."
+        }
+      }
+    ],
+    "open_questions": [],
+    "search_queries_used": ["example query"]
+  },
+  "stakeholders": {
+    "stakeholders": [
+      {
+        "name": "Actor One",
+        "category": "influencer",
+        "interest": "Cares about the example.",
+        "position": "neutral",
+        "position_evidence": {
+          "url": "https://www.reuters.com/business/example-story-2026",
+          "title": "Example story (same URL, cross-agent duplicate)",
+          "accessed_at": "2026-08-15T09:05:00Z",
+          "excerpt": "Example excerpt."
+        },
+        "power": "medium",
+        "priority": "important",
+        "engagement_notes": "Track the actor's statements."
+      },
+      {
+        "name": "Actor Two",
+        "category": "affected-party",
+        "interest": "Also affected.",
+        "position": "supportive",
+        "position_evidence": {
+          "url": "https://www.bloomberg.com/other-story",
+          "title": "Other story",
+          "accessed_at": "2026-08-15T09:10:00Z",
+          "excerpt": "…"
+        },
+        "power": "low",
+        "priority": "monitor",
+        "engagement_notes": "Passive."
+      },
+      {
+        "name": "Actor Three",
+        "category": "affected-party",
+        "interest": "Also affected.",
+        "position": "supportive",
+        "position_evidence": {
+          "url": "https://www.ft.com/third-story",
+          "title": "Third story",
+          "accessed_at": "2026-08-15T09:20:00Z",
+          "excerpt": "…"
+        },
+        "power": "low",
+        "priority": "monitor",
+        "engagement_notes": "Passive."
+      }
+    ],
+    "key_dynamics": ["a", "b", "c"],
+    "blind_spots": [],
+    "coverage_confidence": "medium"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "description": "ResearchResult with all sources dated before any format's freshness window. Used by tests/integration/sourcing-hardened-e2e.test.ts to exercise the freshness rule.",
+  "research": {
+    "findings": [
+      {
+        "claim": "Old regulatory scan.",
+        "supporting_evidence": "Evidence from a 2015 filing that is too old to be actionable in 2026.",
+        "source": {
+          "url": "https://www.reuters.com/legacy/2015-filing",
+          "title": "Historical filing snapshot",
+          "accessed_at": "2015-01-01T00:00:00Z",
+          "excerpt": "Excerpt from a 2015 archived report."
+        }
+      },
+      {
+        "claim": "Ten-year-old market data.",
+        "supporting_evidence": "Older industry benchmark.",
+        "source": {
+          "url": "https://www.ft.com/legacy/2016-benchmark",
+          "title": "2016 industry benchmark",
+          "accessed_at": "2016-06-01T00:00:00Z",
+          "excerpt": "Historical benchmark, no longer representative."
+        }
+      }
+    ],
+    "open_questions": [],
+    "search_queries_used": ["archived filings 2015-2016"]
+  }
+}

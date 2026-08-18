@@ -1,0 +1,29 @@
+{
+  "description": "ResearchResult whose sources sit on untrusted domains (medium.com, blogspot). Used by tests/integration/sourcing-hardened-e2e.test.ts to exercise the domain-trust rule.",
+  "research": {
+    "findings": [
+      {
+        "claim": "Unsourced-quality claim.",
+        "supporting_evidence": "Opinion post rather than a filing or wire.",
+        "source": {
+          "url": "https://medium.com/some-user/entry-strategy-thoughts",
+          "title": "Some blog post",
+          "accessed_at": "2026-08-15T09:00:00Z",
+          "excerpt": "A personal blog post making unverifiable claims about market entry."
+        }
+      },
+      {
+        "claim": "Anonymous industry chatter.",
+        "supporting_evidence": "Blogspot user opinions.",
+        "source": {
+          "url": "https://someone.blogspot.com/2026/07/thoughts",
+          "title": "Blogspot post",
+          "accessed_at": "2026-08-15T09:03:00Z",
+          "excerpt": "Anonymous blog opinion, no editorial oversight."
+        }
+      }
+    ],
+    "open_questions": [],
+    "search_queries_used": ["market entry blog opinions"]
+  }
+}
