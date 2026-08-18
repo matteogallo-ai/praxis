@@ -48,6 +48,8 @@ import {
 import { PraxisError } from "../../registry/errors.ts";
 import {
   c,
+  errorWithContext,
+  progress,
   renderCritiqueInline,
   renderFullBrief,
   renderResearchResult,
@@ -56,6 +58,12 @@ import {
   renderSourcingReport,
   renderStakeholders,
 } from "../output.ts";
+import {
+  AUTO_FORMAT_IDS,
+  detectFormatFromQuestion,
+} from "../format-auto.ts";
+import { FormatNotFoundError } from "../../registry/errors.ts";
+import { UnsupportedRenderTargetError } from "../../renderers/errors.ts";
 import { writeFileSync } from "node:fs";
 import type { LLMProvider } from "../../llm/provider.ts";
 import type {
@@ -385,14 +393,25 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   registry.loadDirectory(opts.formatsDir);
   const orchestrator = new Orchestrator(registry, llm);
 
+  progress("loaded formats", `${AUTO_FORMAT_IDS.length} shipped, provider=${opts.provider}`);
+
   if (opts.full) {
     // Run brief() OR briefWithCritique() OR briefWithCritiqueAndRerun().
     // --with-rerun implies --critique (parser enforces).
+    progress(
+      opts.withRerun
+        ? "running full pipeline with critique + rerun"
+        : opts.critique
+          ? "running full pipeline with critique"
+          : "running full pipeline",
+      `format=${opts.formatId}`
+    );
     const result = opts.withRerun
       ? await orchestrator.briefWithCritiqueAndRerun(opts.question, opts.formatId)
       : opts.critique
         ? await orchestrator.briefWithCritique(opts.question, opts.formatId)
         : await orchestrator.brief(opts.question, opts.formatId);
+    progress("pipeline complete", `${result.synthesis.total_word_count} words`);
 
     // Surface a one-line rerun note to stderr so operators know the
     // editorial re-run loop fired without having to inspect the JSON.
@@ -709,10 +728,49 @@ export async function runBriefCli(
     process.stderr.write(`${c.red("✗")} ${parsed.error}\n`);
     return 1;
   }
+
+  // --format auto: resolve to a concrete format id from question keywords.
+  let effectiveFormatId = parsed.formatId;
+  if (parsed.formatId === "auto") {
+    const detected = detectFormatFromQuestion(parsed.question);
+    if (detected.kind === "matched") {
+      effectiveFormatId = detected.id;
+      progress(
+        `--format auto → ${detected.id}`,
+        `matched: ${detected.matched_keywords.join(", ")}`
+      );
+    } else if (detected.kind === "ambiguous") {
+      const ranked = detected.matches
+        .map((m) => `${m.id} [${m.matched_keywords.join(", ")}]`)
+        .join(", ");
+      process.stderr.write(
+        errorWithContext({
+          what: "--format auto: ambiguous match",
+          cause: `Question matched multiple formats: ${ranked}.`,
+          suggestion:
+            "Re-run with an explicit --format <id>. See `praxis formats list` for the shipped set.",
+          see: "docs/getting-started.md#choosing-a-format",
+        })
+      );
+      return 1;
+    } else {
+      process.stderr.write(
+        errorWithContext({
+          what: "--format auto: no keyword match",
+          cause:
+            "The question did not include any keyword the auto-router recognises.",
+          suggestion: `Pick one of: ${AUTO_FORMAT_IDS.join(", ")}. See \`praxis formats list\`.`,
+          see: "docs/getting-started.md#choosing-a-format",
+        })
+      );
+      return 1;
+    }
+  }
+
   try {
     return await briefCommand({
       question: parsed.question,
-      formatId: parsed.formatId,
+      formatId: effectiveFormatId,
       provider: parsed.provider,
       json: parsed.json,
       withResearch: parsed.withResearch,
@@ -731,8 +789,42 @@ export async function runBriefCli(
       fixturesDir: ctx.fixturesDir,
     });
   } catch (err) {
+    // v0.9: rich context for the most common actionable failures.
     if (err instanceof AnthropicAuthenticationError) {
-      process.stderr.write(`${c.red("✗")} ${err.message}\n`);
+      process.stderr.write(
+        errorWithContext({
+          what: err.message,
+          cause: "The Anthropic provider needs a valid API key.",
+          suggestion:
+            "Export ANTHROPIC_API_KEY in your shell, or switch to --provider mock for offline runs.",
+          see: "docs/troubleshooting.md#anthropic-authentication",
+        })
+      );
+      return 1;
+    }
+    if (err instanceof FormatNotFoundError) {
+      process.stderr.write(
+        errorWithContext({
+          what: err.message,
+          cause: "The requested format id is not registered.",
+          suggestion:
+            "Run `praxis formats list` to see the shipped ids, or add a new YAML file under `formats/`.",
+          see: "docs/cookbook.md#add-a-new-briefing-format",
+        })
+      );
+      return 1;
+    }
+    if (err instanceof UnsupportedRenderTargetError) {
+      process.stderr.write(
+        errorWithContext({
+          what: err.message,
+          cause:
+            "The requested --render target is not one of md-enhanced, docx, pdf, or is not declared in the format's output_targets[].",
+          suggestion:
+            "Pick a supported target, or add it to the format's `output_targets` list.",
+          see: "docs/renderers.md",
+        })
+      );
       return 1;
     }
     if (err instanceof PraxisError) {
