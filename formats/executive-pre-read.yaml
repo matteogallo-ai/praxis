@@ -92,6 +92,72 @@ sections:
 
 sourcing_policy: strict
 
+sourcing_rules:
+  freshness:
+    max_source_age_days: 730
+    warn_after_days: 365
+  domain_trust:
+    mode: reputation-only
+    reputation_tiers:
+      tier_1:
+        - reuters.com
+        - www.reuters.com
+        - bloomberg.com
+        - www.bloomberg.com
+        - ft.com
+        - www.ft.com
+        - wsj.com
+        - www.wsj.com
+        - economist.com
+        - www.economist.com
+        - nytimes.com
+        - www.nytimes.com
+        - "*.gov"
+        - "*.gov.uk"
+        - "*.europa.eu"
+        - "*.bund.de"
+        - "*.gouv.fr"
+        - bundestag.de
+        - www.bundestag.de
+        - bundeskartellamt.de
+        - www.bundeskartellamt.de
+        - arbeitsagentur.de
+        - www.arbeitsagentur.de
+      tier_2:
+        - apnews.com
+        - www.apnews.com
+        - politico.eu
+        - www.politico.eu
+        - lemonde.fr
+        - www.lemonde.fr
+        - handelsblatt.com
+        - www.handelsblatt.com
+        - "*.oecd.org"
+        - "*.imf.org"
+        - "*.worldbank.org"
+        - bitkom.org
+        - www.bitkom.org
+        - eco.de
+        - www.eco.de
+        - verdi.de
+        - www.verdi.de
+        - idc.com
+        - www.idc.com
+        - bcg.com
+        - www.bcg.com
+        - hbr.org
+        - mckinsey.com
+        - www.mckinsey.com
+        - bain.com
+        - www.bain.com
+      tier_3:
+        - wikipedia.org
+        - "*.wikipedia.org"
+      min_tier: 2
+  dedupe:
+    cross_agent: true
+    similarity_threshold: 0.85
+
 style_guide:
   voice: authoritative, third-person, no hedging language
   sentence_structure: short declarative sentences, active voice, max 20 words

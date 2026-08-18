@@ -13,17 +13,24 @@
 import type { YamlValue } from "@promptlang/yaml-parser";
 import {
   AGENT_IDS,
+  DEDUPE_RULE_ALLOWED_KEYS,
+  DOMAIN_TRUST_MODES,
+  DOMAIN_TRUST_RULE_ALLOWED_KEYS,
   FORMAT_ALLOWED_KEYS,
+  FRESHNESS_RULE_ALLOWED_KEYS,
   LANGUAGES,
   METADATA_ALLOWED_KEYS,
   ORGANIZATION_STYLES,
   OUTPUT_TARGETS,
+  REPUTATION_TIERS_ALLOWED_KEYS,
   SECTION_ALLOWED_KEYS,
   SECTION_MAX_LENGTH_ALLOWED_KEYS,
   SOURCING_POLICIES,
+  SOURCING_RULES_ALLOWED_KEYS,
   STYLE_GUIDE_ALLOWED_KEYS,
   TARGET_LENGTH_ALLOWED_KEYS,
   isAgentId,
+  isDomainTrustMode,
   isKebabCase,
   isLanguage,
   isOrganizationStyle,
@@ -34,10 +41,16 @@ import {
 } from "./schema.ts";
 import type {
   AgentId,
+  DedupeRule,
+  DomainTrustMode,
+  DomainTrustRule,
   Format,
   FormatMetadata,
   FormatSection,
+  FreshnessRule,
   OutputTarget,
+  ReputationTiers,
+  SourcingRules,
   StyleGuide,
   TargetLength,
 } from "./schema.ts";
@@ -100,12 +113,19 @@ export function validateFormat(raw: YamlValue, source?: string): Format {
   const styleGuide = validateStyleGuide(raw["style_guide"], issues);
   const outputTargets = validateOutputTargets(raw["output_targets"], issues);
 
+  // v0.5 — optional. Absent → no rules; present → structurally validated.
+  let sourcingRules: SourcingRules | undefined;
+  const rulesRaw = raw["sourcing_rules"];
+  if (rulesRaw !== undefined && rulesRaw !== null) {
+    sourcingRules = validateSourcingRules(rulesRaw, issues) ?? undefined;
+  }
+
   if (issues.length > 0) {
     throw new ValidationError(issues, source);
   }
 
   // At this point every branch above returned non-null OR we would have thrown.
-  return {
+  const format: Format = {
     id: id as string,
     name: raw["name"] as string,
     version: version as string,
@@ -116,6 +136,10 @@ export function validateFormat(raw: YamlValue, source?: string): Format {
     style_guide: styleGuide as StyleGuide,
     output_targets: outputTargets as OutputTarget[],
   };
+  if (sourcingRules !== undefined) {
+    format.sourcing_rules = sourcingRules;
+  }
+  return format;
 }
 
 // ---------------------------------------------------------------------------
@@ -485,6 +509,268 @@ function validateOutputTargets(
     targets.push(v);
   }
   return ok ? targets : null;
+}
+
+// ---------------------------------------------------------------------------
+// v0.5 — sourcing_rules validators
+// ---------------------------------------------------------------------------
+
+function validateSourcingRules(
+  raw: YamlValue,
+  issues: ValidationIssue[]
+): SourcingRules | null {
+  if (!isPlainObject(raw)) {
+    issues.push({ path: "sourcing_rules", message: "must be a mapping" });
+    return null;
+  }
+  checkExtraKeys(raw, SOURCING_RULES_ALLOWED_KEYS, "sourcing_rules", issues);
+
+  const rules: SourcingRules = {};
+
+  const freshnessRaw = raw["freshness"];
+  if (freshnessRaw !== undefined && freshnessRaw !== null) {
+    const parsed = validateFreshnessRule(freshnessRaw, issues);
+    if (parsed !== null) rules.freshness = parsed;
+  }
+
+  const trustRaw = raw["domain_trust"];
+  if (trustRaw !== undefined && trustRaw !== null) {
+    const parsed = validateDomainTrustRule(trustRaw, issues);
+    if (parsed !== null) rules.domain_trust = parsed;
+  }
+
+  const dedupeRaw = raw["dedupe"];
+  if (dedupeRaw !== undefined && dedupeRaw !== null) {
+    const parsed = validateDedupeRule(dedupeRaw, issues);
+    if (parsed !== null) rules.dedupe = parsed;
+  }
+
+  return rules;
+}
+
+function validateFreshnessRule(
+  raw: YamlValue,
+  issues: ValidationIssue[]
+): FreshnessRule | null {
+  const path = "sourcing_rules.freshness";
+  if (!isPlainObject(raw)) {
+    issues.push({ path, message: "must be a mapping" });
+    return null;
+  }
+  checkExtraKeys(raw, FRESHNESS_RULE_ALLOWED_KEYS, path, issues);
+  const max = requirePositiveInt(raw, "max_source_age_days", issues, path);
+  const warn = requirePositiveInt(raw, "warn_after_days", issues, path);
+  if (max === null || warn === null) return null;
+  if (warn > max) {
+    issues.push({
+      path: `${path}.warn_after_days`,
+      message: `must be ≤ max_source_age_days (${max}), got ${warn}`,
+    });
+    return null;
+  }
+  return { max_source_age_days: max, warn_after_days: warn };
+}
+
+function validateDomainTrustRule(
+  raw: YamlValue,
+  issues: ValidationIssue[]
+): DomainTrustRule | null {
+  const path = "sourcing_rules.domain_trust";
+  if (!isPlainObject(raw)) {
+    issues.push({ path, message: "must be a mapping" });
+    return null;
+  }
+  checkExtraKeys(raw, DOMAIN_TRUST_RULE_ALLOWED_KEYS, path, issues);
+
+  const modeRaw = raw["mode"];
+  let mode: DomainTrustMode | null = null;
+  if (modeRaw === undefined) {
+    issues.push({ path: `${path}.mode`, message: "is required" });
+  } else if (!isDomainTrustMode(modeRaw)) {
+    issues.push({
+      path: `${path}.mode`,
+      message: `must be one of [${DOMAIN_TRUST_MODES.join(", ")}], got ${formatValue(modeRaw)}`,
+    });
+  } else {
+    mode = modeRaw;
+  }
+
+  const allowList = optionalStringArray(raw["allow_list"], `${path}.allow_list`, issues);
+  const denyList = optionalStringArray(raw["deny_list"], `${path}.deny_list`, issues);
+
+  let tiers: ReputationTiers | null | undefined = undefined;
+  if (raw["reputation_tiers"] !== undefined && raw["reputation_tiers"] !== null) {
+    tiers = validateReputationTiers(raw["reputation_tiers"], issues);
+  }
+
+  if (mode === null) return null;
+
+  if (mode === "allow-list") {
+    if (allowList === null || allowList.length === 0) {
+      issues.push({
+        path: `${path}.allow_list`,
+        message: "is required (non-empty) when mode is 'allow-list'",
+      });
+      return null;
+    }
+    return { mode, allow_list: allowList };
+  }
+  if (mode === "deny-list") {
+    if (denyList === null || denyList.length === 0) {
+      issues.push({
+        path: `${path}.deny_list`,
+        message: "is required (non-empty) when mode is 'deny-list'",
+      });
+      return null;
+    }
+    return { mode, deny_list: denyList };
+  }
+  // reputation-only
+  if (tiers === undefined) {
+    issues.push({
+      path: `${path}.reputation_tiers`,
+      message: "is required when mode is 'reputation-only'",
+    });
+    return null;
+  }
+  if (tiers === null) return null;
+  return { mode, reputation_tiers: tiers };
+}
+
+function validateReputationTiers(
+  raw: YamlValue,
+  issues: ValidationIssue[]
+): ReputationTiers | null {
+  const path = "sourcing_rules.domain_trust.reputation_tiers";
+  if (!isPlainObject(raw)) {
+    issues.push({ path, message: "must be a mapping" });
+    return null;
+  }
+  checkExtraKeys(raw, REPUTATION_TIERS_ALLOWED_KEYS, path, issues);
+
+  const t1 = requireStringArrayAllowEmpty(raw, "tier_1", `${path}.tier_1`, issues);
+  const t2 = requireStringArrayAllowEmpty(raw, "tier_2", `${path}.tier_2`, issues);
+  const t3 = requireStringArrayAllowEmpty(raw, "tier_3", `${path}.tier_3`, issues);
+
+  const minTierRaw = raw["min_tier"];
+  let minTier: 1 | 2 | 3 | null = null;
+  if (minTierRaw === undefined) {
+    issues.push({ path: `${path}.min_tier`, message: "is required" });
+  } else if (typeof minTierRaw !== "number" || !Number.isInteger(minTierRaw)) {
+    issues.push({
+      path: `${path}.min_tier`,
+      message: `must be an integer 1|2|3, got ${formatValue(minTierRaw)}`,
+    });
+  } else if (minTierRaw !== 1 && minTierRaw !== 2 && minTierRaw !== 3) {
+    issues.push({
+      path: `${path}.min_tier`,
+      message: `must be one of [1, 2, 3], got ${minTierRaw}`,
+    });
+  } else {
+    minTier = minTierRaw;
+  }
+
+  if (t1 === null || t2 === null || t3 === null || minTier === null) return null;
+  return { tier_1: t1, tier_2: t2, tier_3: t3, min_tier: minTier };
+}
+
+function validateDedupeRule(
+  raw: YamlValue,
+  issues: ValidationIssue[]
+): DedupeRule | null {
+  const path = "sourcing_rules.dedupe";
+  if (!isPlainObject(raw)) {
+    issues.push({ path, message: "must be a mapping" });
+    return null;
+  }
+  checkExtraKeys(raw, DEDUPE_RULE_ALLOWED_KEYS, path, issues);
+
+  const crossAgentRaw = raw["cross_agent"];
+  let crossAgent: boolean | null = null;
+  if (crossAgentRaw === undefined) {
+    issues.push({ path: `${path}.cross_agent`, message: "is required" });
+  } else if (typeof crossAgentRaw !== "boolean") {
+    issues.push({
+      path: `${path}.cross_agent`,
+      message: `must be a boolean, got ${formatValue(crossAgentRaw)}`,
+    });
+  } else {
+    crossAgent = crossAgentRaw;
+  }
+
+  const thresholdRaw = raw["similarity_threshold"];
+  let threshold: number | null = null;
+  if (thresholdRaw === undefined) {
+    issues.push({ path: `${path}.similarity_threshold`, message: "is required" });
+  } else if (typeof thresholdRaw !== "number" || Number.isNaN(thresholdRaw)) {
+    issues.push({
+      path: `${path}.similarity_threshold`,
+      message: `must be a number in [0, 1], got ${formatValue(thresholdRaw)}`,
+    });
+  } else if (thresholdRaw < 0 || thresholdRaw > 1) {
+    issues.push({
+      path: `${path}.similarity_threshold`,
+      message: `must be in [0, 1], got ${thresholdRaw}`,
+    });
+  } else {
+    threshold = thresholdRaw;
+  }
+
+  if (crossAgent === null || threshold === null) return null;
+  return { cross_agent: crossAgent, similarity_threshold: threshold };
+}
+
+function optionalStringArray(
+  raw: YamlValue | undefined,
+  path: string,
+  issues: ValidationIssue[]
+): string[] | null {
+  if (raw === undefined || raw === null) return null;
+  if (!Array.isArray(raw)) {
+    issues.push({ path, message: "must be a sequence of strings" });
+    return null;
+  }
+  const out: string[] = [];
+  let ok = true;
+  for (let i = 0; i < raw.length; i++) {
+    const v = raw[i]!;
+    if (typeof v !== "string" || v.trim() === "") {
+      issues.push({ path: `${path}[${i}]`, message: "must be a non-empty string" });
+      ok = false;
+    } else {
+      out.push(v);
+    }
+  }
+  return ok ? out : null;
+}
+
+function requireStringArrayAllowEmpty(
+  obj: { [k: string]: YamlValue },
+  key: string,
+  path: string,
+  issues: ValidationIssue[]
+): string[] | null {
+  const raw = obj[key];
+  if (raw === undefined) {
+    issues.push({ path, message: "is required" });
+    return null;
+  }
+  if (!Array.isArray(raw)) {
+    issues.push({ path, message: "must be a sequence of strings" });
+    return null;
+  }
+  const out: string[] = [];
+  let ok = true;
+  for (let i = 0; i < raw.length; i++) {
+    const v = raw[i]!;
+    if (typeof v !== "string" || v.trim() === "") {
+      issues.push({ path: `${path}[${i}]`, message: "must be a non-empty string" });
+      ok = false;
+    } else {
+      out.push(v);
+    }
+  }
+  return ok ? out : null;
 }
 
 // ---------------------------------------------------------------------------

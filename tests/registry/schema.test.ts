@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import {
   AGENT_IDS,
+  DOMAIN_TRUST_MODES,
+  FORMAT_ALLOWED_KEYS,
   ISO_DATE_RE,
   KEBAB_CASE_RE,
   LANGUAGES,
@@ -10,6 +12,7 @@ import {
   SEMVER_RE,
   SOURCING_POLICIES,
   isAgentId,
+  isDomainTrustMode,
   isKebabCase,
   isLanguage,
   isOrganizationStyle,
@@ -159,5 +162,31 @@ describe("ISO date", () => {
     expect(isValidIsoDate("2026-00-10")).toBe(false);
     expect(isValidIsoDate("2026-04-31")).toBe(false);
     expect(isValidIsoDate("2001-02-29")).toBe(false); // non-leap year
+  });
+});
+
+describe("v0.5 sourcing rules — enums and helpers", () => {
+  test("DOMAIN_TRUST_MODES matches the frozen list", () => {
+    expect([...DOMAIN_TRUST_MODES]).toEqual([
+      "allow-list",
+      "deny-list",
+      "reputation-only",
+    ]);
+  });
+
+  test("isDomainTrustMode accepts every enum member", () => {
+    for (const v of DOMAIN_TRUST_MODES) expect(isDomainTrustMode(v)).toBe(true);
+  });
+
+  test("isDomainTrustMode rejects unknown values", () => {
+    expect(isDomainTrustMode("permit")).toBe(false);
+    expect(isDomainTrustMode("")).toBe(false);
+    expect(isDomainTrustMode(null)).toBe(false);
+    expect(isDomainTrustMode(42)).toBe(false);
+  });
+
+  test("FORMAT_ALLOWED_KEYS includes sourcing_rules alongside sourcing_policy", () => {
+    expect(FORMAT_ALLOWED_KEYS).toContain("sourcing_rules");
+    expect(FORMAT_ALLOWED_KEYS).toContain("sourcing_policy");
   });
 });

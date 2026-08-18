@@ -83,8 +83,76 @@ export interface Format {
   target_length: TargetLength;
   sections: FormatSection[];
   sourcing_policy: SourcingPolicy;
+  /**
+   * v0.5 optional block. When present, the hardened sourcing layer
+   * uses these rules (freshness, domain trust, cross-agent dedupe) and
+   * `sourcing_policy` is used only as the failure mode (`strict` throws
+   * on any error, `permissive` collects). When absent, v0.4 behaviour
+   * is preserved verbatim.
+   */
+  sourcing_rules?: SourcingRules;
   style_guide: StyleGuide;
   output_targets: OutputTarget[];
+}
+
+// ---------------------------------------------------------------------------
+// v0.5 — Sourcing rules (freshness, domain trust, dedupe).
+// ---------------------------------------------------------------------------
+
+/**
+ * Freshness gate. Sources whose `accessed_at` is older than
+ * `max_source_age_days` are rejected (strict) or warned (permissive).
+ * `warn_after_days` is a soft warning threshold; must satisfy
+ * `warn_after_days <= max_source_age_days`.
+ */
+export interface FreshnessRule {
+  max_source_age_days: number;
+  warn_after_days: number;
+}
+
+export const DOMAIN_TRUST_MODES = ["allow-list", "deny-list", "reputation-only"] as const;
+export type DomainTrustMode = (typeof DOMAIN_TRUST_MODES)[number];
+
+/**
+ * Domain trust rule. Wildcards `*.` (subdomain) and `.*` (any TLD) are
+ * supported by the matcher — e.g. `*.gov.uk`, `gov.*`.
+ */
+export interface DomainTrustRule {
+  mode: DomainTrustMode;
+  /** Required iff `mode === "allow-list"`. */
+  allow_list?: string[];
+  /** Required iff `mode === "deny-list"`. */
+  deny_list?: string[];
+  /** Required iff `mode === "reputation-only"`. */
+  reputation_tiers?: ReputationTiers;
+}
+
+/**
+ * Reputation tiers for `reputation-only` mode. Tier 1 is the highest
+ * reputation. `min_tier` names the lowest tier accepted (2 means tiers
+ * 1 and 2 pass; tier 3 fails).
+ */
+export interface ReputationTiers {
+  tier_1: string[];
+  tier_2: string[];
+  tier_3: string[];
+  min_tier: 1 | 2 | 3;
+}
+
+export interface DedupeRule {
+  /** When true, the accumulator tracks URLs across all agents. */
+  cross_agent: boolean;
+  /**
+   * `0` = ignore, `1` = only strictly identical (after normalisation).
+   * Between 0 and 1 defines a Levenshtein-based similarity threshold.
+   */
+  similarity_threshold: number;
+}
+
+export interface SourcingRules {
+  freshness?: FreshnessRule;
+  domain_trust?: DomainTrustRule;
+  dedupe?: DedupeRule;
 }
 
 /**
@@ -100,8 +168,40 @@ export const FORMAT_ALLOWED_KEYS: readonly string[] = [
   "target_length",
   "sections",
   "sourcing_policy",
+  "sourcing_rules",
   "style_guide",
   "output_targets",
+] as const;
+
+// Allowed key lists for the v0.5 sourcing_rules sub-schemas.
+export const SOURCING_RULES_ALLOWED_KEYS: readonly string[] = [
+  "freshness",
+  "domain_trust",
+  "dedupe",
+] as const;
+
+export const FRESHNESS_RULE_ALLOWED_KEYS: readonly string[] = [
+  "max_source_age_days",
+  "warn_after_days",
+] as const;
+
+export const DOMAIN_TRUST_RULE_ALLOWED_KEYS: readonly string[] = [
+  "mode",
+  "allow_list",
+  "deny_list",
+  "reputation_tiers",
+] as const;
+
+export const REPUTATION_TIERS_ALLOWED_KEYS: readonly string[] = [
+  "tier_1",
+  "tier_2",
+  "tier_3",
+  "min_tier",
+] as const;
+
+export const DEDUPE_RULE_ALLOWED_KEYS: readonly string[] = [
+  "cross_agent",
+  "similarity_threshold",
 ] as const;
 
 export const METADATA_ALLOWED_KEYS: readonly string[] = [
@@ -158,6 +258,10 @@ export function isAgentId(v: unknown): v is AgentId {
 
 export function isOutputTarget(v: unknown): v is OutputTarget {
   return typeof v === "string" && (OUTPUT_TARGETS as readonly string[]).includes(v);
+}
+
+export function isDomainTrustMode(v: unknown): v is DomainTrustMode {
+  return typeof v === "string" && (DOMAIN_TRUST_MODES as readonly string[]).includes(v);
 }
 
 // ---------------------------------------------------------------------------

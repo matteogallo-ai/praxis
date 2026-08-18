@@ -95,6 +95,62 @@ sections:
 
 sourcing_policy: strict
 
+sourcing_rules:
+  freshness:
+    max_source_age_days: 545
+    warn_after_days: 270
+  domain_trust:
+    mode: reputation-only
+    reputation_tiers:
+      tier_1:
+        - reuters.com
+        - www.reuters.com
+        - bloomberg.com
+        - www.bloomberg.com
+        - ft.com
+        - www.ft.com
+        - wsj.com
+        - www.wsj.com
+        - economist.com
+        - www.economist.com
+        - "*.gov"
+        - "*.gov.uk"
+        - "*.europa.eu"
+        - "*.bund.de"
+        - bundestag.de
+        - www.bundestag.de
+        - bundeskartellamt.de
+        - www.bundeskartellamt.de
+        - arbeitsagentur.de
+        - www.arbeitsagentur.de
+      tier_2:
+        - hbr.org
+        - www.hbr.org
+        - mckinsey.com
+        - www.mckinsey.com
+        - bcg.com
+        - www.bcg.com
+        - bain.com
+        - www.bain.com
+        - "*.oecd.org"
+        - "*.imf.org"
+        - "*.worldbank.org"
+        - bitkom.org
+        - www.bitkom.org
+        - eco.de
+        - www.eco.de
+        - handelsblatt.com
+        - www.handelsblatt.com
+        - idc.com
+        - www.idc.com
+      tier_3:
+        - wikipedia.org
+        - "*.wikipedia.org"
+      min_tier: 2
+  dedupe:
+    cross_agent: true
+    similarity_threshold: 0.85
+
 style_guide:
   voice: MECE-driven, pyramid principle, action-oriented, third-person
   sentence_structure: short declarative, active voice, max 15 words

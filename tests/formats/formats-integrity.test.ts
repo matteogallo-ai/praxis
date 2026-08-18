@@ -111,4 +111,41 @@ describe("shipped formats — structural invariants", () => {
       expect(f.metadata.last_reviewed <= today).toBe(true);
     }
   });
+
+  // -------------------------------------------------------------------------
+  // v0.5 — every shipped format now declares a sourcing_rules block that
+  // covers freshness, domain trust, and dedupe. This locks the format
+  // authoring convention in place: any new shipped format must repeat it.
+  // -------------------------------------------------------------------------
+
+  test("every shipped format declares a sourcing_rules block (v0.5 baseline)", () => {
+    for (const f of all) {
+      expect(f.sourcing_rules).toBeDefined();
+    }
+  });
+
+  test("every sourcing_rules block covers freshness, domain_trust, and dedupe", () => {
+    for (const f of all) {
+      expect(f.sourcing_rules?.freshness).toBeDefined();
+      expect(f.sourcing_rules?.domain_trust).toBeDefined();
+      expect(f.sourcing_rules?.dedupe).toBeDefined();
+    }
+  });
+
+  test("freshness thresholds satisfy warn_after_days ≤ max_source_age_days", () => {
+    for (const f of all) {
+      const fr = f.sourcing_rules?.freshness;
+      expect(fr).toBeDefined();
+      if (fr) {
+        expect(fr.warn_after_days).toBeLessThanOrEqual(fr.max_source_age_days);
+        expect(fr.max_source_age_days).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test("dedupe.cross_agent is enabled by default in every shipped format", () => {
+    for (const f of all) {
+      expect(f.sourcing_rules?.dedupe?.cross_agent).toBe(true);
+    }
+  });
 });

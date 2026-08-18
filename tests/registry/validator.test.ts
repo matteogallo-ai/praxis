@@ -436,3 +436,226 @@ describe("validateFormat — misc fields", () => {
     expectIssue(raw, "output_targets[1]", "duplicate");
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.5 — sourcing_rules (optional, retro-compatible)
+// ---------------------------------------------------------------------------
+
+describe("validateFormat — v0.5 sourcing_rules retrocompatibility", () => {
+  test("a format without sourcing_rules stays valid (v0.4 baseline)", () => {
+    const raw = clone();
+    delete raw["sourcing_rules"];
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules).toBeUndefined();
+  });
+
+  test("an empty sourcing_rules mapping is accepted", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {};
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules).toEqual({});
+  });
+
+  test("rejects sourcing_rules if not a mapping", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = "nope";
+    expectIssue(raw, "sourcing_rules", "must be a mapping");
+  });
+
+  test("rejects unknown key inside sourcing_rules", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { fresness_typo: {} };
+    expectIssue(raw, "sourcing_rules.fresness_typo", "unknown key");
+  });
+});
+
+describe("validateFormat — sourcing_rules.freshness", () => {
+  test("accepts a valid freshness rule", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      freshness: { max_source_age_days: 730, warn_after_days: 365 },
+    };
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules?.freshness).toEqual({
+      max_source_age_days: 730,
+      warn_after_days: 365,
+    });
+  });
+
+  test("rejects freshness if warn_after_days > max_source_age_days", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      freshness: { max_source_age_days: 100, warn_after_days: 200 },
+    };
+    expectIssue(raw, "sourcing_rules.freshness.warn_after_days", "≤ max_source_age_days");
+  });
+
+  test("rejects freshness if max_source_age_days is missing", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { freshness: { warn_after_days: 100 } };
+    expectIssue(raw, "sourcing_rules.freshness.max_source_age_days", "is required");
+  });
+
+  test("rejects freshness if a field is non-positive", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      freshness: { max_source_age_days: -1, warn_after_days: 10 },
+    };
+    expectIssue(raw, "sourcing_rules.freshness.max_source_age_days", "strictly greater");
+  });
+
+  test("rejects unknown field inside freshness", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      freshness: { max_source_age_days: 100, warn_after_days: 30, xxx: 1 },
+    };
+    expectIssue(raw, "sourcing_rules.freshness.xxx", "unknown key");
+  });
+});
+
+describe("validateFormat — sourcing_rules.domain_trust", () => {
+  test("accepts an allow-list mode with a non-empty list", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      domain_trust: { mode: "allow-list", allow_list: ["reuters.com", "*.gov"] },
+    };
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules?.domain_trust).toEqual({
+      mode: "allow-list",
+      allow_list: ["reuters.com", "*.gov"],
+    });
+  });
+
+  test("rejects allow-list mode without allow_list", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { domain_trust: { mode: "allow-list" } };
+    expectIssue(raw, "sourcing_rules.domain_trust.allow_list", "is required");
+  });
+
+  test("rejects allow-list mode with empty allow_list", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      domain_trust: { mode: "allow-list", allow_list: [] },
+    };
+    expectIssue(raw, "sourcing_rules.domain_trust.allow_list", "is required");
+  });
+
+  test("accepts a deny-list mode with a non-empty list", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      domain_trust: { mode: "deny-list", deny_list: ["medium.com", "*.blogspot.com"] },
+    };
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules?.domain_trust).toEqual({
+      mode: "deny-list",
+      deny_list: ["medium.com", "*.blogspot.com"],
+    });
+  });
+
+  test("rejects deny-list mode without deny_list", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { domain_trust: { mode: "deny-list" } };
+    expectIssue(raw, "sourcing_rules.domain_trust.deny_list", "is required");
+  });
+
+  test("accepts reputation-only mode with tier tables", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      domain_trust: {
+        mode: "reputation-only",
+        reputation_tiers: {
+          tier_1: ["reuters.com"],
+          tier_2: ["hbr.org"],
+          tier_3: ["wikipedia.org"],
+          min_tier: 2,
+        },
+      },
+    };
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules?.domain_trust).toEqual({
+      mode: "reputation-only",
+      reputation_tiers: {
+        tier_1: ["reuters.com"],
+        tier_2: ["hbr.org"],
+        tier_3: ["wikipedia.org"],
+        min_tier: 2,
+      },
+    });
+  });
+
+  test("rejects reputation-only mode without reputation_tiers", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { domain_trust: { mode: "reputation-only" } };
+    expectIssue(raw, "sourcing_rules.domain_trust.reputation_tiers", "is required");
+  });
+
+  test("rejects invalid min_tier value", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      domain_trust: {
+        mode: "reputation-only",
+        reputation_tiers: {
+          tier_1: [],
+          tier_2: [],
+          tier_3: [],
+          min_tier: 7,
+        },
+      },
+    };
+    expectIssue(
+      raw,
+      "sourcing_rules.domain_trust.reputation_tiers.min_tier",
+      "must be one of [1, 2, 3]"
+    );
+  });
+
+  test("rejects invalid mode", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { domain_trust: { mode: "sometimes" } };
+    expectIssue(raw, "sourcing_rules.domain_trust.mode", "must be one of");
+  });
+
+  test("rejects allow_list containing a non-string", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      domain_trust: { mode: "allow-list", allow_list: [""] },
+    };
+    expectIssue(raw, "sourcing_rules.domain_trust.allow_list[0]", "non-empty string");
+  });
+});
+
+describe("validateFormat — sourcing_rules.dedupe", () => {
+  test("accepts a valid dedupe rule", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      dedupe: { cross_agent: true, similarity_threshold: 0.85 },
+    };
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules?.dedupe).toEqual({
+      cross_agent: true,
+      similarity_threshold: 0.85,
+    });
+  });
+
+  test("rejects dedupe with a threshold outside [0, 1]", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      dedupe: { cross_agent: true, similarity_threshold: 1.5 },
+    };
+    expectIssue(raw, "sourcing_rules.dedupe.similarity_threshold", "in [0, 1]");
+  });
+
+  test("rejects dedupe with non-boolean cross_agent", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      dedupe: { cross_agent: "yes", similarity_threshold: 0.85 },
+    };
+    expectIssue(raw, "sourcing_rules.dedupe.cross_agent", "must be a boolean");
+  });
+
+  test("rejects dedupe missing similarity_threshold", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { dedupe: { cross_agent: false } };
+    expectIssue(raw, "sourcing_rules.dedupe.similarity_threshold", "is required");
+  });
+});
