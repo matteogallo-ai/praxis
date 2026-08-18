@@ -16,12 +16,15 @@ import type { FormatRegistry } from "../registry/registry.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
   AdversarialCritiqueResult,
+  Critique,
   OptionsGenerationResult,
   ResearchResult,
+  RevisionContext,
   RiskAnalysisResult,
   ScopingResult,
   StakeholderMapResult,
   SynthesisResult,
+  SynthesizedSection,
 } from "../agents/types.ts";
 import type { Format } from "../registry/schema.ts";
 import type {
@@ -160,6 +163,44 @@ export interface BriefResult {
  */
 export interface BriefWithCritiqueResult extends BriefResult {
   adversarial: AdversarialCritiqueResult;
+}
+
+/**
+ * v0.8 payload returned by `Orchestrator.briefWithCritiqueAndRerun()`.
+ * Superset of `BriefWithCritiqueResult` that records whether the
+ * editorial re-run loop fired, which critiques triggered it, the
+ * pre-rerun synthesis (audit trail), and which sections changed
+ * substantially.
+ *
+ * When `rerun_performed === false`, `original_synthesis` is `null`,
+ * `rerun_reason` is `null`, and `rerun_metadata` is `null`. When
+ * `rerun_performed === true`, the current `synthesis` is the
+ * post-rerun one and the `original_synthesis` is preserved.
+ *
+ * Hard cap: exactly ONE rerun. The method never re-iterates even
+ * if the post-rerun brief would (hypothetically) trigger another.
+ * See `docs/editorial-loop.md` for the safeguard rationale.
+ */
+export interface BriefWithCritiqueAndRerunResult extends BriefWithCritiqueResult {
+  rerun_performed: boolean;
+  /** Human-readable summary when `rerun_performed === true`; else null. */
+  rerun_reason: string | null;
+  /** Pre-rerun synthesis when the rerun fired; else null. */
+  original_synthesis: SynthesisResult | null;
+  rerun_metadata: RerunMetadata | null;
+}
+
+export interface RerunMetadata {
+  /** critique.id values that triggered the rerun (critical + material). */
+  critiques_addressed: string[];
+  steelmanned_alternative_used: string | null;
+  /**
+   * section_id values whose content_markdown changed substantially
+   * between the original and the post-rerun synthesis. "Substantial"
+   * = word-count delta > 20% OR normalised Levenshtein distance
+   * > 0.30.
+   */
+  re_synthesis_deviations: string[];
 }
 
 export class Orchestrator {
@@ -519,6 +560,112 @@ export class Orchestrator {
     return { ...brief, adversarial, sourcing_report };
   }
 
+  /**
+   * v0.8 — Runs `briefWithCritique()`. If the critique output signals
+   * `revised_recommendation_needed: true`, runs the Synthesis agent
+   * ONE MORE TIME in REVISION MODE and returns the post-rerun brief;
+   * otherwise returns the initial brief unchanged. Hard cap: exactly
+   * one rerun per call, ever. There is no recursion — a critique that
+   * would (hypothetically) fire on the post-rerun output is ignored;
+   * downstream consumers can call this method again with the new
+   * output if they want another pass, but the library never loops on
+   * its own.
+   *
+   * When the rerun fires, the returned payload carries:
+   *   - `rerun_performed: true`
+   *   - `synthesis`             — the POST-rerun synthesis
+   *   - `original_synthesis`    — the PRE-rerun synthesis (audit trail)
+   *   - `rerun_metadata`        — critique IDs addressed, the
+   *                               steelmanned alternative used, and
+   *                               the list of sections whose text
+   *                               changed substantially
+   *   - `sourcing_report.edited_after_critique: true`
+   *
+   * When the rerun does NOT fire (no critique signal, or the signal
+   * is present but no steelmanned alternative), the payload carries
+   * `rerun_performed: false` with `original_synthesis` and
+   * `rerun_metadata` set to `null`.
+   *
+   * Throws:
+   *   - Everything `briefWithCritique()` throws.
+   *   - Any typed synthesis error (`EditorialFailureError`, etc.)
+   *     from the rerun step.
+   */
+  async briefWithCritiqueAndRerun(
+    question: string,
+    formatId: string,
+    options: BriefWithCritiqueOptions = {}
+  ): Promise<BriefWithCritiqueAndRerunResult> {
+    const initial = await this.briefWithCritique(question, formatId, options);
+
+    // No rerun needed — either no derived signal OR no landing pad
+    // (steelmanned_alternative). The parser guarantees "signal true
+    // → alternative non-null", but we defend against future drift.
+    const needed = initial.adversarial.revised_recommendation_needed;
+    const alt = initial.adversarial.steelmanned_alternative;
+    if (!needed || alt === null) {
+      return {
+        ...initial,
+        rerun_performed: false,
+        rerun_reason: null,
+        original_synthesis: null,
+        rerun_metadata: null,
+      };
+    }
+
+    const critiquesToAddress = initial.adversarial.critiques.filter(
+      (c) => c.severity === "critical" || c.severity === "material"
+    );
+
+    const format = this.registry.get(formatId);
+    const revisionContext: RevisionContext = {
+      original_synthesis: initial.synthesis,
+      adversarial: initial.adversarial,
+      critiques_to_address: critiquesToAddress,
+      steelmanned_alternative: alt,
+      instruction:
+        "revise sections and align recommendation with the steelmanned alternative",
+    };
+
+    const rerunSynthesis = await this.doSynthesize(
+      initial.scoping,
+      initial.research,
+      initial.stakeholders,
+      initial.risks,
+      initial.options,
+      format,
+      options,
+      revisionContext
+    );
+
+    const deviations = computeReSynthesisDeviations(
+      initial.synthesis,
+      rerunSynthesis
+    );
+
+    const rerunReason = buildRerunReason(
+      initial.adversarial,
+      critiquesToAddress
+    );
+
+    return {
+      ...initial,
+      synthesis: rerunSynthesis,
+      sourcing_report: {
+        ...initial.sourcing_report,
+        edited_after_critique: true,
+      },
+      rerun_performed: true,
+      rerun_reason: rerunReason,
+      original_synthesis: initial.synthesis,
+      rerun_metadata: {
+        critiques_addressed: critiquesToAddress.map((c) => c.id),
+        steelmanned_alternative_used: alt,
+        re_synthesis_deviations: deviations,
+      },
+    };
+  }
+
   private prepareForScoping(question: string, formatId: string): Format {
     if (question.trim().length === 0) {
       throw new OrchestrationError("Question is empty. Provide a non-blank briefing question.");
@@ -629,9 +776,10 @@ export class Orchestrator {
     risks: RiskAnalysisResult,
     optionsResult: OptionsGenerationResult,
     format: Format,
-    options: BriefOptions
+    options: BriefOptions,
+    revisionContext?: RevisionContext
   ): Promise<SynthesisResult> {
-    const ctx = {
+    const ctx: Parameters<typeof executeSynthesis>[0] = {
       scoping,
       research,
       stakeholders,
@@ -639,6 +787,9 @@ export class Orchestrator {
       options: optionsResult,
       format,
     };
+    if (revisionContext !== undefined) {
+      ctx.revision_context = revisionContext;
+    }
     const execOpts: Parameters<typeof executeSynthesis>[2] = {};
     if (options.synthesisPromptPath !== undefined) {
       execOpts.promptPath = options.synthesisPromptPath;
@@ -715,4 +866,103 @@ function formatRequiresAgent(format: Format, agentId: string): boolean {
   return format.sections.some((s) =>
     (s.required_agents as readonly string[]).includes(agentId)
   );
+}
+
+// ---------------------------------------------------------------------------
+// v0.8 — rerun deviation heuristic + reason builder
+// ---------------------------------------------------------------------------
+
+/**
+ * "Substantial change" between two versions of a section:
+ *   - absolute word-count delta > 20% of the OLD count, OR
+ *   - normalised Levenshtein distance > 0.30 on the content_markdown.
+ *
+ * Both signals capture ways the LLM might have re-written the section
+ * — a paraphrase without changing word count still trips (2), while
+ * a shortening without changing meaning trips (1). Sections missing
+ * from either side are surfaced explicitly (new / removed IDs).
+ */
+export function computeReSynthesisDeviations(
+  original: SynthesisResult,
+  rerun: SynthesisResult
+): string[] {
+  const deviations: string[] = [];
+  const origBySection = new Map<string, SynthesizedSection>(
+    original.sections.map((s) => [s.section_id, s])
+  );
+  const rerunBySection = new Map<string, SynthesizedSection>(
+    rerun.sections.map((s) => [s.section_id, s])
+  );
+
+  for (const [sid, rerunSec] of rerunBySection) {
+    const origSec = origBySection.get(sid);
+    if (origSec === undefined) {
+      deviations.push(sid);
+      continue;
+    }
+    if (isSubstantiallyChanged(origSec, rerunSec)) {
+      deviations.push(sid);
+    }
+  }
+  // Sections present in the original but removed on rerun — surface them too.
+  for (const sid of origBySection.keys()) {
+    if (!rerunBySection.has(sid)) deviations.push(sid);
+  }
+  return deviations;
+}
+
+function isSubstantiallyChanged(
+  a: SynthesizedSection,
+  b: SynthesizedSection
+): boolean {
+  const wordDelta =
+    a.word_count === 0
+      ? b.word_count > 0
+        ? 1
+      : 0
+      : Math.abs(b.word_count - a.word_count) / a.word_count;
+  if (wordDelta > 0.2) return true;
+  const nlev = normalisedLevenshtein(a.content_markdown, b.content_markdown);
+  return nlev > 0.3;
+}
+
+/** Iterative-DP Levenshtein, memory-bounded to O(min(m,n)). */
+function normalisedLevenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return 1;
+  if (b.length === 0) return 1;
+  const [s, t] = a.length <= b.length ? [a, b] : [b, a];
+  const m = s.length;
+  const n = t.length;
+  let prev = new Array<number>(m + 1);
+  let curr = new Array<number>(m + 1);
+  for (let i = 0; i <= m; i++) prev[i] = i;
+  for (let j = 1; j <= n; j++) {
+    curr[0] = j;
+    for (let i = 1; i <= m; i++) {
+      const cost = s.charCodeAt(i - 1) === t.charCodeAt(j - 1) ? 0 : 1;
+      curr[i] = Math.min(
+        curr[i - 1]! + 1,
+        prev[i]! + 1,
+        prev[i - 1]! + cost
+      );
+    }
+    [prev, curr] = [curr, prev];
+  }
+  return prev[m]! / Math.max(m, n);
+}
+
+function buildRerunReason(
+  adv: AdversarialCritiqueResult,
+  toAddress: readonly Critique[]
+): string {
+  const critical = adv.critical_count;
+  const material = adv.material_count;
+  const trigger =
+    critical >= 1
+      ? `${critical} critical critique(s)`
+      : `${material} material critique(s)`;
+  return `${trigger} triggered a Synthesis rerun in REVISION MODE addressing critique IDs: ${toAddress
+    .map((c) => c.id)
+    .join(", ")}.`;
 }
