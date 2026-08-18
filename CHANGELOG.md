@@ -5,6 +5,204 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] — 2026-08-18
+
+**Options Generation agent + Synthesis agent + `brief()` finally
+implemented.** This is the release where Praxis crosses from
+"pipeline components" to "pipeline output". Three tightly coupled
+bricks land together because they validate each other: Options
+without Synthesis has no rendered form; Synthesis without Options
+has nothing specific to assemble in the recommendation section; and
+`brief()` without both is still the `NotImplementedError` stub that
+has been in the code since v0.2. The first complete, sourced,
+format-conformant briefing rolls off the pipeline in this release.
+
+### Added
+
+- **Options Generation agent** (`src/agents/options.ts`) — fifth
+  Praxis agent, first to consume ALL FOUR prior artefacts (Scoping +
+  Research + Stakeholders + Risks):
+  - `executeOptionsGeneration(ctx, llm)` loads
+    `prompts/options.prompt`, dispatches to `llm.completeWithTools`
+    with the `web_search` tool, and validates the returned JSON
+    against `OptionsGenerationResult`.
+  - Hard caps: `MIN_OPTIONS = 2`, `MAX_OPTIONS = 4`, 3-6 tradeoff
+    dimensions per option, exactly one option carries
+    `recommendation_level === "recommended"`.
+  - Cross-artefact validation: every
+    `stakeholder_impact.stakeholder_name` must exist in the
+    supplied `StakeholderMapResult`; every `risks_mitigated[]` and
+    `risks_introduced[]` id must exist in the supplied
+    `RiskAnalysisResult`; a risk cannot appear in both lists for
+    the same option. Fabricated cross-references are structurally
+    forbidden.
+  - Anti-vague tradeoff heuristic: `pros`, `cons`, `advantages`,
+    `disadvantages`, `strengths`, `weaknesses`, `general`,
+    `positives`, `negatives`, `benefits`, `drawbacks` are rejected
+    at parse time (case-insensitive). The model must pick a
+    concrete label (`cost`, `time-to-market`,
+    `regulatory-exposure`, …).
+  - Sequential IDs (`OPT-A`, `OPT-B`, `OPT-C`, `OPT-D`); duplicates
+    and non-sequential IDs rejected.
+  - Errors: `OptionsGenerationError`,
+    `InvalidOptionStakeholderReference`,
+    `InvalidOptionRiskReference`.
+- **Synthesis agent** (`src/agents/synthesis.ts`) — sixth Praxis
+  agent, consumes ALL FIVE prior artefacts:
+  - `executeSynthesis(ctx, llm)` loads
+    `prompts/synthesis.prompt`, iterates over
+    `ctx.format.sections[]` in declared order, and issues ONE
+    LLM call per section (no tool use — synthesis does not add
+    facts).
+  - Per-section post-validation: word count vs `max_length` with
+    10% tolerance; forbidden_terms hit-count; validation_rules
+    acknowledgement tracking; sources_cited existence check
+    (every cited URL must appear in one of the upstream artefacts).
+  - Aggregated `format_conformance` report with per-section
+    over-length, per-section forbidden-term hits, and failed
+    validation rules.
+  - Fabricated sources are structurally forbidden — a cited URL
+    absent from every upstream artefact raises `SynthesisError`.
+  - Errors: `SynthesisError`, `SynthesisValidationError`.
+- **`Orchestrator.brief()` implemented** — the six-agent pipeline
+  chains Scoping → Research → Stakeholders → Risks → Options →
+  Synthesis, threads a single `SourcingAccumulator` through every
+  sourcing validation, and returns a `BriefResult`:
+
+  ```ts
+  interface BriefResult {
+    scoping: ScopingResult;
+    research: ResearchResult;
+    stakeholders: StakeholderMapResult;
+    risks: RiskAnalysisResult;
+    options: OptionsGenerationResult;
+    synthesis: SynthesisResult;
+    sourcing_report: SourcingReport;
+    generated_at: string;      // ISO 8601 UTC
+    format_id: string;
+    question: string;
+    provider_name: string;
+  }
+  ```
+
+  Refuses to run when the format's sections do not list every agent
+  from `scoping` through `synthesis` in their `required_agents`.
+- **CLI `brief` command** (`src/cli/commands/brief.ts`):
+  - New flag `--full` — runs the full six-agent pipeline via
+    `Orchestrator.brief()` and prints the assembled Markdown
+    briefing (YAML front-matter + section headings + sources +
+    validation notes) to stdout.
+  - New flag `--output <path>` — writes the Markdown to a file
+    instead of stdout. Requires `--full`. A one-line confirmation
+    lands on stderr so pipelines don't silently swallow the output
+    location.
+  - `--full --json` — emits the complete `BriefResult` as JSON for
+    audit / downstream tooling.
+  - New flag `--with-sourcing-report` — appends the aggregated
+    cross-agent sourcing report (as Markdown) beneath the briefing
+    when used with `--full`. Also usable stand-alone (aliases the
+    v0.5 `--sourcing-report` behaviour outside `--full`).
+- **CLI output** (`src/cli/output.ts`):
+  - `renderFullBrief(result)` — self-contained ANSI-free Markdown
+    document with a YAML front-matter header (question, format,
+    provider, generated_at, recommended option, aggregated risk,
+    sourcing summary, word-count deviation).
+- **New prompts** (`prompts/`):
+  - `options.prompt` — MECE-tradeoffs, cross-artefact
+    reference discipline, exactly-one-recommended.
+  - `synthesis.prompt` — no-invention rule, per-section context
+    (tone directives, max words, validation rules, forbidden
+    terms), sources_cited discipline.
+- **New fixtures** (`tests/fixtures/mock-llm/`):
+  - `options-{executive-pre-read,mckinsey-style-note,position-paper-corporate}.json`
+    — three-option analyses per shipped format, with valid
+    stakeholder / risk cross-references.
+  - `synthesis-{format}-{section}.json` × 18 — one fixture per
+    (format, section) pair, calibrated on the German-market-entry
+    test question, all cited URLs sourced from the upstream mock
+    fixtures.
+  - `synthesis-forbidden-terms.json`, `synthesis-over-length.json`
+    — failure-mode fixtures exercising the per-section validation
+    code paths.
+- **Optional live integration tests** (`tests/live/`):
+  - `options-agent.live.test.ts`,
+    `synthesis-agent.live.test.ts`,
+    `full-brief.live.test.ts` — the last writes a Markdown
+    briefing to `/tmp/praxis-live-brief-<ts>.md` for post-hoc
+    human review.
+- **~150 new tests** across options-agent unit tests, synthesis-agent
+  unit tests, orchestrator brief() end-to-end, CLI `--full`,
+  options-e2e, synthesis-e2e, and full-brief-e2e. **Total: 651
+  tests + 9 optional live tests** (all live tests skip without
+  `ANTHROPIC_API_KEY`).
+
+### Changed
+
+- **`NotImplementedError` no longer thrown by `brief()`.** The class
+  is kept in `src/orchestrator/errors.ts` (still re-exported from
+  `src/index.ts`) because it is part of the public API surface and
+  useful for future stubs. Its constructor message is
+  generalised — the previous "Not implemented in v0.2" hardcode is
+  removed.
+- **`executive-pre-read` format** now lists `options` alongside
+  `synthesis` in the `recommendation` section's `required_agents`.
+  The recommendation section receives the recommended option from
+  the Options agent; this makes the format honest about its
+  agent-graph. The other two shipped formats already declared
+  `options` in a section.
+- **CLI help** now advertises `--full`, `--output`,
+  `--with-sourcing-report` and drops the "coming in v0.6+" line.
+- **Praxis version bumped** to `0.6.0` in `package.json` and
+  `src/cli/version-constant.ts`.
+
+### Notes on the design
+
+- **Three bricks in one release, on purpose.** Options and Synthesis
+  validate each other: without Synthesis, Options is a JSON payload
+  the reader never sees rendered; without Options, Synthesis has
+  nothing specific to assemble under `recommendation`. And without
+  `brief()` implemented, the pipeline has no user-facing shape. All
+  three land together because splitting them across three releases
+  would ship two non-testable half-features.
+- **Synthesis makes ONE LLM call per section**, not one call for the
+  whole briefing. This keeps each call focused on one section's
+  tone directives / max_length / validation_rules and lets the mock
+  fixture set stay decomposable. It costs more LLM round-trips
+  per brief (6 for the shipped formats vs 1 for a monolithic
+  approach) but produces much better format conformance in
+  practice — the tradeoff is worth it.
+- **No-invention is enforced structurally, not stylistically.** A
+  cited URL in a synthesized section that does not appear in an
+  upstream artefact raises `SynthesisError` — the same discipline
+  the sourcing layer applies to Research, Stakeholder, and Risk
+  evidence.
+- **The Markdown briefing is ANSI-free by design.** `--full` output
+  is meant to be piped to a file, opened in an editor, or fed to a
+  Markdown-to-PDF pipeline. ANSI codes would corrupt every
+  downstream consumer.
+
+### Security notes
+
+- No new environment variables. `ANTHROPIC_API_KEY` still guards
+  the live provider; Options and Synthesis reuse the same auth
+  path.
+- `--output` writes to any path the process can — no sandboxing.
+  In a shell context this is desirable (users control where the
+  file lands). Automation callers should validate the path
+  themselves.
+- The no-invention rule for Synthesis is a hard structural guard,
+  not a soft prompt request — the parser rejects fabricated URLs
+  regardless of what the LLM tries to emit.
+
+### Next
+
+- **v0.7 — Adversarial Critique agent.** Seventh Praxis agent —
+  reads the completed brief and stress-tests the recommendation
+  against its strongest counter-arguments. Output layer (PDF,
+  DOCX, MD renderers) begins landing in the same release cycle.
+
+[0.6.0]: https://github.com/matteogallo-ai/praxis/releases/tag/v0.6.0
+
 ## [0.5.0] — 2026-08-18
 
 **Risk Analysis agent + hardened Sourcing & Verification Layer.**

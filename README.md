@@ -8,19 +8,93 @@ discipline enforced upstream**: the briefing arrives already shaped like
 the organization's own analysts wrote it, with rigorous sourcing and a
 consistent voice. That is 80% of what a senior reader values.
 
-The current release, **v0.5 — Risk Analysis agent + hardened
-Sourcing Layer**, ships two coupled bricks: the fourth Praxis agent
-(Risk — the first to consume three prior outputs) and the
-production-grade version of the sourcing layer that Risk exercises
-first (freshness gates, domain trust bands, cross-agent citation
-dedupe).
+The current release, **v0.6 — Options Generation agent + Synthesis
+agent + `brief()` implemented**, is the release where Praxis
+crosses from "pipeline components" to "pipeline output". Three
+tightly coupled bricks land together: the fifth agent (Options,
+first to consume all four prior artefacts), the sixth agent
+(Synthesis, which assembles the final briefing text respecting the
+format's tone directives / max_length / forbidden_terms /
+validation_rules), and `Orchestrator.brief()` — the
+`NotImplementedError` stub that has been in the code since v0.2 is
+finally replaced by the real six-agent pipeline that rolls the
+first complete, sourced, format-conformant briefing off the
+assembly line.
+
+New CLI:
+
+```
+praxis brief "<question>" --format executive-pre-read --full
+praxis brief "<question>" --format executive-pre-read --full --output brief.md
+praxis brief "<question>" --format executive-pre-read --full --with-sourcing-report
+praxis brief "<question>" --format executive-pre-read --full --json
+```
+
+Sample output (truncated, mock provider):
+
+```
+---
+question: "Should we enter the German market?"
+format: "executive-pre-read"
+provider: "mock"
+generated_at: "2026-08-18T..."
+recommended_option: "OPT-A"
+aggregated_risk: "high"
+sourcing_summary: "total=29 ok=28 stale=0 untrusted=0 duplicated=1 missing=0"
+total_word_count: 338
+target_word_count: 800
+word_deviation_pct: -57.8
+---
+
+# Should we enter the German market?
+
+## Context
+
+German mid-market SaaS grew 12% CAGR between 2022 and 2025 …
+
+## Recommendation
+
+Enter Germany in Q1 2027 via a bounded greenfield office capped at
+15 staff for year one, owned by the Head of EMEA Sales with a
+first-referenceable-customer milestone at month nine …
+
+## Risks and Mitigations
+
+SAP's likely bundled counter-offer is the largest strategic risk …
+```
 
 Highlights:
 
 - Everything from v0.1 (Format Registry), v0.2 (Scoping agent,
   Orchestrator), v0.3 (Research agent, AnthropicLLMProvider,
-  embryonic sourcing), and v0.4 (Stakeholder Mapping agent).
-- **Risk Analysis agent** — reads Scoping + Research + Stakeholders,
+  embryonic sourcing), v0.4 (Stakeholder Mapping agent), and v0.5
+  (Risk Analysis agent + hardened sourcing).
+- **Options Generation agent** — reads Scoping + Research +
+  Stakeholders + Risks, calls `web_search` for precedent, produces
+  2-4 mutually-exclusive options with concrete tradeoff dimensions
+  (vague labels like `pros`/`cons` are structurally rejected),
+  cross-referenced stakeholder impact and risk implications, and
+  exactly one `recommended` option. Prompt:
+  [`prompts/options.prompt`](prompts/options.prompt). Design guide:
+  [`docs/options.md`](docs/options.md).
+- **Synthesis agent** — one LLM call per format section (no tool
+  use — synthesis does not add facts). Per-section validation
+  against `tone_directives`, `max_length`, `validation_rules`, and
+  format-level `forbidden_terms`. Fabricated URLs are structurally
+  forbidden (any cited URL absent from the upstream artefacts
+  raises `SynthesisError`). Prompt:
+  [`prompts/synthesis.prompt`](prompts/synthesis.prompt). Design
+  guide: [`docs/synthesis.md`](docs/synthesis.md).
+- **`Orchestrator.brief()` implemented** — six-agent pipeline
+  end-to-end with a single `SourcingAccumulator` threaded through
+  every sourcing validation. Returns a `BriefResult` (all six
+  artefacts + aggregated `sourcing_report` + audit metadata).
+- **CLI `--full` + `--output` + `--with-sourcing-report`** —
+  produces a self-contained Markdown briefing with YAML
+  front-matter (question, format, provider, generated_at,
+  recommended option, aggregated risk, sourcing summary,
+  word-count deviation).
+- **Risk Analysis agent (v0.5)** — reads Scoping + Research + Stakeholders,
   calls the Anthropic `web_search` tool for precedent and
   benchmarks, produces a `RiskAnalysisResult` with 5-15 risks (hard
   cap 25). Each risk carries category / likelihood / impact /
@@ -105,7 +179,7 @@ npm — Praxis will switch to `"promptlang": "^1.x"` in `dependencies`.
 
 ```
 $ bun run cli version
-praxis v0.5.0
+praxis v0.6.0
 ```
 
 ### `praxis formats list`
@@ -160,6 +234,22 @@ $ bun run cli brief "Should we enter the German market?" \
 # audit view: aggregated cross-agent sourcing report only (v0.5)
 $ bun run cli brief "Should we enter the German market?" \
     --format executive-pre-read --sourcing-report
+
+# full brief — six-agent pipeline, Markdown output (v0.6)
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --full
+
+# full brief, written to a file (v0.6)
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --full --output /tmp/brief.md
+
+# full brief with the aggregated sourcing report appended (v0.6)
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --full --with-sourcing-report
+
+# full brief as JSON for audit / downstream tooling (v0.6)
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --full --json
 ```
 
 Flags:
@@ -170,13 +260,23 @@ Flags:
 - `--with-stakeholders` — optional. Runs the three-agent pipeline.
   Implies `--with-research`. Prints a compact ANSI stakeholder table
   plus per-stakeholder details.
-- `--with-risks` — optional. Runs the full four-agent pipeline
+- `--with-risks` — optional. Runs the four-agent pipeline
   (Scoping + Research + Stakeholders + Risks). Implies
   `--with-stakeholders`. Prints a compact ANSI risk table, aggregated
   score, top-3 priorities, per-risk details, and the aggregated
   cross-agent sourcing report at the end.
 - `--sourcing-report` — optional. Prints ONLY the aggregated
   cross-agent sourcing report (implies `--with-risks`).
+- `--full` — optional. Runs the full six-agent pipeline (Scoping +
+  Research + Stakeholders + Risks + Options + Synthesis) and prints
+  the assembled Markdown briefing. See `docs/options.md` and
+  `docs/synthesis.md`.
+- `--output <path>` — optional, requires `--full`. Writes the
+  Markdown to a file instead of stdout; a one-line confirmation
+  lands on stderr.
+- `--with-sourcing-report` — optional. Appends the aggregated
+  sourcing report (as Markdown) beneath the briefing when used with
+  `--full`.
 - `--provider <name>` — optional. Values: `mock` (default, fixture-driven)
   and `anthropic` (live API; requires `ANTHROPIC_API_KEY`).
 - `--json` — optional. Prints raw JSON only, for piping. Under
@@ -233,10 +333,12 @@ Live tests self-skip when `ANTHROPIC_API_KEY` is unset. See
 
 ## Architecture
 
-v0.5 adds the Risk Analysis agent (first Praxis agent to consume
-three prior outputs) and promotes the sourcing layer from embryonic
-validator to production-grade transverse layer with freshness,
-domain trust, and cross-agent dedupe:
+v0.6 completes the six-agent pipeline. `Orchestrator.brief()` runs
+Scoping → Research → Stakeholders → Risks → Options → Synthesis with
+a single `SourcingAccumulator` threaded through every sourcing
+validation, and returns a `BriefResult` that carries all six
+artefacts, the aggregated cross-agent sourcing report, and audit
+metadata:
 
 ```
                       ┌─────────────────────────┐
@@ -248,22 +350,24 @@ domain trust, and cross-agent dedupe:
                       │  scope() /                           │
                       │  researchAfterScoping() /            │
                       │  mapStakeholdersAfterResearch() /    │
-                      │  assessRisksAfterStakeholders()      │
+                      │  assessRisksAfterStakeholders() /    │
+                      │  brief()  ← v0.6, six-agent pipeline │
                       └───────────┬──────────────────────────┘
                                   │
               ┌───────────────────┴──────────────────────────────┐
               │                                                  │
-   ┌──────────▼─────────────────────────┐         ┌──────────────▼───────────────┐
-   │  Scoping → Research → Stakeholder  │◀────────│  Sourcing & Verification     │
-   │     → Risk (fourth agent, v0.5)    │         │  Layer (v0.5 hardened)       │
-   └──────────┬─────────────────────────┘         │  • freshness / trust / dedupe│
-              │                                   │  • SourcingAccumulator       │
-              ▼                                   │  • aggregated SourcingReport │
-   ┌────────────────────────────────────────┐    └──────────────────────────────┘
+   ┌──────────▼──────────────────────────────┐    ┌──────────────▼───────────────┐
+   │  Scoping → Research → Stakeholder →     │◀───│  Sourcing & Verification     │
+   │  Risk → Options → Synthesis             │    │  Layer (v0.5 hardened)       │
+   │  (six-agent pipeline, v0.6)             │    │  • freshness / trust / dedupe│
+   └──────────┬──────────────────────────────┘    │  • SourcingAccumulator       │
+              │                                   │  • aggregated SourcingReport │
+              ▼                                   └──────────────────────────────┘
+   ┌────────────────────────────────────────┐
    │              LLMProvider               │
    │      MockLLMProvider (offline)         │
    │      AnthropicLLMProvider (live)       │
-   │      .completeWithTools()              │
+   │      .complete() / .completeWithTools()│
    └────────────────────────────────────────┘
 ```
 
@@ -271,6 +375,8 @@ Full detail and design rationale: [`docs/architecture.md`](docs/architecture.md)
 For authoring a new agent prompt: [`docs/writing-a-prompt.md`](docs/writing-a-prompt.md).
 For the stakeholder mapping philosophy: [`docs/stakeholders.md`](docs/stakeholders.md).
 For the risk analysis philosophy: [`docs/risks.md`](docs/risks.md).
+For the options generation philosophy: [`docs/options.md`](docs/options.md).
+For the synthesis philosophy: [`docs/synthesis.md`](docs/synthesis.md).
 For the hardened sourcing layer: [`docs/sourcing.md`](docs/sourcing.md).
 
 ---
@@ -331,9 +437,9 @@ Praxis targets a v1.0 release in ten steps.
 | v0.2 | Agent scoping — first PromptLang-authored agent + orchestrator scaffold |
 | v0.3 | Research agent + real Anthropic provider + embryonic sourcing layer |
 | v0.4 | Stakeholder Mapping agent + sourcing extension |
-| **v0.5** | Risk Analysis agent + hardened sourcing (freshness, domain trust, dedupe) (this release) |
-| v0.6 | Options Generation agent + Synthesis agent + full 7-agent pipeline |
-| v0.7 | Output targets — PDF/DOCX/MD renderers |
+| v0.5 | Risk Analysis agent + hardened sourcing (freshness, domain trust, dedupe) |
+| **v0.6** | Options + Synthesis agents; `brief()` implemented; first end-to-end briefing (this release) |
+| v0.7 | Adversarial Critique agent + output renderers (PDF/DOCX/MD) |
 | v0.8 | Style guide enforcement (forbidden terms, sentence caps, MECE checks) |
 | v0.9 | End-to-end demos on the three shipped formats |
 | v1.0 | Documentation, CI matrix, external contributor onboarding |

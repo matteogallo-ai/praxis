@@ -135,21 +135,41 @@ under the strict-policy shipped formats.
 
 ---
 
-## v0.6 — Options Generation Agent + Full Pipeline
+## v0.6 — Options Generation Agent + Synthesis Agent + Full Brief ✅ (shipped 2026-08-18)
 
-- `options` agent — fifth Praxis agent. Reads Scoping + Research +
-  Stakeholders + Risks and enumerates the two-to-four courses of
-  action worth putting in front of the reader, each with a defensible
-  pro/con and a bounded resource envelope.
-- `synthesis` agent — writes the final section text respecting the
-  format's tone directives.
-- All seven agents wired together. First fully generated briefing on the
-  executive pre-read format.
+- `options` agent — fifth Praxis agent, first to consume all four
+  prior artefacts. Enumerates 2-4 mutually-exclusive courses of
+  action with concrete tradeoff dimensions (vague labels like
+  `pros`/`cons` are structurally rejected), cross-referenced
+  stakeholder impact predictions and risk implications, and exactly
+  one `recommended` option. Errors: `OptionsGenerationError`,
+  `InvalidOptionStakeholderReference`, `InvalidOptionRiskReference`.
+- `synthesis` agent — sixth Praxis agent. One LLM call per format
+  section, respecting per-section `tone_directives`, `max_length`,
+  and `validation_rules`, plus format-level `forbidden_terms`.
+  Non-invention is structural: any cited URL absent from the
+  upstream artefacts raises `SynthesisError`. Returns a full
+  `format_conformance` audit (over-length sections, forbidden-term
+  hit counts, failed validation rules).
+- `Orchestrator.brief()` **implemented**. Chains Scoping → Research
+  → Stakeholders → Risks → Options → Synthesis with a single
+  `SourcingAccumulator` threaded through every sourcing
+  validation. Returns a `BriefResult` (all six artefacts +
+  aggregated sourcing report + audit metadata).
+- CLI: `--full`, `--output <path.md>`, `--with-sourcing-report`.
+  Produces a Markdown briefing with a YAML front-matter header
+  suitable for a Markdown-to-PDF pipeline or a human review.
+- **First complete, sourced, format-conformant briefing rolls off
+  the pipeline in this release.**
 
 ---
 
-## v0.7 — Output Renderers
+## v0.7 — Adversarial Critique Agent + Output Renderers
 
+- `adversarial` agent — seventh Praxis agent. Reads the completed
+  brief and stress-tests the recommendation against the strongest
+  counter-arguments (steelmanned, not strawmanned). Feeds into the
+  `counter-arguments-addressed` section of formats that require it.
 - Renderers for the three declared `output_targets`: `md`, `docx`,
   `pdf`.
 - PDF pipeline builds on a headless typesetter (no external SaaS).
