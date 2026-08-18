@@ -16,15 +16,27 @@ import type {
   ScopingResult,
   ResearchResult,
   StakeholderMapResult,
+  RiskAnalysisResult,
 } from "../agents/types.ts";
 import type { Format } from "../registry/schema.ts";
+import type {
+  SourcingAccumulator,
+  SourcingReport,
+} from "../sourcing/types.ts";
 import { executeScoping } from "../agents/scoping.ts";
 import { executeResearch } from "../agents/research.ts";
 import { executeStakeholderMapping } from "../agents/stakeholder.ts";
+import { executeRiskAnalysis } from "../agents/risk.ts";
 import {
+  validateRiskSourcing,
   validateSourcing,
   validateStakeholderSourcing,
 } from "../sourcing/validator.ts";
+import {
+  InMemorySourcingAccumulator,
+  NoopSourcingAccumulator,
+} from "../sourcing/dedupe.ts";
+import { mergeReports } from "../sourcing/report.ts";
 import { NotImplementedError, OrchestrationError } from "./errors.ts";
 
 export interface ScopeOptions {
@@ -47,6 +59,19 @@ export interface MapStakeholdersAfterResearchOptions
   stakeholderMaxToolRounds?: number;
 }
 
+export interface AssessRisksAfterStakeholdersOptions
+  extends MapStakeholdersAfterResearchOptions {
+  /** Overrides the risk prompt file path — used in tests. */
+  riskPromptPath?: string;
+  /** Hard cap on tool-use rounds for the Risk Analysis agent. */
+  riskMaxToolRounds?: number;
+  /**
+   * Injectable clock for freshness validation (tests). Defaults to
+   * `new Date()` at pipeline start.
+   */
+  now?: Date;
+}
+
 export interface ResearchAfterScopingResult {
   scoping: ScopingResult;
   research: ResearchResult;
@@ -56,6 +81,15 @@ export interface MapStakeholdersAfterResearchResult {
   scoping: ScopingResult;
   research: ResearchResult;
   stakeholders: StakeholderMapResult;
+}
+
+export interface AssessRisksAfterStakeholdersResult {
+  scoping: ScopingResult;
+  research: ResearchResult;
+  stakeholders: StakeholderMapResult;
+  risks: RiskAnalysisResult;
+  /** Aggregated cross-agent sourcing report (v0.5). */
+  sourcing_report: SourcingReport;
 }
 
 export class Orchestrator {
@@ -158,9 +192,103 @@ export class Orchestrator {
   }
 
   /**
-   * Runs the full briefing pipeline. Not implemented in v0.4 — the
-   * remaining agents (synthesis, editorial, style, formatter) land
-   * progressively from v0.6.
+   * Runs Scoping → Research → Stakeholder Mapping → Risk Analysis and
+   * enforces the format's sourcing policy AND the v0.5 hardened
+   * sourcing rules (freshness, domain trust, cross-agent dedupe) end
+   * to end.
+   *
+   * Returns the four structured outputs plus an aggregated
+   * `sourcing_report` covering the whole pipeline run.
+   *
+   * Throws:
+   *   - `OrchestrationError` if the format does not require `scoping`,
+   *     `research`, `stakeholder`, AND `risk` in its sections.
+   *   - Any typed subclass of `SourcingValidationError` (`StaleSource…`,
+   *     `UntrustedDomain…`) when strict policy is violated by any
+   *     inspected source across the pipeline.
+   *   - `RiskAnalysisError` / `InvalidRiskStakeholderReference` /
+   *     `RiskInflationError` from the Risk agent.
+   */
+  async assessRisksAfterStakeholders(
+    question: string,
+    formatId: string,
+    options: AssessRisksAfterStakeholdersOptions = {}
+  ): Promise<AssessRisksAfterStakeholdersResult> {
+    const format = this.prepareForScoping(question, formatId);
+    if (!formatRequiresAgent(format, "research")) {
+      throw new OrchestrationError(
+        `Format '${formatId}' does not list 'research' in any section's required_agents; nothing to research.`
+      );
+    }
+    if (!formatRequiresAgent(format, "stakeholder")) {
+      throw new OrchestrationError(
+        `Format '${formatId}' does not list 'stakeholder' in any section's required_agents; nothing to map.`
+      );
+    }
+    if (!formatRequiresAgent(format, "risk")) {
+      throw new OrchestrationError(
+        `Format '${formatId}' does not list 'risk' in any section's required_agents; nothing to assess.`
+      );
+    }
+
+    const rules = format.sourcing_rules;
+    const accumulator: SourcingAccumulator =
+      rules?.dedupe?.cross_agent === true
+        ? new InMemorySourcingAccumulator(rules.dedupe)
+        : new NoopSourcingAccumulator();
+    const now = options.now ?? new Date();
+    const validateOpts: Parameters<typeof validateSourcing>[2] = {
+      accumulator,
+      now,
+    };
+    if (rules !== undefined) validateOpts.rules = rules;
+
+    const scoping = await this.doScoping(question, format, options);
+    const research = await this.doResearch(scoping, format, options);
+    const researchReport = validateSourcing(
+      research,
+      format.sourcing_policy,
+      validateOpts
+    );
+
+    const stakeholders = await this.doMapStakeholders(
+      scoping,
+      research,
+      format,
+      options
+    );
+    const stakeholderReport = validateStakeholderSourcing(
+      stakeholders,
+      format.sourcing_policy,
+      validateOpts
+    );
+
+    const risks = await this.doAssessRisks(
+      scoping,
+      research,
+      stakeholders,
+      format,
+      options
+    );
+    const riskReport = validateRiskSourcing(
+      risks,
+      format.sourcing_policy,
+      validateOpts
+    );
+
+    const sourcing_report = mergeReports(format.sourcing_policy, [
+      researchReport,
+      stakeholderReport,
+      riskReport,
+    ]);
+
+    return { scoping, research, stakeholders, risks, sourcing_report };
+  }
+
+  /**
+   * Runs the full briefing pipeline. Not implemented in v0.5 — the
+   * remaining agents (options, adversarial, synthesis, editorial,
+   * style, formatter) land progressively from v0.6.
    */
   async brief(_question: string, _formatId: string): Promise<never> {
     throw new NotImplementedError(
@@ -233,6 +361,24 @@ export class Orchestrator {
       execOpts.maxToolRounds = options.stakeholderMaxToolRounds;
     }
     return executeStakeholderMapping(ctx, this.llm, execOpts);
+  }
+
+  private doAssessRisks(
+    scoping: ScopingResult,
+    research: ResearchResult,
+    stakeholders: StakeholderMapResult,
+    format: Format,
+    options: AssessRisksAfterStakeholdersOptions
+  ): Promise<RiskAnalysisResult> {
+    const ctx = { scoping, research, stakeholders, format };
+    const execOpts: Parameters<typeof executeRiskAnalysis>[2] = {};
+    if (options.riskPromptPath !== undefined) {
+      execOpts.promptPath = options.riskPromptPath;
+    }
+    if (options.riskMaxToolRounds !== undefined) {
+      execOpts.maxToolRounds = options.riskMaxToolRounds;
+    }
+    return executeRiskAnalysis(ctx, this.llm, execOpts);
   }
 }
 

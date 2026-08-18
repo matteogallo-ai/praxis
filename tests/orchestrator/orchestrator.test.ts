@@ -616,3 +616,120 @@ describe("Orchestrator.mapStakeholdersAfterResearch", () => {
     expect(isSourceMissing(out.stakeholders.stakeholders[1]!.position_evidence)).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.5 — Orchestrator.assessRisksAfterStakeholders
+// ---------------------------------------------------------------------------
+
+describe("Orchestrator.assessRisksAfterStakeholders", () => {
+  test("chains scoping → research → stakeholders → risks and returns a merged sourcing_report", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.assessRisksAfterStakeholders(
+      "Should we enter the German market?",
+      "executive-pre-read",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    expect(out.scoping.reformulated_question.length).toBeGreaterThan(20);
+    expect(out.research.findings.length).toBeGreaterThan(0);
+    expect(out.stakeholders.stakeholders.length).toBeGreaterThan(3);
+    expect(out.risks.risks.length).toBeGreaterThanOrEqual(5);
+    expect(out.risks.top_3_priorities).toHaveLength(3);
+    expect(out.sourcing_report.total_items).toBeGreaterThan(0);
+    expect(out.sourcing_report.counts.ok).toBeGreaterThan(0);
+  });
+
+  test("throws when the format does not require the risk agent", async () => {
+    const format = baseFormat(
+      "no-risk-fmt",
+      ["scoping", "research", "stakeholder"],
+      "strict"
+    );
+    const registry = makeRegistryWith(format);
+    const orch = new Orchestrator(registry, makeMockProvider());
+    await expect(
+      orch.assessRisksAfterStakeholders("Q", "no-risk-fmt")
+    ).rejects.toBeInstanceOf(OrchestrationError);
+  });
+
+  test("throws when the format does not require the stakeholder agent", async () => {
+    const format = baseFormat(
+      "no-stkh-fmt",
+      ["scoping", "research", "risk"],
+      "strict"
+    );
+    const registry = makeRegistryWith(format);
+    const orch = new Orchestrator(registry, makeMockProvider());
+    await expect(
+      orch.assessRisksAfterStakeholders("Q", "no-stkh-fmt")
+    ).rejects.toBeInstanceOf(OrchestrationError);
+  });
+
+  test("throws when the format does not require the research agent", async () => {
+    const format = baseFormat(
+      "no-research-fmt",
+      ["scoping", "stakeholder", "risk"],
+      "strict"
+    );
+    const registry = makeRegistryWith(format);
+    const orch = new Orchestrator(registry, makeMockProvider());
+    await expect(
+      orch.assessRisksAfterStakeholders("Q", "no-research-fmt")
+    ).rejects.toBeInstanceOf(OrchestrationError);
+  });
+
+  test("throws SourcingValidationError when the format's freshness rule rejects a source", async () => {
+    // Pin the clock in the far future so every shipped fixture ages past
+    // the strictest freshness window (mckinsey-style-note: 545 days).
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    await expect(
+      orch.assessRisksAfterStakeholders(
+        "Should we enter Germany?",
+        "mckinsey-style-note",
+        { now: new Date("2035-01-01T00:00:00Z") }
+      )
+    ).rejects.toBeInstanceOf(SourcingValidationError);
+  });
+
+  test("the sourcing_report attributes items to the three agents", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const out = await orch.assessRisksAfterStakeholders(
+      "Should we enter the German market?",
+      "position-paper-corporate",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    // total_items = |findings| + |stakeholders| + 2*|risks|
+    const expected =
+      out.research.findings.length +
+      out.stakeholders.stakeholders.length +
+      out.risks.risks.length * 2;
+    expect(out.sourcing_report.total_items).toBe(expected);
+  });
+
+  test("works with all three shipped formats", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    for (const formatId of [
+      "executive-pre-read",
+      "mckinsey-style-note",
+      "position-paper-corporate",
+    ] as const) {
+      const question =
+        formatId === "mckinsey-style-note"
+          ? "Should we enter Germany?"
+          : "Should we enter the German market?";
+      const out = await orch.assessRisksAfterStakeholders(
+        question,
+        formatId,
+        { now: new Date("2026-08-18T00:00:00Z") }
+      );
+      expect(out.risks.risks.length).toBeGreaterThanOrEqual(5);
+    }
+  });
+});
