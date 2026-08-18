@@ -1,0 +1,107 @@
+version: 1
+
+# Ten calibrated benchmark questions for Praxis v0.9+.
+#
+# Each question is a real-world briefing prompt the target format
+# was designed to handle. Questions are DISTINCT in intent — the
+# set stresses the three shipped formats across corporate strategy
+# (executive-pre-read), consulting-style structured argumentation
+# (mckinsey-style-note), and public-facing position papers
+# (position-paper-corporate).
+#
+# The `format` field of each benchmark is the CANONICAL routing —
+# `--format auto` should reach the same conclusion from the
+# question text alone. The schema test enforces this coherence.
+#
+# Distribution:
+#   3 × executive-pre-read       (02, 03, 04)
+#   4 × mckinsey-style-note      (01, 05, 06, 07)
+#   3 × position-paper-corporate (08, 09, 10)
+#
+# Do NOT add an 11th benchmark without a v-plus-1 release.
+
+benchmarks:
+  - id: "01-german-market-entry"
+    question: "Should we enter the German market?"
+    format: "mckinsey-style-note"
+    tags:
+      - market-entry
+      - europe
+      - mckinsey
+    intent: "Canonical 'Should we?' question — trips the mckinsey-style-note trigger phrase. Exercises Situation, Complication, Question, Answer, So-What arc end to end."
+
+  - id: "02-cfo-buyback-briefing"
+    question: "Prepare the board briefing on the proposed share buyback."
+    format: "executive-pre-read"
+    tags:
+      - board-decision
+      - capital-allocation
+    intent: "Board-audience capital-allocation brief. Trips 'board' keyword; exercises executive-pre-read's six-section board discipline."
+
+  - id: "03-executive-succession-planning"
+    question: "Draft the executive succession briefing for the incoming CEO."
+    format: "executive-pre-read"
+    tags:
+      - leadership-decision
+      - governance
+    intent: "Leadership-decision briefing. Trips 'executive' keyword. Human-capital substance, still executive-audience."
+
+  - id: "04-uk-listing-board-briefing"
+    question: "Prepare the board pre-read on a proposed UK dual-listing decision."
+    format: "executive-pre-read"
+    tags:
+      - board-decision
+      - capital-markets
+    intent: "Board-facing listing decision. Trips 'board' keyword. Verifies the exec format still wins even when the question text hints at strategic substance."
+
+  - id: "05-supply-chain-acquisition"
+    question: "Should we pursue the acquisition of a European supply-chain competitor?"
+    format: "mckinsey-style-note"
+    tags:
+      - acquisition
+      - supply-chain
+    intent: "Classic McKinsey-style question — trips 'should we' plus 'acquisition'. Exercises the format's structured argument arc on a portfolio move."
+
+  - id: "06-market-entry-southeast-asia"
+    question: "Should we consider strategic market entry into Southeast Asia?"
+    format: "mckinsey-style-note"
+    tags:
+      - market-entry
+      - apac
+      - strategic
+    intent: "Three keyword hits for mckinsey: 'should we', 'strategic', 'market entry'. Different geography from (01) — the mock benchmark set does not over-fit to Germany."
+
+  - id: "07-should-we-divest-consumer-line"
+    question: "Should we divest the underperforming consumer product line?"
+    format: "mckinsey-style-note"
+    tags:
+      - portfolio
+      - divestiture
+    intent: "Portfolio-rebalancing question. 'Should we' is the canonical trigger phrase for mckinsey-style-note; no other keyword group fires."
+
+  - id: "08-ai-regulation-position"
+    question: "Draft our corporate position on the incoming AI regulatory framework."
+    format: "position-paper-corporate"
+    tags:
+      - regulatory
+      - policy
+      - ai-governance
+    intent: "Position-paper archetype: regulatory response to a policy framework. Two hits ('position', 'regulatory') both in the position-paper group; exercises the format's five-section arc."
+
+  - id: "09-trade-association-response"
+    question: "Prepare our submission to the trade association's public consultation on data localisation."
+    format: "position-paper-corporate"
+    tags:
+      - association
+      - policy
+      - data
+    intent: "Public-consultation submission via a trade association. Trips 'association' keyword; represents the association-facing variant."
+
+  - id: "10-esg-position"
+    question: "Publish our updated position on Scope 3 emissions disclosure requirements."
+    format: "position-paper-corporate"
+    tags:
+      - regulatory
+      - esg
+      - disclosure
+    intent: "Public policy statement on a disclosure regime. Trips 'position' keyword; stresses the format's stakeholder-landscape section (regulators, investors, NGOs)."
