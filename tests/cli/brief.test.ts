@@ -882,3 +882,256 @@ describe("briefCommand — --full (v0.6, mock provider)", () => {
     expect(stderr()).toContain("ANTHROPIC_API_KEY");
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.7 — --critique, --render, --theme, --include-toc, --include-appendices
+// ---------------------------------------------------------------------------
+
+import { readFileSync as readFileSync_v07, rmSync as rmSync_v07 } from "node:fs";
+import { mkdtempSync as mkdtempSync_v07 } from "node:fs";
+import { tmpdir as tmpdir_v07 } from "node:os";
+import { join as join_v07 } from "node:path";
+
+describe("parseBriefArgs — v0.7 flags", () => {
+  test("parses --critique alone", () => {
+    const p = parseBriefArgs(["Q", "--format", "executive-pre-read", "--full", "--critique"]);
+    expect(p.error).toBeUndefined();
+    expect(p.critique).toBe(true);
+  });
+
+  test("parses --render pdf with --output", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read", "--full",
+      "--render", "pdf", "--output", "/tmp/x.pdf",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.renderTarget).toBe("pdf");
+    expect(p.outputPath).toBe("/tmp/x.pdf");
+  });
+
+  test("supports --render=<target> equals form", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read", "--full",
+      "--render=docx", "--output=/tmp/y.docx",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.renderTarget).toBe("docx");
+    expect(p.outputPath).toBe("/tmp/y.docx");
+  });
+
+  test("--render without --output is a parse error", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read", "--full", "--render", "pdf",
+    ]);
+    expect(p.error).toContain("--render requires --output");
+  });
+
+  test("--render without --full is a parse error", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read",
+      "--render", "pdf", "--output", "/tmp/x.pdf",
+    ]);
+    expect(p.error).toContain("--render requires --full");
+  });
+
+  test("--theme + --include-toc + --include-appendices parse", () => {
+    const p = parseBriefArgs([
+      "Q", "--format", "executive-pre-read", "--full", "--render", "pdf",
+      "--output", "/tmp/x.pdf", "--theme", "consulting",
+      "--include-toc", "--include-appendices",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.theme).toBe("consulting");
+    expect(p.includeToc).toBe(true);
+    expect(p.includeAppendices).toBe(true);
+  });
+});
+
+describe("briefCommand — v0.7 --critique", () => {
+  test("--full --critique appends the inline critique to stdout", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--full",
+        "--critique",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    // The Markdown briefing still lands on stdout.
+    expect(out).toContain("# Should we enter the German market?");
+    // And the inline critique is appended.
+    expect(out).toContain("Adversarial Critique");
+    expect(out).toContain("Robustness:");
+    expect(out).toContain("CRIT-001");
+  });
+});
+
+describe("briefCommand — v0.7 --render", () => {
+  test("--full --render md-enhanced --output writes an enhanced Markdown file", async () => {
+    const dir = mkdtempSync_v07(join_v07(tmpdir_v07(), "praxis-v07-md-"));
+    const path = join_v07(dir, "brief.md");
+    try {
+      const code = await runBriefCli(
+        [
+          "Should we enter the German market?",
+          "--format", "executive-pre-read",
+          "--full", "--render", "md-enhanced",
+          "--output", path,
+        ],
+        CTX
+      );
+      expect(code).toBe(0);
+      // stdout empty (v0.7 --render writes stderr confirmation).
+      expect(stdout()).toBe("");
+      expect(stderr()).toContain(path);
+      const md = readFileSync_v07(path, "utf-8");
+      expect(md.startsWith("---\n")).toBe(true);
+      expect(md).toContain("## Sources");
+    } finally {
+      rmSync_v07(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("--full --render pdf --output writes a PDF file (%PDF-… magic)", async () => {
+    const dir = mkdtempSync_v07(join_v07(tmpdir_v07(), "praxis-v07-pdf-"));
+    const path = join_v07(dir, "brief.pdf");
+    try {
+      const code = await runBriefCli(
+        [
+          "Should we enter the German market?",
+          "--format", "executive-pre-read",
+          "--full", "--render", "pdf",
+          "--output", path,
+        ],
+        CTX
+      );
+      expect(code).toBe(0);
+      const buf = readFileSync_v07(path);
+      expect(buf.slice(0, 5).toString("ascii")).toBe("%PDF-");
+      expect(buf.length).toBeGreaterThan(1024);
+    } finally {
+      rmSync_v07(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("--full --render docx --output writes a DOCX file (PK magic)", async () => {
+    const dir = mkdtempSync_v07(join_v07(tmpdir_v07(), "praxis-v07-docx-"));
+    const path = join_v07(dir, "brief.docx");
+    try {
+      const code = await runBriefCli(
+        [
+          "Should we enter Germany?",
+          "--format", "mckinsey-style-note",
+          "--full", "--render", "docx",
+          "--output", path,
+        ],
+        CTX
+      );
+      expect(code).toBe(0);
+      const buf = readFileSync_v07(path);
+      expect(buf[0]).toBe(0x50);
+      expect(buf[1]).toBe(0x4b);
+    } finally {
+      rmSync_v07(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("--full --critique --render pdf includes the critique in the PDF", async () => {
+    const dir = mkdtempSync_v07(join_v07(tmpdir_v07(), "praxis-v07-full-"));
+    const path = join_v07(dir, "brief.pdf");
+    try {
+      const code = await runBriefCli(
+        [
+          "Should we enter the German market?",
+          "--format", "executive-pre-read",
+          "--full", "--critique", "--render", "pdf",
+          "--include-toc", "--include-appendices",
+          "--theme", "consulting",
+          "--output", path,
+        ],
+        CTX
+      );
+      expect(code).toBe(0);
+      const buf = readFileSync_v07(path);
+      expect(buf.slice(0, 5).toString("ascii")).toBe("%PDF-");
+      // A --critique --render PDF is materially larger than a plain
+      // one because the critique adds pages.
+      expect(buf.length).toBeGreaterThan(10 * 1024);
+    } finally {
+      rmSync_v07(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("--full --render pdf without --output is a parse error", async () => {
+    const code = await runBriefCli(
+      [
+        "Q", "--format", "executive-pre-read",
+        "--full", "--render", "pdf",
+      ],
+      CTX
+    );
+    expect(code).toBe(1);
+    expect(stderr()).toContain("--render requires --output");
+  });
+
+  test("--full --render docx --output on a format that doesn't allow docx exits 1", async () => {
+    const dir = mkdtempSync_v07(join_v07(tmpdir_v07(), "praxis-v07-err-"));
+    const path = join_v07(dir, "x.docx");
+    try {
+      const code = await runBriefCli(
+        [
+          "Q", "--format", "executive-pre-read",
+          "--full", "--render", "docx",
+          "--output", path,
+        ],
+        CTX
+      );
+      expect(code).toBe(1);
+      expect(stderr()).toContain("does not declare 'docx'");
+    } finally {
+      rmSync_v07(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("--full --render unknown-target --output exits 1", async () => {
+    const dir = mkdtempSync_v07(join_v07(tmpdir_v07(), "praxis-v07-unk-"));
+    const path = join_v07(dir, "x.epub");
+    try {
+      const code = await runBriefCli(
+        [
+          "Q", "--format", "executive-pre-read",
+          "--full", "--render", "epub",
+          "--output", path,
+        ],
+        CTX
+      );
+      expect(code).toBe(1);
+      expect(stderr()).toContain("does not declare 'epub'");
+    } finally {
+      rmSync_v07(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("--theme with an unknown value exits 1", async () => {
+    const dir = mkdtempSync_v07(join_v07(tmpdir_v07(), "praxis-v07-theme-"));
+    const path = join_v07(dir, "x.pdf");
+    try {
+      const code = await runBriefCli(
+        [
+          "Q", "--format", "executive-pre-read",
+          "--full", "--render", "pdf",
+          "--output", path, "--theme", "corporate",
+        ],
+        CTX
+      );
+      expect(code).toBe(1);
+      expect(stderr()).toContain("--theme 'corporate' is not one of");
+    } finally {
+      rmSync_v07(dir, { recursive: true, force: true });
+    }
+  });
+});

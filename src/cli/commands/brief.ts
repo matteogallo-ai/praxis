@@ -48,6 +48,7 @@ import {
 import { PraxisError } from "../../registry/errors.ts";
 import {
   c,
+  renderCritiqueInline,
   renderFullBrief,
   renderResearchResult,
   renderRisks,
@@ -58,12 +59,15 @@ import {
 import { writeFileSync } from "node:fs";
 import type { LLMProvider } from "../../llm/provider.ts";
 import type {
+  AdversarialCritiqueResult,
   ScopingResult,
   ResearchResult,
   StakeholderMapResult,
   RiskAnalysisResult,
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
+import { render as dispatchRender } from "../../renderers/index.ts";
+import { RENDER_THEMES, type RenderOptions, type RenderTheme } from "../../renderers/types.ts";
 
 export interface BriefCommandOptions {
   question: string;
@@ -76,6 +80,11 @@ export interface BriefCommandOptions {
   sourcingReport: boolean;
   full: boolean;
   outputPath: string | null;
+  critique: boolean;
+  renderTarget: string | null;
+  theme: string | null;
+  includeToc: boolean;
+  includeAppendices: boolean;
   formatsDir: string;
   fixturesDir: string;
 }
@@ -91,6 +100,11 @@ export interface ParsedBriefArgs {
   sourcingReport: boolean;
   full: boolean;
   outputPath: string | null;
+  critique: boolean;
+  renderTarget: string | null;
+  theme: string | null;
+  includeToc: boolean;
+  includeAppendices: boolean;
   error?: string;
 }
 
@@ -110,6 +124,11 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   let sourcingReport = false;
   let full = false;
   let outputPath: string | null = null;
+  let critique = false;
+  let renderTarget: string | null = null;
+  let theme: string | null = null;
+  let includeToc = false;
+  let includeAppendices = false;
 
   const errorReturn = (error: string): ParsedBriefArgs => ({
     question: "",
@@ -122,6 +141,11 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     sourcingReport,
     full,
     outputPath,
+    critique,
+    renderTarget,
+    theme,
+    includeToc,
+    includeAppendices,
     error,
   });
 
@@ -173,6 +197,34 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       // `--full` briefing (as opposed to `--sourcing-report` which
       // shows ONLY the report and implies `--with-risks`).
       sourcingReport = true;
+    } else if (a === "--critique") {
+      critique = true;
+    } else if (a === "--render") {
+      const next = args[i + 1];
+      if (next === undefined) {
+        return errorReturn(
+          "--render expects a target (md-enhanced | docx | pdf)"
+        );
+      }
+      renderTarget = next;
+      i++;
+    } else if (a.startsWith("--render=")) {
+      renderTarget = a.slice("--render=".length);
+    } else if (a === "--theme") {
+      const next = args[i + 1];
+      if (next === undefined) {
+        return errorReturn(
+          "--theme expects a name (professional | government | consulting)"
+        );
+      }
+      theme = next;
+      i++;
+    } else if (a.startsWith("--theme=")) {
+      theme = a.slice("--theme=".length);
+    } else if (a === "--include-toc") {
+      includeToc = true;
+    } else if (a === "--include-appendices") {
+      includeAppendices = true;
     } else {
       positional.push(a);
     }
@@ -200,7 +252,33 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       sourcingReport,
       full,
       outputPath,
-      error: "--format is required. Usage: praxis brief \"<question>\" --format <id>",
+      critique,
+      renderTarget,
+      theme,
+      includeToc,
+      includeAppendices,
+      error:
+        "--format is required. Usage: praxis brief \"<question>\" --format <id>",
+    };
+  }
+  if (renderTarget !== null && !full) {
+    return {
+      question: positional[0]!,
+      formatId,
+      provider,
+      json,
+      withResearch,
+      withStakeholders,
+      withRisks,
+      sourcingReport,
+      full,
+      outputPath,
+      critique,
+      renderTarget,
+      theme,
+      includeToc,
+      includeAppendices,
+      error: "--render requires --full.",
     };
   }
   if (outputPath !== null && !full) {
@@ -215,7 +293,34 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       sourcingReport,
       full,
       outputPath,
-      error: "--output requires --full (the option only applies to the full briefing).",
+      critique,
+      renderTarget,
+      theme,
+      includeToc,
+      includeAppendices,
+      error:
+        "--output requires --full (the option only applies to the full briefing).",
+    };
+  }
+  if (renderTarget !== null && outputPath === null) {
+    return {
+      question: positional[0]!,
+      formatId,
+      provider,
+      json,
+      withResearch,
+      withStakeholders,
+      withRisks,
+      sourcingReport,
+      full,
+      outputPath,
+      critique,
+      renderTarget,
+      theme,
+      includeToc,
+      includeAppendices,
+      error:
+        "--render requires --output <path>. Binary formats (pdf, docx) cannot be piped to stdout.",
     };
   }
 
@@ -230,6 +335,11 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     sourcingReport,
     full,
     outputPath,
+    critique,
+    renderTarget,
+    theme,
+    includeToc,
+    includeAppendices,
   };
 }
 
@@ -240,7 +350,40 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   const orchestrator = new Orchestrator(registry, llm);
 
   if (opts.full) {
-    const result = await orchestrator.brief(opts.question, opts.formatId);
+    // Run brief() OR briefWithCritique() depending on --critique.
+    const result = opts.critique
+      ? await orchestrator.briefWithCritique(opts.question, opts.formatId)
+      : await orchestrator.brief(opts.question, opts.formatId);
+
+    // --render <target> — dispatch to the renderer, write binary/text
+    // to --output.
+    if (opts.renderTarget !== null) {
+      const format = registry.get(opts.formatId);
+      const renderOpts: RenderOptions = {
+        include_sourcing_report: opts.sourcingReport,
+        include_critique: opts.critique,
+        include_toc: opts.includeToc,
+        include_appendices: opts.includeAppendices,
+      };
+      const themeArg = opts.theme;
+      if (themeArg !== null) {
+        if (!(RENDER_THEMES as readonly string[]).includes(themeArg)) {
+          throw new PraxisError(
+            `--theme '${themeArg}' is not one of: ${RENDER_THEMES.join(", ")}`
+          );
+        }
+        renderOpts.theme = themeArg as RenderTheme;
+      }
+      const buf = await dispatchRender(result, opts.renderTarget, format, renderOpts);
+      // opts.outputPath is guaranteed non-null (parser enforces it).
+      writeFileSync(opts.outputPath!, buf);
+      process.stderr.write(
+        `${c.dim("wrote")} ${opts.outputPath} ${c.dim(`(${buf.length} bytes, ${opts.renderTarget})`)}\n`
+      );
+      return 0;
+    }
+
+    // No --render: plain Markdown / JSON stdout output (v0.6 behaviour).
     if (opts.json) {
       const payload = JSON.stringify(result, null, 2) + "\n";
       writeOrEmit(payload, opts.outputPath);
@@ -253,6 +396,18 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
       out += renderSourcingReportMarkdown(result.sourcing_report);
     }
     writeOrEmit(out, opts.outputPath);
+    // Additionally print the inline critique: to stdout if writing
+    // the brief to a file (stdout is free); to stdout at the end of
+    // the Markdown when brief goes to stdout (colour is fine — the
+    // reader is a human at that point, not a pipeline).
+    if (opts.critique && hasCritiqueField(result)) {
+      const critiqueText = renderCritiqueInline(result.adversarial);
+      if (opts.outputPath !== null) {
+        process.stderr.write(critiqueText);
+      } else {
+        process.stdout.write(critiqueText);
+      }
+    }
     return 0;
   }
 
@@ -318,6 +473,12 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   const scoping = await orchestrator.scope(opts.question, opts.formatId);
   printScopingOnly(scoping, opts.json);
   return 0;
+}
+
+function hasCritiqueField(
+  v: object
+): v is { adversarial: AdversarialCritiqueResult } {
+  return "adversarial" in v && (v as { adversarial: unknown }).adversarial !== undefined;
 }
 
 function selectProvider(name: string, fixturesDir: string): LLMProvider {
@@ -496,6 +657,11 @@ export async function runBriefCli(
       sourcingReport: parsed.sourcingReport,
       full: parsed.full,
       outputPath: parsed.outputPath,
+      critique: parsed.critique,
+      renderTarget: parsed.renderTarget,
+      theme: parsed.theme,
+      includeToc: parsed.includeToc,
+      includeAppendices: parsed.includeAppendices,
       formatsDir: ctx.formatsDir,
       fixturesDir: ctx.fixturesDir,
     });

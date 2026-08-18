@@ -491,3 +491,80 @@ function escapeMarkdownHeading(v: string): string {
 function escapeMarkdownLinkText(v: string): string {
   return v.replace(/\[/g, "\\[").replace(/\]/g, "\\]");
 }
+
+// ---------------------------------------------------------------------------
+// Adversarial critique inline renderer (v0.7).
+// ---------------------------------------------------------------------------
+
+import type { AdversarialCritiqueResult } from "../agents/types.ts";
+
+/**
+ * Render a critique result as ANSI text (for stdout). Colour is
+ * driven by severity — critical=red, material=yellow, minor=dim.
+ */
+export function renderCritiqueInline(result: AdversarialCritiqueResult): string {
+  const parts: string[] = [];
+  parts.push(`\n${c.bold(c.cyan("Adversarial Critique"))}\n`);
+  parts.push(`${c.dim("=".repeat(20))}\n`);
+  const robustColor =
+    result.recommendation_robustness === "low"
+      ? c.red
+      : result.recommendation_robustness === "medium"
+        ? c.yellow
+        : c.green;
+  parts.push(
+    `${c.dim("Robustness:")} ${robustColor(result.recommendation_robustness)}  |  ` +
+      `${c.dim("Critiques:")} ${result.critiques.length}  |  ` +
+      `${c.red(`critical=${result.critical_count}`)} ${c.yellow(`material=${result.material_count}`)} ${c.dim(`minor=${result.minor_count}`)}\n`
+  );
+  parts.push(
+    `${c.dim("Revision needed:")} ${result.revised_recommendation_needed ? c.red("yes") : c.green("no")}\n\n`
+  );
+
+  if (result.steelmanned_alternative !== null) {
+    parts.push(`${c.bold("Steelmanned alternative")}\n`);
+    parts.push(`  ${result.steelmanned_alternative}\n\n`);
+  }
+
+  for (const crit of result.critiques) {
+    const sevColor =
+      crit.severity === "critical"
+        ? c.red
+        : crit.severity === "material"
+          ? c.yellow
+          : c.dim;
+    parts.push(
+      `${c.bold(crit.id)} ${sevColor(`[${crit.severity}]`)} ${c.dim(crit.category)}\n`
+    );
+    parts.push(`  ${c.dim("target:")}      ${describeTarget(crit.target)}\n`);
+    parts.push(`  ${c.dim("steelman:")}    ${crit.steelmanned_position}\n`);
+    parts.push(`  ${c.dim("implication:")} ${crit.implication_if_true}\n`);
+    parts.push(`  ${c.dim("revise:")}      ${crit.suggested_revision}\n`);
+    if ("url" in crit.counter_evidence) {
+      parts.push(`  ${c.dim("evidence:")}    ${c.blue(crit.counter_evidence.url)}\n`);
+    } else {
+      parts.push(
+        `  ${c.yellow("evidence:")}    ${c.yellow("[SOURCE MISSING]")} ${c.dim("searched:")} ${crit.counter_evidence.searched_for}\n`
+      );
+    }
+    parts.push("\n");
+  }
+
+  return parts.join("");
+}
+
+function describeTarget(t: {
+  section_id?: string;
+  option_id?: string;
+  risk_id?: string;
+  stakeholder_name?: string;
+  finding_index?: number;
+}): string {
+  const bits: string[] = [];
+  if (t.section_id !== undefined) bits.push(`section=${t.section_id}`);
+  if (t.option_id !== undefined) bits.push(`option=${t.option_id}`);
+  if (t.risk_id !== undefined) bits.push(`risk=${t.risk_id}`);
+  if (t.stakeholder_name !== undefined) bits.push(`stakeholder='${t.stakeholder_name}'`);
+  if (t.finding_index !== undefined) bits.push(`finding[${t.finding_index}]`);
+  return bits.join(" · ") || "(empty)";
+}
