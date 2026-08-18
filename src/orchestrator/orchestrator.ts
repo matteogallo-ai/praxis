@@ -15,6 +15,7 @@
 import type { FormatRegistry } from "../registry/registry.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
+  AdversarialCritiqueResult,
   OptionsGenerationResult,
   ResearchResult,
   RiskAnalysisResult,
@@ -26,13 +27,16 @@ import type { Format } from "../registry/schema.ts";
 import type {
   SourcingAccumulator,
   SourcingReport,
+  SourcingWarning,
 } from "../sourcing/types.ts";
+import { isSourceMissing } from "../sourcing/types.ts";
 import { executeScoping } from "../agents/scoping.ts";
 import { executeResearch } from "../agents/research.ts";
 import { executeStakeholderMapping } from "../agents/stakeholder.ts";
 import { executeRiskAnalysis } from "../agents/risk.ts";
 import { executeOptionsGeneration } from "../agents/options.ts";
 import { executeSynthesis } from "../agents/synthesis.ts";
+import { executeAdversarialCritique } from "../agents/adversarial.ts";
 import {
   validateRiskSourcing,
   validateSourcing,
@@ -42,7 +46,7 @@ import {
   InMemorySourcingAccumulator,
   NoopSourcingAccumulator,
 } from "../sourcing/dedupe.ts";
-import { mergeReports } from "../sourcing/report.ts";
+import { buildReport, mergeReports } from "../sourcing/report.ts";
 import { OrchestrationError } from "./errors.ts";
 
 export interface ScopeOptions {
@@ -92,6 +96,20 @@ export interface BriefOptions extends AssessRisksAfterStakeholdersOptions {
   providerName?: string;
 }
 
+/**
+ * Options for `briefWithCritique()`. Superset of `BriefOptions`
+ * plus the adversarial agent's own prompt-path and max-tool-rounds
+ * overrides. Kept as its own interface so `brief()` consumers do not
+ * accidentally trigger the critique step by supplying critique
+ * options.
+ */
+export interface BriefWithCritiqueOptions extends BriefOptions {
+  /** Overrides the default `prompts/adversarial.prompt` location — used in tests. */
+  adversarialPromptPath?: string;
+  /** Hard cap on tool-use rounds for the Adversarial Critique agent. */
+  adversarialMaxToolRounds?: number;
+}
+
 export interface ResearchAfterScopingResult {
   scoping: ScopingResult;
   research: ResearchResult;
@@ -131,6 +149,17 @@ export interface BriefResult {
   format_id: string;
   question: string;
   provider_name: string;
+}
+
+/**
+ * Superset of `BriefResult` returned by `Orchestrator.briefWithCritique()`.
+ * Adds the adversarial critique output and re-aggregates the
+ * sourcing report to include the critique's counter-evidence
+ * sources. The `sourcing_report` field is REPLACED (not appended) so
+ * consumers see one coherent report covering the whole run.
+ */
+export interface BriefWithCritiqueResult extends BriefResult {
+  adversarial: AdversarialCritiqueResult;
 }
 
 export class Orchestrator {
@@ -450,6 +479,46 @@ export class Orchestrator {
     };
   }
 
+  /**
+   * Runs the v0.6 six-agent `brief()` pipeline, then feeds the
+   * complete `BriefResult` to the Adversarial Critique agent (v0.7)
+   * for stress-testing. Returns the enriched payload.
+   *
+   * The pipeline is:
+   *
+   *   brief() [six agents] → executeAdversarialCritique() → merge sourcing
+   *
+   * The sourcing_report is REPLACED (not appended) so it now covers
+   * the critique's counter_evidence sources as well as the six
+   * upstream agents' sources.
+   *
+   * `brief()` itself is UNCHANGED — API-compatible with v0.6.
+   * `briefWithCritique()` is the opt-in path.
+   *
+   * Throws:
+   *   - Everything `brief()` throws.
+   *   - Any typed adversarial error
+   *     (`AdversarialCritiqueError`, `InvalidCritiqueTargetError`,
+   *     `MissingAlternativeError`) from the critique step.
+   */
+  async briefWithCritique(
+    question: string,
+    formatId: string,
+    options: BriefWithCritiqueOptions = {}
+  ): Promise<BriefWithCritiqueResult> {
+    const brief = await this.brief(question, formatId, options);
+    const format = this.registry.get(formatId);
+
+    const adversarial = await this.doAdversarial(brief, format, options);
+
+    const sourcing_report = withCritiqueSources(
+      brief.sourcing_report,
+      adversarial
+    );
+
+    return { ...brief, adversarial, sourcing_report };
+  }
+
   private prepareForScoping(question: string, formatId: string): Format {
     if (question.trim().length === 0) {
       throw new OrchestrationError("Question is empty. Provide a non-blank briefing question.");
@@ -576,6 +645,70 @@ export class Orchestrator {
     }
     return executeSynthesis(ctx, this.llm, execOpts);
   }
+
+  private doAdversarial(
+    brief: BriefResult,
+    format: Format,
+    options: BriefWithCritiqueOptions
+  ): Promise<AdversarialCritiqueResult> {
+    const ctx = {
+      brief_result: {
+        scoping: brief.scoping,
+        research: brief.research,
+        stakeholders: brief.stakeholders,
+        risks: brief.risks,
+        options: brief.options,
+        synthesis: brief.synthesis,
+        format_id: brief.format_id,
+        question: brief.question,
+      },
+      format,
+    };
+    const execOpts: Parameters<typeof executeAdversarialCritique>[2] = {};
+    if (options.adversarialPromptPath !== undefined) {
+      execOpts.promptPath = options.adversarialPromptPath;
+    }
+    if (options.adversarialMaxToolRounds !== undefined) {
+      execOpts.maxToolRounds = options.adversarialMaxToolRounds;
+    }
+    return executeAdversarialCritique(ctx, this.llm, execOpts);
+  }
+}
+
+/**
+ * Enrich the base `sourcing_report` with the critique's counter-
+ * evidence sources so the caller sees ONE report covering the full
+ * critique-augmented run.
+ *
+ * Each critique contributes ONE inspected item (the
+ * `counter_evidence` slot). Missing counter-evidence surfaces as a
+ * `missing_source` warning tagged to the corresponding critique
+ * index — reusing the existing `missing_source` variant keeps the
+ * report shape stable for consumers.
+ */
+function withCritiqueSources(
+  baseReport: SourcingReport,
+  adversarial: AdversarialCritiqueResult
+): SourcingReport {
+  const additionalWarnings: SourcingWarning[] = [];
+  // A critique's counter_evidence lives in a "critique-N" slot; we
+  // reuse the missing_source warning variant with finding_index set
+  // to the critique index so the SourcingReport shape stays stable.
+  for (const [i, c] of adversarial.critiques.entries()) {
+    if (isSourceMissing(c.counter_evidence)) {
+      additionalWarnings.push({
+        kind: "missing_source",
+        finding_index: baseReport.total_items + i,
+        searched_for: `[${c.id}] ${c.counter_evidence.searched_for}`,
+      });
+    }
+  }
+  const critiqueReport = buildReport(
+    baseReport.policy,
+    adversarial.critiques.length,
+    additionalWarnings
+  );
+  return mergeReports(baseReport.policy, [baseReport, critiqueReport]);
 }
 
 function formatRequiresAgent(format: Format, agentId: string): boolean {
