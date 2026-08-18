@@ -5,3 +5,9 @@ dist
 .env
 .env.local
 coverage
+
+# v0.10: local cache of scoring JSON payloads, keyed by
+# {slug}-{mode}. Never committed — the whole point is that a
+# maintainer with API access regenerates them, and the score
+# aggregation lands in benchmarks/RESULTS.md instead.
+benchmarks/.scoring-cache/

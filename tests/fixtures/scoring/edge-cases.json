@@ -1,0 +1,91 @@
+{
+  "score_zero_rejected": {
+    "briefing_id": "01-german-market-entry",
+    "provider": "mock",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 0, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 3, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 3, "example": "…", "improvement": "…"}
+    },
+    "total": 18,
+    "weakest_aspect": "n/a",
+    "strongest_aspect": "n/a",
+    "comparative_note": "n/a"
+  },
+  "score_six_rejected": {
+    "briefing_id": "01-german-market-entry",
+    "provider": "mock",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 6, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 3, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 3, "example": "…", "improvement": "…"}
+    },
+    "total": 24,
+    "weakest_aspect": "n/a",
+    "strongest_aspect": "n/a",
+    "comparative_note": "n/a"
+  },
+  "missing_criterion": {
+    "briefing_id": "01-german-market-entry",
+    "provider": "mock",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 3, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 3, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"}
+    },
+    "total": 18,
+    "weakest_aspect": "n/a",
+    "strongest_aspect": "n/a",
+    "comparative_note": "n/a"
+  },
+  "total_mismatch": {
+    "briefing_id": "01-german-market-entry",
+    "provider": "mock",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 4, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 4, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 4, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 4, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 4, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 4, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 99,
+    "weakest_aspect": "n/a",
+    "strongest_aspect": "n/a",
+    "comparative_note": "n/a"
+  },
+  "unknown_provider": {
+    "briefing_id": "01-german-market-entry",
+    "provider": "openai",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 3, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 3, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 3, "example": "…", "improvement": "…"}
+    },
+    "total": 21,
+    "weakest_aspect": "n/a",
+    "strongest_aspect": "n/a",
+    "comparative_note": "n/a"
+  }
+}

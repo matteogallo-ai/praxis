@@ -1,0 +1,46 @@
+{
+  "briefing_id": "01-german-market-entry",
+  "provider": "anthropic",
+  "format_id": "mckinsey-style-note",
+  "scores": {
+    "framing_clarity": {
+      "score": 4,
+      "example": "Opens with the decision at stake",
+      "improvement": "Name the decision-owner in sentence 1."
+    },
+    "non_hedging": {
+      "score": 3,
+      "example": "Uses 'may' and 'could' twice in recommendation",
+      "improvement": "Replace hedges with dated commitments."
+    },
+    "decisive_recommendation": {
+      "score": 4,
+      "example": "OPT-A endorsed with rationale",
+      "improvement": "State the trigger for reversal in one line."
+    },
+    "concrete_tradeoffs": {
+      "score": 3,
+      "example": "Cost / time / risk dimensioned",
+      "improvement": "Add euro figures to the cost row."
+    },
+    "perceived_sourcing": {
+      "score": 4,
+      "example": "Reuters, EU Commission cited",
+      "improvement": "Add one industry-body source for demand claim."
+    },
+    "adversarial_usefulness": {
+      "score": 3,
+      "example": "Three material critiques land",
+      "improvement": "One critique should target OPT-B directly."
+    },
+    "format_fidelity": {
+      "score": 4,
+      "example": "Situation / Complication / Answer / So-What arc",
+      "improvement": "Tighten the So-What to a single sentence."
+    }
+  },
+  "total": 25,
+  "weakest_aspect": "Sourcing on the demand-side claim relies on one weak citation.",
+  "strongest_aspect": "Structure follows the pyramid discipline cleanly.",
+  "comparative_note": "Competitive with a first-year associate; senior partners would push back on hedges."
+}

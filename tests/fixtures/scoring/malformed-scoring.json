@@ -1,0 +1,13 @@
+{
+  "briefing_id": "02-malformed-example",
+  "provider": "anthropic",
+  "format_id": "executive-pre-read",
+  "scores": {
+    "framing_clarity": {"score": 4, "example": "…", "improvement": "…"},
+    "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+    "decisive_recommendation": {"score": "four", "example": "…", "improvement": "…"},
+    "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+    "perceived_sourcing": {"score": 3, "example": "…", "improvement": "…"}
+  },
+  "total": 20
+}

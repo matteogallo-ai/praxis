@@ -1,0 +1,162 @@
+[
+  {
+    "briefing_id": "01-german-market-entry",
+    "provider": "mock",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 3, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 2, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 21,
+    "weakest_aspect": "sourcing", "strongest_aspect": "fidelity", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "01-german-market-entry",
+    "provider": "anthropic",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 4, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 4, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 4, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 4, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 4, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 4, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 28,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "02-cfo-buyback-briefing",
+    "provider": "mock",
+    "format_id": "executive-pre-read",
+    "scores": {
+      "framing_clarity": {"score": 4, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 3, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 23,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "02-cfo-buyback-briefing",
+    "provider": "anthropic",
+    "format_id": "executive-pre-read",
+    "scores": {
+      "framing_clarity": {"score": 4, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 4, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 4, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 4, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 5, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 4, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 29,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "03-executive-succession-planning",
+    "provider": "mock",
+    "format_id": "executive-pre-read",
+    "scores": {
+      "framing_clarity": {"score": 3, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 2, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 2, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 2, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 3, "example": "…", "improvement": "…"}
+    },
+    "total": 18,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "03-executive-succession-planning",
+    "provider": "anthropic",
+    "format_id": "executive-pre-read",
+    "scores": {
+      "framing_clarity": {"score": 4, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 4, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 4, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 4, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 26,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "04-uk-listing-board-briefing",
+    "provider": "mock",
+    "format_id": "executive-pre-read",
+    "scores": {
+      "framing_clarity": {"score": 3, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 3, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 3, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 22,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "04-uk-listing-board-briefing",
+    "provider": "anthropic",
+    "format_id": "executive-pre-read",
+    "scores": {
+      "framing_clarity": {"score": 4, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 4, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 4, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 4, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 4, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 27,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "05-supply-chain-acquisition",
+    "provider": "mock",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 3, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 3, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 3, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 2, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 2, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 3, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 20,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  },
+  {
+    "briefing_id": "05-supply-chain-acquisition",
+    "provider": "anthropic",
+    "format_id": "mckinsey-style-note",
+    "scores": {
+      "framing_clarity": {"score": 4, "example": "…", "improvement": "…"},
+      "non_hedging": {"score": 4, "example": "…", "improvement": "…"},
+      "decisive_recommendation": {"score": 4, "example": "…", "improvement": "…"},
+      "concrete_tradeoffs": {"score": 4, "example": "…", "improvement": "…"},
+      "perceived_sourcing": {"score": 5, "example": "…", "improvement": "…"},
+      "adversarial_usefulness": {"score": 4, "example": "…", "improvement": "…"},
+      "format_fidelity": {"score": 4, "example": "…", "improvement": "…"}
+    },
+    "total": 29,
+    "weakest_aspect": "…", "strongest_aspect": "…", "comparative_note": "…"
+  }
+]
