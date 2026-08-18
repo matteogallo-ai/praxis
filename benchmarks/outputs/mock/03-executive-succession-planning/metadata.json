@@ -1,0 +1,46 @@
+{
+  "id": "03-executive-succession-planning",
+  "question": "Draft the executive succession briefing for the incoming CEO.",
+  "format": "executive-pre-read",
+  "tags": [
+    "leadership-decision",
+    "governance"
+  ],
+  "mode": "mock",
+  "duration_ms": 16,
+  "generated_at": "2026-08-18T13:29:14.193Z",
+  "provider_name": "mock",
+  "synthesis": {
+    "total_word_count": 338,
+    "target_words": 800,
+    "deviation_pct": -57.8,
+    "sections_over_length": 0,
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 1,
+    "material_count": 2,
+    "minor_count": 2,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 3,
+    "re_synthesis_deviations": []
+  },
+  "sourcing": {
+    "total_items": 34,
+    "counts": {
+      "ok": 31,
+      "stale": 0,
+      "untrusted": 0,
+      "duplicated": 1,
+      "missing": 2
+    },
+    "edited_after_critique": true
+  },
+  "artefacts": {
+    "brief.md": 17142,
+    "brief.pdf": 47514
+  }
+}

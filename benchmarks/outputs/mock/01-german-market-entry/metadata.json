@@ -1,0 +1,48 @@
+{
+  "id": "01-german-market-entry",
+  "question": "Should we enter the German market?",
+  "format": "mckinsey-style-note",
+  "tags": [
+    "market-entry",
+    "europe",
+    "mckinsey"
+  ],
+  "mode": "mock",
+  "duration_ms": 33,
+  "generated_at": "2026-08-18T13:29:14.139Z",
+  "provider_name": "mock",
+  "synthesis": {
+    "total_word_count": 326,
+    "target_words": 1200,
+    "deviation_pct": -72.8,
+    "sections_over_length": 0,
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 1,
+    "material_count": 2,
+    "minor_count": 2,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 3,
+    "re_synthesis_deviations": []
+  },
+  "sourcing": {
+    "total_items": 32,
+    "counts": {
+      "ok": 28,
+      "stale": 0,
+      "untrusted": 0,
+      "duplicated": 2,
+      "missing": 2
+    },
+    "edited_after_critique": true
+  },
+  "artefacts": {
+    "brief.md": 16510,
+    "brief.pdf": 46745,
+    "brief.docx": 7667
+  }
+}

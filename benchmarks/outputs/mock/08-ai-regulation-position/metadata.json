@@ -1,0 +1,47 @@
+{
+  "id": "08-ai-regulation-position",
+  "question": "Draft our corporate position on the incoming AI regulatory framework.",
+  "format": "position-paper-corporate",
+  "tags": [
+    "regulatory",
+    "policy",
+    "ai-governance"
+  ],
+  "mode": "mock",
+  "duration_ms": 16,
+  "generated_at": "2026-08-18T13:29:14.273Z",
+  "provider_name": "mock",
+  "synthesis": {
+    "total_word_count": 476,
+    "target_words": 1600,
+    "deviation_pct": -70.3,
+    "sections_over_length": 0,
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 1,
+    "material_count": 3,
+    "minor_count": 1,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 4,
+    "re_synthesis_deviations": []
+  },
+  "sourcing": {
+    "total_items": 33,
+    "counts": {
+      "ok": 28,
+      "stale": 0,
+      "untrusted": 0,
+      "duplicated": 3,
+      "missing": 2
+    },
+    "edited_after_critique": true
+  },
+  "artefacts": {
+    "brief.pdf": 49425,
+    "brief.docx": 8275
+  }
+}
