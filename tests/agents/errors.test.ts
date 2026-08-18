@@ -3,9 +3,12 @@ import { describe, expect, test } from "bun:test";
 import {
   AgentExecutionError,
   InvalidAgentOutputError,
+  InvalidRiskStakeholderReference,
   PromptFileError,
   ResearchAgentError,
   MaxToolRoundsExceededError,
+  RiskAnalysisError,
+  RiskInflationError,
   StakeholderMappingError,
 } from "../../src/agents/errors.ts";
 import { PraxisError } from "../../src/registry/errors.ts";
@@ -73,5 +76,44 @@ describe("StakeholderMappingError", () => {
     expect(err.name).toBe("StakeholderMappingError");
     expect(err.message).toContain("count 2 below min 3");
     expect(err.message).toContain("stakeholder");
+  });
+});
+
+describe("RiskAnalysisError", () => {
+  test("carries the risk agent id and message", () => {
+    const err = new RiskAnalysisError("duplicate id RISK-001");
+    expect(err).toBeInstanceOf(AgentExecutionError);
+    expect(err.agentId).toBe("risk");
+    expect(err.name).toBe("RiskAnalysisError");
+    expect(err.message).toContain("duplicate id RISK-001");
+    expect(err.message).toContain("risk");
+  });
+});
+
+describe("InvalidRiskStakeholderReference", () => {
+  test("mentions the risk id, unknown name, and known set", () => {
+    const err = new InvalidRiskStakeholderReference(
+      "RISK-004",
+      "Made Up",
+      ["Alice", "Bob"]
+    );
+    expect(err).toBeInstanceOf(RiskAnalysisError);
+    expect(err.riskId).toBe("RISK-004");
+    expect(err.unknownStakeholder).toBe("Made Up");
+    expect(err.message).toContain("RISK-004");
+    expect(err.message).toContain("Made Up");
+    expect(err.message).toContain("Alice");
+    expect(err.message).toContain("Bob");
+  });
+});
+
+describe("RiskInflationError", () => {
+  test("names the count and the cap", () => {
+    const err = new RiskInflationError(30, 25);
+    expect(err).toBeInstanceOf(RiskAnalysisError);
+    expect(err.count).toBe(30);
+    expect(err.max).toBe(25);
+    expect(err.message).toContain("30");
+    expect(err.message).toContain("25");
   });
 });

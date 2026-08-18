@@ -87,3 +87,56 @@ export class StakeholderMappingError extends AgentExecutionError {
     this.name = "StakeholderMappingError";
   }
 }
+
+/**
+ * Raised by the Risk Analysis agent for structural failures that
+ * belong to the domain-specific rules of the agent (invalid stakeholder
+ * reference, top_3 pointing at a missing risk, aggregated_risk_score
+ * inconsistency). Distinct from `RiskInflationError` (specifically:
+ * more than `MAX_RISKS` were produced).
+ */
+export class RiskAnalysisError extends AgentExecutionError {
+  constructor(message: string) {
+    super("risk", message);
+    this.name = "RiskAnalysisError";
+  }
+}
+
+/**
+ * Raised when a Risk names an `affected_stakeholders` entry that does
+ * not appear in the `StakeholderMapResult` supplied to the agent.
+ * Enforces the invariant "no fabricated cross-references".
+ */
+export class InvalidRiskStakeholderReference extends RiskAnalysisError {
+  readonly riskId: string;
+  readonly unknownStakeholder: string;
+
+  constructor(riskId: string, unknownStakeholder: string, knownNames: readonly string[]) {
+    super(
+      `Risk '${riskId}' references unknown stakeholder '${unknownStakeholder}'. ` +
+        `Known: [${knownNames.join(", ")}]`
+    );
+    this.name = "InvalidRiskStakeholderReference";
+    this.riskId = riskId;
+    this.unknownStakeholder = unknownStakeholder;
+  }
+}
+
+/**
+ * Raised when the Risk Analysis agent returns more than `MAX_RISKS`
+ * risks. Prevents the model from padding the list to look thorough —
+ * meaningful risk analysis is bounded.
+ */
+export class RiskInflationError extends RiskAnalysisError {
+  readonly count: number;
+  readonly max: number;
+
+  constructor(count: number, max: number) {
+    super(
+      `Risk count ${count} exceeds the maximum of ${max}. Tighten the analysis.`
+    );
+    this.name = "RiskInflationError";
+    this.count = count;
+    this.max = max;
+  }
+}

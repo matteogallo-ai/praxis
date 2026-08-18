@@ -161,3 +161,147 @@ export interface StakeholderContext {
   research: ResearchResult;
   format: Format;
 }
+
+// ---------------------------------------------------------------------------
+// v0.5 — Risk Analysis agent
+// ---------------------------------------------------------------------------
+
+/**
+ * Canonical taxonomy for risk categories. Deliberately eight buckets:
+ * five classical business categories plus reputational, geopolitical,
+ * and human-capital — the three the shipped formats care about most.
+ */
+export type RiskCategory =
+  | "strategic"
+  | "operational"
+  | "financial"
+  | "regulatory"
+  | "reputational"
+  | "geopolitical"
+  | "technological"
+  | "human-capital";
+
+export const RISK_CATEGORIES: readonly RiskCategory[] = [
+  "strategic",
+  "operational",
+  "financial",
+  "regulatory",
+  "reputational",
+  "geopolitical",
+  "technological",
+  "human-capital",
+] as const;
+
+export type RiskLikelihood =
+  | "very-low"
+  | "low"
+  | "medium"
+  | "high"
+  | "very-high";
+
+export const RISK_LIKELIHOODS: readonly RiskLikelihood[] = [
+  "very-low",
+  "low",
+  "medium",
+  "high",
+  "very-high",
+] as const;
+
+export type RiskImpact =
+  | "negligible"
+  | "minor"
+  | "moderate"
+  | "major"
+  | "severe";
+
+export const RISK_IMPACTS: readonly RiskImpact[] = [
+  "negligible",
+  "minor",
+  "moderate",
+  "major",
+  "severe",
+] as const;
+
+/**
+ * `< 3mo` / `3-12mo` / `1-3y` / `> 3y`.
+ */
+export type RiskTimeframe =
+  | "immediate"
+  | "short-term"
+  | "medium-term"
+  | "long-term";
+
+export const RISK_TIMEFRAMES: readonly RiskTimeframe[] = [
+  "immediate",
+  "short-term",
+  "medium-term",
+  "long-term",
+] as const;
+
+/** Aggregated overall / by-category risk score. */
+export type AggregatedRiskLevel = "low" | "medium" | "high" | "critical";
+
+export const AGGREGATED_RISK_LEVELS: readonly AggregatedRiskLevel[] = [
+  "low",
+  "medium",
+  "high",
+  "critical",
+] as const;
+
+/**
+ * A single risk. Every `Risk` carries sourced evidence for BOTH its
+ * likelihood assessment AND its impact assessment — same discipline as
+ * Research findings and Stakeholder positions.
+ *
+ * `affected_stakeholders` must reference names present in the
+ * `StakeholderMapResult` supplied to the agent. The parser rejects any
+ * risk that names an unknown stakeholder — fabricated links are
+ * structurally forbidden.
+ */
+export interface Risk {
+  /** `RISK-001`, `RISK-002`, … — assigned sequentially by the parser. */
+  id: string;
+  category: RiskCategory;
+  /** One or two sentences describing the risk. */
+  description: string;
+  likelihood: RiskLikelihood;
+  impact: RiskImpact;
+  likelihood_evidence: SourceStatus;
+  impact_evidence: SourceStatus;
+  /**
+   * Stakeholder names lifted verbatim from the mapping. The parser
+   * validates every entry against the supplied `StakeholderMapResult`.
+   */
+  affected_stakeholders: string[];
+  timeframe: RiskTimeframe;
+  /** 1-3 concrete mitigations. Vague statements ("monitor closely") are rejected. */
+  mitigations: string[];
+  residual_risk_after_mitigation: RiskLikelihood;
+}
+
+/**
+ * The structured output of the Risk Analysis agent.
+ */
+export interface RiskAnalysisResult {
+  risks: Risk[];
+  aggregated_risk_score: {
+    overall: AggregatedRiskLevel;
+    /** Only categories with at least one Risk need to appear. */
+    by_category: Partial<Record<RiskCategory, AggregatedRiskLevel>>;
+  };
+  /** IDs of the 3 most critical risks (must reference `risks[].id`). */
+  top_3_priorities: string[];
+  /** Analytical gaps the agent could not close. */
+  unresolved_uncertainties: string[];
+}
+
+/**
+ * Inputs the Risk Analysis agent receives at execution time. First
+ * Praxis agent to consume THREE prior outputs.
+ */
+export interface RiskContext {
+  scoping: ScopingResult;
+  research: ResearchResult;
+  stakeholders: StakeholderMapResult;
+  format: Format;
+}
