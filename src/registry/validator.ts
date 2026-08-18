@@ -16,9 +16,12 @@ import {
   DEDUPE_RULE_ALLOWED_KEYS,
   DOMAIN_TRUST_MODES,
   DOMAIN_TRUST_RULE_ALLOWED_KEYS,
+  EDITORIAL_ACTIONS,
+  EDITORIAL_RULES_ALLOWED_KEYS,
   FORMAT_ALLOWED_KEYS,
   FRESHNESS_RULE_ALLOWED_KEYS,
   LANGUAGES,
+  MAX_REGENERATION_ATTEMPTS_CEILING,
   METADATA_ALLOWED_KEYS,
   ORGANIZATION_STYLES,
   OUTPUT_TARGETS,
@@ -31,6 +34,7 @@ import {
   TARGET_LENGTH_ALLOWED_KEYS,
   isAgentId,
   isDomainTrustMode,
+  isEditorialAction,
   isKebabCase,
   isLanguage,
   isOrganizationStyle,
@@ -44,6 +48,8 @@ import type {
   DedupeRule,
   DomainTrustMode,
   DomainTrustRule,
+  EditorialAction,
+  EditorialRules,
   Format,
   FormatMetadata,
   FormatSection,
@@ -545,7 +551,76 @@ function validateSourcingRules(
     if (parsed !== null) rules.dedupe = parsed;
   }
 
+  const editorialRaw = raw["editorial"];
+  if (editorialRaw !== undefined && editorialRaw !== null) {
+    const parsed = validateEditorialRules(editorialRaw, issues);
+    if (parsed !== null) rules.editorial = parsed;
+  }
+
   return rules;
+}
+
+function validateEditorialRules(
+  raw: YamlValue,
+  issues: ValidationIssue[]
+): EditorialRules | null {
+  const path = "sourcing_rules.editorial";
+  if (!isPlainObject(raw)) {
+    issues.push({ path, message: "must be a mapping" });
+    return null;
+  }
+  checkExtraKeys(raw, EDITORIAL_RULES_ALLOWED_KEYS, path, issues);
+
+  const out: EditorialRules = {};
+
+  const strict = raw["strict_editorial"];
+  if (strict !== undefined && strict !== null) {
+    if (typeof strict !== "boolean") {
+      issues.push({
+        path: `${path}.strict_editorial`,
+        message: `must be a boolean, got ${formatValue(strict)}`,
+      });
+    } else {
+      out.strict_editorial = strict;
+    }
+  }
+
+  const maxRegen = raw["max_regeneration_attempts"];
+  if (maxRegen !== undefined && maxRegen !== null) {
+    if (typeof maxRegen !== "number" || !Number.isInteger(maxRegen)) {
+      issues.push({
+        path: `${path}.max_regeneration_attempts`,
+        message: `must be an integer in [1, ${MAX_REGENERATION_ATTEMPTS_CEILING}], got ${formatValue(maxRegen)}`,
+      });
+    } else if (maxRegen < 1 || maxRegen > MAX_REGENERATION_ATTEMPTS_CEILING) {
+      issues.push({
+        path: `${path}.max_regeneration_attempts`,
+        message: `must be in [1, ${MAX_REGENERATION_ATTEMPTS_CEILING}], got ${maxRegen}`,
+      });
+    } else {
+      out.max_regeneration_attempts = maxRegen;
+    }
+  }
+
+  for (const field of [
+    "forbidden_terms_action",
+    "over_length_action",
+    "validation_rules_action",
+  ] as const) {
+    const v = raw[field];
+    if (v !== undefined && v !== null) {
+      if (!isEditorialAction(v)) {
+        issues.push({
+          path: `${path}.${field}`,
+          message: `must be one of [${EDITORIAL_ACTIONS.join(", ")}], got ${formatValue(v)}`,
+        });
+      } else {
+        out[field] = v as EditorialAction;
+      }
+    }
+  }
+
+  return out;
 }
 
 function validateFreshnessRule(

@@ -659,3 +659,80 @@ describe("validateFormat — sourcing_rules.dedupe", () => {
     expectIssue(raw, "sourcing_rules.dedupe.similarity_threshold", "is required");
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.8 — editorial rules
+// ---------------------------------------------------------------------------
+
+describe("validateFormat — v0.8 sourcing_rules.editorial", () => {
+  test("accepts a full editorial block with all fields set", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = {
+      editorial: {
+        strict_editorial: true,
+        max_regeneration_attempts: 3,
+        forbidden_terms_action: "reject",
+        over_length_action: "warn",
+        validation_rules_action: "reject",
+      },
+    };
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules?.editorial).toEqual({
+      strict_editorial: true,
+      max_regeneration_attempts: 3,
+      forbidden_terms_action: "reject",
+      over_length_action: "warn",
+      validation_rules_action: "reject",
+    });
+  });
+
+  test("accepts an empty editorial block (all fields default)", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { editorial: {} };
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules?.editorial).toEqual({});
+  });
+
+  test("rejects editorial with a non-boolean strict_editorial", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { editorial: { strict_editorial: "yes" } };
+    expectIssue(raw, "sourcing_rules.editorial.strict_editorial", "must be a boolean");
+  });
+
+  test("rejects editorial with max_regeneration_attempts out of range", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { editorial: { max_regeneration_attempts: 5 } };
+    expectIssue(raw, "sourcing_rules.editorial.max_regeneration_attempts", "in [1, 3]");
+  });
+
+  test("rejects editorial with max_regeneration_attempts = 0", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { editorial: { max_regeneration_attempts: 0 } };
+    expectIssue(raw, "sourcing_rules.editorial.max_regeneration_attempts", "in [1, 3]");
+  });
+
+  test("rejects editorial with a non-integer max_regeneration_attempts", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { editorial: { max_regeneration_attempts: 2.5 } };
+    expectIssue(raw, "sourcing_rules.editorial.max_regeneration_attempts", "must be an integer");
+  });
+
+  test("rejects editorial with an invalid forbidden_terms_action", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { editorial: { forbidden_terms_action: "silent" } };
+    expectIssue(raw, "sourcing_rules.editorial.forbidden_terms_action", "must be one of");
+  });
+
+  test("rejects editorial with an unknown top-level key", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { editorial: { unknown_field: "boom" } };
+    expectIssue(raw, "sourcing_rules.editorial.unknown_field", "unknown key");
+  });
+
+  test("editorial with only strict_editorial: false is valid (backward-compat default)", () => {
+    const raw = clone();
+    raw["sourcing_rules"] = { editorial: { strict_editorial: false } };
+    const f = validateFormat(raw);
+    expect(f.sourcing_rules?.editorial?.strict_editorial).toBe(false);
+  });
+});

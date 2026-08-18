@@ -158,6 +158,15 @@ sourcing_rules:
   dedupe:
     cross_agent: true
     similarity_threshold: 0.85
+  editorial:
+    # v0.8: strict_editorial: false preserves v0.7 warn-only behaviour.
+    # Set to true to have Synthesis reject-and-regenerate sections
+    # that trip forbidden_terms / max_length / validation_rules.
+    strict_editorial: false
+    max_regeneration_attempts: 2
+    forbidden_terms_action: warn
+    over_length_action: warn
+    validation_rules_action: warn
 
 style_guide:
   voice: authoritative, third-person, no hedging language

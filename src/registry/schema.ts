@@ -153,6 +153,46 @@ export interface SourcingRules {
   freshness?: FreshnessRule;
   domain_trust?: DomainTrustRule;
   dedupe?: DedupeRule;
+  /**
+   * v0.8 optional block. When present and `strict_editorial: true`,
+   * the Synthesis agent enforces `forbidden_terms`, `max_length`,
+   * and `validation_rules` as HARD rejections rather than soft
+   * warnings — a failing section is regenerated up to
+   * `max_regeneration_attempts` times before `EditorialFailureError`
+   * is raised. Absent block or `strict_editorial: false` → v0.7
+   * behaviour verbatim (warnings only).
+   */
+  editorial?: EditorialRules;
+}
+
+// ---------------------------------------------------------------------------
+// v0.8 — Editorial rules (strict_editorial mode).
+// ---------------------------------------------------------------------------
+
+export const EDITORIAL_ACTIONS = ["reject", "warn"] as const;
+export type EditorialAction = (typeof EDITORIAL_ACTIONS)[number];
+
+/**
+ * Editorial conformance rules. Every field is optional; sensible
+ * defaults preserve the v0.7 "warn only" behaviour.
+ *
+ *   strict_editorial     — master switch. `false` → all actions
+ *                          collapse to `"warn"` regardless of the
+ *                          individual `*_action` settings.
+ *   max_regeneration_attempts — how many times the Synthesis agent
+ *                          will re-call the LLM for a section that
+ *                          failed a `"reject"`-action rule. Must be
+ *                          in [1, 3]. Default 2.
+ *   forbidden_terms_action / over_length_action /
+ *   validation_rules_action — per-axis rejection mode. Default
+ *                          `"warn"` for all three.
+ */
+export interface EditorialRules {
+  strict_editorial?: boolean;
+  max_regeneration_attempts?: number;
+  forbidden_terms_action?: EditorialAction;
+  over_length_action?: EditorialAction;
+  validation_rules_action?: EditorialAction;
 }
 
 /**
@@ -173,12 +213,31 @@ export const FORMAT_ALLOWED_KEYS: readonly string[] = [
   "output_targets",
 ] as const;
 
-// Allowed key lists for the v0.5 sourcing_rules sub-schemas.
+// Allowed key lists for the v0.5 sourcing_rules sub-schemas (with
+// v0.8 addition of the editorial block).
 export const SOURCING_RULES_ALLOWED_KEYS: readonly string[] = [
   "freshness",
   "domain_trust",
   "dedupe",
+  "editorial",
 ] as const;
+
+export const EDITORIAL_RULES_ALLOWED_KEYS: readonly string[] = [
+  "strict_editorial",
+  "max_regeneration_attempts",
+  "forbidden_terms_action",
+  "over_length_action",
+  "validation_rules_action",
+] as const;
+
+/** Default number of Synthesis regeneration attempts under strict_editorial. */
+export const DEFAULT_MAX_REGENERATION_ATTEMPTS = 2;
+/** Hard ceiling — no format may exceed this. */
+export const MAX_REGENERATION_ATTEMPTS_CEILING = 3;
+
+export function isEditorialAction(v: unknown): v is EditorialAction {
+  return typeof v === "string" && (EDITORIAL_ACTIONS as readonly string[]).includes(v);
+}
 
 export const FRESHNESS_RULE_ALLOWED_KEYS: readonly string[] = [
   "max_source_age_days",

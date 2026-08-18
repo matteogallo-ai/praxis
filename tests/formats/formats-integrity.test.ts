@@ -193,4 +193,23 @@ describe("shipped formats — structural invariants", () => {
       expect(hasOptions).toBe(true);
     }
   });
+
+  // v0.8: every shipped format declares an editorial block with
+  // strict_editorial: false (backward-compat) explicitly, so
+  // opting into strict_editorial is a one-line change per format.
+  test("every shipped format declares an editorial block with strict_editorial=false", () => {
+    for (const f of all) {
+      const ed = f.sourcing_rules?.editorial;
+      expect(ed).toBeDefined();
+      expect(ed!.strict_editorial).toBe(false);
+    }
+  });
+
+  test("every editorial block picks a valid max_regeneration_attempts (1-3)", () => {
+    for (const f of all) {
+      const attempts = f.sourcing_rules?.editorial?.max_regeneration_attempts;
+      expect(attempts).toBeGreaterThanOrEqual(1);
+      expect(attempts).toBeLessThanOrEqual(3);
+    }
+  });
 });

@@ -150,6 +150,12 @@ sourcing_rules:
   dedupe:
     cross_agent: true
     similarity_threshold: 0.85
+  editorial:
+    strict_editorial: false
+    max_regeneration_attempts: 2
+    forbidden_terms_action: warn
+    over_length_action: warn
+    validation_rules_action: warn
 
 style_guide:
   voice: MECE-driven, pyramid principle, action-oriented, third-person
