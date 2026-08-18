@@ -1,15 +1,24 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  validateRiskSourcing,
   validateSourcing,
   validateStakeholderSourcing,
 } from "../../src/sourcing/validator.ts";
-import { SourcingValidationError } from "../../src/sourcing/errors.ts";
+import {
+  SourcingValidationError,
+  StaleSourceError,
+  UntrustedDomainError,
+} from "../../src/sourcing/errors.ts";
+import { InMemorySourcingAccumulator } from "../../src/sourcing/dedupe.ts";
 import type {
   ResearchResult,
   StakeholderMapResult,
   Stakeholder,
+  Risk,
+  RiskAnalysisResult,
 } from "../../src/agents/types.ts";
+import type { SourcingRules } from "../../src/sourcing/types.ts";
 
 function sourced(url: string, title: string, excerpt = "…"): ResearchResult["findings"][number] {
   return {
@@ -247,3 +256,347 @@ describe("validateStakeholderSourcing — permissive", () => {
     expect(report.warnings).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// v0.5 — hardened rules (freshness, domain trust, dedupe) + Risk sourcing.
+// ---------------------------------------------------------------------------
+
+const NOW = new Date("2026-08-18T00:00:00Z");
+
+function sourcedAt(dateIso: string, url = "https://reuters.com/x"): ResearchResult["findings"][number] {
+  return {
+    claim: "some claim",
+    supporting_evidence: "supporting text",
+    source: {
+      url,
+      title: "T",
+      accessed_at: dateIso,
+      excerpt: "…",
+    },
+  };
+}
+
+function research(findings: ResearchResult["findings"]): ResearchResult {
+  return { findings, open_questions: [], search_queries_used: [] };
+}
+
+describe("validateSourcing — freshness rule", () => {
+  const rules: SourcingRules = {
+    freshness: { max_source_age_days: 730, warn_after_days: 365 },
+  };
+
+  test("emits a stale_source warning under permissive when past max", () => {
+    const r = validateSourcing(
+      research([sourcedAt("2020-01-01T00:00:00Z")]),
+      "permissive",
+      { rules, now: NOW }
+    );
+    expect(r.warnings).toHaveLength(1);
+    const w = r.warnings[0]!;
+    expect(w.kind).toBe("stale_source");
+    if (w.kind === "stale_source") {
+      expect(w.exceeds_max).toBe(true);
+      expect(w.age_days).toBeGreaterThan(730);
+    }
+    expect(r.counts.stale).toBe(1);
+  });
+
+  test("emits a stale_source warning (non-blocking) between warn and max", () => {
+    const r = validateSourcing(
+      research([sourcedAt("2025-01-01T00:00:00Z")]),
+      "permissive",
+      { rules, now: NOW }
+    );
+    expect(r.warnings).toHaveLength(1);
+    const w = r.warnings[0]!;
+    if (w.kind === "stale_source") {
+      expect(w.exceeds_max).toBe(false);
+    }
+    // Stale bucket categorisation still applies (non-blocking though).
+    expect(r.counts.stale).toBe(1);
+  });
+
+  test("does NOT throw under strict when age is only past warn (soft warning)", () => {
+    expect(() =>
+      validateSourcing(
+        research([sourcedAt("2025-06-01T00:00:00Z")]),
+        "strict",
+        { rules, now: NOW }
+      )
+    ).not.toThrow();
+  });
+
+  test("throws StaleSourceError under strict when age exceeds max", () => {
+    let caught: unknown;
+    try {
+      validateSourcing(
+        research([sourcedAt("2020-01-01T00:00:00Z")]),
+        "strict",
+        { rules, now: NOW }
+      );
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(StaleSourceError);
+    const e = caught as StaleSourceError;
+    expect(e.maxAgeDays).toBe(730);
+    expect(e.ageDays).toBeGreaterThan(730);
+  });
+
+  test("fresh sources pass cleanly", () => {
+    const r = validateSourcing(
+      research([sourcedAt("2026-08-01T00:00:00Z")]),
+      "strict",
+      { rules, now: NOW }
+    );
+    expect(r.warnings).toEqual([]);
+    expect(r.counts.ok).toBe(1);
+  });
+});
+
+describe("validateSourcing — domain trust rule", () => {
+  const rules: SourcingRules = {
+    domain_trust: {
+      mode: "reputation-only",
+      reputation_tiers: {
+        tier_1: ["reuters.com"],
+        tier_2: ["hbr.org"],
+        tier_3: ["wikipedia.org"],
+        min_tier: 2,
+      },
+    },
+  };
+
+  test("emits an untrusted_domain warning under permissive", () => {
+    const r = validateSourcing(
+      research([sourcedAt("2026-08-01T00:00:00Z", "https://blogspot.com/x")]),
+      "permissive",
+      { rules, now: NOW }
+    );
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings[0]!.kind).toBe("untrusted_domain");
+    expect(r.counts.untrusted).toBe(1);
+  });
+
+  test("throws UntrustedDomainError under strict", () => {
+    let caught: unknown;
+    try {
+      validateSourcing(
+        research([sourcedAt("2026-08-01T00:00:00Z", "https://medium.com/x")]),
+        "strict",
+        { rules, now: NOW }
+      );
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(UntrustedDomainError);
+  });
+
+  test("trusted-tier source passes", () => {
+    const r = validateSourcing(
+      research([sourcedAt("2026-08-01T00:00:00Z", "https://reuters.com/x")]),
+      "strict",
+      { rules, now: NOW }
+    );
+    expect(r.warnings).toEqual([]);
+  });
+});
+
+describe("validateSourcing — cross-agent dedupe", () => {
+  const rules: SourcingRules = {
+    dedupe: { cross_agent: true, similarity_threshold: 0.85 },
+  };
+
+  test("emits a duplicate_source warning when the same URL appears in two agents", () => {
+    const acc = new InMemorySourcingAccumulator(rules.dedupe!);
+    validateSourcing(
+      research([sourcedAt("2026-08-01T00:00:00Z", "https://reuters.com/x")]),
+      "permissive",
+      { rules, now: NOW, accumulator: acc }
+    );
+    const stakeholderReport = validateStakeholderSourcing(
+      {
+        stakeholders: [
+          stakeholder({
+            name: "A",
+            position_evidence: {
+              url: "https://reuters.com/x",
+              title: "T",
+              accessed_at: "2026-08-01T00:00:00Z",
+              excerpt: "…",
+            },
+          }),
+        ],
+        key_dynamics: ["a", "b", "c"],
+        blind_spots: [],
+        coverage_confidence: "medium",
+      },
+      "permissive",
+      { rules, now: NOW, accumulator: acc }
+    );
+    expect(stakeholderReport.warnings).toHaveLength(1);
+    expect(stakeholderReport.warnings[0]!.kind).toBe("duplicate_source");
+    expect(stakeholderReport.counts.duplicated).toBe(1);
+  });
+
+  test("does not flag duplicates within a single agent", () => {
+    const acc = new InMemorySourcingAccumulator(rules.dedupe!);
+    const r = validateSourcing(
+      research([
+        sourcedAt("2026-08-01T00:00:00Z", "https://reuters.com/x"),
+        sourcedAt("2026-08-01T00:00:00Z", "https://reuters.com/x"),
+      ]),
+      "permissive",
+      { rules, now: NOW, accumulator: acc }
+    );
+    expect(r.warnings).toEqual([]);
+  });
+
+  test("duplicates are non-blocking under strict (warning only)", () => {
+    const acc = new InMemorySourcingAccumulator(rules.dedupe!);
+    validateSourcing(
+      research([sourcedAt("2026-08-01T00:00:00Z", "https://reuters.com/x")]),
+      "strict",
+      { rules, now: NOW, accumulator: acc }
+    );
+    // Now the second agent emits a duplicate — must not throw.
+    expect(() =>
+      validateStakeholderSourcing(
+        {
+          stakeholders: [
+            stakeholder({
+              name: "A",
+              position_evidence: {
+                url: "https://reuters.com/x",
+                title: "T",
+                accessed_at: "2026-08-01T00:00:00Z",
+                excerpt: "…",
+              },
+            }),
+          ],
+          key_dynamics: ["a", "b", "c"],
+          blind_spots: [],
+          coverage_confidence: "medium",
+        },
+        "strict",
+        { rules, now: NOW, accumulator: acc }
+      )
+    ).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v0.5 — validateRiskSourcing (Risk agent, both evidence fields).
+// ---------------------------------------------------------------------------
+
+function risk(overrides: Partial<Risk> = {}): Risk {
+  return {
+    id: "RISK-001",
+    category: "strategic",
+    description: "A risk.",
+    likelihood: "medium",
+    impact: "moderate",
+    likelihood_evidence: {
+      url: "https://reuters.com/likelihood",
+      title: "L",
+      accessed_at: "2026-08-01T00:00:00Z",
+      excerpt: "…",
+    },
+    impact_evidence: {
+      url: "https://reuters.com/impact",
+      title: "I",
+      accessed_at: "2026-08-01T00:00:00Z",
+      excerpt: "…",
+    },
+    affected_stakeholders: ["A"],
+    timeframe: "short-term",
+    mitigations: ["Do X"],
+    residual_risk_after_mitigation: "low",
+    ...overrides,
+  };
+}
+
+function riskResult(risks: Risk[]): RiskAnalysisResult {
+  return {
+    risks,
+    aggregated_risk_score: { overall: "medium", by_category: {} },
+    top_3_priorities: risks.slice(0, 3).map((r) => r.id),
+    unresolved_uncertainties: [],
+  };
+}
+
+describe("validateRiskSourcing — strict", () => {
+  test("passes when both evidence fields are sourced", () => {
+    const report = validateRiskSourcing(
+      riskResult([risk()]),
+      "strict",
+      { now: NOW }
+    );
+    expect(report.total_items).toBe(2);
+    expect(report.warnings).toEqual([]);
+  });
+
+  test("throws when likelihood_evidence is missing", () => {
+    let caught: unknown;
+    try {
+      validateRiskSourcing(
+        riskResult([
+          risk({
+            likelihood_evidence: {
+              status: "SOURCE_MISSING",
+              searched_for: "q",
+            },
+          }),
+        ]),
+        "strict"
+      );
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SourcingValidationError);
+    const e = caught as SourcingValidationError;
+    const w = e.report.warnings[0]!;
+    expect(w.kind).toBe("missing_risk_evidence");
+    if (w.kind === "missing_risk_evidence") {
+      expect(w.evidence_field).toBe("likelihood_evidence");
+      expect(w.risk_id).toBe("RISK-001");
+    }
+  });
+
+  test("throws when impact_evidence is missing", () => {
+    let caught: unknown;
+    try {
+      validateRiskSourcing(
+        riskResult([
+          risk({
+            impact_evidence: { status: "SOURCE_MISSING", searched_for: "q" },
+          }),
+        ]),
+        "strict"
+      );
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SourcingValidationError);
+  });
+});
+
+describe("validateRiskSourcing — permissive", () => {
+  test("collects missing evidence warnings without throwing", () => {
+    const report = validateRiskSourcing(
+      riskResult([
+        risk({
+          likelihood_evidence: { status: "SOURCE_MISSING", searched_for: "l" },
+          impact_evidence: { status: "SOURCE_MISSING", searched_for: "i" },
+        }),
+      ]),
+      "permissive"
+    );
+    expect(report.warnings).toHaveLength(2);
+    expect(report.missing_sources_count).toBe(2);
+    expect(report.total_items).toBe(2);
+    expect(report.counts.missing).toBe(2);
+    expect(report.counts.ok).toBe(0);
+  });
+});
+
