@@ -1,20 +1,33 @@
 /**
  * `praxis brief "<question>" --format <id> [flags]` — CLI entry point.
  *
- * v0.5 modes:
- *   default              Scoping only.
- *   --with-research      Scoping → Research.
- *   --with-stakeholders  Scoping → Research → Stakeholder Mapping.
- *                        Implies --with-research; a note is emitted
- *                        to stdout if used alone.
- *   --with-risks         Scoping → Research → Stakeholders → Risks.
- *                        Implies --with-stakeholders (and therefore
- *                        --with-research); notes emitted to stdout if
- *                        used alone.
- *   --sourcing-report    Prints ONLY the aggregated cross-agent
- *                        sourcing report (useful for audit). Implies
- *                        --with-risks (the full pipeline is what
- *                        produces the report).
+ * v0.6 modes:
+ *   default                 Scoping only.
+ *   --with-research         Scoping → Research.
+ *   --with-stakeholders     Scoping → Research → Stakeholder Mapping.
+ *                           Implies --with-research; a note is
+ *                           emitted to stdout if used alone.
+ *   --with-risks            Scoping → Research → Stakeholders → Risks.
+ *                           Implies --with-stakeholders (and therefore
+ *                           --with-research); notes emitted to stdout
+ *                           if used alone.
+ *   --sourcing-report       Prints ONLY the aggregated cross-agent
+ *                           sourcing report (useful for audit).
+ *                           Implies --with-risks.
+ *   --full                  Runs the full six-agent pipeline
+ *                           (Scoping → Research → Stakeholders → Risks
+ *                           → Options → Synthesis) via
+ *                           `Orchestrator.brief()` and prints the
+ *                           assembled Markdown briefing. Combines
+ *                           with:
+ *     --output <path>       Writes the Markdown to `path` instead of
+ *                           stdout. Paths must be relative or
+ *                           absolute and readable — Praxis writes
+ *                           anywhere the process can.
+ *     --json                Prints the full `BriefResult` as JSON
+ *                           (for audit / downstream tooling).
+ *     --with-sourcing-report  Appends the detailed sourcing report
+ *                             beneath the briefing.
  *
  * Providers:
  *   --provider mock       (default) reads pre-scripted fixtures under
@@ -22,9 +35,6 @@
  *   --provider anthropic  live provider. Requires `ANTHROPIC_API_KEY`
  *                         in the environment. Enables tool-using
  *                         agents against the real web_search tool.
- *
- * Full-briefing generation still throws `NotImplementedError` at the
- * Orchestrator; that pipeline lands in v0.6+.
  */
 
 import { FormatRegistry } from "../../registry/registry.ts";
@@ -38,12 +48,14 @@ import {
 import { PraxisError } from "../../registry/errors.ts";
 import {
   c,
-  renderScopingResult,
+  renderFullBrief,
   renderResearchResult,
-  renderStakeholders,
   renderRisks,
+  renderScopingResult,
   renderSourcingReport,
+  renderStakeholders,
 } from "../output.ts";
+import { writeFileSync } from "node:fs";
 import type { LLMProvider } from "../../llm/provider.ts";
 import type {
   ScopingResult,
@@ -62,6 +74,8 @@ export interface BriefCommandOptions {
   withStakeholders: boolean;
   withRisks: boolean;
   sourcingReport: boolean;
+  full: boolean;
+  outputPath: string | null;
   formatsDir: string;
   fixturesDir: string;
 }
@@ -75,6 +89,8 @@ export interface ParsedBriefArgs {
   withStakeholders: boolean;
   withRisks: boolean;
   sourcingReport: boolean;
+  full: boolean;
+  outputPath: string | null;
   error?: string;
 }
 
@@ -92,6 +108,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   let withStakeholders = false;
   let withRisks = false;
   let sourcingReport = false;
+  let full = false;
+  let outputPath: string | null = null;
 
   const errorReturn = (error: string): ParsedBriefArgs => ({
     question: "",
@@ -102,6 +120,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     withStakeholders,
     withRisks,
     sourcingReport,
+    full,
+    outputPath,
     error,
   });
 
@@ -127,6 +147,15 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       i++;
     } else if (a.startsWith("--provider=")) {
       provider = a.slice("--provider=".length);
+    } else if (a === "--output") {
+      const next = args[i + 1];
+      if (next === undefined) {
+        return errorReturn("--output expects a file path");
+      }
+      outputPath = next;
+      i++;
+    } else if (a.startsWith("--output=")) {
+      outputPath = a.slice("--output=".length);
     } else if (a === "--json") {
       json = true;
     } else if (a === "--with-research") {
@@ -136,6 +165,13 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     } else if (a === "--with-risks") {
       withRisks = true;
     } else if (a === "--sourcing-report") {
+      sourcingReport = true;
+    } else if (a === "--full") {
+      full = true;
+    } else if (a === "--with-sourcing-report") {
+      // v0.6 alias — `--with-sourcing-report` appends the report to a
+      // `--full` briefing (as opposed to `--sourcing-report` which
+      // shows ONLY the report and implies `--with-risks`).
       sourcingReport = true;
     } else {
       positional.push(a);
@@ -162,7 +198,24 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       withStakeholders,
       withRisks,
       sourcingReport,
+      full,
+      outputPath,
       error: "--format is required. Usage: praxis brief \"<question>\" --format <id>",
+    };
+  }
+  if (outputPath !== null && !full) {
+    return {
+      question: positional[0]!,
+      formatId,
+      provider,
+      json,
+      withResearch,
+      withStakeholders,
+      withRisks,
+      sourcingReport,
+      full,
+      outputPath,
+      error: "--output requires --full (the option only applies to the full briefing).",
     };
   }
 
@@ -175,6 +228,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     withStakeholders,
     withRisks,
     sourcingReport,
+    full,
+    outputPath,
   };
 }
 
@@ -184,8 +239,25 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   registry.loadDirectory(opts.formatsDir);
   const orchestrator = new Orchestrator(registry, llm);
 
-  // --sourcing-report implies --with-risks (the full pipeline is what
-  // produces the aggregated report).
+  if (opts.full) {
+    const result = await orchestrator.brief(opts.question, opts.formatId);
+    if (opts.json) {
+      const payload = JSON.stringify(result, null, 2) + "\n";
+      writeOrEmit(payload, opts.outputPath);
+      return 0;
+    }
+    let out = renderFullBrief(result);
+    if (opts.sourcingReport) {
+      out += "\n---\n\n";
+      out += "# Sourcing Report\n\n";
+      out += renderSourcingReportMarkdown(result.sourcing_report);
+    }
+    writeOrEmit(out, opts.outputPath);
+    return 0;
+  }
+
+  // --sourcing-report (alone, without --full) implies --with-risks
+  // (the full pipeline is what produces the aggregated report).
   const wantsRisks = opts.withRisks || opts.sourcingReport;
 
   if (wantsRisks) {
@@ -265,7 +337,7 @@ function printScopingOnly(result: ScopingResult, json: boolean): void {
   }
   process.stdout.write(renderScopingResult(result));
   process.stdout.write(
-    `\n${c.dim("Next: full briefing generation coming in v0.6+.")}\n`
+    `\n${c.dim("Run with --full to produce the full six-agent briefing.")}\n`
   );
 }
 
@@ -281,7 +353,7 @@ function printScopingPlusResearch(
   process.stdout.write(renderScopingResult(scoping));
   process.stdout.write(renderResearchResult(research));
   process.stdout.write(
-    `\n${c.dim("Next: stakeholder mapping (--with-stakeholders), synthesis, editorial land from v0.4+.")}\n`
+    `\n${c.dim("Run with --with-stakeholders / --with-risks / --full to extend the pipeline.")}\n`
   );
 }
 
@@ -301,7 +373,7 @@ function printFullPipeline(
   process.stdout.write(renderResearchResult(research));
   process.stdout.write(renderStakeholders(stakeholders));
   process.stdout.write(
-    `\n${c.dim("Next: risk analysis (--with-risks), synthesis, editorial land from v0.5+.")}\n`
+    `\n${c.dim("Run with --with-risks / --full to extend the pipeline.")}\n`
   );
 }
 
@@ -329,7 +401,7 @@ function printFullPipelineWithRisks(
   process.stdout.write(renderRisks(risks));
   process.stdout.write(renderSourcingReport(sourcing_report));
   process.stdout.write(
-    `\n${c.dim("Next: options generation lands in v0.6; synthesis and editorial follow.")}\n`
+    `\n${c.dim("Run with --full to produce the assembled Markdown briefing.")}\n`
   );
 }
 
@@ -339,6 +411,62 @@ function printSourcingReportOnly(report: SourcingReport, json: boolean): void {
     return;
   }
   process.stdout.write(renderSourcingReport(report));
+}
+
+/**
+ * Write `content` to `path` (creating a new file, overwriting if
+ * present) OR to stdout when `path` is null. Emits a one-line
+ * confirmation to stderr when writing to a file so pipelines don't
+ * silently swallow the output location.
+ */
+function writeOrEmit(content: string, path: string | null): void {
+  if (path === null) {
+    process.stdout.write(content);
+    return;
+  }
+  writeFileSync(path, content, "utf-8");
+  process.stderr.write(`${c.dim("wrote")} ${path} ${c.dim(`(${content.length} bytes)`)}\n`);
+}
+
+/**
+ * ANSI-free markdown rendering of the sourcing report, used as an
+ * appendix under `--full --with-sourcing-report`.
+ */
+function renderSourcingReportMarkdown(report: SourcingReport): string {
+  const parts: string[] = [];
+  parts.push(`**Policy:** ${report.policy}  \n`);
+  parts.push(`**Total items:** ${report.total_items}  \n`);
+  parts.push(
+    `**Counts:** ok ${report.counts.ok} · stale ${report.counts.stale} · ` +
+      `untrusted ${report.counts.untrusted} · duplicated ${report.counts.duplicated} · ` +
+      `missing ${report.counts.missing}\n\n`
+  );
+  if (report.warnings.length === 0) {
+    parts.push("_No warnings — every inspected item passed._\n");
+    return parts.join("");
+  }
+  parts.push("**Warnings:**\n\n");
+  for (const w of report.warnings) {
+    parts.push(`- ${describeWarningMarkdown(w)}\n`);
+  }
+  return parts.join("");
+}
+
+function describeWarningMarkdown(w: SourcingReport["warnings"][number]): string {
+  switch (w.kind) {
+    case "missing_source":
+      return `[research] finding[${w.finding_index}] SOURCE_MISSING — ${w.searched_for}`;
+    case "missing_stakeholder_evidence":
+      return `[stakeholder] '${w.stakeholder_name}' (index ${w.stakeholder_index}) SOURCE_MISSING — ${w.searched_for}`;
+    case "missing_risk_evidence":
+      return `[risk] ${w.risk_id} .${w.evidence_field} SOURCE_MISSING — ${w.searched_for}`;
+    case "stale_source":
+      return `[${w.agent}] stale source (${w.age_days} days${w.exceeds_max ? "; past max" : ""}): ${w.url}`;
+    case "untrusted_domain":
+      return `[${w.agent}] untrusted domain: ${w.url} — ${w.reason}`;
+    case "duplicate_source":
+      return `[${w.agent}] duplicate source: ${w.url} collides with [${w.previous_agent}] ${w.previous_url}`;
+  }
 }
 
 /**
@@ -366,6 +494,8 @@ export async function runBriefCli(
       withStakeholders: parsed.withStakeholders,
       withRisks: parsed.withRisks,
       sourcingReport: parsed.sourcingReport,
+      full: parsed.full,
+      outputPath: parsed.outputPath,
       formatsDir: ctx.formatsDir,
       fixturesDir: ctx.fixturesDir,
     });

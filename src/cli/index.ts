@@ -129,7 +129,7 @@ function dispatchFormats(sub: string, rest: string[]): number {
 
 function printHelp(): void {
   process.stdout.write(
-    `praxis v${PRAXIS_VERSION} — Format Registry + Scoping/Research/Stakeholder/Risk agents for consultant-grade briefings\n\n` +
+    `praxis v${PRAXIS_VERSION} — Format Registry + six-agent pipeline for consultant-grade briefings\n\n` +
       `Usage:\n` +
       `  praxis version\n` +
       `  praxis formats list [--org-style <style>]\n` +
@@ -141,12 +141,18 @@ function printHelp(): void {
       `                            [--with-stakeholders]\n` +
       `                            [--with-risks]\n` +
       `                            [--sourcing-report]\n` +
+      `                            [--full]\n` +
+      `                            [--output <path.md>]\n` +
+      `                            [--with-sourcing-report]\n` +
       `                            [--json]\n\n` +
-      `In v0.5, 'brief' runs Scoping (default), or progressively adds Research,\n` +
-      `Stakeholder Mapping, and Risk Analysis via --with-research /\n` +
-      `--with-stakeholders / --with-risks. --sourcing-report prints only the\n` +
-      `aggregated cross-agent sourcing report (implies --with-risks).\n` +
-      `Full briefing generation lands in v0.6+. See ROADMAP.md.\n`
+      `In v0.6, 'brief' runs Scoping (default) or progressively adds Research,\n` +
+      `Stakeholder Mapping, Risk Analysis via --with-research / --with-stakeholders /\n` +
+      `--with-risks. --sourcing-report prints only the aggregated sourcing report\n` +
+      `(implies --with-risks). --full runs the full six-agent pipeline\n` +
+      `(Scoping → Research → Stakeholders → Risks → Options → Synthesis) and\n` +
+      `prints the assembled Markdown briefing. --output <path.md> writes to a\n` +
+      `file; --with-sourcing-report appends the audit report; --json emits the\n` +
+      `full BriefResult as JSON.\n`
   );
 }
 

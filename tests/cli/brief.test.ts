@@ -160,7 +160,8 @@ describe("runBriefCli — nominal (scoping only, mock provider)", () => {
     expect(out).toContain("hidden_questions");
     expect(out).toContain("scope_boundaries");
     expect(out).toContain("assumptions_to_validate");
-    expect(out).toContain("v0.6+");
+    // v0.6: the trailer now points at --full instead of "coming in v0.6+".
+    expect(out).toContain("--full");
   });
 
   test("--json emits raw JSON only (no headings, no trailer)", async () => {
@@ -638,5 +639,246 @@ describe("briefCommand — --sourcing-report (v0.5)", () => {
     const out = stdout();
     expect(out).toContain("Risk analysis output");
     expect(out).toContain("Sourcing report");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v0.6 — --full, --output, --with-sourcing-report
+// ---------------------------------------------------------------------------
+
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+describe("parseBriefArgs — v0.6 flags", () => {
+  test("parses --full alone", () => {
+    const p = parseBriefArgs(["Q", "--format", "executive-pre-read", "--full"]);
+    expect(p.error).toBeUndefined();
+    expect(p.full).toBe(true);
+    expect(p.outputPath).toBeNull();
+  });
+
+  test("parses --output <path> with --full", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--full",
+      "--output",
+      "/tmp/x.md",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.outputPath).toBe("/tmp/x.md");
+  });
+
+  test("supports --output=<path> equals form", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--full",
+      "--output=/tmp/y.md",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.outputPath).toBe("/tmp/y.md");
+  });
+
+  test("--output without --full is a parse error", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--output",
+      "/tmp/x.md",
+    ]);
+    expect(p.error).toContain("--output requires --full");
+  });
+
+  test("--with-sourcing-report parses as a sourcing_report request", () => {
+    const p = parseBriefArgs([
+      "Q",
+      "--format",
+      "executive-pre-read",
+      "--full",
+      "--with-sourcing-report",
+    ]);
+    expect(p.error).toBeUndefined();
+    expect(p.sourcingReport).toBe(true);
+    expect(p.full).toBe(true);
+  });
+});
+
+describe("briefCommand — --full (v0.6, mock provider)", () => {
+  test("prints a full Markdown briefing with YAML front-matter and every section", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--full",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    // YAML header markers
+    expect(out.startsWith("---\n")).toBe(true);
+    expect(out).toContain("question: ");
+    expect(out).toContain("format: \"executive-pre-read\"");
+    expect(out).toContain("provider: \"mock\"");
+    expect(out).toContain("recommended_option: \"OPT-A\"");
+    // Question as H1
+    expect(out).toContain("# Should we enter the German market?");
+    // Every section heading in order
+    const headings = [
+      "## Context",
+      "## Key Question",
+      "## Recommendation",
+      "## Supporting Evidence",
+      "## Risks and Mitigations",
+      "## Next Steps",
+    ];
+    let cursor = 0;
+    for (const h of headings) {
+      const idx = out.indexOf(h, cursor);
+      expect(idx).toBeGreaterThanOrEqual(cursor);
+      cursor = idx + h.length;
+    }
+    // At least one Sources block
+    expect(out).toContain("**Sources:**");
+  });
+
+  test("--full --json emits a parseable BriefResult", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--full",
+        "--json",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const parsed = JSON.parse(stdout().trim());
+    expect(parsed.scoping).toBeDefined();
+    expect(parsed.research).toBeDefined();
+    expect(parsed.stakeholders).toBeDefined();
+    expect(parsed.risks).toBeDefined();
+    expect(parsed.options).toBeDefined();
+    expect(parsed.synthesis).toBeDefined();
+    expect(parsed.sourcing_report).toBeDefined();
+    expect(parsed.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(parsed.format_id).toBe("executive-pre-read");
+    expect(parsed.provider_name).toBe("mock");
+    expect(parsed.synthesis.sections).toHaveLength(6);
+  });
+
+  test("--full --output <path> writes to a file and prints a stderr confirmation", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "praxis-brief-out-"));
+    const path = join(dir, "brief.md");
+    try {
+      const code = await runBriefCli(
+        [
+          "Should we enter the German market?",
+          "--format",
+          "executive-pre-read",
+          "--full",
+          "--output",
+          path,
+        ],
+        CTX
+      );
+      expect(code).toBe(0);
+      // stdout should be empty (or just the stderr confirmation isn't there).
+      expect(stdout()).toBe("");
+      expect(stderr()).toContain(path);
+      const content = readFileSync(path, "utf-8");
+      expect(content.startsWith("---\n")).toBe(true);
+      expect(content).toContain("# Should we enter the German market?");
+      expect(content).toContain("## Context");
+      expect(content).toContain("## Next Steps");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("--full --with-sourcing-report appends the report under the briefing", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "executive-pre-read",
+        "--full",
+        "--with-sourcing-report",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    // The briefing appears first, then the sourcing report.
+    const briefIdx = out.indexOf("# Should we enter");
+    const reportIdx = out.indexOf("# Sourcing Report");
+    expect(briefIdx).toBeGreaterThanOrEqual(0);
+    expect(reportIdx).toBeGreaterThan(briefIdx);
+    expect(out).toContain("**Policy:** strict");
+    expect(out).toContain("**Total items:**");
+  });
+
+  test("--full works with mckinsey-style-note", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter Germany?",
+        "--format",
+        "mckinsey-style-note",
+        "--full",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain("## Situation");
+    expect(out).toContain("## Answer");
+    expect(out).toContain("## So What");
+  });
+
+  test("--full works with position-paper-corporate", async () => {
+    const code = await runBriefCli(
+      [
+        "Should we enter the German market?",
+        "--format",
+        "position-paper-corporate",
+        "--full",
+      ],
+      CTX
+    );
+    expect(code).toBe(0);
+    const out = stdout();
+    expect(out).toContain("## Issue Framing");
+    expect(out).toContain("## Our Position");
+    expect(out).toContain("## Recommended Actions");
+  });
+
+  test("--full without --format exits 1 with usage hint", async () => {
+    const code = await runBriefCli(["Q", "--full"], CTX);
+    expect(code).toBe(1);
+    expect(stderr()).toContain("--format is required");
+  });
+
+  test("--full --provider anthropic without ANTHROPIC_API_KEY exits 1 with clear error", async () => {
+    delete process.env["ANTHROPIC_API_KEY"];
+    const code = await runBriefCli(
+      [
+        "Q",
+        "--format",
+        "executive-pre-read",
+        "--full",
+        "--provider",
+        "anthropic",
+      ],
+      CTX
+    );
+    expect(code).toBe(1);
+    expect(stderr()).toContain("ANTHROPIC_API_KEY");
   });
 });
