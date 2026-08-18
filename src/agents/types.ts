@@ -436,6 +436,33 @@ export interface SynthesizedSection {
   /** Sources cited in this section, lifted from upstream artefacts. */
   sources_cited: SourceReference[];
   validation_issues: string[];
+  /**
+   * v0.8: history of every LLM attempt made for this section under
+   * `strict_editorial` mode. Empty array when strict_editorial is
+   * off or the first attempt was accepted. Populated with
+   * per-attempt `EditorialAttempt` entries when a retry was
+   * triggered (each entry records the reason and whether the
+   * attempt was accepted).
+   */
+  editorial_attempts: EditorialAttempt[];
+  /**
+   * v0.8: 1-based index of the attempt whose output is stored in
+   * `content_markdown`. Defaults to 1 (first attempt accepted).
+   */
+  final_attempt_number: number;
+}
+
+/**
+ * v0.8: one entry per LLM attempt made for a section under
+ * `strict_editorial` mode. `reason` names the rule that triggered
+ * the retry when `accepted === false`; `details` is a
+ * human-readable explanation (e.g. `"terms found: 'obviously', 'clearly'"`).
+ */
+export interface EditorialAttempt {
+  attempt_number: number;
+  reason: "forbidden_terms" | "over_length" | "validation_rule" | "accepted";
+  details: string;
+  accepted: boolean;
 }
 
 /**
@@ -494,6 +521,32 @@ export interface SynthesisContext {
   risks: RiskAnalysisResult;
   options: OptionsGenerationResult;
   format: Format;
+  /**
+   * v0.8: when present, tells the Synthesis agent to run in
+   * REVISION MODE — re-writing sections to address the supplied
+   * critical/material critiques and align the recommendation with
+   * the steelmanned alternative. Set by
+   * `Orchestrator.briefWithCritiqueAndRerun()` and NEVER by
+   * end-user code.
+   */
+  revision_context?: RevisionContext;
+}
+
+/**
+ * v0.8: parameters that flip the Synthesis agent into revision
+ * mode. The prompt exposes an additional REVISION section when
+ * `revision_context` is supplied; the model MUST preserve the
+ * existing section IDs / titles / structure and MUST address the
+ * listed critiques.
+ */
+export interface RevisionContext {
+  original_synthesis: SynthesisResult;
+  adversarial: AdversarialCritiqueResult;
+  /** Critical + material critiques the model must address. */
+  critiques_to_address: Critique[];
+  steelmanned_alternative: string | null;
+  /** Free-form instruction — currently "revise sections and align recommendation". */
+  instruction: string;
 }
 
 // ---------------------------------------------------------------------------

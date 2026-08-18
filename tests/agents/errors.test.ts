@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   AdversarialCritiqueError,
   AgentExecutionError,
+  EditorialFailureError,
   InvalidAgentOutputError,
   InvalidCritiqueTargetError,
   InvalidOptionRiskReference,
@@ -247,5 +248,40 @@ describe("MissingAlternativeError", () => {
     expect(err.name).toBe("MissingAlternativeError");
     expect(err.message).toContain("revised_recommendation_needed");
     expect(err.message).toContain("steelmanned_alternative");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// v0.8 — EditorialFailureError
+// ---------------------------------------------------------------------------
+
+describe("EditorialFailureError", () => {
+  test("extends SynthesisError and carries the retry history", () => {
+    const attempts = [
+      { attempt_number: 1, reason: "forbidden_terms", details: "found 'obviously'", accepted: false },
+      { attempt_number: 2, reason: "forbidden_terms", details: "found 'clearly'", accepted: false },
+    ];
+    const err = new EditorialFailureError("intro", "forbidden_terms", attempts);
+    expect(err).toBeInstanceOf(SynthesisError);
+    expect(err.name).toBe("EditorialFailureError");
+    expect(err.sectionId).toBe("intro");
+    expect(err.reason).toBe("forbidden_terms");
+    expect(err.attempts).toHaveLength(2);
+    expect(err.message).toContain("intro");
+    expect(err.message).toContain("forbidden_terms");
+    expect(err.message).toContain("2 attempts");
+  });
+
+  test("supports over_length reason", () => {
+    const err = new EditorialFailureError("body", "over_length", [
+      { attempt_number: 1, reason: "over_length", details: "155 words > 100 cap", accepted: false },
+    ]);
+    expect(err.reason).toBe("over_length");
+  });
+
+  test("supports validation_rule reason", () => {
+    const err = new EditorialFailureError("recommendation", "validation_rule", []);
+    expect(err.reason).toBe("validation_rule");
+    expect(err.attempts).toEqual([]);
   });
 });

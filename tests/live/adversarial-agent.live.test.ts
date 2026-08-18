@@ -162,8 +162,8 @@ const options: OptionsGenerationResult = {
 
 const synthesis: SynthesisResult = {
   sections: [
-    { section_id: "context", title: "Context", content_markdown: "The EU AI Act's GPAI obligations took effect in 2026.", word_count: 10, sources_cited: [SOURCE], validation_issues: [] },
-    { section_id: "recommendation", title: "Recommendation", content_markdown: "Establish a compliance officer role and align with the GPAI schedule.", word_count: 10, sources_cited: [SOURCE], validation_issues: [] },
+    { section_id: "context", title: "Context", content_markdown: "The EU AI Act's GPAI obligations took effect in 2026.", word_count: 10, sources_cited: [SOURCE], validation_issues: [], editorial_attempts: [], final_attempt_number: 1 },
+    { section_id: "recommendation", title: "Recommendation", content_markdown: "Establish a compliance officer role and align with the GPAI schedule.", word_count: 10, sources_cited: [SOURCE], validation_issues: [], editorial_attempts: [], final_attempt_number: 1 },
   ],
   total_word_count: 20,
   format_conformance: {

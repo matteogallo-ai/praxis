@@ -249,6 +249,43 @@ export class SynthesisValidationError extends SynthesisError {
   }
 }
 
+/**
+ * v0.8: raised when a section under `strict_editorial: true` still
+ * fails an editorial rule after `max_regeneration_attempts` LLM
+ * retries. Carries the section id, the failure reason (rule that
+ * refused to be satisfied), and the full attempt history for the
+ * failing section so a caller can inspect what went wrong.
+ */
+export class EditorialFailureError extends SynthesisError {
+  readonly sectionId: string;
+  readonly reason: "forbidden_terms" | "over_length" | "validation_rule";
+  readonly attempts: readonly {
+    attempt_number: number;
+    reason: string;
+    details: string;
+    accepted: boolean;
+  }[];
+
+  constructor(
+    sectionId: string,
+    reason: "forbidden_terms" | "over_length" | "validation_rule",
+    attempts: readonly {
+      attempt_number: number;
+      reason: string;
+      details: string;
+      accepted: boolean;
+    }[]
+  ) {
+    super(
+      `Editorial retry loop exhausted for section '${sectionId}' (${attempts.length} attempts, last reason: ${reason}). See err.attempts for the full history.`
+    );
+    this.name = "EditorialFailureError";
+    this.sectionId = sectionId;
+    this.reason = reason;
+    this.attempts = attempts;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // v0.7 — Adversarial Critique agent
 // ---------------------------------------------------------------------------

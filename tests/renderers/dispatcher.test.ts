@@ -90,6 +90,8 @@ function makeBrief(): BriefResult {
           word_count: 1,
           sources_cited: [],
           validation_issues: [],
+          editorial_attempts: [],
+          final_attempt_number: 1,
         },
       ],
       total_word_count: 1,

@@ -194,6 +194,8 @@ function makeBrief(): BriefResult {
           word_count: 6,
           sources_cited: [SRC],
           validation_issues: [],
+          editorial_attempts: [],
+          final_attempt_number: 1,
         },
         {
           section_id: "body",
@@ -202,6 +204,8 @@ function makeBrief(): BriefResult {
           word_count: 6,
           sources_cited: [],
           validation_issues: [],
+          editorial_attempts: [],
+          final_attempt_number: 1,
         },
       ],
       total_word_count: 12,

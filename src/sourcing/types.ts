@@ -176,6 +176,16 @@ export interface SourcingReport {
   // Convenience aliases used by v0.3/v0.4 consumers. Preserved verbatim
   // so v0.4 tests / renderers keep working during the transition.
   missing_sources_count: number;
+
+  /**
+   * v0.8: `true` when the report describes a briefing that was
+   * re-synthesised after the adversarial critique (i.e. the
+   * `briefWithCritiqueAndRerun` path produced a second Synthesis
+   * pass). Absent / `false` for `brief()` and `briefWithCritique()`
+   * output. Consumers that need to know whether the deliverable
+   * they hold is post-critique-edited check this flag.
+   */
+  edited_after_critique?: boolean;
 }
 
 // ---------------------------------------------------------------------------

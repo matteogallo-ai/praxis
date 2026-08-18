@@ -58,6 +58,8 @@ function makeBrief(overrides: Partial<BriefResult> = {}): BriefResult {
           word_count: 4,
           sources_cited: [SOURCE],
           validation_issues: [],
+          editorial_attempts: [],
+          final_attempt_number: 1,
         },
         {
           section_id: "body",
@@ -66,6 +68,8 @@ function makeBrief(overrides: Partial<BriefResult> = {}): BriefResult {
           word_count: 4,
           sources_cited: [],
           validation_issues: [],
+          editorial_attempts: [],
+          final_attempt_number: 1,
         },
       ],
       total_word_count: 8,
