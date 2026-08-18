@@ -47,7 +47,8 @@ describe("integration — praxis brief (v0.2 scoping-only)", () => {
     expect(res.stdout).toContain("hidden_questions");
     expect(res.stdout).toContain("scope_boundaries");
     expect(res.stdout).toContain("assumptions_to_validate");
-    expect(res.stdout).toContain("v0.6+");
+    // v0.6: the trailer points at --full (was "coming in v0.6+" pre-v0.6).
+    expect(res.stdout).toContain("--full");
   });
 
   test("--json emits standalone parseable JSON with the four fields", () => {
