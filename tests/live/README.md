@@ -32,6 +32,18 @@ bun test tests/live/
   (Scoping → Research → Stakeholders → Risks with the hardened
   sourcing layer) end-to-end and writes the payload to `/tmp` for
   post-hoc inspection.
+- `options-agent.live.test.ts` — runs the Options Generation agent
+  with a real `web_search` tool and verifies the cross-artefact
+  reference discipline (stakeholder names, risk IDs) survives an
+  end-to-end run.
+- `synthesis-agent.live.test.ts` — runs the Synthesis agent with a
+  tightly-scoped 2-section format and verifies the no-invention
+  rule (no cited URL outside the supplied artefacts) holds
+  end-to-end.
+- `full-brief.live.test.ts` — runs the FULL v0.6 six-agent
+  pipeline (Scoping → Research → Stakeholders → Risks → Options →
+  Synthesis) and writes the assembled Markdown brief to
+  `/tmp/praxis-live-brief-<ts>.md` for post-hoc human review.
 
 Costs are minimal (a handful of small requests per invocation) but
 still real. Do not include these tests in CI unless you budget for it.
