@@ -22,6 +22,16 @@ bun test tests/live/
   `completeWithTools()` end-to-end against `/v1/messages`.
 - `research-agent.live.test.ts` — runs the Research agent with a real
   web_search tool and verifies findings come back sourced.
+- `stakeholder-agent.live.test.ts` — runs the Stakeholder Mapping
+  agent with a real web_search tool and verifies at least three
+  well-formed stakeholders come back with real sources.
+- `risk-agent.live.test.ts` — runs the Risk Analysis agent with a
+  real web_search tool and verifies risks come back cross-referenced
+  to the supplied stakeholders and sourced on likelihood or impact.
+- `full-pipeline.live.test.ts` — runs the four-agent v0.5 pipeline
+  (Scoping → Research → Stakeholders → Risks with the hardened
+  sourcing layer) end-to-end and writes the payload to `/tmp` for
+  post-hoc inspection.
 
 Costs are minimal (a handful of small requests per invocation) but
 still real. Do not include these tests in CI unless you budget for it.
