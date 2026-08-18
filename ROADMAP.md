@@ -105,26 +105,42 @@ under the strict-policy shipped formats.
 
 ---
 
-## v0.5 — Risk Analysis Agent + Hardened Sourcing Layer
+## v0.5 — Risk Analysis Agent + Hardened Sourcing Layer ✅ (shipped 2026-08-18)
 
-- `risk` agent — fourth Praxis agent. Enumerates risks tied to the
-  recommendation with likelihood and impact bands, and pairs each
-  risk with a mitigation the reader's owner can execute.
-- Consumes Scoping + Research + Stakeholder outputs (first agent with
-  three prior inputs; validates the general pattern for downstream
-  agents).
-- Sourcing Layer extensions: freshness gates (per-format ceiling on
-  source age), domain-trust bands (per-format allow/deny lists),
-  cross-agent citation dedupe.
-- Orchestrator: `assessRisksAfterStakeholders()`.
-- CLI: `--with-risks` flag chains the four agents.
-- Follow-on `options` and `adversarial` agents move to v0.6 if scope
-  demands.
+- `risk` agent — fourth Praxis agent, first to consume THREE prior
+  outputs (Scoping + Research + Stakeholders). Enumerates 5-15 risks
+  (hard cap 25) with likelihood and impact bands, each sourced on
+  BOTH likelihood and impact evidence, each cross-referenced to the
+  stakeholder mapping by exact name, each paired with 1-3 concrete
+  mitigations and a residual-risk estimate.
+- Sourcing & Verification Layer HARDENED from an embryonic validator
+  into a production-grade transverse layer:
+  - freshness gates (per-format `max_source_age_days` +
+    `warn_after_days`);
+  - domain trust (per-format `allow-list`, `deny-list`, or
+    `reputation-only` tiers with wildcard host matching);
+  - cross-agent dedupe via a pipeline-scoped `SourcingAccumulator`
+    (URL normalisation + Levenshtein similarity threshold);
+  - unified `SourcingReport` with categorised counts (ok / stale /
+    untrusted / duplicated / missing).
+- Format schema extended with an optional `sourcing_rules` block; the
+  three shipped formats now declare it. `sourcing_policy` remains for
+  retro-compat and controls failure mode.
+- Orchestrator: `assessRisksAfterStakeholders()` — runs the four
+  agents end-to-end and returns a merged cross-agent
+  `sourcing_report`.
+- CLI: `--with-risks` (implies --with-stakeholders which implies
+  --with-research) plus a `--sourcing-report` audit view.
+- Follow-on `options` and `adversarial` agents move to v0.6.
 
 ---
 
-## v0.6 — Synthesis Agent + Full Pipeline
+## v0.6 — Options Generation Agent + Full Pipeline
 
+- `options` agent — fifth Praxis agent. Reads Scoping + Research +
+  Stakeholders + Risks and enumerates the two-to-four courses of
+  action worth putting in front of the reader, each with a defensible
+  pro/con and a bounded resource envelope.
 - `synthesis` agent — writes the final section text respecting the
   format's tone directives.
 - All seven agents wired together. First fully generated briefing on the

@@ -8,31 +8,61 @@ discipline enforced upstream**: the briefing arrives already shaped like
 the organization's own analysts wrote it, with rigorous sourcing and a
 consistent voice. That is 80% of what a senior reader values.
 
-The current release, **v0.4 — Stakeholder Mapping agent**, adds the
-third Praxis agent — the first one whose input includes both prior
-outputs (Scoping and Research) and the first analytical agent in the
-strong sense (synthesises a model of the terrain).
+The current release, **v0.5 — Risk Analysis agent + hardened
+Sourcing Layer**, ships two coupled bricks: the fourth Praxis agent
+(Risk — the first to consume three prior outputs) and the
+production-grade version of the sourcing layer that Risk exercises
+first (freshness gates, domain trust bands, cross-agent citation
+dedupe).
 
 Highlights:
 
 - Everything from v0.1 (Format Registry), v0.2 (Scoping agent,
-  Orchestrator), and v0.3 (Research agent, AnthropicLLMProvider,
-  Sourcing & Verification layer).
-- **Stakeholder Mapping agent** — reads Scoping + Research, calls the
-  Anthropic `web_search` tool to confirm public positions, produces a
-  `StakeholderMapResult` with 3-20 stakeholders (hard-capped), each
-  carrying category / interest / position / power / priority and a
-  `position_evidence` field that follows the same sourcing discipline
-  as Research (real `SourceReference` OR explicit `SOURCE_MISSING` —
-  no fabricated evidence about a real person or organisation).
-  Prompt: [`prompts/stakeholder.prompt`](prompts/stakeholder.prompt).
-- **Sourcing Layer extension** — `validateStakeholderSourcing()`
-  enforces the format's policy on stakeholder positions with the same
-  strict/permissive semantics as Research findings.
+  Orchestrator), v0.3 (Research agent, AnthropicLLMProvider,
+  embryonic sourcing), and v0.4 (Stakeholder Mapping agent).
+- **Risk Analysis agent** — reads Scoping + Research + Stakeholders,
+  calls the Anthropic `web_search` tool for precedent and
+  benchmarks, produces a `RiskAnalysisResult` with 5-15 risks (hard
+  cap 25). Each risk carries category / likelihood / impact /
+  timeframe, sourced likelihood AND impact evidence (real
+  `SourceReference` OR explicit `SOURCE_MISSING`), a cross-reference
+  to at least one stakeholder from the mapping by exact name, 1-3
+  concrete mitigations, and a residual-risk estimate. Also emits an
+  aggregated overall / by-category score and top-3 priorities.
+  Prompt: [`prompts/risk.prompt`](prompts/risk.prompt). Design
+  guide: [`docs/risks.md`](docs/risks.md).
+- **Hardened Sourcing & Verification Layer** — the v0.3-v0.4
+  embryonic layer is promoted to a production-grade transverse layer:
+  - **Freshness gates** — per-format `max_source_age_days` and
+    `warn_after_days`. Sources past max raise `StaleSourceError`
+    under strict.
+  - **Domain trust bands** — per-format `allow-list`, `deny-list`,
+    or `reputation-only` tiered mode, with wildcard host matching
+    (`*.gov`, `gov.*`, `*.gov.uk`). Raises `UntrustedDomainError`
+    under strict.
+  - **Cross-agent dedupe** — pipeline-scoped `SourcingAccumulator`
+    with URL normalisation (strip UTM/fragments, sort query params)
+    and Levenshtein similarity threshold. Duplicates are warning-only
+    by default.
+  - **Aggregated `SourcingReport`** with per-category counts
+    (`ok / stale / untrusted / duplicated / missing`) that reconciles
+    with `total_items`. See [`docs/sourcing.md`](docs/sourcing.md).
+- **Format schema extension** — optional `sourcing_rules` block on
+  every format. Absent → v0.4 behaviour. Present → hardened rules
+  apply. All three shipped formats now declare rules calibrated to
+  their genre (executive pre-read: 2-year freshness, tier-2
+  reputation; corporate position paper: 3-year freshness, strict
+  allow-list; McKinsey note: 18-month freshness, tier-2 with
+  strategy-consultancy tier).
+- **Orchestrator** — new `assessRisksAfterStakeholders()` chains the
+  four agents end-to-end and returns
+  `{ scoping, research, stakeholders, risks, sourcing_report }`.
 - **CLI extension** —
-  `praxis brief "<question>" --format <id> --with-stakeholders
-   [--provider mock|anthropic] [--json]` runs the full three-agent
-  pipeline. `--with-stakeholders` implies `--with-research`.
+  `praxis brief "<question>" --format <id> --with-risks
+   [--provider mock|anthropic] [--json]` runs the full four-agent
+  pipeline. Add `--sourcing-report` to print ONLY the aggregated
+  cross-agent report (implies `--with-risks`; the pipeline is what
+  produces the report).
 
 The test suite still runs offline by default (`MockLLMProvider`); live
 integration tests live under [`tests/live/`](tests/live/README.md) and
@@ -75,7 +105,7 @@ npm — Praxis will switch to `"promptlang": "^1.x"` in `dependencies`.
 
 ```
 $ bun run cli version
-praxis v0.4.0
+praxis v0.5.0
 ```
 
 ### `praxis formats list`
@@ -107,9 +137,8 @@ on success, 1 on failure with every issue listed.
 
 ### `praxis brief "<question>" --format <id>`
 
-Runs the Scoping agent by default. Add `--with-research` to chain
-Scoping + Research (v0.3), or `--with-stakeholders` to run the full
-Scoping + Research + Stakeholder Mapping pipeline (v0.4).
+Runs the Scoping agent by default. Add flags to chain further
+agents; each flag implies the earlier ones:
 
 ```bash
 # scoping only
@@ -123,6 +152,14 @@ $ bun run cli brief "Should we enter the German market?" \
 # scoping + research + stakeholder mapping (v0.4)
 $ bun run cli brief "Should we enter the German market?" \
     --format executive-pre-read --with-stakeholders
+
+# scoping + research + stakeholders + risk analysis (v0.5)
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --with-risks
+
+# audit view: aggregated cross-agent sourcing report only (v0.5)
+$ bun run cli brief "Should we enter the German market?" \
+    --format executive-pre-read --sourcing-report
 ```
 
 Flags:
@@ -130,16 +167,21 @@ Flags:
 - `--format <id>` — required. Format id from the registry.
 - `--with-research` — optional. Runs Scoping + Research; prints both.
   Enforces the format's `sourcing_policy` on the research findings.
-- `--with-stakeholders` — optional. Runs the full three-agent
-  pipeline. Implies `--with-research` (a stdout note is emitted when
-  the flag is used alone). Prints a compact ANSI stakeholder table
-  plus per-stakeholder details. Enforces the sourcing policy on both
-  research findings and stakeholder position evidence.
+- `--with-stakeholders` — optional. Runs the three-agent pipeline.
+  Implies `--with-research`. Prints a compact ANSI stakeholder table
+  plus per-stakeholder details.
+- `--with-risks` — optional. Runs the full four-agent pipeline
+  (Scoping + Research + Stakeholders + Risks). Implies
+  `--with-stakeholders`. Prints a compact ANSI risk table, aggregated
+  score, top-3 priorities, per-risk details, and the aggregated
+  cross-agent sourcing report at the end.
+- `--sourcing-report` — optional. Prints ONLY the aggregated
+  cross-agent sourcing report (implies `--with-risks`).
 - `--provider <name>` — optional. Values: `mock` (default, fixture-driven)
   and `anthropic` (live API; requires `ANTHROPIC_API_KEY`).
 - `--json` — optional. Prints raw JSON only, for piping. Under
-  `--with-research`, emits `{ scoping, research }`. Under
-  `--with-stakeholders`, emits `{ scoping, research, stakeholders }`.
+  `--with-risks`, emits
+  `{ scoping, research, stakeholders, risks, sourcing_report }`.
 
 ---
 
@@ -191,9 +233,10 @@ Live tests self-skip when `ANTHROPIC_API_KEY` is unset. See
 
 ## Architecture
 
-v0.4 adds the Stakeholder Mapping agent — the first one whose input
-includes both prior outputs — and extends the sourcing layer to a
-second agent:
+v0.5 adds the Risk Analysis agent (first Praxis agent to consume
+three prior outputs) and promotes the sourcing layer from embryonic
+validator to production-grade transverse layer with freshness,
+domain trust, and cross-agent dedupe:
 
 ```
                       ┌─────────────────────────┐
@@ -202,30 +245,33 @@ second agent:
                                   │
                       ┌───────────▼──────────────────────────┐
                       │            Orchestrator              │
-                      │  scope() / brief() /                 │
+                      │  scope() /                           │
                       │  researchAfterScoping() /            │
-                      │  mapStakeholdersAfterResearch()      │
+                      │  mapStakeholdersAfterResearch() /    │
+                      │  assessRisksAfterStakeholders()      │
                       └───────────┬──────────────────────────┘
                                   │
-                       ┌──────────┼──────────┬──────────────┐
-                       ▼          ▼          ▼              ▼
-                ┌──────────┐ ┌─────────┐ ┌─────────────┐ ┌──────────────┐
-                │  Scoping │→│Research │→│ Stakeholder │ │   Sourcing   │
-                │   Agent  │ │  Agent  │ │Mapping Agent│ │  Validator   │
-                └────┬─────┘ └────┬────┘ └──────┬──────┘ └──────────────┘
-                     │            │             │
-                     ▼            ▼             ▼
-                ┌───────────────────────────────────────────┐
-                │              LLMProvider                  │
-                │      MockLLMProvider (offline)            │
-                │      AnthropicLLMProvider (live)          │
-                │      .completeWithTools()                 │
-                └───────────────────────────────────────────┘
+              ┌───────────────────┴──────────────────────────────┐
+              │                                                  │
+   ┌──────────▼─────────────────────────┐         ┌──────────────▼───────────────┐
+   │  Scoping → Research → Stakeholder  │◀────────│  Sourcing & Verification     │
+   │     → Risk (fourth agent, v0.5)    │         │  Layer (v0.5 hardened)       │
+   └──────────┬─────────────────────────┘         │  • freshness / trust / dedupe│
+              │                                   │  • SourcingAccumulator       │
+              ▼                                   │  • aggregated SourcingReport │
+   ┌────────────────────────────────────────┐    └──────────────────────────────┘
+   │              LLMProvider               │
+   │      MockLLMProvider (offline)         │
+   │      AnthropicLLMProvider (live)       │
+   │      .completeWithTools()              │
+   └────────────────────────────────────────┘
 ```
 
 Full detail and design rationale: [`docs/architecture.md`](docs/architecture.md).
 For authoring a new agent prompt: [`docs/writing-a-prompt.md`](docs/writing-a-prompt.md).
 For the stakeholder mapping philosophy: [`docs/stakeholders.md`](docs/stakeholders.md).
+For the risk analysis philosophy: [`docs/risks.md`](docs/risks.md).
+For the hardened sourcing layer: [`docs/sourcing.md`](docs/sourcing.md).
 
 ---
 
@@ -283,10 +329,10 @@ Praxis targets a v1.0 release in ten steps.
 | --- | --- |
 | v0.1 | Format Registry |
 | v0.2 | Agent scoping — first PromptLang-authored agent + orchestrator scaffold |
-| v0.3 | Research agent + real Anthropic provider + sourcing layer |
-| **v0.4** | Stakeholder Mapping agent + sourcing extension (this release) |
-| v0.5 | Risk Analysis agent + hardened sourcing (freshness, domain trust) |
-| v0.6 | Synthesis agent + full 7-agent pipeline |
+| v0.3 | Research agent + real Anthropic provider + embryonic sourcing layer |
+| v0.4 | Stakeholder Mapping agent + sourcing extension |
+| **v0.5** | Risk Analysis agent + hardened sourcing (freshness, domain trust, dedupe) (this release) |
+| v0.6 | Options Generation agent + Synthesis agent + full 7-agent pipeline |
 | v0.7 | Output targets — PDF/DOCX/MD renderers |
 | v0.8 | Style guide enforcement (forbidden terms, sentence caps, MECE checks) |
 | v0.9 | End-to-end demos on the three shipped formats |

@@ -5,6 +5,212 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] — 2026-08-18
+
+**Risk Analysis agent + hardened Sourcing & Verification Layer.**
+This release is deliberately larger than the previous ones because two
+tightly coupled bricks land together: the fourth Praxis agent (Risk)
+is the *first consumer* of a real, production-grade sourcing layer.
+Shipping Risk against the v0.4 embryonic validator would have forced a
+re-test cycle at v0.6, so v0.5 promotes the layer first — freshness
+gates, domain trust bands, cross-agent citation dedupe — and then
+exercises it seriously with the Risk agent.
+
+### Added
+
+- **Risk Analysis agent** (`src/agents/risk.ts`) — fourth Praxis
+  agent, first to consume THREE prior outputs (Scoping + Research +
+  Stakeholders):
+  - `executeRiskAnalysis(ctx, llm)` loads `prompts/risk.prompt`,
+    dispatches to `llm.completeWithTools` with the `web_search` tool,
+    and validates the returned JSON against `RiskAnalysisResult`.
+  - Hard caps: `MAX_RISKS = 25` (throws `RiskInflationError`), 5-15
+    risks recommended.
+  - Every `Risk` carries sourced likelihood_evidence AND
+    impact_evidence (SourceReference OR explicit SOURCE_MISSING —
+    same discipline as Research and Stakeholders).
+  - `affected_stakeholders` must reference names verbatim from the
+    supplied `StakeholderMapResult`; unknown names raise
+    `InvalidRiskStakeholderReference`.
+  - Sequential IDs (`RISK-001`, `RISK-002`, …); duplicates rejected.
+  - Vague mitigations (`"monitor closely"`) rejected as
+    `RiskAnalysisError`.
+  - Exports: `RiskAnalysisError`, `InvalidRiskStakeholderReference`,
+    `RiskInflationError`, `MAX_RISKS`, `MIN_RISKS`.
+- **Risk types** (`src/agents/types.ts`): `RiskCategory` (8 values),
+  `RiskLikelihood` (5 bands), `RiskImpact` (5 bands),
+  `RiskTimeframe` (4 buckets), `AggregatedRiskLevel`, `Risk`,
+  `RiskAnalysisResult`, `RiskContext`.
+- **Hardened Sourcing & Verification Layer** (`src/sourcing/`):
+  - `types.ts` extended with `SourcingRules`, `FreshnessRule`,
+    `DomainTrustRule`, `DedupeRule`, `SourcingAccumulator`,
+    `SourcingItemCategory`, `SourcingCategoryCounts`.
+  - `freshness.ts` — `classifyFreshness(accessed_at, rule, now)` returns
+    `fresh | warn | stale` with age in days. Malformed timestamps are
+    treated as stale.
+  - `domain-trust.ts` — `evaluateDomainTrust(url, rule)` returns
+    `trusted | untrusted` with a human-readable reason. Wildcards
+    supported: `*.gov`, `gov.*`, `*.gov.uk`, and generic patterns.
+  - `dedupe.ts` — `InMemorySourcingAccumulator` and
+    `NoopSourcingAccumulator`. URL normalisation (lowercase, strip
+    tracking params, drop fragment, sort query), Levenshtein
+    similarity threshold.
+  - `report.ts` — `buildReport(policy, totalItems, warnings)` +
+    `mergeReports([...])` build a `SourcingReport` with per-category
+    counts (`ok / stale / untrusted / duplicated / missing`).
+    Reconciles with `total_items`; most-severe wins.
+  - `validator.ts` refactored into a unified dispatcher. Three public
+    entry points (`validateSourcing`, `validateStakeholderSourcing`,
+    `validateRiskSourcing`) all accept an optional `ValidateOptions`
+    with `rules`, `accumulator`, `now`. Under strict policy the
+    first blocking warning raises the most specific typed subclass;
+    duplicates are non-blocking (warning only).
+  - `errors.ts` — new typed subclasses: `StaleSourceError`,
+    `UntrustedDomainError`, `DuplicateSourceError`. All inherit from
+    `SourcingValidationError` so v0.4 catch-blocks still work.
+    `isBlockingUnderStrict(warning)` helper for downstream code.
+- **Format schema extension** (`src/registry/`):
+  - `Format.sourcing_rules?: SourcingRules` — optional block covering
+    `freshness`, `domain_trust`, and `dedupe`. Absent → v0.4 behaviour.
+  - The three shipped formats now declare a `sourcing_rules` block
+    calibrated to their genre:
+    - `executive-pre-read`: freshness 730/365 days, reputation-only
+      tiers (min_tier 2), cross-agent dedupe at similarity 0.85.
+    - `position-paper-corporate`: freshness 1095/730 days (institutional
+      positions age more slowly), allow-list mode.
+    - `mckinsey-style-note`: freshness 545/270 days (consulting tempo),
+      reputation-only min_tier 2 with a strategy-consultancy tier 2.
+  - `validator.ts` extended with structural validation for every
+    sub-schema (freshness, domain trust, reputation tiers, dedupe).
+- **Orchestrator** (`src/orchestrator/orchestrator.ts`):
+  - `assessRisksAfterStakeholders(question, formatId, options?)` —
+    chains Scoping → Research → Stakeholders → Risks, threads a
+    single `SourcingAccumulator` across all four validations, and
+    returns `{ scoping, research, stakeholders, risks, sourcing_report }`.
+  - Refuses to run when the format's sections do not list `research`,
+    `stakeholder`, AND `risk`.
+- **CLI `brief` command** (`src/cli/commands/brief.ts`):
+  - New flag `--with-risks` (implies `--with-stakeholders` which
+    implies `--with-research`). Emits a stdout note when used
+    without the earlier flags (suppressed under `--json`).
+  - New flag `--sourcing-report` — prints ONLY the aggregated
+    cross-agent report (implies `--with-risks`; the full pipeline is
+    what produces the report).
+  - `--with-risks --json` emits a combined
+    `{ scoping, research, stakeholders, risks, sourcing_report }`.
+- **CLI output** (`src/cli/output.ts`):
+  - `renderRisks(result)` — compact ANSI table
+    (ID | Category | Likelihood | Impact | Timeframe | Description),
+    followed by aggregated score, top-3, per-risk detail blocks with
+    likelihood/impact evidence lines.
+  - `renderSourcingReport(report)` — one-line summary with per-category
+    counts plus a categorised warnings list.
+- **New prompt** (`prompts/risk.prompt`) — Risk agent prompt with
+  explicit calibration for likelihood, impact, mitigation quality,
+  and the anti-fabrication rule for BOTH source references and
+  stakeholder names.
+- **New fixtures** (`tests/fixtures/mock-llm/`):
+  - `risks-executive-pre-read.json`,
+    `risks-mckinsey-style-note.json`,
+    `risks-position-paper-corporate.json` — one 8-9-risk analysis
+    per shipped format, calibrated on the German-market-entry test
+    question. All evidence URLs sit on the shipped formats' trusted
+    tiers; all `affected_stakeholders` reference the corresponding
+    stakeholder fixture's names verbatim.
+- **New reference fixtures** (`tests/fixtures/hardened-sourcing/`):
+  - `stale-sources.json`, `untrusted-domains.json`,
+    `duplicate-sources.json` — canonical failure examples used by
+    `tests/integration/sourcing-hardened-e2e.test.ts`.
+- **Optional live integration tests** (`tests/live/`):
+  - `risk-agent.live.test.ts` — end-to-end run of the Risk agent
+    against the real Anthropic API.
+  - `full-pipeline.live.test.ts` — end-to-end run of the full v0.5
+    pipeline (Scoping → Research → Stakeholders → Risks + hardened
+    sourcing), writes the report to `/tmp` for post-hoc inspection.
+- **181 new tests** across schema/validator (v0.5 rules), sourcing
+  (freshness, domain trust, dedupe, report, unified validator), risk
+  agent (nominal + every error path), orchestrator
+  (`assessRisksAfterStakeholders`), CLI brief (`--with-risks`,
+  `--sourcing-report`), integration (`risks-e2e`,
+  `sourcing-hardened-e2e`), and errors. **Total: 549 tests + 6 optional
+  live tests** (all live tests skip without `ANTHROPIC_API_KEY`).
+
+### Changed
+
+- **Sourcing validator dispatcher.** The three entry points
+  (`validateSourcing`, `validateStakeholderSourcing`,
+  `validateRiskSourcing`) now share a common `inspectSource` pipeline.
+  v0.4 behaviour is preserved: without `rules` in `ValidateOptions`,
+  only the SOURCE_MISSING check runs, and strict/permissive
+  semantics are unchanged.
+- **`SourcingReport` shape.** The v0.4 `{ policy, total_items,
+  missing_sources_count, warnings }` shape gains a `counts:
+  SourcingCategoryCounts` field for per-category totals.
+  `missing_sources_count` is preserved as a convenience alias.
+  Consumers reading only the v0.4 fields keep working.
+- **`SourcingValidationError`** now accepts an optional custom
+  `message` (used by the typed subclasses to attach URL/reason
+  context). The v0.4 default message shape is preserved when no
+  custom message is provided.
+- **`SourcingWarning`** gains four new variants: `missing_risk_evidence`,
+  `stale_source`, `untrusted_domain`, `duplicate_source`. Consumers
+  narrowing on `kind` must handle the new variants (or exhaustive
+  switches will fail the compiler under strict TS settings).
+- **Shipped format YAML files.** Every shipped format now declares a
+  `sourcing_rules` block. Existing `sourcing_policy` values (all
+  strict) are unchanged and now describe the failure mode (throw on
+  first blocking warning).
+- **Existing fixtures** (`stakeholders-*.json`,
+  `research-mckinsey-style-note.json`) now use tier-1/tier-2 URLs
+  compatible with the shipped formats' `sourcing_rules`. The
+  substantive claims and stakeholder names are unchanged.
+- **CLI help** now documents `--with-risks` and `--sourcing-report`.
+- **Praxis version bumped** to `0.5.0` in `package.json` and
+  `src/cli/version-constant.ts`.
+
+### Notes on the design
+
+- **Two bricks in one release, on purpose.** v0.1-v0.4 shipped one
+  agent per release. v0.5 breaks that pattern because the sourcing
+  layer had to be promoted from embryonic to production-grade
+  *before* Risk consumed it — otherwise Risk would have been built
+  against the wrong contract and re-tested at v0.6. The discipline
+  "one release = one well-formed brick" is preserved: here the brick
+  is *the transition to production-grade sourcing*, with Risk as its
+  first serious consumer.
+- **Retro-compat for `sourcing_rules`.** A format that omits the
+  block behaves exactly as under v0.4. This lets contributors ship a
+  format now and adopt rules later. The three shipped formats have
+  been migrated to the new block.
+- **Cross-agent dedupe is warning-only by default.** Two agents
+  citing the same URL is often legitimate (the CEO's statement
+  appears in both Research and Stakeholder evidence). Rather than
+  block, the report flags it so the reader can audit. Future
+  releases may add a strict-dedupe opt-in.
+- **Risk stakeholder validation is exact-name matching.** No fuzzy
+  matching, no alias resolution. If the Risk agent wants to cite an
+  actor not in the mapping, it must return SOURCE_MISSING evidence
+  and add the actor to `unresolved_uncertainties` — the mapping is
+  the ground truth.
+
+### Security notes
+
+- No new environment variables. `ANTHROPIC_API_KEY` still guards the
+  live provider; the risk agent reuses the same auth path.
+- The risk prompt's stakeholder-reference rule is reinforced with a
+  note that fabricated cross-references are misconduct — the reader
+  will make an operational decision partly based on which
+  stakeholders a risk touches.
+
+### Next
+
+- **v0.6 — Options Generation agent + Synthesis agent.** Fifth and
+  sixth Praxis agents. Options reads all four prior outputs and
+  enumerates the two-to-four courses of action worth putting in
+  front of the reader.
+
+[0.5.0]: https://github.com/matteogallo-ai/praxis/releases/tag/v0.5.0
+
 ## [0.4.0] — 2026-08-17
 
 **Stakeholder Mapping agent.** Third Praxis agent, and the first one
