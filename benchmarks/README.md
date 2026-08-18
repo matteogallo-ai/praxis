@@ -14,17 +14,32 @@ reference set they can regenerate at any commit.
   `ANTHROPIC_API_KEY` is set).
 - `run-all.sh` — trivial wrapper so `bash` callers reach the same
   entrypoint.
+- **v0.10** `score-all.ts` — the AI-assisted scoring script.
+  Reads every `brief.md` + `metadata.json`, sends each to Claude
+  Sonnet 4.5 via the calibrated prompt in `scoring-prompt.txt`,
+  and rewrites the "AI-Assisted Qualitative Scoring" section of
+  `RESULTS.md` with per-criterion and per-briefing scores plus
+  systematic observations. Modes: `--mock-only`, `--live-only`,
+  `--refresh <slug>`, `--dry-run`.
+- **v0.10** `scoring-prompt.txt` — the calibrated
+  anti-complaisance prompt (7 criteria × 1–5 scale, "score of 3
+  is normal", "do NOT inflate"). Edited by the release owner,
+  never by the CLI.
 - `CHECKLIST.md` — the scoring rubric (five qualitative axes for
   human review, plus a block of objective checks the runner or a
   future scoring script can automate).
 - `RESULTS.md` — the running scoreboard. The `Automated objective
-  checks` section is filled by the release runner; qualitative
-  scores land after human review.
+  checks` section is filled by `run-all.ts`; the
+  `AI-Assisted Qualitative Scoring` section is filled by
+  `score-all.ts` when a maintainer with API access runs it.
 - `outputs/mock/` — artefacts produced with `MockLLMProvider`.
   Reproducible bit-for-bit from a clean tree.
 - `outputs/live/` — artefacts produced with `AnthropicLLMProvider`.
   Present only when a maintainer with API access has run the live
   path.
+- **v0.10** `.scoring-cache/` — gitignored local cache of
+  scoring payloads keyed by `{slug}-{mode}`. TTL 24h; avoids
+  spending tokens on repeated iteration. Never committed.
 
 ## Running
 
@@ -35,6 +50,19 @@ bun run bench:mock     # ten mock briefings, always reproducible
 bun run bench:live     # ten live briefings, ANTHROPIC_API_KEY required
 bun run bench          # both if a key is present; mock only otherwise
 ```
+
+### v0.10 — scoring
+
+```
+bun run score:dry      # enumerate what would be scored, no API call
+bun run score:mock     # AI-assisted scoring of the mock briefings
+bun run score:live     # AI-assisted scoring of the live briefings
+bun run score          # both if a key is present; mock only otherwise
+```
+
+`score:*` rewrites the "AI-Assisted Qualitative Scoring" block in
+`RESULTS.md`. See `docs/benchmarking-methodology.md` for the
+rubric, prompt design, model choice, known biases, and budget.
 
 Each benchmark writes four files under `outputs/<mode>/<id>/`:
 

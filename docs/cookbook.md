@@ -375,3 +375,57 @@ bun run bench              # both if the key is set
 release-scope reasons. In your own fork you can grow it; if you
 want a schema check, mirror `tests/benchmarks/questions-schema.test.ts`
 against the new size.
+
+---
+
+## 11. Score your own briefings against the calibrated rubric
+
+**Context.** v0.10 ships `benchmarks/score-all.ts` — an
+AI-assisted scorer that grades every briefing under
+`benchmarks/outputs/*/` on the 7-criterion rubric in
+`benchmarks/scoring-prompt.txt`. Uses Claude Sonnet 4.5, same
+model as the pipeline. Full methodology, biases, and budget:
+[`docs/benchmarking-methodology.md`](benchmarking-methodology.md).
+
+Prerequisites: `ANTHROPIC_API_KEY` in `.env` (gitignored) or
+exported.
+
+```bash
+# Enumerate what will be scored; no API call, no cost.
+bun run score:dry
+
+# Score every mock briefing on disk.
+bun run score:mock
+
+# Score every live briefing on disk (requires bench:live first).
+bun run score:live
+
+# Score both.
+bun run score
+
+# Bypass the 24h cache for a single slug.
+bun run benchmarks/score-all.ts --refresh 01-german-market-entry
+```
+
+Each run rewrites the "AI-Assisted Qualitative Scoring" block in
+`benchmarks/RESULTS.md` (the "Automated objective checks" block
+above it is preserved verbatim). The scorer output payload is
+cached under `benchmarks/.scoring-cache/{slug}-{mode}.json`
+(gitignored) with a 24h TTL — re-running within the day is free.
+
+For your own briefings (outside the shipped 10), the scorer
+picks up any directory under `benchmarks/outputs/{mock,live}/`
+that contains both `brief.md` and `metadata.json`. Add yours
+with the same layout, run `bun run score`, done.
+
+**Notes.**
+
+- The rubric assumes 7 criteria × 1–5 = total /35. Do not add or
+  remove criteria without also updating the prompt, the parser,
+  and the tests.
+- Same-family scoring bias is real (Claude scoring Claude
+  output). Interpret **deltas** (mock-vs-live, release-vs-release)
+  more than absolute scores. See methodology doc.
+- Formats whose `output_targets[]` do not declare `md` skip
+  scoring in v0.10.0 (no `brief.md` on disk). v0.10.1 will emit
+  a scoring-source text artefact to close this gap.
