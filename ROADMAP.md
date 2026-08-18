@@ -309,25 +309,57 @@ systematic observations) land as v0.10.1. No code change.
 
 ---
 
-## v1.0 — General Availability (target)
+## v1.0 — General Availability ✅ (shipped 2026-08-18)
+
+Symbolic release. No new functional code. The 1146-test v0.10
+baseline is preserved verbatim; the only src/ change is
+`PRAXIS_VERSION = "1.0.0"`. The tag freezes the public API
+contract.
 
 - **SemVer contract locked.** `src/index.ts` is the surface;
-  every named export is bound by the contract established at
-  v0.8. Removing an export or changing a method signature is a
-  major bump, forever.
-- **Public release.** LinkedIn / community launch. First three
-  external contributor PRs merged.
-- **CI matrix.** Bun 1.3.x on macOS + Linux, TypeScript
-  strictness gate, `bun run bench:mock` as a pre-merge smoke.
-- **Breaking-change process.** Proposal template + review
-  cadence for any future major bump.
+  every named export is bound. Removing / renaming an export
+  or changing an error class's inheritance requires v2.0.
+  See `docs/SEMVER-CONTRACT.md` for the full contract text.
+- **Public release.** Repo becomes the reference implementation
+  of the multi-agent briefing pattern. External contributors
+  onboarded via `CONTRIBUTING.md`.
+- **Compatibility commitment (v1.x).** Additive changes only —
+  new agents, formats, renderers, providers, optional fields,
+  new methods. Breaking changes require v2.0 with a proposal
+  template and a migration guide.
 
-No new pipeline capability planned for v1.0 — the seven-agent
+No new pipeline capability shipped at v1.0 — the seven-agent
 pipeline is final. v1.0 is the stability tag.
 
 ---
 
-## Non-goals (through v1.0)
+## v1.x — Post-1.0 (planned)
+
+Post-tag work, ordered by dependency:
+
+- **v1.0.1 — Empirical validation results.** A maintainer with
+  ~$10 Anthropic credit runs `bun run bench:live && bun run
+  score`; the resulting `benchmarks/outputs/live/*` +
+  `benchmarks/RESULTS.md` mock-vs-live delta table + systematic
+  observations land as a chore commit. Zero code change.
+- **v1.1 — Publish PromptLang to npm.** Replace the current
+  `file:../promptlang/packages/yaml-parser` workspace dep with
+  `"promptlang": "^1.x"` from the registry. Simplifies fresh
+  clones (no sibling checkout required) and unblocks external
+  contributor onboarding.
+- **v1.2+ — Additional formats + integrations.**
+  - New shipped formats: BCG-style structured brief,
+    family-office memo, negotiation-brief-OMC-style.
+  - MCP server integration so the pipeline runs as a Claude
+    Code / Claude.ai skill.
+  - Notion / Google Drive connectors — export a rendered
+    briefing directly to the caller's workspace.
+
+Non-goals stay non-goals through v1.x (see below).
+
+---
+
+## Non-goals (through v1.0 and v1.x)
 
 - No web UI. CLI + library only. UI can come as a separate project on
   top of the stable API.

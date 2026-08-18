@@ -5,6 +5,100 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] — 2026-08-18
+
+### SemVer stability release
+
+Praxis 1.0 is the frozen public API contract. Every public
+export from `src/index.ts` is now bound by SemVer: removing an
+export, renaming one, or changing an error class's inheritance
+chain requires a major version bump. Additive changes (new
+exports, new optional fields, new methods) land in minor
+releases. Bug fixes and internal refactors are patches.
+
+This release is **symbolic**: no new functional code, no new
+tests, no new dependencies. The 1146-test v0.10 baseline is
+preserved verbatim. The only src/ change is the
+`PRAXIS_VERSION` constant.
+
+See `docs/SEMVER-CONTRACT.md` for the full contract text.
+
+### The journey — v0.1 → v1.0
+
+- **v0.1** Format Registry — declarative catalog of professional
+  briefing formats, YAML schema, in-memory registry.
+- **v0.2** Scoping agent + Orchestrator scaffold + PromptLang
+  integration + first `MockLLMProvider`.
+- **v0.3** Real `AnthropicLLMProvider` + Research agent +
+  embryonic sourcing (SourceReference / SourceMissing).
+- **v0.4** Stakeholder Mapping agent (first multi-input agent).
+- **v0.5** Risk Analysis agent + hardened Sourcing layer
+  (freshness, domain trust, cross-agent dedupe).
+- **v0.6** Options Generation + Synthesis + `brief()` complete
+  (first full briefing end to end).
+- **v0.7** Adversarial Critique agent + PDF/DOCX/MD renderers
+  (first executive-ready deliverables). Introduced `pdfkit` —
+  the sole external runtime dep.
+- **v0.8** Editorial re-run loop (hard cap 1) + strict_editorial
+  retry mode + PraxisError base + `src/index.ts` refactored as
+  the stable library API surface.
+- **v0.9** Benchmarks framework (10 calibrated questions) + CLI
+  polish (`--verbose`, `--quiet`, `--format auto`, structured
+  error blocks) + refreshed v1.0-ready docs (getting-started,
+  cookbook, troubleshooting, api, embedding).
+- **v0.10** AI-assisted scoring framework
+  (`benchmarks/score-all.ts` + anti-complaisance prompt + 41
+  unit tests + methodology doc). Empirical mock-vs-live run
+  deferred to v1.0.1.
+
+### What v1.0 guarantees
+
+- **Seven agents** — Scoping, Research, Stakeholder, Risk,
+  Options, Synthesis, Adversarial Critique. Pipeline is final.
+- **Three rendering targets** — PDF (via `pdfkit`), DOCX
+  (from-scratch, no `docx` npm), enhanced Markdown.
+- **Three shipped briefing formats** — executive-pre-read,
+  position-paper-corporate, mckinsey-style-note.
+- **Sourcing layer** — freshness / domain-trust / cross-agent
+  dedupe.
+- **Editorial re-run loop** with hard cap 1 iteration + opt-in
+  `strict_editorial` reject/regenerate.
+- **Stable public API** — `PraxisError` taxonomy + every
+  typed export from `src/index.ts` covered by SemVer.
+- **1146 tests + 11 optional live tests** (`tests/live/` skip
+  when `ANTHROPIC_API_KEY` is absent).
+- **One external npm dependency** — `pdfkit`, the planned
+  exception listed at v0.1.
+- **Ten mock briefings shipped as empirical evidence** —
+  `benchmarks/outputs/mock/*` under 800 KB, reproducible
+  bit-for-bit.
+- **Scoring framework ready** — `bun run score:dry` runs
+  offline, `bun run score` runs against Sonnet 4.5.
+
+### Compatibility commitment (v1.x)
+
+- **Additive** changes only to the public API surface.
+- New agents, formats, renderers, providers — all additive.
+- Breaking changes require **v2.0**. Every proposed break goes
+  through a proposal template with a migration guide.
+
+### Known limitations (documented, not blocking)
+
+- **Live benchmarks empirical run deferred to v1.0.1.** The
+  scoring framework is complete and tested against fixtures;
+  the mock-vs-live delta table lands when a maintainer with
+  API credits runs `bun run bench:live && bun run score`.
+- **position-paper-corporate scoring gap** — v0.10.0's
+  `enumerateBriefings` covers 7 of 10 mock briefings because
+  that format does not declare `md` in `output_targets[]`.
+  Documented in `docs/benchmarking-methodology.md`; a v1.0.1
+  or v1.1 patch adds a scoring-source text artefact.
+- **`@promptlang/yaml-parser` workspace dependency** — still
+  a `file:../promptlang/…` link. v1.1 publishes PromptLang to
+  npm and Praxis switches to `"promptlang": "^1.x"`.
+
+---
+
 ## [0.10.0] — 2026-08-18
 
 **AI-assisted qualitative scoring — framework release (empirical
