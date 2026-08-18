@@ -495,3 +495,143 @@ export interface SynthesisContext {
   options: OptionsGenerationResult;
   format: Format;
 }
+
+// ---------------------------------------------------------------------------
+// v0.7 — Adversarial Critique agent
+// ---------------------------------------------------------------------------
+
+/**
+ * Fixed taxonomy of critique categories. Chosen to cover the ways a
+ * hostile-but-fair reviewer typically breaks a briefing: unstated
+ * assumptions, weak sourcing, dismissed options, over-confidence,
+ * missing perspectives, internal contradictions, under-estimated
+ * risks, and temporal blind spots (assumptions about stability that
+ * may not hold).
+ */
+export type CritiqueCategory =
+  | "hidden-assumption"
+  | "weak-source"
+  | "dismissed-option"
+  | "overconfidence"
+  | "missing-perspective"
+  | "internal-contradiction"
+  | "risk-underestimated"
+  | "temporal-blind-spot";
+
+export const CRITIQUE_CATEGORIES: readonly CritiqueCategory[] = [
+  "hidden-assumption",
+  "weak-source",
+  "dismissed-option",
+  "overconfidence",
+  "missing-perspective",
+  "internal-contradiction",
+  "risk-underestimated",
+  "temporal-blind-spot",
+] as const;
+
+/**
+ * How much the critique should shift the reader's confidence in the
+ * recommendation.
+ *
+ *   minor    — legitimate but does not change the recommendation.
+ *   material — the recommendation stands but needs an explicit hedge.
+ *   critical — the recommendation should be revisited.
+ */
+export type CritiqueSeverity = "minor" | "material" | "critical";
+
+export const CRITIQUE_SEVERITIES: readonly CritiqueSeverity[] = [
+  "minor",
+  "material",
+  "critical",
+] as const;
+
+/**
+ * Precise reference to WHAT the critique is aimed at inside the
+ * `BriefResult`. At least one field is required — the parser rejects
+ * an empty target as `InvalidCritiqueTargetError`. Multiple fields
+ * are legitimate when a critique straddles (e.g. a risk that maps to
+ * a stakeholder).
+ */
+export interface CritiqueTarget {
+  section_id?: string;
+  option_id?: string;
+  risk_id?: string;
+  stakeholder_name?: string;
+  finding_index?: number;
+}
+
+/**
+ * A single critique. Every field is deliberately load-bearing:
+ *
+ *   - `steelmanned_position` MUST be ≥ 20 words. The parser rejects
+ *     bâclé critiques so an under-thought critique does not get
+ *     shipped as if it were considered.
+ *   - `counter_evidence` follows the same SourceReference /
+ *     SOURCE_MISSING discipline as Research findings — fabricated
+ *     counter-evidence is worse than acknowledged absence.
+ *   - `target` fields must reference existing artefacts in the
+ *     `BriefResult`; unknown references raise
+ *     `InvalidCritiqueTargetError`.
+ */
+export interface Critique {
+  /** `CRIT-001`, `CRIT-002`, … — assigned sequentially by the parser. */
+  id: string;
+  category: CritiqueCategory;
+  severity: CritiqueSeverity;
+  target: CritiqueTarget;
+  /** The counter-argument stated at its strongest. ≥ 20 words. */
+  steelmanned_position: string;
+  counter_evidence: SourceStatus;
+  /** 1-2 sentences: what changes in the recommendation if this holds. */
+  implication_if_true: string;
+  /** 1 sentence: how the brief should be adjusted. */
+  suggested_revision: string;
+}
+
+/**
+ * The structured output of the Adversarial Critique agent.
+ *
+ * `revised_recommendation_needed` is a DERIVED signal enforced by the
+ * parser: `true` iff at least one `critical` critique OR at least
+ * three `material` critiques exist. If the signal is true,
+ * `steelmanned_alternative` MUST be a non-empty string — the reader
+ * needs somewhere to land if the current recommendation is challenged.
+ *
+ * `critical_count` / `material_count` / `minor_count` are populated
+ * from `critiques[]` by the parser (redundant caches for downstream
+ * consumers).
+ */
+export interface AdversarialCritiqueResult {
+  critiques: Critique[];
+  critical_count: number;
+  material_count: number;
+  minor_count: number;
+  recommendation_robustness: "high" | "medium" | "low";
+  revised_recommendation_needed: boolean;
+  steelmanned_alternative: string | null;
+}
+
+/**
+ * Inputs the Adversarial Critique agent receives at execution time.
+ * The seventh Praxis agent — consumes the ENTIRE `BriefResult`
+ * produced by the six prior agents (Scoping → Research → Stakeholders
+ * → Risks → Options → Synthesis).
+ *
+ * Note: this file cannot import `BriefResult` directly (the
+ * orchestrator depends on `types.ts`, not the other way around).
+ * The agent takes a structural equivalent, defined here to break the
+ * cycle.
+ */
+export interface AdversarialContext {
+  brief_result: {
+    scoping: ScopingResult;
+    research: ResearchResult;
+    stakeholders: StakeholderMapResult;
+    risks: RiskAnalysisResult;
+    options: OptionsGenerationResult;
+    synthesis: SynthesisResult;
+    format_id: string;
+    question: string;
+  };
+  format: Format;
+}

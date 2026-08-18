@@ -248,3 +248,59 @@ export class SynthesisValidationError extends SynthesisError {
     this.issues = issues;
   }
 }
+
+// ---------------------------------------------------------------------------
+// v0.7 — Adversarial Critique agent
+// ---------------------------------------------------------------------------
+
+/**
+ * Raised by the Adversarial Critique agent for structural failures
+ * (bad count, missing fields, steelmanned_position too short, etc.).
+ * Distinct from the more specific `Invalid*Reference` classes.
+ */
+export class AdversarialCritiqueError extends AgentExecutionError {
+  constructor(message: string) {
+    super("adversarial", message);
+    this.name = "AdversarialCritiqueError";
+  }
+}
+
+/**
+ * Raised when a critique's `target` references an artefact absent
+ * from the supplied `BriefResult` (unknown section_id, option_id,
+ * risk_id, stakeholder_name, or out-of-range finding_index) — or
+ * when the entire `target` object is empty (no field set).
+ *
+ * Enforces the invariant "no fabricated cross-references" for the
+ * critique agent, mirroring the discipline applied to risks and
+ * options.
+ */
+export class InvalidCritiqueTargetError extends AdversarialCritiqueError {
+  readonly critiqueId: string;
+  readonly reason: string;
+
+  constructor(critiqueId: string, reason: string) {
+    super(
+      `Critique '${critiqueId}' has an invalid target: ${reason}`
+    );
+    this.name = "InvalidCritiqueTargetError";
+    this.critiqueId = critiqueId;
+    this.reason = reason;
+  }
+}
+
+/**
+ * Raised when the critique output declares
+ * `revised_recommendation_needed: true` but does not supply a
+ * non-null `steelmanned_alternative`. The whole point of flagging a
+ * revision is to give the reader a place to land — a naked "revise
+ * please" is not a critique.
+ */
+export class MissingAlternativeError extends AdversarialCritiqueError {
+  constructor() {
+    super(
+      "revised_recommendation_needed=true requires a non-empty steelmanned_alternative."
+    );
+    this.name = "MissingAlternativeError";
+  }
+}

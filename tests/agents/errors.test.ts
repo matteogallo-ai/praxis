@@ -1,12 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  AdversarialCritiqueError,
   AgentExecutionError,
   InvalidAgentOutputError,
+  InvalidCritiqueTargetError,
   InvalidOptionRiskReference,
   InvalidOptionStakeholderReference,
   InvalidRiskStakeholderReference,
   MaxToolRoundsExceededError,
+  MissingAlternativeError,
   OptionsGenerationError,
   PromptFileError,
   ResearchAgentError,
@@ -209,5 +212,40 @@ describe("SynthesisValidationError", () => {
     const err = new SynthesisValidationError([]);
     expect(err.issues).toEqual([]);
     expect(err.message).toContain("0 issue");
+  });
+});
+
+describe("AdversarialCritiqueError", () => {
+  test("carries the adversarial agent id and message", () => {
+    const err = new AdversarialCritiqueError("steelman too short");
+    expect(err).toBeInstanceOf(AgentExecutionError);
+    expect(err.agentId).toBe("adversarial");
+    expect(err.name).toBe("AdversarialCritiqueError");
+    expect(err.message).toContain("adversarial");
+    expect(err.message).toContain("steelman too short");
+  });
+});
+
+describe("InvalidCritiqueTargetError", () => {
+  test("mentions the critique id and the reason", () => {
+    const err = new InvalidCritiqueTargetError(
+      "CRIT-003",
+      "unknown option_id 'OPT-Z'"
+    );
+    expect(err).toBeInstanceOf(AdversarialCritiqueError);
+    expect(err.critiqueId).toBe("CRIT-003");
+    expect(err.reason).toBe("unknown option_id 'OPT-Z'");
+    expect(err.message).toContain("CRIT-003");
+    expect(err.message).toContain("unknown option_id");
+  });
+});
+
+describe("MissingAlternativeError", () => {
+  test("has a fixed explanatory message", () => {
+    const err = new MissingAlternativeError();
+    expect(err).toBeInstanceOf(AdversarialCritiqueError);
+    expect(err.name).toBe("MissingAlternativeError");
+    expect(err.message).toContain("revised_recommendation_needed");
+    expect(err.message).toContain("steelmanned_alternative");
   });
 });
