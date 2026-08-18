@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/executive-pre-read/risks-and-mitigations",
+  "match_substring": "Synthesize section 'risks-and-mitigations' of briefing 'executive-pre-read'.",
+  "response": "{\"content_markdown\": \"SAP's likely bundled counter-offer is the largest strategic risk; the mitigation is to pick a beachhead segment SAP under-serves and instrument competitive intelligence within thirty days of first customer signing. BfDI's audit posture is a regulatory table stake; the mitigation is to pre-file a Records of Processing description with a German subprocessor within the first ninety days.\", \"sources_cited\": [], \"validation_issues\": []}"
+}

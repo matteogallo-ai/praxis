@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/executive-pre-read/key-question",
+  "match_substring": "Synthesize section 'key-question' of briefing 'executive-pre-read'.",
+  "response": "{\"content_markdown\": \"Should we enter the German mid-market SaaS segment in 2027, and if so under which entry mode?\", \"sources_cited\": [], \"validation_issues\": []}"
+}

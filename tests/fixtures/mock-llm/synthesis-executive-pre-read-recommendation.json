@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/executive-pre-read/recommendation",
+  "match_substring": "Synthesize section 'recommendation' of briefing 'executive-pre-read'.",
+  "response": "{\"content_markdown\": \"Enter Germany in Q1 2027 via a bounded greenfield office capped at 15 staff for year one, owned by the Head of EMEA Sales with a first-referenceable-customer milestone at month nine. This choice preserves strategic control of the customer relationship, sits inside the Board's stated envelope, and avoids the SAP counter-offer that a broader beachhead would provoke.\", \"sources_cited\": [], \"validation_issues\": []}"
+}

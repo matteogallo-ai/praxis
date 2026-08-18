@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/position-paper-corporate/recommended-actions",
+  "match_substring": "Synthesize section 'recommended-actions' of briefing 'position-paper-corporate'.",
+  "response": "{\"content_markdown\": \"1. Sign the EU data-centre partner and publish the residency commitment by Oct 15 (Corporate Affairs leadership).\\n2. File Bitkom and eco membership applications by Nov 30 (Corporate Affairs leadership).\\n3. Pre-brief the Handelsblatt IT desk thirty days before the Q1 2027 launch (Corporate Affairs leadership).\", \"sources_cited\": [], \"validation_issues\": []}"
+}

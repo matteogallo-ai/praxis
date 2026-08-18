@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/mckinsey-style-note/key-question",
+  "match_substring": "Synthesize section 'key-question' of briefing 'mckinsey-style-note'.",
+  "response": "{\"content_markdown\": \"Which of the following entry modes should the board authorise for Germany in Q1 2027: partnership with a local integrator, bounded greenfield hiring, or deferral to 2028?\", \"sources_cited\": [], \"validation_issues\": []}"
+}

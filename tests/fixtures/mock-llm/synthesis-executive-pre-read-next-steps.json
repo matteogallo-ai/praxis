@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/executive-pre-read/next-steps",
+  "match_substring": "Synthesize section 'next-steps' of briefing 'executive-pre-read'.",
+  "response": "{\"content_markdown\": \"1. Board approves the €4-6m capital envelope by Sep 30 (Head of EMEA Sales).\\n2. Local counsel and DPO engagement complete by Oct 31 (Head of EMEA Sales).\\n3. First customer signed by Q2 2027 (Head of EMEA Sales).\", \"sources_cited\": [], \"validation_issues\": []}"
+}

@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/mckinsey-style-note/answer",
+  "match_substring": "Synthesize section 'answer' of briefing 'mckinsey-style-note'.",
+  "response": "{\"content_markdown\": \"Enter Germany in Q1 2027 via a partnership with a mid-size German integrator, aligned with BCG's published framework. The mechanism is a channel-and-services partnership under a revenue-share model that trades strategic control for a 4-6 month time-to-first-reference. The magnitude of impact is a €1-2m first-year commit and a first-referenceable customer within two quarters.\", \"sources_cited\": [{\"url\": \"https://www.bcg.com/publications/2025/saas-market-entry-europe-partnership-vs-greenfield\", \"title\": \"Partnership vs Greenfield — European SaaS Market Entry\", \"accessed_at\": \"2026-08-17T10:20:00Z\", \"excerpt\": \"Partnership-led entries outperformed greenfield on 24-month NPV in 68% of tracked programmes.\"}], \"validation_issues\": []}"
+}

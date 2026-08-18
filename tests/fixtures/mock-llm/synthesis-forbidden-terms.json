@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/forbidden-terms-scenario",
+  "match_substring": "Synthesize section 'test-section' of briefing 'test-forbidden-terms'.",
+  "response": "{\n  \"content_markdown\": \"Obviously, the entry decision is time-sensitive. It goes without saying that customers care about compliance, and clearly the German regulator matters.\",\n  \"sources_cited\": [],\n  \"validation_issues\": []\n}"
+}

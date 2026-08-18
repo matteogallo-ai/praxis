@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/mckinsey-style-note/so-what",
+  "match_substring": "Synthesize section 'so-what' of briefing 'mckinsey-style-note'.",
+  "response": "{\"content_markdown\": \"The Head of EMEA Sales must secure a partner shortlist and complete due diligence by Nov 30 or the 2027 window closes. Inaction defers the decision to 2028, foregoing 12 months of market signal at a strategic cost the board already flagged.\", \"sources_cited\": [], \"validation_issues\": []}"
+}
