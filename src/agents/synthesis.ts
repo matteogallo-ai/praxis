@@ -38,17 +38,25 @@ import type { Program, PromptDeclaration, MessageSection } from "promptlang/ast"
 
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
+  EditorialAttempt,
   FailedValidationRule,
   ForbiddenTermHit,
   FormatConformance,
+  RevisionContext,
   SynthesisContext,
   SynthesisResult,
   SynthesizedSection,
 } from "./types.ts";
-import type { FormatSection } from "../registry/schema.ts";
+import type {
+  EditorialAction,
+  Format,
+  FormatSection,
+} from "../registry/schema.ts";
+import { DEFAULT_MAX_REGENERATION_ATTEMPTS } from "../registry/schema.ts";
 import type { SourceReference } from "../sourcing/types.ts";
 import {
   AgentExecutionError,
+  EditorialFailureError,
   InvalidAgentOutputError,
   PromptFileError,
   SynthesisError,
@@ -76,30 +84,97 @@ export async function executeSynthesis(
 
   const sections: SynthesizedSection[] = [];
   const sourcesByAgent = collectUpstreamSources(ctx);
+  const editorial = buildEditorialConfig(ctx.format);
+  const revisionBlockGlobal = buildRevisionInstruction(ctx.revision_context);
 
   for (const section of ctx.format.sections) {
-    const inputs = buildSectionInputs(ctx, section);
-    validateParameterCoverage(declaration, inputs, promptPath);
+    const attempts: EditorialAttempt[] = [];
+    let lastReason: EditorialReason | undefined;
+    let lastDetails: string | undefined;
+    let acceptedParsed: ParsedSectionResponse | null = null;
+    let acceptedAttempt = 0;
 
-    const systemText = renderSection(declaration, "system", inputs, promptPath);
-    const userText = renderSection(declaration, "user", inputs, promptPath);
-    const prompt = `${systemText.trim()}\n\n---\n\n${userText.trim()}`;
+    // In non-strict mode, we always run exactly one attempt (v0.7 behaviour).
+    // In strict mode, up to `max_regeneration_attempts` total attempts.
+    const maxAttempts = editorial.strict ? editorial.maxAttempts : 1;
 
-    let text: string;
-    try {
-      text = await callLLM(llm, prompt);
-    } catch (err) {
-      if (err instanceof AgentExecutionError) throw err;
-      const message = err instanceof Error ? err.message : String(err);
-      throw new AgentExecutionError(
-        AGENT_ID,
-        `LLM provider error while synthesising '${section.id}' — ${message}`
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const retryBlock =
+        attempt > 1 && lastReason !== undefined && lastDetails !== undefined
+          ? buildRetryInstruction(lastReason, lastDetails)
+          : "";
+      const revisionBlockForSection = buildSectionRevisionInstruction(
+        revisionBlockGlobal,
+        ctx.revision_context,
+        section
+      );
+
+      const inputs = buildSectionInputs(
+        ctx,
+        section,
+        revisionBlockForSection,
+        retryBlock
+      );
+      validateParameterCoverage(declaration, inputs, promptPath);
+
+      const systemText = renderSection(declaration, "system", inputs, promptPath);
+      const userText = renderSection(declaration, "user", inputs, promptPath);
+      const prompt = `${systemText.trim()}\n\n---\n\n${userText.trim()}`;
+
+      let text: string;
+      try {
+        text = await callLLM(llm, prompt);
+      } catch (err) {
+        if (err instanceof AgentExecutionError) throw err;
+        const message = err instanceof Error ? err.message : String(err);
+        throw new AgentExecutionError(
+          AGENT_ID,
+          `LLM provider error while synthesising '${section.id}' — ${message}`
+        );
+      }
+
+      const parsed = parseSectionResponse(text, section, sourcesByAgent);
+
+      if (editorial.strict) {
+        const check = checkEditorialConformance(parsed, section, ctx, editorial);
+        if (check.rejected) {
+          attempts.push({
+            attempt_number: attempt,
+            reason: check.reason,
+            details: check.details,
+            accepted: false,
+          });
+          lastReason = check.reason;
+          lastDetails = check.details;
+          continue;
+        }
+        attempts.push({
+          attempt_number: attempt,
+          reason: "accepted",
+          details: "all strict editorial rules passed",
+          accepted: true,
+        });
+      }
+
+      acceptedParsed = parsed;
+      acceptedAttempt = attempt;
+      break;
+    }
+
+    if (acceptedParsed === null) {
+      throw new EditorialFailureError(
+        section.id,
+        lastReason ?? "forbidden_terms",
+        attempts
       );
     }
 
-    const parsed = parseSectionResponse(text, section, sourcesByAgent);
-    const post = postValidate(parsed, section, ctx);
-    sections.push(post);
+    const post = postValidate(acceptedParsed, section, ctx);
+    sections.push({
+      ...post,
+      editorial_attempts: attempts,
+      final_attempt_number: acceptedAttempt,
+    });
   }
 
   const totalWordCount = sections.reduce((acc, s) => acc + s.word_count, 0);
@@ -217,7 +292,9 @@ function renderSection(
 
 function buildSectionInputs(
   ctx: SynthesisContext,
-  section: FormatSection
+  section: FormatSection,
+  revisionBlock: string,
+  retryBlock: string
 ): Record<string, string> {
   return {
     scoping_json: JSON.stringify(ctx.scoping, null, 2),
@@ -242,7 +319,172 @@ function buildSectionInputs(
       ctx.format.style_guide.forbidden_terms.length === 0
         ? "(none)"
         : ctx.format.style_guide.forbidden_terms.join(", "),
+    revision_block: revisionBlock,
+    retry_block: retryBlock,
   };
+}
+
+// ---------------------------------------------------------------------------
+// v0.8 — strict_editorial config, conformance gate, prompt blocks
+// ---------------------------------------------------------------------------
+
+type EditorialReason = "forbidden_terms" | "over_length" | "validation_rule";
+
+interface EditorialConfig {
+  /** Master switch — false collapses every axis to "warn" (v0.7 behaviour). */
+  strict: boolean;
+  /** Total attempts per section under strict mode (initial + retries combined). */
+  maxAttempts: number;
+  forbiddenTermsAction: EditorialAction;
+  overLengthAction: EditorialAction;
+  validationRulesAction: EditorialAction;
+}
+
+function buildEditorialConfig(format: Format): EditorialConfig {
+  const e = format.sourcing_rules?.editorial;
+  const strict = e?.strict_editorial === true;
+  const maxAttempts = e?.max_regeneration_attempts ?? DEFAULT_MAX_REGENERATION_ATTEMPTS;
+  return {
+    strict,
+    maxAttempts,
+    forbiddenTermsAction: strict ? (e?.forbidden_terms_action ?? "warn") : "warn",
+    overLengthAction: strict ? (e?.over_length_action ?? "warn") : "warn",
+    validationRulesAction: strict ? (e?.validation_rules_action ?? "warn") : "warn",
+  };
+}
+
+type EditorialCheck =
+  | { rejected: false }
+  | { rejected: true; reason: EditorialReason; details: string };
+
+/**
+ * Under strict mode: return the FIRST reject-action failure (or clean pass).
+ * Order matters — forbidden_terms > over_length > validation_rule — so the
+ * retry prompt gets the highest-signal reason to fix first.
+ */
+function checkEditorialConformance(
+  parsed: ParsedSectionResponse,
+  section: FormatSection,
+  ctx: SynthesisContext,
+  cfg: EditorialConfig
+): EditorialCheck {
+  if (cfg.forbiddenTermsAction === "reject") {
+    const lowered = parsed.content_markdown.toLowerCase();
+    const hits: string[] = [];
+    for (const term of ctx.format.style_guide.forbidden_terms) {
+      if (countOccurrences(lowered, term.toLowerCase()) > 0) hits.push(term);
+    }
+    if (hits.length > 0) {
+      return {
+        rejected: true,
+        reason: "forbidden_terms",
+        details: `found: ${hits.map((t) => `'${t}'`).join(", ")}`,
+      };
+    }
+  }
+
+  if (cfg.overLengthAction === "reject") {
+    const wordCount = countWords(parsed.content_markdown);
+    const overCap = Math.floor(
+      section.max_length.words * (1 + OVER_LENGTH_TOLERANCE_PCT)
+    );
+    if (wordCount > overCap) {
+      return {
+        rejected: true,
+        reason: "over_length",
+        details: `${wordCount} words exceeds cap ${section.max_length.words} (tolerance ${OVER_LENGTH_TOLERANCE_PCT * 100}%)`,
+      };
+    }
+  }
+
+  if (
+    cfg.validationRulesAction === "reject" &&
+    section.validation_rules !== undefined &&
+    section.validation_rules.length > 0
+  ) {
+    const acknowledged = parsed.validation_issues.map((s) => s.toLowerCase());
+    const failed: string[] = [];
+    for (const rule of section.validation_rules) {
+      const key = ruleKey(rule).toLowerCase();
+      if (acknowledged.some((issue) => issue.includes(key))) failed.push(rule);
+    }
+    if (failed.length > 0) {
+      return {
+        rejected: true,
+        reason: "validation_rule",
+        details: `unmet: ${failed.map((r) => `'${r}'`).join("; ")}`,
+      };
+    }
+  }
+
+  return { rejected: false };
+}
+
+/**
+ * Build the REVISION MODE prompt block. Returns "" when no revision
+ * context is present (v0.7 behaviour). The block is per-section — it
+ * filters `critiques_to_address` to those targeting this section (or
+ * unscoped critiques), so the model gets only the load-bearing subset.
+ */
+function buildRevisionInstruction(rc: RevisionContext | undefined): {
+  header: string;
+  alt: string;
+  instruction: string;
+  critiques: RevisionContext["critiques_to_address"];
+} | null {
+  if (rc === undefined) return null;
+  return {
+    header: "REVISION MODE",
+    alt: rc.steelmanned_alternative ?? "(none supplied)",
+    instruction: rc.instruction,
+    critiques: rc.critiques_to_address,
+  };
+}
+
+function buildSectionRevisionInstruction(
+  global: ReturnType<typeof buildRevisionInstruction>,
+  rc: RevisionContext | undefined,
+  section: FormatSection
+): string {
+  if (global === null || rc === undefined) return "";
+  const relevant = global.critiques.filter(
+    (c) => c.target.section_id === undefined || c.target.section_id === section.id
+  );
+  const critiquesText =
+    relevant.length === 0
+      ? "(no critiques targeted at this section — align recommendation and prose with the steelmanned alternative)"
+      : relevant
+          .map(
+            (c) =>
+              `- ${c.id} [${c.severity}, ${c.category}]: ${c.steelmanned_position}\n    implication_if_true: ${c.implication_if_true}\n    suggested_revision: ${c.suggested_revision}`
+          )
+          .join("\n");
+  return [
+    `${global.header} — the initial synthesis attracted adversarial critiques that this pass MUST address.`,
+    "",
+    "Critiques to address:",
+    critiquesText,
+    "",
+    `Steelmanned alternative recommendation:\n${global.alt}`,
+    "",
+    `Instruction: ${global.instruction}`,
+    "",
+    "Preserve the section id, title, and structural boundaries exactly. Re-write only the prose.",
+  ].join("\n");
+}
+
+function buildRetryInstruction(reason: EditorialReason, details: string): string {
+  const readable = reason === "forbidden_terms"
+    ? "forbidden terms detected in content"
+    : reason === "over_length"
+      ? "section exceeded its word-count cap"
+      : "one or more validation_rules were not honoured";
+  return [
+    "STRICT EDITORIAL RETRY — the previous attempt at this section was rejected.",
+    `Reason: ${reason} (${readable}).`,
+    `Details: ${details}.`,
+    "Regenerate the section keeping identical structure, but eliminate the failure cause. Do not merely rephrase — remove the offending element.",
+  ].join("\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -430,6 +672,8 @@ function postValidate(
     word_count: wordCount,
     sources_cited: parsed.sources_cited,
     validation_issues: [...parsed.validation_issues, ...extraIssues],
+    editorial_attempts: [],
+    final_attempt_number: 1,
   };
 }
 

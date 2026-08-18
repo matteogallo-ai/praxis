@@ -39,7 +39,9 @@ prompt synthesis(
   section_validation_rules: string,
   style_voice: string,
   style_sentence_structure: string,
-  forbidden_terms: string
+  forbidden_terms: string,
+  revision_block: string,
+  retry_block: string
 ) -> string {
   system: """
     You are a senior editor assembling a briefing section from the
@@ -149,6 +151,10 @@ prompt synthesis(
     ---
     {{options_json}}
     ---
+
+    {{revision_block}}
+
+    {{retry_block}}
 
     Produce the section JSON now. Remember: no invention beyond the
     artefacts. Sources cited must appear verbatim in the artefacts.
