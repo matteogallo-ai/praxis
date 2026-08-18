@@ -48,6 +48,120 @@ export const c = {
 };
 
 // ---------------------------------------------------------------------------
+// v0.9 — verbosity, symbols, progress, errorWithContext.
+// ---------------------------------------------------------------------------
+
+export type Verbosity = "quiet" | "normal" | "verbose";
+
+let verbosity: Verbosity = "normal";
+
+export function setVerbosity(v: Verbosity): void {
+  verbosity = v;
+}
+
+export function getVerbosity(): Verbosity {
+  return verbosity;
+}
+
+/**
+ * Terminal glyphs used across the CLI. Colour-styled variants are
+ * available via `styledSymbols`; the plain names are ASCII-safe
+ * fallbacks used by pipes / non-TTY sinks.
+ */
+export const symbols = {
+  success: "✓",
+  error: "✗",
+  warn: "⚠",
+  info: "ℹ",
+  bullet: "•",
+  arrow: "→",
+} as const;
+
+export const styledSymbols = {
+  success: () => c.green(symbols.success),
+  error: () => c.red(symbols.error),
+  warn: () => c.yellow(symbols.warn),
+  info: () => c.blue(symbols.info),
+  bullet: () => c.dim(symbols.bullet),
+  arrow: () => c.dim(symbols.arrow),
+};
+
+/**
+ * Emit a leveled log line to stderr. The verbosity gate:
+ *   quiet   → suppresses info/success/verbose (errors + warnings pass).
+ *   normal  → suppresses verbose (everything else passes).
+ *   verbose → passes everything.
+ */
+export function log(
+  level: "info" | "success" | "warn" | "error" | "verbose",
+  message: string
+): void {
+  if (level === "verbose" && verbosity !== "verbose") return;
+  if ((level === "info" || level === "success") && verbosity === "quiet") return;
+  const sym =
+    level === "success"
+      ? styledSymbols.success()
+      : level === "warn"
+        ? styledSymbols.warn()
+        : level === "error"
+          ? styledSymbols.error()
+          : level === "info"
+            ? styledSymbols.info()
+            : c.dim(symbols.arrow);
+  process.stderr.write(`${sym} ${message}\n`);
+}
+
+/**
+ * One-line progress marker to stderr. Suppressed under `--quiet`;
+ * dimmed under `--normal` (default); prefixed with a bright arrow
+ * under `--verbose`.
+ */
+export function progress(step: string, detail?: string): void {
+  if (verbosity === "quiet") return;
+  const arrow = verbosity === "verbose" ? c.cyan(symbols.arrow) : c.dim(symbols.arrow);
+  const body = detail !== undefined ? `${step} ${c.dim(`(${detail})`)}` : step;
+  process.stderr.write(`${arrow} ${body}\n`);
+}
+
+/**
+ * Structured error record used by `errorWithContext()`. Every field
+ * except `what` is optional; the renderer omits missing lines
+ * cleanly so callers can compose partial messages.
+ */
+export interface ErrorContext {
+  what: string;
+  cause?: string;
+  suggestion?: string;
+  see?: string;
+}
+
+/**
+ * Render a structured error as a compact stderr block:
+ *
+ *   ✗ <what>
+ *     cause:      <cause>
+ *     suggestion: <suggestion>
+ *     see:        <see>
+ *
+ * Returned as a string so callers can decide whether to also throw,
+ * suppress under --quiet, or funnel through additional formatting.
+ */
+export function errorWithContext(ctx: ErrorContext): string {
+  const lines: string[] = [];
+  lines.push(`${styledSymbols.error()} ${c.bold(ctx.what)}`);
+  if (ctx.cause !== undefined) {
+    lines.push(`  ${c.dim("cause:")}      ${ctx.cause}`);
+  }
+  if (ctx.suggestion !== undefined) {
+    lines.push(`  ${c.dim("suggestion:")} ${ctx.suggestion}`);
+  }
+  if (ctx.see !== undefined) {
+    lines.push(`  ${c.dim("see:")}        ${ctx.see}`);
+  }
+  return lines.join("\n") + "\n";
+}
+
+// ---------------------------------------------------------------------------
 // Table renderer (fixed-width, monospace, no external dep).
 // ---------------------------------------------------------------------------
 
