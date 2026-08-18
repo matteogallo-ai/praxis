@@ -5,6 +5,149 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] — 2026-08-18
+
+**Consolidation release: editorial re-run loop (hard-cap 1), `strict_editorial` retry mode, Praxis-as-library API surface.**
+
+No new agent, no new npm dep, no Web UI. Three bricks that harden
+Praxis toward v1.0 without expanding scope. Dependencies remain
+exactly `{ @promptlang/yaml-parser (workspace), pdfkit }`.
+
+### Added — editorial re-run loop
+
+- `Orchestrator.briefWithCritiqueAndRerun(question, formatId, options)`
+  runs `briefWithCritique()`, then — iff `revised_recommendation_needed:
+  true` AND `steelmanned_alternative !== null` — re-invokes the
+  Synthesis agent ONCE in REVISION MODE, addressing the critical and
+  material critiques and aligning the recommendation with the
+  steelmanned alternative.
+- **Hard cap: exactly one rerun.** No recursion. A post-rerun brief
+  is never critiqued or re-synthesized again inside the same call.
+  Downstream callers can invoke the method a second time on the new
+  output if they want another pass — the library never loops on its
+  own. See `docs/editorial-loop.md`.
+- New payload `BriefWithCritiqueAndRerunResult` — superset of
+  `BriefWithCritiqueResult` carrying:
+  - `rerun_performed: boolean`
+  - `rerun_reason: string | null`
+  - `original_synthesis: SynthesisResult | null` (pre-rerun audit)
+  - `rerun_metadata: RerunMetadata | null` — `critiques_addressed[]`,
+    `steelmanned_alternative_used`, and `re_synthesis_deviations[]`
+    (section IDs whose text changed substantially).
+- Deviation heuristic: word-count delta > 20% OR normalised
+  Levenshtein distance > 0.30. Both signals published as
+  `computeReSynthesisDeviations()` in the public API.
+- `SourcingReport.edited_after_critique?: boolean` flips to `true`
+  on the returned payload when the rerun fires.
+- CLI: `praxis brief ... --full --with-rerun` (implies `--critique`,
+  requires `--full`). One-line rerun summary printed to stderr; the
+  `--json` payload carries the full rerun metadata block.
+
+### Added — `strict_editorial` retry mode
+
+- Optional `sourcing_rules.editorial` block on every format:
+  - `strict_editorial: boolean` — master switch (default `false`,
+    preserving v0.7 warn-only behaviour).
+  - `max_regeneration_attempts: number` — in `[1, 3]`, default 2.
+  - `forbidden_terms_action`, `over_length_action`,
+    `validation_rules_action` — each `"reject" | "warn"`, default
+    `"warn"`.
+- Under strict mode, the Synthesis agent enforces `"reject"`-action
+  rules as HARD refusals: a failing section is re-generated up to
+  `max_regeneration_attempts` times, with a per-attempt
+  `STRICT EDITORIAL RETRY` block in the prompt naming the reason
+  and details. Every attempt is recorded in
+  `SynthesizedSection.editorial_attempts[]`; the accepted attempt
+  is at `final_attempt_number`.
+- Exhausted retries throw `EditorialFailureError`, carrying the
+  section id, the last failure reason, and the full attempt
+  history for downstream inspection.
+- Reason precedence when several axes fail simultaneously:
+  `forbidden_terms` > `over_length` > `validation_rule`. Fix the
+  loudest first.
+- Reason on accepted attempts: `"accepted"` with a synthesised
+  detail message; useful for auditing that the section passed
+  without a retry.
+
+### Added — Praxis-as-library
+
+- `src/index.ts` refactored as the v1.0 stable API surface. Every
+  named export is covered by the SemVer contract — removing an
+  export or changing an error's inheritance requires a
+  major-version bump.
+- `src/errors/public.ts` — canonical barrel for the public error
+  taxonomy. Every re-exported error inherits from `PraxisError`; a
+  single top-level `catch (e instanceof PraxisError)` is now
+  sufficient to catch every typed Praxis failure.
+- Public value exports now include (v0.8 additions in bold):
+  - Every agent RESULT type from v0.2 through v0.7 (`ScopingResult`,
+    `ResearchResult`, `StakeholderMapResult`, `RiskAnalysisResult`,
+    `OptionsGenerationResult`, `SynthesisResult`,
+    `AdversarialCritiqueResult`).
+  - **`EditorialAttempt`, `RevisionContext`,
+    `BriefWithCritiqueAndRerunResult`, `RerunMetadata`,
+    `EditorialFailureError`, `EditorialAction`, `EditorialRules`,
+    `DEFAULT_MAX_REGENERATION_ATTEMPTS`,
+    `MAX_REGENERATION_ATTEMPTS_CEILING`, `EDITORIAL_ACTIONS`,
+    `isEditorialAction`, `computeReSynthesisDeviations`.**
+  - Renderer dispatcher (`render`, `resolveTarget`, three renderer
+    instances, `RENDER_TARGETS`, `RENDER_THEMES`).
+  - Complete `PraxisError` taxonomy from
+    `src/errors/public.ts`.
+- Post-Stakeholder agent `executeXxx()` implementations
+  (`executeRiskAnalysis`, `executeOptionsGeneration`,
+  `executeSynthesis`, `executeAdversarialCritique`) remain
+  INTERNAL — the Orchestrator owns their sequencing.
+- New docs: `docs/api.md` (narrated API reference),
+  `docs/embedding-praxis.md` (quick-start for library embedders),
+  `docs/editorial-loop.md` (the rerun mechanics and hard-cap
+  rationale).
+
+### Changed
+
+- `SynthesizedSection` gained two REQUIRED fields:
+  `editorial_attempts: EditorialAttempt[]` and
+  `final_attempt_number: number`. Backward-compat default is
+  `[]` and `1` respectively for sections that ran under the
+  default warn-only editorial mode.
+- `SynthesisContext` gained an OPTIONAL `revision_context?:
+  RevisionContext` field. Set only by
+  `Orchestrator.briefWithCritiqueAndRerun()`; end-user code never
+  provides it directly.
+- `prompts/synthesis.prompt` gained two conditional parameters
+  (`revision_block`, `retry_block`) that are empty strings on
+  the initial pass and non-empty on rerun / strict-mode retry.
+
+### Not changed (v0.7 baseline preserved)
+
+- The public v0.6 / v0.7 API — every existing method signature is
+  unchanged. `brief()` and `briefWithCritique()` produce the same
+  outputs as v0.7.
+- Dependencies: still exactly two runtime deps
+  (`@promptlang/yaml-parser`, `pdfkit`). Zero additions.
+- The seven shipped agents — no new agent in v0.8, and no plans
+  for one in v0.9 or v1.0 either. The v0.7 pipeline is the final
+  pipeline.
+
+### Migration notes
+
+- **Formats**: adding `sourcing_rules.editorial: { strict_editorial:
+  false }` is optional and a no-op; formats that omit the block
+  behave identically to v0.7. Formats that set
+  `strict_editorial: true` MUST also set at least one
+  `*_action: "reject"` to make the strict mode meaningful.
+- **Library callers**: `briefWithCritique()` continues to work
+  unchanged; `briefWithCritiqueAndRerun()` is the opt-in v0.8
+  entry point. Every existing `catch (e instanceof PraxisError)`
+  continues to catch the same set plus `EditorialFailureError`.
+- **Direct consumers of `SynthesizedSection`**: the two new
+  required fields are populated by the Synthesis agent and by the
+  renderers already; only test fixtures that construct
+  `SynthesizedSection` literals directly need to add
+  `editorial_attempts: []` and `final_attempt_number: 1`.
+
+---
+
 ## [0.7.0] — 2026-08-18
 
 **Adversarial Critique agent + PDF/DOCX/MD renderers + first (and only planned) external npm dependency.**

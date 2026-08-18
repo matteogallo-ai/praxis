@@ -8,16 +8,28 @@ discipline enforced upstream**: the briefing arrives already shaped like
 the organization's own analysts wrote it, with rigorous sourcing and a
 consistent voice. That is 80% of what a senior reader values.
 
-The current release, **v0.7 — Adversarial Critique agent + PDF /
-DOCX / Markdown-enhanced renderers**, closes the seven-agent
-pipeline (v0.6's `brief()` gains its stress-testing companion) and
-turns the raw Markdown briefing into calibrated executive
-deliverables in three formats. It also introduces the one and only
-external npm runtime dependency in Praxis: **pdfkit** (explicitly
-listed as the planned exception in the v0.1 migration prompt; see
-CHANGELOG for the full justification). Every other v0.7 renderer
-is from-scratch — the DOCX renderer emits Open Packaging
-Convention parts by hand and uses `node:zlib` for DEFLATE.
+The current release, **v0.8 — consolidation: editorial re-run
+loop + `strict_editorial` + Praxis-as-library**, is a hardening
+release. No new agent. No new npm dep. No Web UI. Three bricks
+that prepare v1.0:
+
+- **Editorial re-run loop** —
+  `Orchestrator.briefWithCritiqueAndRerun()` re-invokes Synthesis
+  in REVISION MODE if the critique flags the recommendation for
+  revision. Hard cap: exactly one rerun per call. See
+  `docs/editorial-loop.md`.
+- **`strict_editorial` mode** — opt-in per format; structurally
+  rejects and regenerates sections that hit forbidden terms /
+  over-length / unmet validation_rules (default 2, max 3 attempts
+  per section). Exhausted → `EditorialFailureError`.
+- **Praxis-as-library** — `src/index.ts` refactored as the v1.0
+  stable API surface. Complete `PraxisError` taxonomy. See
+  `docs/embedding-praxis.md`.
+
+The v0.7 pipeline — seven agents, PDF / DOCX / Markdown-enhanced
+renderers, adversarial critique — remains unchanged and
+API-compatible. `pdfkit` remains the ONE and only external npm
+runtime dependency.
 
 New CLI:
 
@@ -35,6 +47,10 @@ praxis brief "<question>" --format executive-pre-read --full --render pdf --outp
 praxis brief "<question>" --format executive-pre-read --full --critique \
      --render pdf --include-toc --include-appendices \
      --theme consulting --output brief.pdf
+
+# v0.8: editorial re-run loop (implies --critique, requires --full)
+praxis brief "<question>" --format executive-pre-read --full --with-rerun
+praxis brief "<question>" --format executive-pre-read --full --with-rerun --json
 ```
 
 Sample output (truncated, mock provider):

@@ -187,26 +187,38 @@ under the strict-policy shipped formats.
 
 ---
 
-## v0.8 — Polish, editorial re-run loop, minimal Web UI
+## v0.8 — Consolidation: editorial re-run loop, strict_editorial, Praxis-as-library ✅ (shipped 2026-08-18)
 
-Concrete options (priorities set post-v0.7 dogfooding):
+Consolidation release. No new agent, no new npm dep, no Web UI. Three
+bricks that harden Praxis toward v1.0 without expanding scope:
 
-- **Editorial re-run loop** — feed the adversarial critique back
-  into a second Synthesis pass so the shipped briefing already
-  addresses its own critiques. Requires a
-  `format_conformance` gate before the second pass so the loop
-  cannot infinitely oscillate.
-- **Post-generation linter** — forbidden-terms hard-reject
-  (currently a soft warning), sentence-length caps,
-  paragraph-length caps, MECE checks on argument sections.
-  Violations trigger a re-generation loop with the specific
-  violation fed back as a constraint.
-- **Minimal Web UI** — small server backend (Bun) + single-page
-  HTML that runs the pipeline in the browser and streams the
-  Markdown/PDF back. No frontend framework — plain HTML.
-- **Praxis-as-library API** — an installable npm package that
-  ships the Orchestrator, agents, and renderers behind a stable
-  API surface for programmatic callers.
+- **Editorial re-run loop** — `Orchestrator.briefWithCritiqueAndRerun()`
+  re-invokes Synthesis in REVISION MODE if the adversarial critique
+  flagged `revised_recommendation_needed`. **Hard cap: exactly one
+  rerun.** The method never re-iterates. `original_synthesis` is
+  preserved for audit, `rerun_metadata` records which critiques were
+  addressed and which sections changed substantially.
+- **Forbidden-terms hard-reject** — opt-in `strict_editorial` mode
+  under `sourcing_rules.editorial`. Rejects and regenerates sections
+  that hit a `"reject"`-action rule (`forbidden_terms_action`,
+  `over_length_action`, `validation_rules_action`) up to
+  `max_regeneration_attempts` (default 2, ceiling 3). Every attempt
+  is recorded in `SynthesizedSection.editorial_attempts[]`. Exhausted
+  → `EditorialFailureError`.
+- **Praxis-as-library** — `src/index.ts` refactored as the v1.0
+  stable API surface. Every public export covered by SemVer.
+  Complete error taxonomy under `PraxisError` — a single top-level
+  `catch (e instanceof PraxisError)` is enough. Post-Stakeholder
+  agent `executeXxx()` implementations remain internal on purpose:
+  the Orchestrator owns their sequencing.
+- **CLI**: `--with-rerun` (implies `--critique`, requires `--full`).
+  Prints a one-line rerun summary to stderr; the JSON payload
+  carries `rerun_performed`, `original_synthesis`, `rerun_metadata`.
+
+Deliberately deferred (moved to a later release):
+
+- Web UI: rejected as out-of-scope for v1.0. The library API IS the
+  contract; UIs are downstream projects.
 
 ---
 
