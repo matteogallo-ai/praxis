@@ -4,7 +4,7 @@
 ![bun: 1.3+](https://img.shields.io/badge/bun-1.3%2B-orange)
 ![typescript: strict](https://img.shields.io/badge/typescript-strict-blue)
 ![license: MIT](https://img.shields.io/badge/license-MIT-lightgrey)
-![status: v0.9](https://img.shields.io/badge/status-v0.9-blue)
+![release: v1.0](https://img.shields.io/badge/release-v1.0-brightgreen)
 
 > Multi-agent briefing system that produces senior-analyst-grade
 > documents in your organization's exact format — with rigorous
