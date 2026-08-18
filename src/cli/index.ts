@@ -21,9 +21,31 @@ import { listCommand, parseOrgStyleFlag } from "./commands/list.ts";
 import { inspectCommand } from "./commands/inspect.ts";
 import { validateCommand } from "./commands/validate.ts";
 import { runBriefCli } from "./commands/brief.ts";
-import { c } from "./output.ts";
+import { c, setVerbosity, type Verbosity } from "./output.ts";
 import { PRAXIS_VERSION } from "./version-constant.ts";
 import { PraxisError } from "../registry/errors.ts";
+
+/**
+ * Strip global verbosity flags (--verbose / -v / --quiet / -q) from the
+ * argument list and apply them via `setVerbosity()`. The residual
+ * `argv` (order preserved) is returned so downstream parsers do not
+ * see the flags. Later flags win — `--quiet --verbose` yields verbose.
+ */
+export function stripVerbosityFlags(argv: readonly string[]): string[] {
+  let v: Verbosity = "normal";
+  const rest: string[] = [];
+  for (const a of argv) {
+    if (a === "--verbose") {
+      v = "verbose";
+    } else if (a === "--quiet") {
+      v = "quiet";
+    } else {
+      rest.push(a);
+    }
+  }
+  setVerbosity(v);
+  return rest;
+}
 
 /**
  * Formats directory used by `formats list`, `formats inspect`, and `brief`.
@@ -44,7 +66,9 @@ const DEFAULT_MOCK_FIXTURES_DIR = resolve(
 );
 
 export async function run(argv: readonly string[]): Promise<number> {
-  const args = [...argv];
+  // Global flags (--verbose, --quiet) can appear anywhere on the
+  // command line. Strip them first so downstream parsers stay simple.
+  const args = stripVerbosityFlags(argv);
 
   if (args.length === 0 || args[0] === "help" || args[0] === "--help" || args[0] === "-h") {
     printHelp();
@@ -151,6 +175,11 @@ function printHelp(): void {
       `                            [--include-appendices]\n` +
       `                            [--with-sourcing-report]\n` +
       `                            [--json]\n\n` +
+      `Global flags:\n` +
+      `  --verbose            log every pipeline step to stderr\n` +
+      `  --quiet              suppress progress logs; keep final output\n\n` +
+      `Format helpers:\n` +
+      `  --format auto        pick a shipped format from question keywords\n\n` +
       `In v0.7, 'brief' runs the seven-agent pipeline. --full runs the six-agent\n` +
       `pipeline (Scoping → Research → Stakeholders → Risks → Options → Synthesis) and\n` +
       `prints the Markdown briefing. --critique adds the Adversarial Critique agent\n` +
