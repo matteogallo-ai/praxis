@@ -1,6 +1,6 @@
 {
   "name": "praxis",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Format Registry for producing consultant-grade analytical briefings in the exact codes of the target organization",
   "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
   "license": "MIT",
@@ -33,10 +33,12 @@
     "cli": "bun run src/cli/index.ts"
   },
   "dependencies": {
-    "@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser"
+    "@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser",
+    "pdfkit": "^0.19.1"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/pdfkit": "^0.17.6",
     "typescript": "^5.6.0"
   },
   "engines": {
