@@ -31,14 +31,15 @@ function output(): string {
 }
 
 describe("praxis formats list", () => {
-  test("prints a table with all three shipped formats", () => {
+  test("prints a table with all shipped formats", () => {
     const code = listCommand({ formatsDir: FORMATS });
     expect(code).toBe(0);
     const out = output();
     expect(out).toContain("executive-pre-read");
     expect(out).toContain("mckinsey-style-note");
     expect(out).toContain("position-paper-corporate");
-    expect(out).toContain("3 formats registered");
+    expect(out).toContain("family-office-memo");
+    expect(out).toContain("4 formats registered");
   });
 
   test("table header lists the six expected columns", () => {

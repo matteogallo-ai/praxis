@@ -30,8 +30,8 @@ describe("benchmarks/questions.yaml — schema", () => {
     expect(MANIFEST.version).toBe(1);
   });
 
-  test("exactly 10 entries (v0.9 closed set)", () => {
-    expect(MANIFEST.benchmarks.length).toBe(10);
+  test("exactly 11 entries (v1.2 set — 10 shipped in v0.9, family-office added in v1.2)", () => {
+    expect(MANIFEST.benchmarks.length).toBe(11);
   });
 
   test("every id is kebab-case with a leading NN- prefix", () => {
@@ -46,10 +46,10 @@ describe("benchmarks/questions.yaml — schema", () => {
       expect(ids.has(b.id)).toBe(false);
       ids.add(b.id);
     }
-    expect(ids.size).toBe(10);
+    expect(ids.size).toBe(11);
   });
 
-  test("every format field is one of the three shipped ids", () => {
+  test("every format field is one of the shipped ids", () => {
     for (const b of MANIFEST.benchmarks) {
       expect((AUTO_FORMAT_IDS as readonly string[]).includes(b.format)).toBe(true);
     }
@@ -97,7 +97,7 @@ describe("benchmarks/questions.yaml — --format auto coherence", () => {
 });
 
 describe("benchmarks/questions.yaml — format coverage", () => {
-  test("all three shipped formats have at least one benchmark", () => {
+  test("every shipped format has at least one benchmark", () => {
     const seen = new Set<string>(MANIFEST.benchmarks.map((b) => b.format));
     for (const id of AUTO_FORMAT_IDS) {
       expect(seen.has(id)).toBe(true);

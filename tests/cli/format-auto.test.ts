@@ -144,11 +144,12 @@ describe("detectFormatFromQuestion — no-match paths", () => {
 });
 
 describe("AUTO_FORMAT_IDS / AUTO_FORMAT_KEYWORDS export shape", () => {
-  test("three format ids exposed", () => {
-    expect(AUTO_FORMAT_IDS.length).toBe(3);
+  test("four shipped format ids exposed", () => {
+    expect(AUTO_FORMAT_IDS.length).toBe(4);
     expect(AUTO_FORMAT_IDS).toContain("executive-pre-read");
     expect(AUTO_FORMAT_IDS).toContain("position-paper-corporate");
     expect(AUTO_FORMAT_IDS).toContain("mckinsey-style-note");
+    expect(AUTO_FORMAT_IDS).toContain("family-office-memo");
   });
 
   test("every format has at least one keyword", () => {

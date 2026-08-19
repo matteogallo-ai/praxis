@@ -463,27 +463,30 @@ describe("readCache / writeCache", () => {
 // ---------------------------------------------------------------------------
 
 describe("enumerateBriefings", () => {
-  test("finds every mock briefing (all 10, including position-paper)", () => {
-    // v1.1.1 — `benchmarks/run-all.ts` always emits brief.md
-    // regardless of the format's `output_targets[]` declaration, so
-    // the scoring framework now sees every mock briefing:
-    //   executive-pre-read       ([pdf, md])       → 3 briefings (02-04)
-    //   mckinsey-style-note      ([pdf, docx, md]) → 4 briefings (01, 05-07)
-    //   position-paper-corporate ([pdf, docx])     → 3 briefings (08-10)
-    // Total: 10. The v0.10 gap of 7/10 documented in
-    // docs/benchmarking-methodology.md is closed.
+  test("finds every mock briefing (all 11 including family-office-memo)", () => {
+    // v1.1.1 fixed the position-paper brief.md gap so the scoring
+    // framework sees every mock briefing regardless of the format's
+    // `output_targets[]` declaration. v1.2.0 adds the eleventh
+    // benchmark (11-family-office-co-investment) for the new
+    // family-office-memo format:
+    //   executive-pre-read       → 3 briefings (02-04)
+    //   mckinsey-style-note      → 4 briefings (01, 05-07)
+    //   position-paper-corporate → 3 briefings (08-10)
+    //   family-office-memo       → 1 briefing  (11)
+    // Total: 11.
     const refs = enumerateBriefings(".", { mockOnly: true, liveOnly: false });
-    expect(refs.length).toBe(10);
+    expect(refs.length).toBe(11);
     expect(refs.every((r) => r.mode === "mock")).toBe(true);
     for (const r of refs) {
       expect(existsSync(r.brief_md_path)).toBe(true);
       expect(existsSync(r.metadata_path)).toBe(true);
     }
-    // Every position-paper briefing (08-10) is now included.
+    // Every position-paper briefing (08-10) is now included, plus 11.
     const slugs = refs.map((r) => r.slug).join(",");
     expect(slugs).toContain("08-");
     expect(slugs).toContain("09-");
     expect(slugs).toContain("10-");
+    expect(slugs).toContain("11-family-office");
   });
 
   test("live-only with only the placeholder README returns zero refs", () => {
