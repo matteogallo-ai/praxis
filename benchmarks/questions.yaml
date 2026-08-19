@@ -17,8 +17,9 @@ version: 1
 #   3 × executive-pre-read       (02, 03, 04)
 #   4 × mckinsey-style-note      (01, 05, 06, 07)
 #   3 × position-paper-corporate (08, 09, 10)
+#   1 × family-office-memo       (11)  — added in v1.2.0 alongside the format itself
 #
-# Do NOT add an 11th benchmark without a v-plus-1 release.
+# Do NOT add a 12th benchmark without a v-plus-1 release.
 
 benchmarks:
   - id: "01-german-market-entry"
@@ -105,3 +106,12 @@ benchmarks:
       - esg
       - disclosure
     intent: "Public policy statement on a disclosure regime. Trips 'position' keyword; stresses the format's stakeholder-landscape section (regulators, investors, NGOs)."
+
+  - id: "11-family-office-co-investment"
+    question: "Should the family council approve the co-investment opportunity in the Zurich-based fintech proposed by our external advisor?"
+    format: "family-office-memo"
+    tags:
+      - family-office
+      - co-investment
+      - governance
+    intent: "Fourth format shipped in v1.2.0. Discreet family-office memo exercising the six-section arc (principal summary, context and heritage, stakeholders, options, risks and preservation, next step). Trips the 'family council' keyword group. Content stresses advisor-conflict governance under STEP / OECD conventions."
