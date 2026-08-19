@@ -5,6 +5,62 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.1] — 2026-08-19
+
+### Fixed
+
+- **Benchmark artefact coverage** — `benchmarks/run-all.ts` now
+  always emits the full `brief.md` + `brief.pdf` + `brief.docx` +
+  `metadata.json` trifecta for every benchmark, regardless of the
+  format's `output_targets[]` declaration. Previously 6/10 mock
+  benchmark output directories were incomplete: 3
+  position-paper-corporate briefings (08/09/10) lacked `brief.md`
+  and 3 executive-pre-read briefings (02/03/04) lacked
+  `brief.docx`. As a result, the v0.10 scoring framework reported
+  only 7/10 mocks as scorable; it now reports 10/10.
+- **Root cause.** `run-all.ts` was gating each artefact write on
+  `format.output_targets.includes(target)` and then delegating to
+  the `render()` dispatcher, which enforces the same rule. This
+  is the correct behaviour for the user-facing CLI
+  (`praxis brief ... --render docx`) — a format that doesn't
+  declare a target shouldn't accept it. But a benchmark run is a
+  harness, not a user-facing artefact; scoring uniformity
+  requires the full trifecta on every entry. The fix bypasses the
+  dispatcher's guard by calling the individual renderer
+  implementations (`markdownEnhancedRenderer`, `pdfRenderer`,
+  `docxRenderer`) directly, all already exported from
+  `src/renderers/index.ts`. Zero change to the user-facing CLI or
+  the dispatcher itself.
+
+### Added
+
+- `tests/benchmarks/coverage.test.ts` — regression test that
+  asserts every mock benchmark output directory carries all four
+  expected files (non-empty). Guards against silent
+  reintroduction of the gap on future changes to `run-all.ts` or
+  the format registry.
+
+### Changed
+
+- `benchmarks/outputs/mock/*/` regenerated end-to-end via
+  `bun run bench:mock`. All 10 entries now carry the full
+  trifecta. Same content envelope, same size class, deterministic
+  under `MockLLMProvider`.
+
+### Notes
+
+- Empirical scoring coverage is now 10/10 mocks scorable (up from
+  7/10 in v0.10 / v1.1.0).
+- No API change, no functional change beyond the bug fix.
+- The 1146-test v1.1 baseline is preserved; 42 new tests come
+  from the coverage regression file (one per file × 10
+  directories, plus the two structural assertions). The
+  `enumerateBriefings` test in `score-all.test.ts` had to be
+  updated in place: it previously encoded the 7/10 gap as
+  expected behaviour, and now encodes the 10/10 fix.
+- `docs/benchmarking-methodology.md` updated: the known-limitation
+  bullet on the 7/10 gap now records the v1.1.1 resolution.
+
 ## [1.1.0] — 2026-08-19
 
 ### npm dependency switch (yaml-parser)

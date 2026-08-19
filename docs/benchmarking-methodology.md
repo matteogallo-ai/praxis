@@ -112,11 +112,17 @@ to experiment with a different model.
   scorings across three formats therefore give the scorer only
   three distinct texts to grade, which produces artificially
   clustered mock scores.
-- **v0.10.0 scoring covers 7 of the 10 mock briefings.** The
-  three `position-paper-corporate` briefings (08–10) do not
-  emit `brief.md` because that format does not declare `md` in
-  `output_targets[]`. v0.10.1 will resolve this by emitting a
-  scoring-source text artefact alongside `pdf`/`docx`.
+- **Scoring covers all 10 mock briefings (v1.1.1+).** Previous
+  releases (v0.10.0 / v1.1.0) shipped only 7/10 mocks scorable —
+  the three `position-paper-corporate` briefings (08–10) lacked
+  `brief.md` because that format does not declare `md` in
+  `output_targets[]` and `benchmarks/run-all.ts` was honouring
+  that declaration. v1.1.1 makes the benchmark harness emit the
+  full `md`/`pdf`/`docx` trifecta regardless of `output_targets[]`
+  (the harness is not a user-facing artefact, so uniform
+  coverage takes precedence over the format's declared
+  consumption preferences). Regression guarded by
+  `tests/benchmarks/coverage.test.ts`.
 - **No calibration against human reviewers.** A future release
   will hand the ten mocks + ten lives to a senior consultant
   for a blind score, and correlate against the AI scoring. That
