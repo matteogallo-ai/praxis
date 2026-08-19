@@ -192,23 +192,34 @@ quick-start: [`docs/embedding-praxis.md`](docs/embedding-praxis.md).
 
 ## Development
 
-Praxis runs on [Bun](https://bun.sh) 1.3+. It depends on the
-sibling PromptLang checkout for the vendored YAML parser:
+Praxis runs on [Bun](https://bun.sh) 1.3+. Since v1.1
+[`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser)
+resolves from the npm registry — no sibling checkout is needed for
+that piece. The `promptlang` **core** (lexer / parser / ast /
+runtime) is still consumed via TypeScript `paths` from a sibling
+checkout under `~/dev/promptlang/`, so both repos must currently
+live side by side:
 
 ```
 ~/dev/
 ├── praxis/        ← this repo
-└── promptlang/    ← required at this relative path
+└── promptlang/    ← required for the promptlang core imports
 ```
 
 Setup:
 
 ```bash
+git clone https://github.com/matteogallo-ai/promptlang.git ~/dev/promptlang
+git clone https://github.com/matteogallo-ai/praxis.git ~/dev/praxis
+cd ~/dev/praxis
 bun install
 bun run typecheck   # bunx tsc --noEmit — 0 errors
-bun test            # ~1100+ pass, ~10 skip (live tests gated on API key)
+bun test            # 1146 pass, 11 skip (live tests gated on API key)
 bun run bench:mock  # 10 benchmarks against the mock provider
 ```
+
+Publishing the `promptlang` core to npm (removing this last sibling
+requirement) is planned for a future release.
 
 CLI dev loop:
 
@@ -234,10 +245,13 @@ in the v0.1 migration prompt; every other renderer stays
 from-scratch (the DOCX renderer emits Open Packaging Convention
 parts by hand and uses `node:zlib` for DEFLATE).
 
-**Why the sibling PromptLang checkout?** The YAML parser is
-vendored during PromptLang's own alpha; it will switch to
-`"promptlang": "^1.x"` in `dependencies` once PromptLang
-publishes to npm.
+**Why still a sibling PromptLang checkout?** Since v1.1, the
+`@promptlang/yaml-parser` sub-package is on npm and no longer
+needs one. The `promptlang` **core** (lexer / parser / ast /
+runtime), which the agents import for prompt-file parsing, is not
+yet published to npm — Praxis reaches it via `tsconfig` `paths`
+against `~/dev/promptlang/`. Publishing the core is a future
+release.
 
 **Does Praxis need an API key?** No — the mock provider is
 fixture-driven and produces every artefact type. Live runs need

@@ -20,29 +20,33 @@ Architectural context lives in
 
 ---
 
-## Repository layout (sibling checkouts required)
+## Repository layout (sibling PromptLang checkout still required)
 
-Praxis depends on the [PromptLang](https://github.com/matteogallo-ai/promptlang)
-runtime, and the dependency is wired as a file path. Both repositories
-must live side by side under the same parent directory:
+Since Praxis v1.1, the `@promptlang/yaml-parser` sub-package is
+consumed from the npm registry — `bun install` alone resolves it.
+The `promptlang` **core** (lexer / parser / ast / runtime) is
+still consumed via TypeScript `paths` against a sibling
+[PromptLang](https://github.com/matteogallo-ai/promptlang)
+checkout. Both repositories must therefore currently live side by
+side under the same parent directory:
 
 ```
 ~/dev/
 ├── praxis/        ← this repo
-└── promptlang/    ← must exist at this exact relative location
+└── promptlang/    ← required for the promptlang core imports
 ```
 
-If you clone them under different names or paths, `bun install` and the
-TypeScript path mapping will both fail. Fix:
+If you clone them under different names or paths, TypeScript path
+mapping will fail. Fix:
 
 ```bash
 git clone https://github.com/matteogallo-ai/promptlang.git ~/dev/promptlang
 git clone https://github.com/matteogallo-ai/praxis.git ~/dev/praxis
 ```
 
-This constraint is temporary. Once PromptLang is published to npm,
-Praxis will switch to `"promptlang": "^1.x"` in `dependencies` and
-delete the `paths` entries in `tsconfig.json`.
+This constraint applies only to the core `promptlang` package.
+Publishing it to npm and deleting the `paths` entries in
+`tsconfig.json` is planned for a future release.
 
 ---
 
@@ -112,9 +116,10 @@ minimal but real; do not run them from CI without explicit budget.
   do not relax them. `any` is forbidden in `src/`. Tests may use `any`
   when strictly necessary, with a comment justifying the escape hatch.
 - **No new npm dependencies.** Praxis is a zero-external-dependency
-  library plus the workspace-linked `@promptlang/yaml-parser`. If you
-  think a dependency is truly required, open an issue first — the bar
-  is high. HTTP: use Bun's native `fetch`, not `axios`/`node-fetch`.
+  library plus `@promptlang/yaml-parser` (npm since v1.1) and
+  `pdfkit`. If you think a dependency is truly required, open an
+  issue first — the bar is high. HTTP: use Bun's native `fetch`,
+  not `axios`/`node-fetch`.
 - **No real network calls in `bun test`.** The default test suite is
   deterministic and offline. Use `MockLLMProvider` or a custom
   in-memory `LLMProvider`. Real network tests belong under
