@@ -5,6 +5,107 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — 2026-08-19
+
+### Fourth shipped format — family-office-memo
+
+Praxis 1.2 introduces the fourth shipped briefing format:
+`family-office-memo`. It is a discreet, three-page,
+institution-voiced memo calibrated for a family principal or a
+family council — the audience for which corporate briefings
+(`executive-pre-read`, `mckinsey-style-note`,
+`position-paper-corporate`) are not the right register.
+
+Typical use cases: co-investment authorisations, external
+private-banker or family-lawyer selection, generational
+transition governance, philanthropic vehicle structuring,
+response to a regulatory or supervisory inquiry.
+
+### Added
+
+- **`formats/family-office-memo.yaml`** — six-section format
+  (Principal Summary, Context and Heritage, Stakeholders and
+  Alignment, Options and Tradeoffs, Risks and Preservation,
+  Recommended Next Step), 1200-word target, discreet
+  institutional voice. Enforces a roles-not-names vocabulary
+  (Principal, Successor Generation, External Trustee, Private
+  Banker, External Advisor, Family Lawyer) via the
+  `forbidden_terms` guard on `"the family"`.
+- **Strict-editorial by design.** Unlike the three prior
+  formats which ship with `strict_editorial: false` (warn-only),
+  `family-office-memo` sets `strict_editorial: true` with every
+  axis on `"reject"`. Synthesis regenerates a section that trips
+  forbidden terms, length caps, or validation rules — the memo
+  goes to the council in the tone it was authored for, or not
+  at all.
+- **Patrimonial sourcing profile.** `sourcing_rules.freshness`
+  admits sources up to 5 years old (warning after 3 years) —
+  patrimonial decisions digest over longer horizons than
+  corporate cycles. `sourcing_rules.domain_trust` uses a
+  reputation-only tiering with tier-1 anchors on FT, Reuters,
+  Bloomberg, WSJ, Economist, government / OECD / BIS / IMF,
+  Swiss admin.ch and finma.ch, and Campden FB. Tier-2 includes
+  Wealth Briefing, Family Officer, STEP, Law360. Tier-3
+  (Wikipedia) is excluded via `min_tier: 2`.
+- **12 mock-llm fixtures** under `tests/fixtures/mock-llm/`
+  covering the full seven-agent pipeline (scoping, research,
+  stakeholders, risks, options, adversarial, plus one synthesis
+  fixture per section). Content is calibrated to a realistic
+  co-investment authorisation scenario: "Should the council
+  approve the co-investment alongside the external advisor in
+  the Zurich-based fintech?". All stakeholders appear by role;
+  no named individuals; no invented families.
+- **11th benchmark** in `benchmarks/questions.yaml`
+  (`11-family-office-co-investment`). All 11 mock briefings are
+  scorable end-to-end (up from 10).
+- **Router keywords** in `src/cli/format-auto.ts`:
+  `--format auto` now routes questions containing
+  `family council`, `family principal`, `successor generation`,
+  `patrimonial`, or `family office` to `family-office-memo`.
+- **Format-integrity tests** in
+  `tests/formats/formats-integrity.test.ts` covering the
+  section order, tone directives, forbidden-term coverage,
+  strict-editorial posture, sourcing-rule freshness thresholds,
+  tier-1 and tier-2 domain lists, output targets, and fixture
+  presence on disk.
+- **`docs/formats/family-office-memo.md`** — full format
+  reference covering when to use, section structure, tone
+  conventions, discretion protocols (roles-not-names),
+  sourcing standards, and example use cases.
+
+### Changed
+
+- Root `package.json` version bumped to `1.2.0`.
+- `src/cli/version-constant.ts`: `PRAXIS_VERSION = "1.2.0"`.
+- `README.md`: format table now lists four shipped formats.
+- Structural invariant tests in
+  `tests/formats/formats-integrity.test.ts` and
+  `tests/cli/list.test.ts` /
+  `tests/cli/format-auto.test.ts` /
+  `tests/benchmarks/questions-schema.test.ts` /
+  `tests/benchmarks/run-all-mock.test.ts` updated to reflect
+  the 4-format / 11-benchmark set.
+- The old "every format ships with `strict_editorial: false`"
+  invariant relaxed to "every format declares the editorial
+  block explicitly" — both `false` (warn-only) and `true`
+  (reject-and-regenerate) are valid postures under v0.8's
+  editorial framework.
+
+### Notes
+
+- **No API change.** `src/index.ts` public surface is unchanged.
+  The frozen v1.0 SemVer contract is preserved verbatim.
+- **No new npm dependency.** The format is a data file plus
+  fixtures; no runtime code is added.
+- **Test count**: 1212 pass (up from 1188 in v1.1.1). +24 new
+  tests from the family-office-memo integrity block, fixture
+  presence loop, and the benchmark-schema and cli test updates.
+- The seven-agent pipeline (scoping → research → stakeholders →
+  risks → options → synthesis → adversarial critique + rerun)
+  operates on the new format identically to the prior three.
+  The only format-specific behaviour is the strict-editorial
+  regeneration loop.
+
 ## [1.1.1] — 2026-08-19
 
 ### Fixed

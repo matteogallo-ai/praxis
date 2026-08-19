@@ -4,4 +4,4 @@
  * Kept in a stand-alone module so tests can import it without triggering
  * the CLI dispatcher.
  */
-export const PRAXIS_VERSION = "1.1.1";
+export const PRAXIS_VERSION = "1.2.0";
