@@ -5,6 +5,53 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-08-19
+
+### npm dependency switch (yaml-parser)
+
+`@promptlang/yaml-parser` is now consumed as a versioned npm
+dependency (`^1.0.0`) instead of a workspace `file:` linking
+against `../promptlang/packages/yaml-parser`. `bun install` alone
+now resolves the parser from
+[npmjs.com/package/@promptlang/yaml-parser](https://www.npmjs.com/package/@promptlang/yaml-parser).
+
+**Scope note.** This release switches only the extracted
+`@promptlang/yaml-parser` sub-package. The `promptlang` **core**
+(lexer / parser / ast / runtime) imported by the agents is still
+consumed via TypeScript `paths` from the sibling
+`~/dev/promptlang/` checkout — publishing the core to npm is a
+follow-up release.
+
+### Changed
+
+- `package.json` dependency:
+  `"@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser"`
+  → `"@promptlang/yaml-parser": "^1.0.0"`. Bun resolves and
+  downloads the package from the npm registry.
+- `bun.lock` regenerated to record the npm-resolved
+  `@promptlang/yaml-parser@1.0.0` (with sha512 integrity).
+- `README.md` and `CONTRIBUTING.md`: clarify that only the
+  yaml-parser sub-package is on npm as of v1.1; the sibling
+  PromptLang checkout is still required for the `promptlang` core
+  imports.
+- `ROADMAP.md`: v1.1 milestone marked as SHIPPED, follow-up entry
+  added for eventual core publication.
+- `src/cli/version-constant.ts`: `PRAXIS_VERSION = "1.1.0"`.
+
+### Notes
+
+- **Zero functional change.** Same public API, same 1146-test
+  baseline, same behaviour. The parser's API contract is unchanged —
+  same `parseYaml`, `YamlParseError`, and `YamlValue` exports.
+- One piece of technical debt from v1.0 is resolved: the
+  `@promptlang/yaml-parser` distribution path. The remaining
+  workspace linking (the `promptlang` core, via `tsconfig` paths)
+  is out of scope for this release.
+- Local development against an unpublished `@promptlang/yaml-parser`
+  change is still possible via `bun link` or by temporarily
+  switching the dependency back to a `file:` path — neither is
+  required for day-to-day work anymore.
+
 ## [1.0.0] — 2026-08-18
 
 ### SemVer stability release

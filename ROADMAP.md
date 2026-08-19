@@ -333,7 +333,22 @@ pipeline is final. v1.0 is the stability tag.
 
 ---
 
-## v1.x — Post-1.0 (planned)
+## v1.1 — @promptlang/yaml-parser via npm ✅ (shipped 2026-08-19)
+
+Chore release. The `@promptlang/yaml-parser` sub-package
+dependency migrated from the workspace
+`file:../promptlang/packages/yaml-parser` linking to the versioned
+npm dependency `"^1.0.0"`, published on
+[npmjs.com](https://www.npmjs.com/package/@promptlang/yaml-parser).
+The `promptlang` **core** (lexer / parser / ast / runtime) is
+still consumed via TypeScript `paths` from the sibling
+`~/dev/promptlang/` checkout — decoupling that piece is planned
+for a follow-up release. Zero functional change; 1146-test
+baseline preserved verbatim.
+
+---
+
+## v1.x — Post-1.1 (planned)
 
 Post-tag work, ordered by dependency:
 
@@ -342,11 +357,10 @@ Post-tag work, ordered by dependency:
   score`; the resulting `benchmarks/outputs/live/*` +
   `benchmarks/RESULTS.md` mock-vs-live delta table + systematic
   observations land as a chore commit. Zero code change.
-- **v1.1 — Publish PromptLang to npm.** Replace the current
-  `file:../promptlang/packages/yaml-parser` workspace dep with
-  `"promptlang": "^1.x"` from the registry. Simplifies fresh
-  clones (no sibling checkout required) and unblocks external
-  contributor onboarding.
+- **Publish `promptlang` core to npm.** Replace the current
+  tsconfig `paths` mapping to `../promptlang/src/*` with an npm
+  dependency on `promptlang` once the core package is published.
+  Removes the last sibling-checkout requirement.
 - **v1.2+ — Additional formats + integrations.**
   - New shipped formats: BCG-style structured brief,
     family-office memo, negotiation-brief-OMC-style.
