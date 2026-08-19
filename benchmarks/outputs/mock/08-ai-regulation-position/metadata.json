@@ -8,8 +8,8 @@
     "ai-governance"
   ],
   "mode": "mock",
-  "duration_ms": 16,
-  "generated_at": "2026-08-18T13:29:14.273Z",
+  "duration_ms": 17,
+  "generated_at": "2026-08-19T11:59:14.207Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 476,
@@ -41,7 +41,8 @@
     "edited_after_critique": true
   },
   "artefacts": {
-    "brief.pdf": 49425,
-    "brief.docx": 8275
+    "brief.md": 18939,
+    "brief.pdf": 49424,
+    "brief.docx": 8274
   }
 }

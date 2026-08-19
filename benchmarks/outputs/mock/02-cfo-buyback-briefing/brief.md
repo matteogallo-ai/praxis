@@ -2,7 +2,7 @@
 question: "Prepare the board briefing on the proposed share buyback."
 format: "executive-pre-read"
 provider: "mock"
-generated_at: "2026-08-18T13:29:14.173Z"
+generated_at: "2026-08-19T11:59:14.102Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=34 ok=31 stale=0 untrusted=0 duplicated=1 missing=2"

@@ -7,8 +7,8 @@
     "capital-allocation"
   ],
   "mode": "mock",
-  "duration_ms": 20,
-  "generated_at": "2026-08-18T13:29:14.173Z",
+  "duration_ms": 22,
+  "generated_at": "2026-08-19T11:59:14.102Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 338,
@@ -41,6 +41,7 @@
   },
   "artefacts": {
     "brief.md": 17134,
-    "brief.pdf": 47329
+    "brief.pdf": 47329,
+    "brief.docx": 8070
   }
 }
