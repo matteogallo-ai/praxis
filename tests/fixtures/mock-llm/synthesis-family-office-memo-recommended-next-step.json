@@ -1,0 +1,5 @@
+{
+  "label": "synthesis/family-office-memo/recommended-next-step",
+  "match_substring": "Synthesize section 'recommended-next-step' of briefing 'family-office-memo'.",
+  "response": "{\"content_markdown\": \"Convene the council within four weeks to authorise the co-investment at the capped envelope, subject to the three governance dependencies being filed on the record before the vote.\", \"sources_cited\": [{\"url\": \"https://www.oecd.org/finance/family-office-governance-2024\", \"title\": \"OECD Note — Governance of Family Capital 2024\", \"accessed_at\": \"2026-06-11T08:47:00Z\", \"excerpt\": \"Advisor-led co-investments require documented council authorisation.\"}], \"validation_issues\": []}"
+}
