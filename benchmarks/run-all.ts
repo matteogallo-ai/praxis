@@ -35,7 +35,11 @@ import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
 import { MockLLMProvider } from "../src/llm/mock-provider.ts";
 import { AnthropicLLMProvider } from "../src/llm/anthropic-provider.ts";
 import type { LLMProvider } from "../src/llm/provider.ts";
-import { render as dispatchRender } from "../src/renderers/index.ts";
+import {
+  markdownEnhancedRenderer,
+  pdfRenderer,
+  docxRenderer,
+} from "../src/renderers/index.ts";
 import type { BriefWithCritiqueAndRerunResult } from "../src/orchestrator/orchestrator.ts";
 
 // ---------------------------------------------------------------------------
@@ -208,7 +212,10 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
       const outDir = join(opts.root, "benchmarks", "outputs", mode, b.id);
       const started = Date.now();
       try {
-        const format = registry.get(b.format);
+        // Validate format exists before spawning the orchestrator so
+        // an unknown format surfaces as a clean per-benchmark failure
+        // rather than a mid-pipeline throw.
+        registry.get(b.format);
         mkdirSync(outDir, { recursive: true });
 
         const result = await orchestrator.briefWithCritiqueAndRerun(
@@ -216,11 +223,19 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
           b.format
         );
 
-        // Render every target declared in the format's output_targets[]
-        // and skip the ones it does not declare. Records the produced
-        // artefacts in metadata so downstream scoring can be format-aware.
+        // Always render md + pdf + docx regardless of the format's
+        // declared output_targets. The benchmark harness needs the
+        // full trifecta uniformly: brief.md is the input to
+        // benchmarks/score-all.ts (AI-assisted qualitative scoring)
+        // and brief.pdf / brief.docx are the human-review artefacts.
+        //
+        // We call the renderer implementations directly rather than
+        // going through the `render()` dispatcher — the dispatcher
+        // enforces `format.output_targets[]` because it protects the
+        // user-facing CLI surface, but a benchmark run is a harness,
+        // not a user artefact, and it disregards that declaration to
+        // keep coverage uniform across all formats.
         const artefacts: Record<string, number> = {};
-        const targets = format.output_targets as readonly string[];
         const renderOpts = {
           include_toc: true,
           include_appendices: true,
@@ -228,21 +243,17 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
           include_sourcing_report: true,
         } as const;
 
-        if (targets.includes("md")) {
-          const md = await dispatchRender(result, "md-enhanced", format, renderOpts);
-          writeFileSync(join(outDir, "brief.md"), md);
-          artefacts["brief.md"] = md.length;
-        }
-        if (targets.includes("pdf")) {
-          const pdf = await dispatchRender(result, "pdf", format, renderOpts);
-          writeFileSync(join(outDir, "brief.pdf"), pdf);
-          artefacts["brief.pdf"] = pdf.length;
-        }
-        if (targets.includes("docx")) {
-          const docx = await dispatchRender(result, "docx", format, renderOpts);
-          writeFileSync(join(outDir, "brief.docx"), docx);
-          artefacts["brief.docx"] = docx.length;
-        }
+        const md = await markdownEnhancedRenderer.render(result, renderOpts);
+        writeFileSync(join(outDir, "brief.md"), md);
+        artefacts["brief.md"] = md.length;
+
+        const pdf = await pdfRenderer.render(result, renderOpts);
+        writeFileSync(join(outDir, "brief.pdf"), pdf);
+        artefacts["brief.pdf"] = pdf.length;
+
+        const docx = await docxRenderer.render(result, renderOpts);
+        writeFileSync(join(outDir, "brief.docx"), docx);
+        artefacts["brief.docx"] = docx.length;
 
         const meta = {
           ...buildMetadata(b, mode, result, Date.now() - started),
