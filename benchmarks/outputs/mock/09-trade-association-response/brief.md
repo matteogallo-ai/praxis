@@ -2,7 +2,7 @@
 question: "Prepare our submission to the trade association's public consultation on data localisation."
 format: "position-paper-corporate"
 provider: "mock"
-generated_at: "2026-08-19T11:59:14.224Z"
+generated_at: "2026-08-19T12:23:41.702Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2"

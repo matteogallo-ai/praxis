@@ -9,7 +9,7 @@
   ],
   "mode": "mock",
   "duration_ms": 17,
-  "generated_at": "2026-08-19T11:59:14.207Z",
+  "generated_at": "2026-08-19T12:23:41.685Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 476,
@@ -43,6 +43,6 @@
   "artefacts": {
     "brief.md": 18939,
     "brief.pdf": 49424,
-    "brief.docx": 8274
+    "brief.docx": 8275
   }
 }

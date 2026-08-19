@@ -8,8 +8,8 @@
     "strategic"
   ],
   "mode": "mock",
-  "duration_ms": 16,
-  "generated_at": "2026-08-19T11:59:14.175Z",
+  "duration_ms": 15,
+  "generated_at": "2026-08-19T12:23:41.654Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 326,

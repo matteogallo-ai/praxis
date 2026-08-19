@@ -2,7 +2,7 @@
 question: "Should we divest the underperforming consumer product line?"
 format: "mckinsey-style-note"
 provider: "mock"
-generated_at: "2026-08-19T11:59:14.192Z"
+generated_at: "2026-08-19T12:23:41.669Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=32 ok=28 stale=0 untrusted=0 duplicated=2 missing=2"

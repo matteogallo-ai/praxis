@@ -1,0 +1,48 @@
+{
+  "id": "11-family-office-co-investment",
+  "question": "Should the family council approve the co-investment opportunity in the Zurich-based fintech proposed by our external advisor?",
+  "format": "family-office-memo",
+  "tags": [
+    "family-office",
+    "co-investment",
+    "governance"
+  ],
+  "mode": "mock",
+  "duration_ms": 14,
+  "generated_at": "2026-08-19T12:23:41.738Z",
+  "provider_name": "mock",
+  "synthesis": {
+    "total_word_count": 886,
+    "target_words": 1200,
+    "deviation_pct": -26.2,
+    "sections_over_length": 0,
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 0,
+    "material_count": 2,
+    "minor_count": 2,
+    "revised_recommendation_needed": false
+  },
+  "rerun": {
+    "performed": false,
+    "critiques_addressed_count": 0,
+    "re_synthesis_deviations": []
+  },
+  "sourcing": {
+    "total_items": 26,
+    "counts": {
+      "ok": 15,
+      "stale": 0,
+      "untrusted": 0,
+      "duplicated": 9,
+      "missing": 2
+    },
+    "edited_after_critique": false
+  },
+  "artefacts": {
+    "brief.md": 19454,
+    "brief.pdf": 49397,
+    "brief.docx": 7869
+  }
+}

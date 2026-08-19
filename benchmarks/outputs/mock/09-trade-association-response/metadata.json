@@ -8,8 +8,8 @@
     "data"
   ],
   "mode": "mock",
-  "duration_ms": 16,
-  "generated_at": "2026-08-19T11:59:14.224Z",
+  "duration_ms": 18,
+  "generated_at": "2026-08-19T12:23:41.702Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 476,
@@ -42,7 +42,7 @@
   },
   "artefacts": {
     "brief.md": 18983,
-    "brief.pdf": 49467,
+    "brief.pdf": 49466,
     "brief.docx": 8284
   }
 }

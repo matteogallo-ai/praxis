@@ -7,8 +7,8 @@
     "supply-chain"
   ],
   "mode": "mock",
-  "duration_ms": 16,
-  "generated_at": "2026-08-19T11:59:14.159Z",
+  "duration_ms": 17,
+  "generated_at": "2026-08-19T12:23:41.637Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 326,
@@ -41,7 +41,7 @@
   },
   "artefacts": {
     "brief.md": 16584,
-    "brief.pdf": 47072,
-    "brief.docx": 7693
+    "brief.pdf": 47073,
+    "brief.docx": 7692
   }
 }

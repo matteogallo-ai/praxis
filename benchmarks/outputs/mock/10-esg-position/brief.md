@@ -2,7 +2,7 @@
 question: "Publish our updated position on Scope 3 emissions disclosure requirements."
 format: "position-paper-corporate"
 provider: "mock"
-generated_at: "2026-08-19T11:59:14.240Z"
+generated_at: "2026-08-19T12:23:41.720Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2"
