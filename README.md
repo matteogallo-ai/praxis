@@ -140,16 +140,24 @@ Design notes:
 
 ## Formats included
 
-Three shipped formats calibrated across the corporate briefing
-spectrum:
+Four shipped formats calibrated across the corporate and
+patrimonial briefing spectrum:
 
-| id                         | intent                                                | length      | targets       |
-| -------------------------- | ----------------------------------------------------- | ----------- | ------------- |
-| `executive-pre-read`       | Board / executive decision, 6 sections                | ~800 words  | md, pdf       |
-| `mckinsey-style-note`      | Situation / Complication / Answer / So-What arc       | ~1200 words | md, pdf, docx |
-| `position-paper-corporate` | Public position on a regulatory or policy question    | ~1500 words | pdf, docx     |
+| id                         | intent                                                             | length      | targets       |
+| -------------------------- | ------------------------------------------------------------------ | ----------- | ------------- |
+| `executive-pre-read`       | Board / executive decision, 6 sections                             | ~800 words  | md, pdf       |
+| `mckinsey-style-note`      | Situation / Complication / Answer / So-What arc                    | ~1200 words | md, pdf, docx |
+| `position-paper-corporate` | Public position on a regulatory or policy question                 | ~1500 words | pdf, docx     |
+| `family-office-memo`       | Discreet patrimonial memo for a family principal or family council | ~1200 words | md, pdf, docx |
 
-Adding a fourth format is one YAML file. See
+The `family-office-memo` format (shipped in v1.2.0) enforces a
+strict-editorial posture — sections that trip forbidden terms,
+length caps, or validation rules are rejected and regenerated
+rather than surfaced as warnings. See
+[`docs/formats/family-office-memo.md`](docs/formats/family-office-memo.md)
+for the discretion protocols and sourcing standards.
+
+Adding a fifth format is one YAML file. See
 [`docs/cookbook.md § 1`](docs/cookbook.md).
 
 ---

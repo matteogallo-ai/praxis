@@ -333,6 +333,39 @@ pipeline is final. v1.0 is the stability tag.
 
 ---
 
+## v1.2 — family-office-memo format ✅ (shipped 2026-08-19)
+
+Fourth shipped format. `formats/family-office-memo.yaml` is a
+discreet, three-page, institution-voiced patrimonial memo for a
+family principal or family council. Six sections (Principal
+Summary, Context and Heritage, Stakeholders and Alignment,
+Options and Tradeoffs, Risks and Preservation, Recommended Next
+Step). Strict-editorial by design: Synthesis regenerates any
+section that trips forbidden terms, length caps, or validation
+rules rather than warning. Roles-not-names discretion protocol
+enforced via `forbidden_terms` on `"the family"`. Patrimonial
+sourcing profile: 5-year freshness horizon, reputation-only
+domain trust with tier-1 anchors on FT / Reuters / Bloomberg /
+OECD / BIS / IMF / admin.ch / finma.ch / Campden. Ships with
+12 mock-llm fixtures and an 11th benchmark
+(`11-family-office-co-investment`). See
+`docs/formats/family-office-memo.md`. +24 tests; baseline
+1188 → 1212. Zero API change, zero new npm dependency.
+
+---
+
+## v1.1.1 — position-paper-corporate coverage fix ✅ (shipped 2026-08-19)
+
+Patch release. `benchmarks/run-all.ts` was gating each artefact
+write on `format.output_targets[]`, leaving 6/10 mock briefing
+directories incomplete (3 without `brief.md`, 3 without
+`brief.docx`). Fix: benchmark harness now always emits the full
+md+pdf+docx trifecta regardless of format declaration. Scoring
+coverage went from 7/10 to 10/10. See CHANGELOG for the full
+root-cause writeup.
+
+---
+
 ## v1.1 — @promptlang/yaml-parser via npm ✅ (shipped 2026-08-19)
 
 Chore release. The `@promptlang/yaml-parser` sub-package
@@ -361,9 +394,10 @@ Post-tag work, ordered by dependency:
   tsconfig `paths` mapping to `../promptlang/src/*` with an npm
   dependency on `promptlang` once the core package is published.
   Removes the last sibling-checkout requirement.
-- **v1.2+ — Additional formats + integrations.**
+- **v1.3+ — Additional formats + integrations.**
   - New shipped formats: BCG-style structured brief,
-    family-office memo, negotiation-brief-OMC-style.
+    negotiation-brief-OMC-style. (The family-office memo
+    shipped in v1.2.0.)
   - MCP server integration so the pipeline runs as a Claude
     Code / Claude.ai skill.
   - Notion / Google Drive connectors — export a rendered
