@@ -5,7 +5,7 @@
     "": {
       "name": "praxis",
       "dependencies": {
-        "@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser",
+        "@promptlang/yaml-parser": "^1.0.0",
         "pdfkit": "^0.19.1",
       },
       "devDependencies": {
@@ -20,7 +20,7 @@
 
     "@noble/hashes": ["@noble/hashes@1.8.0", "", {}, "sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A=="],
 
-    "@promptlang/yaml-parser": ["@promptlang/yaml-parser@file:../promptlang/packages/yaml-parser", {}],
+    "@promptlang/yaml-parser": ["@promptlang/yaml-parser@1.0.0", "", {}, "sha512-0+MdiNeGwlAWy0S4gWXHX1xAuyEK7spu9KYWB56r+LSFkDjIeOVazF92BgKKmAl0O3E9QxDcmYL+XnoGOEFPMQ=="],
 
     "@swc/helpers": ["@swc/helpers@0.5.23", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-5lSsMOTXURePglDfvuAQUqkGek9Hg2kksOYay2m0+XR++b2NWYL/4sWyuvVBIs8oKnJaxkdi9whaL/sqN13afw=="],
 

@@ -40,7 +40,7 @@
     "score:dry": "bun run benchmarks/score-all.ts --dry-run"
   },
   "dependencies": {
-    "@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser",
+    "@promptlang/yaml-parser": "^1.0.0",
     "pdfkit": "^0.19.1"
   },
   "devDependencies": {
