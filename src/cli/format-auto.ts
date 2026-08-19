@@ -1,11 +1,12 @@
 /**
  * v0.9 — `--format auto` — opinionated shortcut, not intelligence.
  *
- * Maps question keywords to one of the three shipped formats:
+ * Maps question keywords to one of the shipped formats:
  *
  *   executive-pre-read       → board / executive / leadership decision
  *   position-paper-corporate → position / regulatory / policy / association
  *   mckinsey-style-note      → should we / market entry / M&A / acquisition / strategic
+ *   family-office-memo       → family council / family principal / successor generation / patrimonial / family office
  *
  * Design note: this is a deterministic keyword matcher, not an LLM
  * router. When several groups fire (e.g. "Should we take a position
@@ -21,6 +22,7 @@ export const AUTO_FORMAT_IDS = [
   "executive-pre-read",
   "position-paper-corporate",
   "mckinsey-style-note",
+  "family-office-memo",
 ] as const;
 
 export type AutoFormatId = (typeof AUTO_FORMAT_IDS)[number];
@@ -44,6 +46,13 @@ export const AUTO_FORMAT_KEYWORDS: Record<AutoFormatId, readonly string[]> = {
     "m&a",
     "acquisition",
     "strategic",
+  ],
+  "family-office-memo": [
+    "family council",
+    "family principal",
+    "successor generation",
+    "patrimonial",
+    "family office",
   ],
 };
 
