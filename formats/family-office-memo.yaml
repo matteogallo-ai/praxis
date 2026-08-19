@@ -1,0 +1,172 @@
+id: family-office-memo
+name: Family Office Memo
+version: 1.0.0
+
+metadata:
+  author: Matteo Gallo
+  organization_style: family-office
+  language: en
+  last_reviewed: 2026-08-19
+
+target_length:
+  pages: 3
+  words: 1200
+
+sections:
+  - id: principal-summary
+    title: Principal Summary
+    purpose: One-paragraph orientation for the family principal — what this memo is, what decision is being surfaced, and why it deserves attention now.
+    max_length:
+      words: 120
+    required_agents:
+      - scoping
+      - synthesis
+    tone_directives: Third-person institutional voice. Address the principal through the document, never as "you". Named individuals appear only when publicly documented or explicitly authorised by scoping.reformulated_question. Restrained, formal, no journalistic tone.
+    validation_rules:
+      - "must_state_decision_explicitly: true"
+      - "no_bullet_lists: true"
+      - "max_sentences_per_paragraph: 4"
+
+  - id: context-and-heritage
+    title: Context and Heritage Considerations
+    purpose: Situate the decision within the long-term patrimonial and governance context — generational timeframe, legacy considerations, alignment with prior council decisions.
+    max_length:
+      words: 200
+    required_agents:
+      - research
+      - synthesis
+    tone_directives: Reflective, long-horizon voice. Reference historical precedent when relevant. Avoid short-term financial jargon.
+    validation_rules:
+      - "no_bullet_lists: true"
+
+  - id: stakeholders-and-alignment
+    title: Stakeholders and Alignment
+    purpose: Map the members, external advisors, and institutional counterparties concerned. For each, state their known position and the alignment or tension it creates.
+    max_length:
+      words: 250
+    required_agents:
+      - stakeholder
+      - synthesis
+    tone_directives: Discreet. Named individuals appear only when publicly documented or explicitly authorised. Otherwise use roles (Principal, Successor Generation, External Trustee, Private Banker, External Advisor). Never speculate on private positions.
+
+  - id: options-and-tradeoffs
+    title: Options and Tradeoffs
+    purpose: Present two to three realistic courses of action with their tradeoffs across four dimensions — fiscal exposure, governance impact, generational alignment, reputational surface.
+    max_length:
+      words: 350
+    required_agents:
+      - options
+      - synthesis
+    tone_directives: Structured but not corporate. Each option is presented as a genuine alternative, not a straw option. Recommend one option explicitly.
+    validation_rules:
+      - "must_contain_recommendation: true"
+
+  - id: risks-and-preservation
+    title: Risks and Preservation Considerations
+    purpose: The three to five material risks to patrimony or reputation attached to the recommended option, each with a concrete mitigation line. Focus on preservation, not opportunity cost.
+    max_length:
+      words: 200
+    required_agents:
+      - risk
+      - synthesis
+    tone_directives: Sober. Distinguish clearly reputational risks from financial risks. Never sensationalise.
+
+  - id: recommended-next-step
+    title: Recommended Next Step
+    purpose: A single concrete next step for the principal or council — mandate a further study, convene an extraordinary council, engage a specific external advisor, or approve directly. One sentence.
+    max_length:
+      words: 80
+    required_agents:
+      - synthesis
+    tone_directives: Directive, discreet, actionable.
+    validation_rules:
+      - "must_state_recommendation_explicitly: true"
+
+sourcing_policy: strict
+
+sourcing_rules:
+  freshness:
+    max_source_age_days: 1825   # 5 years — patrimonial decisions digest over longer horizons
+    warn_after_days: 1095       # warn after 3 years
+  domain_trust:
+    mode: reputation-only
+    reputation_tiers:
+      tier_1:
+        - ft.com
+        - www.ft.com
+        - reuters.com
+        - www.reuters.com
+        - bloomberg.com
+        - www.bloomberg.com
+        - wsj.com
+        - www.wsj.com
+        - economist.com
+        - www.economist.com
+        - "*.gov"
+        - "*.gov.uk"
+        - "*.admin.ch"          # Swiss federal administration
+        - "*.finma.ch"           # Swiss financial regulator
+        - "*.esma.europa.eu"     # EU securities regulator
+        - "*.oecd.org"
+        - "*.bis.org"            # Bank for International Settlements
+        - "*.imf.org"
+        - campdenfb.com
+        - www.campdenfb.com
+      tier_2:
+        - wealthbriefing.com
+        - www.wealthbriefing.com
+        - family-officer.eu
+        - www.family-officer.eu
+        - familyofficenetwork.com
+        - www.familyofficenetwork.com
+        - privatebankerinternational.com
+        - www.privatebankerinternational.com
+        - law360.com
+        - www.law360.com
+        - step.org
+        - www.step.org
+      tier_3:
+        - wikipedia.org
+        - "*.wikipedia.org"
+      min_tier: 2
+  dedupe:
+    cross_agent: true
+    similarity_threshold: 0.85
+  editorial:
+    strict_editorial: true
+    max_regeneration_attempts: 2
+    forbidden_terms_action: reject
+    over_length_action: reject
+    validation_rules_action: reject
+
+style_guide:
+  voice: Institutional, restrained, third-person. Never journalistic, never conversational, never sales-pitch. Sentence structure short-to-medium, no complex subordinate clauses.
+  sentence_structure: 12-25 words per sentence typical. Simple hypotactic constructions. Avoid rhetorical questions.
+  forbidden_terms:
+    - obviously
+    - clearly
+    - arguably
+    - leverage
+    - synergy
+    - unlock value
+    - circle back
+    - touch base
+    - reach out
+    - amazing
+    - incredible
+    - game-changing
+    - cutting-edge
+    - best-in-class
+    - world-class
+    - seize the opportunity
+    - no-brainer
+    - low-hanging fruit
+    - at the end of the day
+    - moving forward
+    - going forward
+    - the family
+
+output_targets:
+  - pdf
+  - docx
+  - md
