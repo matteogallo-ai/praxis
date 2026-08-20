@@ -5,6 +5,7 @@
 ![typescript: strict](https://img.shields.io/badge/typescript-strict-blue)
 ![license: MIT](https://img.shields.io/badge/license-MIT-lightgrey)
 ![release: v1.0](https://img.shields.io/badge/release-v1.0-brightgreen)
+![status](https://img.shields.io/badge/status-feature--complete_at_v1.3.0-blue)
 
 > Multi-agent briefing system that produces senior-analyst-grade
 > documents in your organization's exact format — with rigorous
@@ -15,6 +16,19 @@ Praxis is CLI-first and library-second. Zero paid dependencies
 beyond `pdfkit` (see § FAQ). Runs offline against a
 fixture-driven mock provider; runs live against Anthropic when
 you export a key.
+
+---
+
+## Project status
+
+Praxis reached **feature completeness at v1.3.0**. The pipeline,
+formats, renderers, sourcing layer, and library API are stable.
+One patch release (v1.3.1) is planned to add empirical validation
+of the v1.3.0 framing improvements. After v1.3.1, Praxis enters
+maintenance mode.
+
+See [`ROADMAP.md`](./ROADMAP.md) for the closure plan and
+post-v1.3.1 status.
 
 ---
 
