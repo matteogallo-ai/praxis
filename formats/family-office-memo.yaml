@@ -21,7 +21,7 @@ sections:
     required_agents:
       - scoping
       - synthesis
-    tone_directives: Third-person institutional voice. Address the principal through the document, never as "you". Named individuals appear only when publicly documented or explicitly authorised by scoping.reformulated_question. Restrained, formal, no journalistic tone.
+    tone_directives: "Third-person institutional voice. Address the principal through the document, never as \"you\". Named individuals appear only when publicly documented or explicitly authorised by scoping.reformulated_question. Restrained, formal, no journalistic tone.\n\nFRAMING RULES.\n1. The first sentence names the decision surfaced for the principal. Not the context. Not 'this memo surfaces...'. THE DECISION.\n2. The first sentence contains the subject AND the temporality (immediate / 3-6 months / long-term).\n3. The first paragraph lets the principal decide in 3 lines or fewer whether to keep reading or delegate: advantage / risk / recommendation.\n\nExamples for this format.\nOK: 'Authorise the co-investment inside a CHF 5M cap, conditional on the External Advisor formal recusal. Council decision requested within 30 days.'\nNO: 'This memo surfaces the co-investment opportunity...'"
     validation_rules:
       - "must_state_decision_explicitly: true"
       - "no_bullet_lists: true"
@@ -35,7 +35,7 @@ sections:
     required_agents:
       - research
       - synthesis
-    tone_directives: Reflective, long-horizon voice. Reference historical precedent when relevant. Avoid short-term financial jargon.
+    tone_directives: "Reflective, long-horizon voice. Reference historical precedent when relevant. Avoid short-term financial jargon.\n\nFRAMING RULES.\n1. The first sentence names the patrimonial thread that binds the decision — not 'context includes...'.\n2. Subject and temporality (generational / long-horizon) appear inside the first sentence.\n3. A reader can triage the heritage stakes from the opening paragraph."
     validation_rules:
       - "no_bullet_lists: true"
 
@@ -47,7 +47,7 @@ sections:
     required_agents:
       - stakeholder
       - synthesis
-    tone_directives: Discreet. Named individuals appear only when publicly documented or explicitly authorised. Otherwise use roles (Principal, Successor Generation, External Trustee, Private Banker, External Advisor). Never speculate on private positions.
+    tone_directives: "Discreet. Named individuals appear only when publicly documented or explicitly authorised. Otherwise use roles (Principal, Successor Generation, External Trustee, Private Banker, External Advisor). Never speculate on private positions.\n\nFRAMING RULES.\n1. The opening sentence names the alignment picture — where the council stands, not 'the following actors are relevant'.\n2. Subject and temporality inside the first sentence.\n3. A reader can triage governance risk from the first line."
 
   - id: options-and-tradeoffs
     title: Options and Tradeoffs
@@ -57,7 +57,7 @@ sections:
     required_agents:
       - options
       - synthesis
-    tone_directives: Structured but not corporate. Each option is presented as a genuine alternative, not a straw option. Recommend one option explicitly.
+    tone_directives: "Structured but not corporate. Each option is presented as a genuine alternative, not a straw option. Recommend one option explicitly.\n\nFRAMING RULES.\n1. The section opens by naming the recommended option and the runner-up — not 'options are as follows'.\n2. Each option paragraph opens with the option label + its dominant tradeoff, subject and temporality inside.\n3. Reader can triage the recommended path from the first paragraph."
     validation_rules:
       - "must_contain_recommendation: true"
 
@@ -69,7 +69,7 @@ sections:
     required_agents:
       - risk
       - synthesis
-    tone_directives: Sober. Distinguish clearly reputational risks from financial risks. Never sensationalise.
+    tone_directives: "Sober. Distinguish clearly reputational risks from financial risks. Never sensationalise.\n\nFRAMING RULES.\n1. Each risk sentence names the preservation threat itself — not 'risks to consider include...'.\n2. Subject and temporality (immediate / generational) inside the first line.\n3. Reader can triage severity and reversibility from the opening line."
 
   - id: recommended-next-step
     title: Recommended Next Step
@@ -78,7 +78,7 @@ sections:
       words: 80
     required_agents:
       - synthesis
-    tone_directives: Directive, discreet, actionable.
+    tone_directives: "Directive, discreet, actionable.\n\nFRAMING RULES.\n1. The single sentence IS the decision — verb-first, no preamble.\n2. Subject and temporality (immediate window / next council session) inside the sentence.\n3. Reader knows exactly what the principal or council is being asked to trigger."
     validation_rules:
       - "must_state_recommendation_explicitly: true"
 

@@ -21,7 +21,7 @@ sections:
     required_agents:
       - scoping
       - research
-    tone_directives: neutral, factual, third-person; open on the trigger event, not on background.
+    tone_directives: "neutral, factual, third-person; open on the trigger event, not on background.\n\nFRAMING RULES.\n1. The first sentence names the decision surfaced. Not the context. Not 'this report'. THE DECISION.\n2. The first sentence contains the subject AND the temporality (immediate / 3-6 months / long-term).\n3. The first paragraph lets the reader decide in 3 lines or fewer whether to keep reading or delegate: advantage / risk / recommendation.\n\nExamples for this format.\nOK: 'Approve the $12M ARR acquisition of X by end of Q3. Two risks (regulatory, integration), one mitigation each.'\nNO: 'This memo examines the strategic implications of a potential acquisition...'"
     validation_rules:
       - "must_contain_trigger_event: true"
       - "max_sentences_per_paragraph: 3"
@@ -33,7 +33,7 @@ sections:
       words: 50
     required_agents:
       - scoping
-    tone_directives: crisp, closed-form question; no compound "and/or" formulations.
+    tone_directives: "crisp, closed-form question; no compound 'and/or' formulations.\n\nFRAMING RULES.\n1. The question IS the decision — do not hide it behind a preamble.\n2. Name the subject and the temporality inside the question itself.\n3. A reader who sees only this question knows what triage call is required."
     validation_rules:
       - "must_be_single_question: true"
       - "no_bullet_lists: true"
@@ -46,7 +46,7 @@ sections:
     required_agents:
       - options
       - synthesis
-    tone_directives: authoritative, imperative; lead with the verb; name the owner and the deadline.
+    tone_directives: "authoritative, imperative; lead with the verb; name the owner and the deadline.\n\nFRAMING RULES.\n1. Verb-first sentence names the decision, the owner, the deadline.\n2. Subject and temporality appear inside the first sentence.\n3. First paragraph 3 lines or fewer: advantage / risk / recommendation."
     validation_rules:
       - "must_state_recommendation_in_first_sentence: true"
       - "must_name_owner: true"
@@ -60,7 +60,7 @@ sections:
     required_agents:
       - research
       - stakeholder
-    tone_directives: evidentiary, structured; one paragraph per fact; source in parentheses at end of paragraph.
+    tone_directives: "evidentiary, structured; one paragraph per fact; source in parentheses at end of paragraph.\n\nFRAMING RULES.\n1. The opening sentence of each paragraph states the load-bearing fact — not 'this section covers...'.\n2. Each paragraph identifies the subject and the temporality the fact refers to.\n3. A reader skimming only the first sentence of each paragraph can triage the case."
     validation_rules:
       - "min_citations: 3"
       - "max_citations: 7"
@@ -74,7 +74,7 @@ sections:
     required_agents:
       - risk
       - adversarial
-    tone_directives: honest, ungarnished; one line naming the risk, one line naming the mitigation.
+    tone_directives: "honest, ungarnished; one line naming the risk, one line naming the mitigation.\n\nFRAMING RULES.\n1. Each risk sentence names the risk itself, not 'we should consider...'.\n2. Subject and temporality of the risk are inside the first sentence.\n3. A reader can triage severity from the first line alone."
     validation_rules:
       - "min_risks: 2"
       - "max_risks: 3"
@@ -87,7 +87,7 @@ sections:
       words: 50
     required_agents:
       - synthesis
-    tone_directives: imperative, ordered; verb-first bullets are permitted here only.
+    tone_directives: "imperative, ordered; verb-first bullets are permitted here only.\n\nFRAMING RULES.\n1. Each bullet leads with the action verb — the decision to execute.\n2. Owner and date appear inside the bullet, not in a footnote.\n3. A reader skimming the list knows what triggers on approval."
     validation_rules:
       - "every_step_has_owner_and_date: true"
 
