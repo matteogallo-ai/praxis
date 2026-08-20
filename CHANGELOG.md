@@ -5,6 +5,105 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] — 2026-08-20
+
+### First empirical qualitative scoring — mock briefings
+
+First empirical run of the v0.10 AI-assisted scoring framework
+against the eleven mock briefings shipped in v0.9 / v1.1.1 / v1.2.
+Every briefing scored by Claude Sonnet 4.5 through the calibrated
+seven-criterion rubric (`benchmarks/scoring-prompt.txt`, "3/5 is
+normal, 4-5 requires genuine excellence, do not inflate").
+
+The live-side of the mock-vs-live comparison table is left blank
+in this release. The first `bun run bench:live` attempt exposed
+systematic gaps between the mock provider (which always synthesises
+well-sourced findings) and the real Anthropic API — see the
+"Deferred — live empirical run" note below. Those gaps are real
+product findings surfaced by the framework and will be addressed
+in a follow-up release; they do not invalidate the mock scoring,
+which is the empirical baseline against which the live results
+will eventually be compared.
+
+### Added
+
+- `benchmarks/RESULTS.md` now carries an `## AI-Assisted
+  Qualitative Scoring (2026-08-20)` section with an aggregate
+  table (7 criteria × mock, n=11), an 11-row per-briefing table,
+  and a systematic-observations block generated deterministically
+  by `benchmarks/score-all.ts`.
+- `benchmarks/.scoring-cache/` populated with eleven cached
+  scoring payloads (one per mock briefing, 24 h TTL). The cache
+  keeps future `bun run score` runs cheap and idempotent as long
+  as the mock briefings are unchanged.
+
+### Empirical results (mock, n=11)
+
+- **Total score:** 25.7 / 35 average (73 %), range 24 – 28.
+- **Strongest criterion across the set:** Adversarial usefulness
+  — perfect 5.0 / 5 on every briefing. The critique regeneration
+  loop consistently produces steelmanned counter-arguments that
+  the scorer flags as genuinely challenging.
+- **Weakest criterion across the set:** Framing clarity —
+  1.9 / 5 average, with 8 / 11 briefings scoring 1 or 2. Root
+  cause: the mock synthesis fixtures do not open with a crisp
+  reformulated question. The framework surfaces this as
+  actionable: "add an executive summary box with decision,
+  magnitude, timing up-front" is the recurring `improvement`
+  suggestion.
+- **Top three briefings:**
+  `11-family-office-co-investment` (28 / 35, family-office-memo),
+  `01-german-market-entry` (27 / 35, mckinsey-style-note),
+  `10-esg-position` (27 / 35, position-paper-corporate).
+- **Bottom briefing:** `06-market-entry-southeast-asia`
+  (24 / 35, mckinsey-style-note) — flagged for weakest framing
+  and thinnest concrete tradeoffs.
+- **Format ranking by mean score:**
+  family-office-memo 28.0 (n=1),
+  position-paper-corporate 26.0 (n=3),
+  mckinsey-style-note 25.5 (n=4),
+  executive-pre-read 25.0 (n=3).
+
+### Deferred — live empirical run
+
+The intended mock-vs-live delta table remains unpopulated. The
+first `bun run bench:live` attempt aborted every briefing before
+any artefact was written:
+
+- 3 / 5 briefings — `SourcingValidationError: strict policy, 7-8
+  of 8 items lack a source`. The real Anthropic model, given the
+  research prompt, returned findings with `SOURCE_MISSING`
+  markers rather than extracting URLs from `web_search` results.
+  The mock provider hides this because its fixtures always carry
+  four verified source fields.
+- 1 / 5 — research agent raw output began with prose ("I …")
+  before the JSON, tripping `JSON.parse`.
+- 1 / 5 — `AnthropicTimeoutError` at the 60 000 ms default. The
+  research agent's tool-use loop exceeded the per-request timeout
+  on a corporate-strategy question.
+
+These are genuine live-pipeline gaps, not scoring-framework
+gaps, and warrant a dedicated fix rather than a config workaround
+inside this chore release. The scoring framework itself is
+validated: it runs to completion on eleven inputs with zero
+errors and produces a well-formed RESULTS.md.
+
+### Notes
+
+- No code changes (src/, prompts/, formats/ untouched).
+- No API surface change; the v1.x additive-only contract is
+  preserved.
+- Baseline test count preserved verbatim (only the
+  `version-constant` string and its dispatch-test assertions
+  change).
+- Approximate API cost for this release: under $2 (11 scoring
+  calls at ~$0.05 each, plus 5 partial live briefing attempts).
+- Follow-up work tracked in ROADMAP.md § "Post-1.2 (planned)":
+  live-pipeline hardening (research JSON extraction, per-agent
+  timeout, permissive-fallback under strict policy) is the
+  precondition for the still-outstanding "empirical mock-vs-live
+  delta" line.
+
 ## [1.2.0] — 2026-08-19
 
 ### Fourth shipped format — family-office-memo
