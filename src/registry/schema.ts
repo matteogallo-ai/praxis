@@ -64,6 +64,13 @@ export interface FormatSection {
   max_length: SectionMaxLength;
   required_agents: AgentId[];
   tone_directives: string;
+  /**
+   * v1.3 optional override. When present, Synthesis treats it as the
+   * ABSOLUTE FIRST PRIORITY for the section — used on opening sections
+   * to force decision-first framing. See FRAMING CLARITY CHECK in
+   * `prompts/synthesis.prompt`.
+   */
+  tone_hook?: string;
   /** Optional declarative rules — free-form strings for v0.1. */
   validation_rules?: string[];
 }
@@ -282,6 +289,7 @@ export const SECTION_ALLOWED_KEYS: readonly string[] = [
   "max_length",
   "required_agents",
   "tone_directives",
+  "tone_hook",
   "validation_rules",
 ] as const;
 

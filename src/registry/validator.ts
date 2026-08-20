@@ -306,6 +306,19 @@ function validateSection(
   const purpose = requireString(raw, "purpose", issues, path);
   const toneDirectives = requireString(raw, "tone_directives", issues, path);
 
+  let toneHook: string | undefined;
+  const toneHookRaw = raw["tone_hook"];
+  if (toneHookRaw !== undefined && toneHookRaw !== null) {
+    if (typeof toneHookRaw !== "string" || toneHookRaw.trim() === "") {
+      issues.push({
+        path: `${path}.tone_hook`,
+        message: "must be a non-empty string when declared",
+      });
+    } else {
+      toneHook = toneHookRaw;
+    }
+  }
+
   const maxLen = validateSectionMaxLength(raw["max_length"], `${path}.max_length`, issues);
   const requiredAgents = validateRequiredAgents(
     raw["required_agents"],
@@ -363,6 +376,9 @@ function validateSection(
     required_agents: requiredAgents,
     tone_directives: toneDirectives,
   };
+  if (toneHook !== undefined) {
+    section.tone_hook = toneHook;
+  }
   if (validationRules !== undefined) {
     section.validation_rules = validationRules;
   }
