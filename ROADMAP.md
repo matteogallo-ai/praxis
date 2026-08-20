@@ -381,15 +381,42 @@ baseline preserved verbatim.
 
 ---
 
-## v1.x — Post-1.1 (planned)
+## v1.2.1 — First empirical mock scoring ✅ (shipped 2026-08-20)
+
+Chore release. First empirical run of the v0.10 AI-assisted
+scoring framework against the 11 mock briefings. Every briefing
+scored by Claude Sonnet 4.5 through the calibrated seven-criterion
+rubric. RESULTS.md now carries the aggregate table, an 11-row
+per-briefing table, and a systematic-observations block. Mock
+mean: 25.7 / 35 (73 %). Strongest criterion: Adversarial
+usefulness (5.0 / 5). Weakest: Framing clarity (1.9 / 5). The
+live-side column stays blank in this release — see the "live
+pipeline hardening" item below. Zero code change; only version
+constants + CHANGELOG + RESULTS.md.
+
+---
+
+## v1.x — Post-1.2 (planned)
 
 Post-tag work, ordered by dependency:
 
-- **v1.0.1 — Empirical validation results.** A maintainer with
-  ~$10 Anthropic credit runs `bun run bench:live && bun run
-  score`; the resulting `benchmarks/outputs/live/*` +
-  `benchmarks/RESULTS.md` mock-vs-live delta table + systematic
-  observations land as a chore commit. Zero code change.
+- **Live pipeline hardening (precondition for the live empirical
+  mock-vs-live delta).** The first `bun run bench:live` attempt
+  aborted every briefing before any artefact was written: 3 / 5
+  on `SourcingValidationError` under strict policy (research
+  agent returned `SOURCE_MISSING` for most findings because
+  `web_search` results didn't map to the four-field source
+  schema), 1 / 5 on `JSON.parse` of research output that opened
+  with prose ("I …"), 1 / 5 on `AnthropicTimeoutError` at the
+  60 000 ms default. Three tracks for the fix release:
+  research-prompt tightening on source extraction, per-agent
+  timeout override (research needs > 60 s), and JSON prose-strip
+  fallback in `parseResearchOutput`. See v1.2.1 CHANGELOG for the
+  full failure catalogue.
+- **Live empirical mock-vs-live delta (blocked by above).** Once
+  `bun run bench:live` succeeds on ≥ 8 / 11 briefings, the
+  RESULTS.md live column and delta column populate automatically
+  on the next `bun run score`. No code change at that point.
 - **Publish `promptlang` core to npm.** Replace the current
   tsconfig `paths` mapping to `../promptlang/src/*` with an npm
   dependency on `promptlang` once the core package is published.
