@@ -10,6 +10,55 @@ release depends on it.
 
 ---
 
+## Project status — Feature-complete at v1.3.0
+
+Praxis is **functionally complete**. The 7-agent pipeline, 4 calibrated
+formats, 3 rendering targets, sourcing layer with structural
+anti-hallucination guards, editorial re-run with strict_editorial mode,
+adversarial critique with steelmanning enforcement, and stable public
+library API are all shipped, tested (1216 tests + 11 optional live
+tests), and documented.
+
+### Planned releases
+
+- **v1.3.1** — empirical validation of the v1.3.0 framing_clarity
+  improvement (mock re-scoring only, ~$1 API cost, ~20 min). Ship
+  gates: framing_clarity ≥ 3.0 mock average, no other criterion
+  regresses > -0.3. Blocked only on Anthropic API credits refill.
+  Executable in three shell commands per
+  [`docs/v1.3.1-runbook.md`](./docs/v1.3.1-runbook.md).
+
+### Post-v1.3.1 status: maintenance mode
+
+After v1.3.1, Praxis enters **maintenance mode**:
+
+- Bug fixes only. No new features by default.
+- Community contributions welcome via PRs.
+- Any major evolution (new format, new agent, v2.0 Corporate Reasoning
+  Engine) will be a deliberate future decision, not a natural next
+  step.
+
+### The v2.0 hypothesis (not committed)
+
+The original ambition — a Corporate Reasoning Engine performing
+decision analysis across multiple perspectives on demand — remains
+architecturally possible but is not on any near-term timeline. It
+would be a from-scratch conceptual extension, not an incremental v1.x
+continuation.
+
+### The disciplined shipping record
+
+14 public releases from v0.1 to v1.3.0 shipped between August 8 and
+August 20, 2026. Each release closed one well-defined brick. Zero
+release ever broke a test that passed in the previous release. The
+SemVer contract engaged in v0.8 and formalised in v1.0 was never
+broken.
+
+This project is a demonstration that disciplined shipping produces
+better outcomes than exhaustive feature accumulation.
+
+---
+
 ## v0.1 — Format Registry ✅ (shipped 2026-08-14)
 
 - Canonical schema for briefing formats.
