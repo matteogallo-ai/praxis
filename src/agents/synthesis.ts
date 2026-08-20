@@ -307,6 +307,7 @@ function buildSectionInputs(
     section_title: section.title,
     section_purpose: section.purpose,
     section_tone_directives: section.tone_directives,
+    section_tone_hook: section.tone_hook ?? "(none)",
     section_max_words: String(section.max_length.words),
     section_required_agents: section.required_agents.join(", "),
     section_validation_rules:
