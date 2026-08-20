@@ -71,3 +71,52 @@ the rubric. Do NOT auto-fill._
 _Populated when a maintainer with `ANTHROPIC_API_KEY` runs
 `bun run bench:live` and copies the outputs into
 `benchmarks/outputs/live/`._
+
+## AI-Assisted Qualitative Scoring (2026-08-20)
+
+Scored by Claude Sonnet 4.5 via the calibrated rubric in `scoring-prompt.txt`. See `docs/benchmarking-methodology.md` for the methodology, model choice, and known biases.
+
+### Aggregate scores
+
+| Criterion | Mock (n) | Live (n) | Delta |
+|---|---|---|---|
+| Framing clarity | 1.9 (n=11) | — | — |
+| Non-hedging | 3.9 (n=11) | — | — |
+| Decisive recommendation | 4.0 (n=11) | — | — |
+| Concrete tradeoffs | 3.2 (n=11) | — | — |
+| Perceived sourcing | 4.2 (n=11) | — | — |
+| Adversarial usefulness | 5.0 (n=11) | — | — |
+| Format fidelity | 3.5 (n=11) | — | — |
+| **Total /35** | **25.7 (n=11)** | **—** | **—** |
+
+### Per-briefing scores
+
+| # | Slug | Format | Mock | Live | Delta |
+|---|---|---|---|---|---|
+| 01 | 01-german-market-entry | mckinsey-style-note | 27 | — | — |
+| 02 | 02-cfo-buyback-briefing | executive-pre-read | 25 | — | — |
+| 03 | 03-executive-succession-planning | executive-pre-read | 25 | — | — |
+| 04 | 04-uk-listing-board-briefing | executive-pre-read | 25 | — | — |
+| 05 | 05-supply-chain-acquisition | mckinsey-style-note | 26 | — | — |
+| 06 | 06-market-entry-southeast-asia | mckinsey-style-note | 24 | — | — |
+| 07 | 07-should-we-divest-consumer-line | mckinsey-style-note | 25 | — | — |
+| 08 | 08-ai-regulation-position | position-paper-corporate | 26 | — | — |
+| 09 | 09-trade-association-response | position-paper-corporate | 25 | — | — |
+| 10 | 10-esg-position | position-paper-corporate | 27 | — | — |
+| 11 | 11-family-office-co-investment | family-office-memo | 28 | — | — |
+
+### Systematic observations
+
+**Where live significantly outperforms mock (Δ ≥ +1.0):** none observed.
+
+**Where mock holds close (Δ < +0.5):** none observed.
+
+**Weakest aspect across all briefings:** Framing clarity (overall 1.9/5).
+
+**Strongest aspect across all briefings:** Adversarial usefulness (overall 5.0/5).
+
+**Overall verdict:**
+
+- Mock briefings average 25.7/35 (n=11).
+- 0 briefing(s) below the 15/35 usability floor; 0 at or above the 32/35 near-excellence line.
+
