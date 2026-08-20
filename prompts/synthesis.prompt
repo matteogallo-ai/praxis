@@ -34,6 +34,7 @@ prompt synthesis(
   section_title: string,
   section_purpose: string,
   section_tone_directives: string,
+  section_tone_hook: string,
   section_max_words: string,
   section_required_agents: string,
   section_validation_rules: string,
@@ -103,6 +104,21 @@ prompt synthesis(
        you knowingly bent a rule or could not honour one. Empty
        array is fine.
 
+    ## FRAMING CLARITY CHECK
+
+    Before producing this section, verify:
+    1. First sentence contains the DECISION (not the context, not the analysis).
+    2. First sentence answers "so what?" implicitly.
+    3. First paragraph enables a triage decision in ≤ 15 seconds of reading.
+
+    After writing the section, re-read the opening sentence in
+    isolation. Ask: "Would an executive who reads ONLY this sentence
+    know what action to take?" If not, rewrite.
+
+    If `section_tone_hook` is provided (i.e. not "(none)"), apply it
+    AS THE ABSOLUTE FIRST PRIORITY — it overrides any conflicting
+    guidance from `section_tone_directives` on ordering and opening.
+
     Return valid JSON only. No prose commentary, no markdown fences,
     no leading or trailing text.
 
@@ -119,6 +135,7 @@ prompt synthesis(
     Section title:            {{section_title}}
     Section purpose:          {{section_purpose}}
     Section tone directives:  {{section_tone_directives}}
+    Section tone hook:        {{section_tone_hook}}
     Section max words:        {{section_max_words}}
     Section required agents:  {{section_required_agents}}
     Section validation rules: {{section_validation_rules}}
