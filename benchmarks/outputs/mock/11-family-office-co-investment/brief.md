@@ -2,14 +2,14 @@
 question: "Should the family council approve the co-investment opportunity in the Zurich-based fintech proposed by our external advisor?"
 format: "family-office-memo"
 provider: "mock"
-generated_at: "2026-08-19T12:23:41.738Z"
+generated_at: "2026-08-20T07:44:25.042Z"
 recommended_option: "OPT-A"
 aggregated_risk: "medium"
 sourcing_summary: "total=26 ok=15 stale=0 untrusted=0 duplicated=9 missing=2"
 critique_summary: "critiques=4 critical=0 material=2 minor=2 robustness=medium revised_needed=false"
-total_word_count: 886
+total_word_count: 864
 target_word_count: 1200
-word_deviation_pct: -26.2
+word_deviation_pct: -28
 ---
 
 # Should the family council approve the co-investment opportunity in the Zurich-based fintech proposed by our external advisor?
@@ -30,7 +30,7 @@ word_deviation_pct: -26.2
 
 ## Principal Summary
 
-This memo surfaces the proposed co-investment alongside the external advisor in a Zurich-based fintech target, and requests the council's authorisation on the terms below. The file matters now because the external advisor holds both the counterparty and the advisory role, and because the envelope proposed sits close to the direct venture sleeve soft ceiling documented in the Campden 2025 benchmark. The recommended course is to authorise the co-investment inside a capped envelope, conditional on a formal advisor recusal, an independent counsel second opinion, and a written statement from the successor generation on record before the vote.
+Authorise the co-investment alongside the External Advisor inside a capped CHF 5M envelope, conditional on a formal advisor recusal, an independent counsel second opinion, and a written statement from the successor generation before the vote. The file matters now because the External Advisor holds both the counterparty and the advisory role, and because the envelope sits close to the direct venture sleeve soft ceiling documented in the Campden 2025 benchmark. Council decision requested within 30 days.
 
 **Sources:**
 

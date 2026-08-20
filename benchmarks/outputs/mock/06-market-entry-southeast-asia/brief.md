@@ -2,14 +2,14 @@
 question: "Should we consider strategic market entry into Southeast Asia?"
 format: "mckinsey-style-note"
 provider: "mock"
-generated_at: "2026-08-19T12:23:41.654Z"
+generated_at: "2026-08-20T07:44:24.961Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=32 ok=28 stale=0 untrusted=0 duplicated=2 missing=2"
 critique_summary: "critiques=5 critical=1 material=2 minor=2 robustness=medium revised_needed=true"
-total_word_count: 326
+total_word_count: 372
 target_word_count: 1200
-word_deviation_pct: -72.8
+word_deviation_pct: -69
 ---
 
 # Should we consider strategic market entry into Southeast Asia?
@@ -30,7 +30,7 @@ word_deviation_pct: -72.8
 
 ## Situation
 
-The German mid-market SaaS segment grew 12% CAGR between 2022 and 2025 and now represents the largest addressable slice of EMEA. Foreign providers captured roughly 22% of the €7.5bn 2022-2025 growth, with the remainder held by domestic players.
+Enter Germany via a majority partnership by Q3 2026, or lose the mid-market SaaS entry window for the next 18 months. The German mid-market SaaS segment grew 12% CAGR between 2022 and 2025 and now represents the largest addressable slice of EMEA. Foreign providers captured roughly 22 percent of the 7.5 billion euro 2022-2025 growth, with the remainder held by domestic players — a foothold that regulatory tightening and SAP's DACH mid-market defence are set to close over the next 18 months.
 
 **Sources:**
 

@@ -8,13 +8,13 @@
     "ai-governance"
   ],
   "mode": "mock",
-  "duration_ms": 17,
-  "generated_at": "2026-08-19T12:23:41.685Z",
+  "duration_ms": 16,
+  "generated_at": "2026-08-20T07:44:24.993Z",
   "provider_name": "mock",
   "synthesis": {
-    "total_word_count": 476,
+    "total_word_count": 500,
     "target_words": 1600,
-    "deviation_pct": -70.3,
+    "deviation_pct": -68.8,
     "sections_over_length": 0,
     "forbidden_terms_found": 0
   },
@@ -41,8 +41,8 @@
     "edited_after_critique": true
   },
   "artefacts": {
-    "brief.md": 18939,
-    "brief.pdf": 49424,
-    "brief.docx": 8275
+    "brief.md": 19101,
+    "brief.pdf": 49507,
+    "brief.docx": 8326
   }
 }

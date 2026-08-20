@@ -2,14 +2,14 @@
 question: "Prepare the board briefing on the proposed share buyback."
 format: "executive-pre-read"
 provider: "mock"
-generated_at: "2026-08-19T12:23:41.583Z"
+generated_at: "2026-08-20T07:44:24.888Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=34 ok=31 stale=0 untrusted=0 duplicated=1 missing=2"
 critique_summary: "critiques=5 critical=1 material=2 minor=2 robustness=medium revised_needed=true"
-total_word_count: 338
+total_word_count: 355
 target_word_count: 800
-word_deviation_pct: -57.8
+word_deviation_pct: -55.6
 ---
 
 # Prepare the board briefing on the proposed share buyback.
@@ -30,7 +30,7 @@ word_deviation_pct: -57.8
 
 ## Context
 
-German mid-market SaaS grew 12% CAGR between 2022 and 2025, and the segment is now the largest addressable slice of EMEA (McKinsey 2025 benchmark). BfDI's 2026 enforcement priority list singles out foreign SaaS providers, and SAP has restructured its DACH mid-market coverage to defend against new entrants. A decision is required this cycle on whether to enter, and if so how.
+Enter the German mid-market SaaS segment via a controlled majority partnership by end of Q3 2026. Two risks (regulatory posture, SAP defence), one mitigation each. German mid-market SaaS grew 12% CAGR between 2022 and 2025 and is now EMEA's largest addressable slice (McKinsey 2025 benchmark). BfDI's 2026 enforcement priority list singles out foreign SaaS providers, and SAP has restructured its DACH mid-market coverage against new entrants. A go / no-go call is required this cycle.
 
 **Sources:**
 

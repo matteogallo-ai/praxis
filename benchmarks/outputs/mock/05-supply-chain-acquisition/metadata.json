@@ -8,12 +8,12 @@
   ],
   "mode": "mock",
   "duration_ms": 17,
-  "generated_at": "2026-08-19T12:23:41.637Z",
+  "generated_at": "2026-08-20T07:44:24.944Z",
   "provider_name": "mock",
   "synthesis": {
-    "total_word_count": 326,
+    "total_word_count": 372,
     "target_words": 1200,
-    "deviation_pct": -72.8,
+    "deviation_pct": -69,
     "sections_over_length": 0,
     "forbidden_terms_found": 0
   },
@@ -40,8 +40,8 @@
     "edited_after_critique": true
   },
   "artefacts": {
-    "brief.md": 16584,
-    "brief.pdf": 47073,
-    "brief.docx": 7692
+    "brief.md": 16832,
+    "brief.pdf": 47280,
+    "brief.docx": 7794
   }
 }

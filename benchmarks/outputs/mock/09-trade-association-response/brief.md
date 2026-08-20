@@ -2,14 +2,14 @@
 question: "Prepare our submission to the trade association's public consultation on data localisation."
 format: "position-paper-corporate"
 provider: "mock"
-generated_at: "2026-08-19T12:23:41.702Z"
+generated_at: "2026-08-20T07:44:25.010Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2"
 critique_summary: "critiques=5 critical=1 material=3 minor=1 robustness=medium revised_needed=true"
-total_word_count: 476
+total_word_count: 500
 target_word_count: 1600
-word_deviation_pct: -70.3
+word_deviation_pct: -68.8
 ---
 
 # Prepare our submission to the trade association's public consultation on data localisation.
@@ -30,7 +30,7 @@ word_deviation_pct: -70.3
 
 ## Issue Framing
 
-The Bundestag Digital Committee is preparing procurement guidance that would prefer EU-headquartered SaaS providers, with a cross-party consensus emerging over the second half of 2026. BMDV has issued a conditional welcome to foreign SaaS entrants, tied to EU data residency and transparent processing governance. The organisation has standing to weigh in because its 2026 ambitions memo names Germany as a commercial-and-institutional priority; the decision window closes with the Committee's Q1 2027 draft.
+The organisation should defend an EU-data-residency compromise on the Bundestag Digital Committee's procurement guidance, and file a formal position before the Q1 2027 draft closes. The Committee is preparing procurement guidance that would prefer EU-headquartered SaaS providers, with cross-party consensus emerging over the second half of 2026. BMDV has issued a conditional welcome to foreign SaaS entrants, tied to EU data residency and transparent processing governance. The organisation has standing to weigh in because its 2026 ambitions memo names Germany as a commercial-and-institutional priority; the decision window closes with the Committee's Q1 2027 draft.
 
 **Sources:**
 
