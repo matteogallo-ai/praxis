@@ -22,6 +22,7 @@ sections:
       - scoping
       - research
     tone_directives: "descriptive, third-person, no evaluation; anchor with dated facts.\n\nFRAMING RULES.\n1. The first sentence names the decision the note is being written to surface. Not the context. Not 'this note explores...'. THE DECISION.\n2. The first sentence contains the subject AND the temporality (immediate / 3-6 months / long-term).\n3. The first paragraph lets the reader decide in 3 lines or fewer whether to keep reading or delegate: advantage / risk / recommendation.\n\nExamples for this format.\nOK: 'Enter Germany via majority acquisition. Regulatory clock (18 months), distribution moat (2 competitors), talent scarcity (6-month hire ramp).'\nNO: 'Germany presents both opportunities and challenges...'"
+    tone_hook: "Open with the decision. Not the context. Not the framing. THE DECISION. Reader must know within 15 words whether to keep reading or delegate."
     validation_rules:
       - "must_reference_time_horizon: true"
       - "no_evaluative_adjectives: true"
