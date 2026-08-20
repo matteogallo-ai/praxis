@@ -5,6 +5,19 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Planned in v1.3.1
+
+Empirical validation of v1.3.0 framing_clarity improvement.
+Runbook in [`docs/v1.3.1-runbook.md`](./docs/v1.3.1-runbook.md).
+Blocked only on Anthropic API credits refill.
+
+### Post-v1.3.1
+
+Praxis enters maintenance mode. See
+[`ROADMAP.md § Project status`](./ROADMAP.md#project-status--feature-complete-at-v130).
+
 ## [1.3.0] — 2026-08-20
 
 ### Framing clarity — structural prompt overhaul
