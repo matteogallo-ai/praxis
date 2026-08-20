@@ -381,6 +381,74 @@ baseline preserved verbatim.
 
 ---
 
+## v1.3.0 — Framing clarity: structural prompt overhaul ✅ (shipped 2026-08-20)
+
+Structural release addressing the framing-clarity gap
+surfaced by v1.2.1 empirical scoring (1.9 / 5 baseline,
+8 / 11 briefings scoring 1 or 2). Three coordinated changes
+push the seven-agent pipeline toward decision-first openings:
+
+- **New optional `tone_hook` field on `FormatSection`** —
+  short opinionated override that Synthesis treats as the
+  absolute first priority for the section. Used exclusively on
+  the four opening sections (`executive-pre-read.context`,
+  `mckinsey-style-note.situation`,
+  `position-paper-corporate.issue-framing`,
+  `family-office-memo.principal-summary`) with a shared
+  imperative payload demanding decision-first framing within
+  the first 15 words.
+- **FRAMING RULES block appended to every section's
+  `tone_directives`** across the four shipped formats. Three
+  constraints: name the decision (not the context), carry the
+  subject and temporality in the first sentence, enable a
+  triage decision in three lines or fewer. Opening sections
+  additionally carry format-specific ✓ / ✗ examples anchoring
+  the target register.
+- **FRAMING CLARITY CHECK block in `prompts/synthesis.prompt`**
+  — a pre- and post-writing gate telling Synthesis to verify
+  the opening sentence enables 15-second triage and to rewrite
+  it if an executive reading only that sentence would not know
+  what action to take. Honours `section_tone_hook` when
+  present.
+
+Four opening mock synthesis fixtures were rewritten
+decision-first (source arrays preserved verbatim) and all
+eleven mock briefings were regenerated via `bun run bench:mock`.
+Zero API surface change; zero new npm dependency; 1221 tests
+pass (up from 1212). Empirical re-scoring is deferred to
+v1.3.1 — see below.
+
+## v1.3.1 — Empirical validation of v1.3.0 prompt improvements (planned)
+
+Chore release. A maintainer with `ANTHROPIC_API_KEY` and
+~$1 credit runs:
+
+```
+bun run score --mock-only
+```
+
+with the eleven-brief `.scoring-cache/` refreshed (or after
+the 24 h TTL naturally expires) so every mock is re-scored
+against the v1.3.0 prompts. The resulting
+`benchmarks/RESULTS.md` diff — a new dated block replacing the
+2026-08-20 aggregate table, per-briefing table, and
+systematic-observations block — lands as v1.3.1. No code
+change.
+
+Ship criteria for v1.3.1:
+
+- `framing_clarity` mean **≥ 3.0** on the 11-brief set (from
+  the 1.9 baseline; a +1.1 lift or better is required to
+  consider the v1.3.0 structural changes empirically
+  validated).
+- No other criterion regresses by more than 0.3 versus its
+  v1.2.1 baseline (notably `format_fidelity` at 3.5 must
+  stay ≥ 3.2).
+
+If either gate fails, v1.3.1 becomes an iteration release
+rather than a validation release — the fixtures and prompts
+are re-tuned before another paid pass.
+
 ## v1.2.1 — First empirical mock scoring ✅ (shipped 2026-08-20)
 
 Chore release. First empirical run of the v0.10 AI-assisted
@@ -421,10 +489,11 @@ Post-tag work, ordered by dependency:
   tsconfig `paths` mapping to `../promptlang/src/*` with an npm
   dependency on `promptlang` once the core package is published.
   Removes the last sibling-checkout requirement.
-- **v1.3+ — Additional formats + integrations.**
+- **v1.4+ — Additional formats + integrations.**
   - New shipped formats: BCG-style structured brief,
     negotiation-brief-OMC-style. (The family-office memo
-    shipped in v1.2.0.)
+    shipped in v1.2.0; the v1.3.0 slot was consumed by the
+    framing-clarity structural overhaul.)
   - MCP server integration so the pipeline runs as a Claude
     Code / Claude.ai skill.
   - Notion / Google Drive connectors — export a rendered

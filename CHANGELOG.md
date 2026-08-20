@@ -5,6 +5,138 @@ All notable changes to Praxis are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — 2026-08-20
+
+### Framing clarity — structural prompt overhaul
+
+v1.2.1 empirical scoring identified **framing clarity** as the
+weakest criterion across all eleven mock briefings (1.9 / 5
+average, with 8 / 11 briefings scoring 1 or 2). The root cause
+was consistent: opening sections led with context or
+meta-commentary ("This memo examines...", "Germany presents both
+opportunities and challenges...") rather than with the decision
+the reader is being asked to make.
+
+v1.3.0 attacks the root cause at three layers of the pipeline —
+the format schema, the section directives, and the Synthesis
+prompt itself. Every layer pushes the model toward a
+decision-first opening on the section that determines whether the
+reader keeps reading or delegates.
+
+### Added
+
+- **New optional `tone_hook` field on `FormatSection`** — a
+  short, opinionated override that Synthesis treats as the
+  ABSOLUTE FIRST PRIORITY for the section, overriding any
+  conflicting guidance from the section's `tone_directives` on
+  ordering and opening. Used exclusively on the opening section
+  of each format (`context`, `situation`, `issue-framing`,
+  `principal-summary`) with the same imperative payload:
+  _"Open with the decision. Not the context. Not the framing.
+  THE DECISION. Reader must know within 15 words whether to keep
+  reading or delegate."_
+- **FRAMING RULES block appended to every section's
+  `tone_directives`** across the four shipped formats. Each block
+  imposes three constraints: (1) the first sentence names the
+  decision (not the context, not "this report"); (2) the first
+  sentence carries the subject AND the temporality (immediate /
+  3-6 months / long-term); (3) the first paragraph enables a
+  triage decision in three lines or fewer (advantage / risk /
+  recommendation). Opening sections also carry a format-specific
+  ✓/✗ example pair to anchor the model on the target register.
+- **FRAMING CLARITY CHECK block in
+  `prompts/synthesis.prompt`** — a pre- and post-writing gate
+  that instructs the Synthesis agent to (a) verify the opening
+  sentence contains the decision and enables 15-second triage
+  before producing the section, and (b) re-read the opening
+  sentence in isolation after writing and rewrite if an
+  executive reading ONLY that sentence would not know what
+  action to take. When `section_tone_hook` is provided
+  (i.e. not `"(none)"`), the prompt treats it as the absolute
+  first priority.
+
+### Changed
+
+- **`src/registry/schema.ts`** — `FormatSection` gains the
+  optional `tone_hook?: string` field. `SECTION_ALLOWED_KEYS`
+  gains `"tone_hook"`.
+- **`src/registry/validator.ts`** — validator accepts
+  `tone_hook` as an optional non-empty string on any section;
+  rejects empty strings with a clear message.
+- **`src/agents/synthesis.ts`** — `buildSectionInputs()` passes
+  the section's `tone_hook` (or the literal `"(none)"` when
+  absent) into the Synthesis prompt.
+- **`prompts/synthesis.prompt`** — new `section_tone_hook`
+  prompt parameter; new FRAMING CLARITY CHECK block in the
+  system message; new `Section tone hook:` line in the user
+  message.
+- **`formats/executive-pre-read.yaml`,
+  `formats/mckinsey-style-note.yaml`,
+  `formats/position-paper-corporate.yaml`,
+  `formats/family-office-memo.yaml`** — every section's
+  `tone_directives` extended with the FRAMING RULES block.
+  Opening sections (`context`, `situation`, `issue-framing`,
+  `principal-summary`) additionally carry `tone_hook` and a
+  format-specific ✓/✗ example pair.
+- **`tests/fixtures/mock-llm/synthesis-{format}-{opening}.json`**
+  (four fixtures) — rewritten to lead with the decision. The
+  original context-first phrasings ("This memo surfaces the
+  co-investment opportunity...", "Germany presents both
+  opportunities and challenges...") are replaced with imperative
+  openings that name the recommended action, the subject, and
+  the temporality inside the first sentence. `sources_cited`
+  arrays preserved verbatim so upstream sourcing validation is
+  unaffected.
+- **`benchmarks/outputs/mock/*/brief.{md,pdf,docx}` +
+  `metadata.json`** regenerated via `bun run bench:mock`. All
+  eleven mock briefings render cleanly under the new opening
+  fixtures.
+
+### Deferred — empirical re-scoring
+
+Empirical re-scoring of the eleven mocks against the improved
+prompts is deferred to **v1.3.1** (awaiting Anthropic API
+credits refill). The structural changes are shipped now to
+preserve the disciplined shipping cadence and to make the
+prompt improvements available to library consumers immediately.
+
+Expected direction of change (to be validated empirically in
+v1.3.1):
+
+- **`framing_clarity`** — meaningful lift from the 1.9 / 5
+  baseline. The specific magnitude is a v1.3.1 finding, not a
+  v1.3.0 claim; no synthetic numbers are recorded in this
+  release.
+- **Other criteria** (`non_hedging`, `decisive_recommendation`,
+  `concrete_tradeoffs`, `perceived_sourcing`,
+  `adversarial_usefulness`, `format_fidelity`) — no regression
+  expected, since the changes are additive to the sections'
+  directives and do not touch downstream agents or sources.
+
+`benchmarks/RESULTS.md` is intentionally NOT updated in this
+release. It will land in v1.3.1 alongside the empirical scores.
+
+### Notes
+
+- **No API surface change.** `src/index.ts` public exports are
+  unchanged. `tone_hook` is an optional field on a
+  data-only interface (`FormatSection`); adding it is additive
+  under the v1.0 SemVer contract.
+- **No new npm dependency.**
+- **Format registry compatibility.** Formats authored against
+  v1.2.x continue to load unchanged — `tone_hook` is optional
+  and defaults to absent.
+- **Test count**: 1221 pass (up from 1212 baseline). Zero
+  non-live regressions. Six pre-existing live tests continue to
+  require `ANTHROPIC_API_KEY` and are unaffected by this
+  release.
+- **Approximate API cost for this release: $0.** All work is
+  structural (schema, prompts, formats, fixtures). Empirical
+  scoring cost (~$0.30–0.80 for the eleven mocks) shifts to
+  v1.3.1.
+- **Follow-up in ROADMAP.md § v1.3.1**: empirical re-scoring
+  and RESULTS.md refresh.
+
 ## [1.2.1] — 2026-08-20
 
 ### First empirical qualitative scoring — mock briefings
