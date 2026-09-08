@@ -12,6 +12,29 @@
 > sourcing, adversarial stress-testing, and PDF / DOCX / Markdown
 > renderers.
 
+## Architecture
+
+The pipeline chains seven specialized agents. Each stage's output
+feeds the next; the final adversarial pass can trigger a synthesis
+rerun if it finds material weaknesses.
+
+```mermaid
+flowchart LR
+    Q([Question]) --> S1[Scoping]
+    S1 --> S2[Research]
+    S2 --> S3[Stakeholders]
+    S3 --> S4[Risks]
+    S4 --> S5[Options]
+    S5 --> S6[Synthesis]
+    S6 --> S7[Adversarial<br/>Critique]
+    S7 --> R([Briefing<br/>PDF / DOCX / MD])
+
+    classDef agent fill:#eef,stroke:#557,stroke-width:1px,color:#113;
+    classDef io fill:#efe,stroke:#575,stroke-width:1px,color:#131;
+    class S1,S2,S3,S4,S5,S6,S7 agent;
+    class Q,R io;
+```
+
 Praxis is CLI-first and library-second. Zero paid dependencies
 beyond `pdfkit` (see § FAQ). Runs offline against a
 fixture-driven mock provider; runs live against Anthropic when
