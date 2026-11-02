@@ -32,7 +32,10 @@
       "Bash(bun run bench *)",
       "Bash(bun run score*)",
       "Bash(PRAXIS_LIVE_TESTS=1 *)",
-      "Bash(git tag *)"
+      "Bash(git tag *)",
+      "Bash(git push --tags*)",
+      "Bash(git push * --tags*)",
+      "Bash(env PRAXIS_LIVE_TESTS=1*)"
     ]
   }
 }
