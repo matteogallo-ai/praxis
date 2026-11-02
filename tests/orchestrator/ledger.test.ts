@@ -65,3 +65,17 @@ describe("UsageLedger through the orchestrator", () => {
     expect(ledger.summary().stages["scoping"]).toMatchObject({ calls: 1, input_tokens: 0, cost_usd: 0 });
   });
 });
+
+describe("UsageLedger and the synthesis rerun", () => {
+  test("rerun calls are recorded under synthesis-rerun, apart from the first synthesis", async () => {
+    const ledger = new UsageLedger({ simulated: true });
+    const result = await orchestrator().briefWithCritiqueAndRerun(QUESTION, FORMAT, {
+      now: NOW,
+      ledger,
+      onSourcingFailure: "degrade",
+    });
+    expect(result.rerun_performed).toBe(true);
+    const stages = ledger.summary().stages;
+    expect(stages["synthesis-rerun"]!.calls).toBe(stages["synthesis"]!.calls);
+  });
+});

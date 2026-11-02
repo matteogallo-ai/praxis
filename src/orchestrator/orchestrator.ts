@@ -812,7 +812,7 @@ export class Orchestrator {
     if (options.synthesisPromptPath !== undefined) {
       execOpts.promptPath = options.synthesisPromptPath;
     }
-    return executeSynthesis(ctx, this.llmFor("synthesis", options), execOpts);
+    return executeSynthesis(ctx, this.llmFor(revisionContext === undefined ? "synthesis" : "synthesis-rerun", options), execOpts);
   }
 
   private doAdversarial(
