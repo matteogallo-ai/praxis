@@ -222,7 +222,8 @@ Grouped for orientation:
 - **Registry** — `ValidationError`, `YamlSyntaxError`,
   `FileNotFoundError`, `DuplicateFormatError`,
   `FormatNotFoundError`.
-- **Orchestrator** — `OrchestrationError`, `NotImplementedError`.
+- **Orchestrator** — `OrchestrationError`, `NotImplementedError` (deprecated: nothing
+  throws it; removal is scheduled for the next major release).
 - **LLM** — `LLMError`, `ProviderNotSupportedError`,
   `MockFixtureNotFoundError`, `ToolUseNotSupportedError`,
   `AnthropicAuthenticationError`, `AnthropicAPIError`,

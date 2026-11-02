@@ -31,9 +31,13 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   date taken from the brief); `duration_ms` is omitted from mock metadata.
 - `benchmarks/score-all.ts` refuses mock briefings; `score:mock` is removed.
 
+### Deprecated
+
+- `NotImplementedError`: nothing throws it. It remains exported for 1.x
+  compatibility; removal is scheduled for the next major release.
+
 ### Removed
 
-- **BREAKING:** `NotImplementedError` is no longer exported; nothing threw it.
 - Unused internal exports and three dead helpers found by knip.
 
 ## [1.3.0] — 2026-08-20
