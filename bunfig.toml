@@ -2,3 +2,4 @@
 production = false
 
 [test]
+preload = ["./tests/helpers/preload.ts"]

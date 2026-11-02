@@ -11,3 +11,6 @@ coverage
 # maintainer with API access regenerates them, and the score
 # aggregation lands in benchmarks/RESULTS.md instead.
 benchmarks/.scoring-cache/
+
+# Run checkpoints and metadata written by `praxis brief --full`.
+.praxis/
