@@ -28,7 +28,6 @@ import type {
 } from "../agents/types.ts";
 import type { Format } from "../registry/schema.ts";
 import type {
-  SourcingAccumulator,
   SourcingReport,
   SourcingWarning,
 } from "../sourcing/types.ts";
@@ -203,6 +202,35 @@ export interface RerunMetadata {
   re_synthesis_deviations: string[];
 }
 
+const NOTHING_TO_DO = {
+  research: "nothing to research",
+  stakeholder: "nothing to map",
+  risk: "nothing to assess",
+  options: "nothing to weigh",
+  synthesis: "nothing to write",
+} as const;
+
+/** Stage outputs of one pipeline run, filled in as stages complete. */
+interface PipelineRun {
+  scoping: ScopingResult;
+  research?: ResearchResult;
+  stakeholders?: StakeholderMapResult;
+  risks?: RiskAnalysisResult;
+  options?: OptionsGenerationResult;
+  synthesis?: SynthesisResult;
+  generatedAt: string;
+  /** Merged report of every sourcing validation run so far. */
+  sourcingReport: () => SourcingReport;
+}
+
+/** A stage output the pipeline has produced by the time it is read. */
+function required<T>(value: T | undefined): T {
+  if (value === undefined) {
+    throw new OrchestrationError("internal: a stage output was read before the stage ran");
+  }
+  return value;
+}
+
 export class Orchestrator {
   private readonly registry: FormatRegistry;
   private readonly llm: LLMProvider;
@@ -244,17 +272,8 @@ export class Orchestrator {
     formatId: string,
     options: ResearchAfterScopingOptions = {}
   ): Promise<ResearchAfterScopingResult> {
-    const format = this.prepareForScoping(question, formatId);
-    if (!formatRequiresAgent(format, "research")) {
-      throw new OrchestrationError(
-        `Format '${formatId}' does not list 'research' in any section's required_agents; nothing to research.`
-      );
-    }
-
-    const scoping = await this.doScoping(question, format, options);
-    const research = await this.doResearch(scoping, format, options);
-    validateSourcing(research, format.sourcing_policy);
-    return { scoping, research };
+    const run = await this.runPipeline(question, formatId, options, "research");
+    return { scoping: run.scoping, research: required(run.research) };
   }
 
   /**
@@ -275,38 +294,18 @@ export class Orchestrator {
     formatId: string,
     options: MapStakeholdersAfterResearchOptions = {}
   ): Promise<MapStakeholdersAfterResearchResult> {
-    const format = this.prepareForScoping(question, formatId);
-    if (!formatRequiresAgent(format, "research")) {
-      throw new OrchestrationError(
-        `Format '${formatId}' does not list 'research' in any section's required_agents; nothing to research.`
-      );
-    }
-    if (!formatRequiresAgent(format, "stakeholder")) {
-      throw new OrchestrationError(
-        `Format '${formatId}' does not list 'stakeholder' in any section's required_agents; nothing to map.`
-      );
-    }
-
-    const scoping = await this.doScoping(question, format, options);
-    const research = await this.doResearch(scoping, format, options);
-    validateSourcing(research, format.sourcing_policy);
-
-    const stakeholders = await this.doMapStakeholders(
-      scoping,
-      research,
-      format,
-      options
-    );
-    validateStakeholderSourcing(stakeholders, format.sourcing_policy);
-
-    return { scoping, research, stakeholders };
+    const run = await this.runPipeline(question, formatId, options, "stakeholder");
+    return {
+      scoping: run.scoping,
+      research: required(run.research),
+      stakeholders: required(run.stakeholders),
+    };
   }
 
   /**
    * Runs Scoping → Research → Stakeholder Mapping → Risk Analysis and
-   * enforces the format's sourcing policy AND the v0.5 hardened
-   * sourcing rules (freshness, domain trust, cross-agent dedupe) end
-   * to end.
+   * enforces the format's sourcing policy AND the hardened sourcing
+   * rules (freshness, domain trust, cross-agent dedupe) end to end.
    *
    * Returns the four structured outputs plus an aggregated
    * `sourcing_report` covering the whole pipeline run.
@@ -325,79 +324,18 @@ export class Orchestrator {
     formatId: string,
     options: AssessRisksAfterStakeholdersOptions = {}
   ): Promise<AssessRisksAfterStakeholdersResult> {
-    const format = this.prepareForScoping(question, formatId);
-    if (!formatRequiresAgent(format, "research")) {
-      throw new OrchestrationError(
-        `Format '${formatId}' does not list 'research' in any section's required_agents; nothing to research.`
-      );
-    }
-    if (!formatRequiresAgent(format, "stakeholder")) {
-      throw new OrchestrationError(
-        `Format '${formatId}' does not list 'stakeholder' in any section's required_agents; nothing to map.`
-      );
-    }
-    if (!formatRequiresAgent(format, "risk")) {
-      throw new OrchestrationError(
-        `Format '${formatId}' does not list 'risk' in any section's required_agents; nothing to assess.`
-      );
-    }
-
-    const rules = format.sourcing_rules;
-    const accumulator: SourcingAccumulator =
-      rules?.dedupe?.cross_agent === true
-        ? new InMemorySourcingAccumulator(rules.dedupe)
-        : new NoopSourcingAccumulator();
-    const now = options.now ?? new Date();
-    const validateOpts: Parameters<typeof validateSourcing>[2] = {
-      accumulator,
-      now,
+    const run = await this.runPipeline(question, formatId, options, "risk");
+    return {
+      scoping: run.scoping,
+      research: required(run.research),
+      stakeholders: required(run.stakeholders),
+      risks: required(run.risks),
+      sourcing_report: run.sourcingReport(),
     };
-    if (rules !== undefined) validateOpts.rules = rules;
-
-    const scoping = await this.doScoping(question, format, options);
-    const research = await this.doResearch(scoping, format, options);
-    const researchReport = validateSourcing(
-      research,
-      format.sourcing_policy,
-      validateOpts
-    );
-
-    const stakeholders = await this.doMapStakeholders(
-      scoping,
-      research,
-      format,
-      options
-    );
-    const stakeholderReport = validateStakeholderSourcing(
-      stakeholders,
-      format.sourcing_policy,
-      validateOpts
-    );
-
-    const risks = await this.doAssessRisks(
-      scoping,
-      research,
-      stakeholders,
-      format,
-      options
-    );
-    const riskReport = validateRiskSourcing(
-      risks,
-      format.sourcing_policy,
-      validateOpts
-    );
-
-    const sourcing_report = mergeReports(format.sourcing_policy, [
-      researchReport,
-      stakeholderReport,
-      riskReport,
-    ]);
-
-    return { scoping, research, stakeholders, risks, sourcing_report };
   }
 
   /**
-   * Runs the full v0.6 briefing pipeline end to end:
+   * Runs the full briefing pipeline end to end:
    *
    *   Scoping → Research → Stakeholders → Risks → Options → Synthesis
    *
@@ -423,101 +361,98 @@ export class Orchestrator {
     formatId: string,
     options: BriefOptions = {}
   ): Promise<BriefResult> {
+    const run = await this.runPipeline(question, formatId, options, "synthesis");
+    return {
+      scoping: run.scoping,
+      research: required(run.research),
+      stakeholders: required(run.stakeholders),
+      risks: required(run.risks),
+      options: required(run.options),
+      synthesis: required(run.synthesis),
+      sourcing_report: run.sourcingReport(),
+      generated_at: run.generatedAt,
+      format_id: formatId,
+      question,
+      provider_name: options.providerName ?? this.llm.name,
+    };
+  }
+
+  /**
+   * The one implementation behind the four staged entry points: runs the
+   * stages in order up to and including `last`, validating sourcing after
+   * each sourced stage. Up to `stakeholder` the format's `sourcing_rules`
+   * are not applied, as those two entry points have always behaved.
+   */
+  private async runPipeline(
+    question: string,
+    formatId: string,
+    options: BriefOptions,
+    last: "research" | "stakeholder" | "risk" | "synthesis"
+  ): Promise<PipelineRun> {
     const format = this.prepareForScoping(question, formatId);
-    for (const agent of ["research", "stakeholder", "risk", "options", "synthesis"] as const) {
+    const order = ["research", "stakeholder", "risk", "options", "synthesis"] as const;
+    const needed = order.slice(0, order.indexOf(last) + 1);
+    for (const agent of needed) {
       if (!formatRequiresAgent(format, agent)) {
         throw new OrchestrationError(
-          `Format '${formatId}' does not list '${agent}' in any section's required_agents; the full brief pipeline requires it.`
+          last === "synthesis"
+            ? `Format '${formatId}' does not list '${agent}' in any section's required_agents; the full brief pipeline requires it.`
+            : `Format '${formatId}' does not list '${agent}' in any section's required_agents; ${NOTHING_TO_DO[agent]}.`
         );
       }
     }
 
-    const generated_at = (options.now ?? new Date()).toISOString();
-    const providerName = options.providerName ?? this.llm.name;
-
-    const rules = format.sourcing_rules;
-    const accumulator: SourcingAccumulator =
-      rules?.dedupe?.cross_agent === true
-        ? new InMemorySourcingAccumulator(rules.dedupe)
-        : new NoopSourcingAccumulator();
     const now = options.now ?? new Date();
-    const validateOpts: Parameters<typeof validateSourcing>[2] = {
-      accumulator,
-      now,
-    };
-    if (rules !== undefined) validateOpts.rules = rules;
-
+    const hardened = last === "risk" || last === "synthesis";
+    const validateOpts: Parameters<typeof validateSourcing>[2] = {};
+    if (hardened) {
+      const rules = format.sourcing_rules;
+      validateOpts.accumulator =
+        rules?.dedupe?.cross_agent === true
+          ? new InMemorySourcingAccumulator(rules.dedupe)
+          : new NoopSourcingAccumulator();
+      validateOpts.now = now;
+      if (rules !== undefined) validateOpts.rules = rules;
+    }
+    const policy = format.sourcing_policy;
+    const reports: SourcingReport[] = [];
     const scoping = await this.doScoping(question, format, options);
-    const research = await this.doResearch(scoping, format, options);
-    const researchReport = validateSourcing(
-      research,
-      format.sourcing_policy,
-      validateOpts
-    );
-
-    const stakeholders = await this.doMapStakeholders(
+    const run: PipelineRun = {
       scoping,
-      research,
-      format,
-      options
-    );
-    const stakeholderReport = validateStakeholderSourcing(
-      stakeholders,
-      format.sourcing_policy,
-      validateOpts
-    );
-
-    const risks = await this.doAssessRisks(
-      scoping,
-      research,
-      stakeholders,
-      format,
-      options
-    );
-    const riskReport = validateRiskSourcing(
-      risks,
-      format.sourcing_policy,
-      validateOpts
-    );
-
-    const optionsResult = await this.doGenerateOptions(
-      scoping,
-      research,
-      stakeholders,
-      risks,
-      format,
-      options
-    );
-
-    const synthesis = await this.doSynthesize(
-      scoping,
-      research,
-      stakeholders,
-      risks,
-      optionsResult,
-      format,
-      options
-    );
-
-    const sourcing_report = mergeReports(format.sourcing_policy, [
-      researchReport,
-      stakeholderReport,
-      riskReport,
-    ]);
-
-    return {
-      scoping,
-      research,
-      stakeholders,
-      risks,
-      options: optionsResult,
-      synthesis,
-      sourcing_report,
-      generated_at,
-      format_id: formatId,
-      question,
-      provider_name: providerName,
+      generatedAt: now.toISOString(),
+      sourcingReport: () => mergeReports(policy, reports),
     };
+
+    run.research = await this.doResearch(scoping, format, options);
+    reports.push(validateSourcing(run.research, policy, validateOpts));
+    if (last === "research") return run;
+
+    run.stakeholders = await this.doMapStakeholders(scoping, run.research, format, options);
+    reports.push(validateStakeholderSourcing(run.stakeholders, policy, validateOpts));
+    if (last === "stakeholder") return run;
+
+    run.risks = await this.doAssessRisks(scoping, run.research, run.stakeholders, format, options);
+    reports.push(validateRiskSourcing(run.risks, policy, validateOpts));
+    if (last === "risk") return run;
+
+    run.options = await this.doGenerateOptions(
+      scoping,
+      run.research,
+      run.stakeholders,
+      run.risks,
+      format,
+      options
+    );
+    run.synthesis = await this.doSynthesize(
+      scoping,
+      run.research,
+      run.stakeholders,
+      run.risks,
+      run.options,
+      format,
+      options
+    );
+    return run;
   }
 
   /**
