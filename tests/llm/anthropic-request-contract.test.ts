@@ -53,7 +53,14 @@ const RETIRED_OR_DEPRECATED = [
   "claude-3-haiku-20240307",
 ];
 
-const ALLOWED_BODY_KEYS = new Set(["model", "max_tokens", "system", "messages", "tools"]);
+const ALLOWED_BODY_KEYS = new Set([
+  "model",
+  "max_tokens",
+  "system",
+  "messages",
+  "tools",
+  "output_config",
+]);
 
 describe("Anthropic request contract — API version 2026-10-21", () => {
   test("complete(): headers, endpoint and body keys", async () => {
@@ -111,6 +118,18 @@ describe("Anthropic request contract — API version 2026-10-21", () => {
       system: "the rules",
       messages: [{ role: "user", content: "the question" }],
     });
+  });
+
+  test("an output schema becomes output_config.format, and never rides with tools", async () => {
+    const { fn, calls } = capturingFetch();
+    const p = new AnthropicLLMProvider({ apiKey: "sk-test", fetchFn: fn });
+    const schema = { type: "object", properties: {}, additionalProperties: false };
+    await p.complete("q", { output_schema: schema });
+    expect(calls[0]!.body["output_config"]).toEqual({
+      format: { type: "json_schema", schema },
+    });
+    await p.completeWithTools("q", [{ type: "web_search", name: "web_search" }], {});
+    expect(calls[1]!.body).not.toHaveProperty("output_config");
   });
 
   test("a pinned model (constructor or ANTHROPIC_MODEL) overrides the stage's model", async () => {

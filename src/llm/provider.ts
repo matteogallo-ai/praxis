@@ -28,6 +28,11 @@ export interface CompleteOptions {
   /** Model for this call (a stage's `@model`), when the provider supports it. */
   model?: string;
   /**
+   * JSON Schema the answer must follow. Providers with constrained decoding
+   * enforce it; the others may ignore it, so callers still validate.
+   */
+  output_schema?: Record<string, unknown>;
+  /**
    * @deprecated Ignored. Anthropic API version 2026-10-21 rejects sampling
    * parameters; the field stays so 1.x callers that set it still compile.
    */

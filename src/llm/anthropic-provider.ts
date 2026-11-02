@@ -145,6 +145,7 @@ export class AnthropicLLMProvider implements LLMProvider {
       max_tokens: options.max_tokens ?? DEFAULT_MAX_TOKENS,
       model: this.modelFor(options.model),
       system: options.system,
+      outputSchema: options.output_schema,
     });
     return extractText(body);
   }
@@ -170,11 +171,14 @@ export class AnthropicLLMProvider implements LLMProvider {
         max_tokens,
         model,
         system: options.system,
+        // Structured outputs are a 400 alongside citations, and web search
+        // citations are always on, so tool calls never carry a schema.
+        outputSchema: undefined,
       });
       const raw = rawContentBlocks(body);
       const content = parseContentBlocks(raw);
       collectedToolCalls.push(...extractToolCalls(content));
-      finalText = extractTextFromBlocks(content);
+      finalText = extractFinalText(content);
       stopReason = typeof body.stop_reason === "string" ? body.stop_reason : "";
 
       if (stopReason === "pause_turn") {
@@ -203,7 +207,12 @@ export class AnthropicLLMProvider implements LLMProvider {
   private async request(
     messages: AnthropicMessage[],
     tools: Tool[],
-    opts: { max_tokens: number; model: string; system: string | undefined }
+    opts: {
+      max_tokens: number;
+      model: string;
+      system: string | undefined;
+      outputSchema: Record<string, unknown> | undefined;
+    }
   ): Promise<AnthropicResponseBody> {
     const payload: Record<string, unknown> = {
       model: opts.model,
@@ -213,6 +222,9 @@ export class AnthropicLLMProvider implements LLMProvider {
       payload["system"] = opts.system;
     }
     payload["messages"] = messages;
+    if (opts.outputSchema !== undefined) {
+      payload["output_config"] = { format: { type: "json_schema", schema: opts.outputSchema } };
+    }
     if (tools.length > 0) {
       payload["tools"] = tools.map(mapToolToAnthropic);
     }
@@ -321,6 +333,20 @@ function extractTextFromBlocks(blocks: AnthropicContentBlock[]): string {
     .filter((b) => b.type === "text" && typeof b.text === "string")
     .map((b) => b.text as string)
     .join("");
+}
+
+/**
+ * The answer is the text after the turn's last tool block. Text before it is
+ * the model narrating its searches ("I'll search for …"), and the answer
+ * itself arrives in several text blocks wherever a web search citation
+ * attaches, so the blocks after the boundary are joined.
+ */
+function extractFinalText(blocks: AnthropicContentBlock[]): string {
+  let lastToolBlock = -1;
+  blocks.forEach((b, i) => {
+    if (isToolUseType(b.type) || b.type.endsWith("_tool_result")) lastToolBlock = i;
+  });
+  return extractTextFromBlocks(blocks.slice(lastToolBlock + 1));
 }
 
 function extractToolCalls(blocks: AnthropicContentBlock[]): ToolCall[] {

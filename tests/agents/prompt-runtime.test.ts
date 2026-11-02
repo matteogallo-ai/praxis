@@ -90,6 +90,22 @@ describe("callModel", () => {
     });
   });
 
+  test("an output schema is passed on calls without tools only", async () => {
+    const { llm, seen } = recordingProvider(true);
+    const schema = { type: "object" };
+    await callModel("demo", llm, loaded(), rendered, { tools: [], outputSchema: schema });
+    expect(seen[0]!.options).toEqual({
+      system: "SYS",
+      model: "claude-haiku-5-5",
+      output_schema: schema,
+    });
+    await callModel("demo", llm, loaded(), rendered, {
+      tools: [{ type: "web_search", name: "web_search" }],
+      outputSchema: schema,
+    });
+    expect(seen[1]!.options).not.toHaveProperty("output_schema");
+  });
+
   test("a provider that does not declare acceptsSystemPrompt still gets the system text", async () => {
     const { llm, seen } = recordingProvider(undefined);
     await callModel("demo", llm, loaded(), rendered, { tools: [] });

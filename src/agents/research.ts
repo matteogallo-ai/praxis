@@ -22,7 +22,7 @@
  * and does not silently fill them in.
  */
 
-import { callModel, loadPrompt, renderPrompt, stripJsonFences, outputReader } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, extractJsonText, outputReader } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -76,7 +76,7 @@ export async function executeResearch(
 }
 
 function parseResearchResult(raw: string): ResearchResult {
-  const stripped = stripJsonFences(raw).trim();
+  const stripped = extractJsonText(raw);
   if (stripped.length === 0) {
     throw new InvalidAgentOutputError(AGENT_ID, "empty response", raw);
   }

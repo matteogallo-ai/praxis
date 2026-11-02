@@ -78,8 +78,6 @@ stages before it rather than sharing one implementation.
 These are confirmed in the code and are why live runs fail or cannot be
 trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
-- Model output is parsed with `JSON.parse` after stripping a code fence;
-  prose before the JSON fails the stage.
 - One timeout (60 s) applies to every stage, including the web-search ones.
 - A failure at any stage loses the stages before it: there is no checkpoint.
 - Web search results and earlier stages' output enter the next prompt

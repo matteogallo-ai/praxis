@@ -30,7 +30,7 @@
  * upstream agents.
  */
 
-import { callModel, loadPrompt, renderPrompt, stripJsonFences } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, extractJsonText } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
   EditorialAttempt,
@@ -56,6 +56,35 @@ import {
 } from "./errors.ts";
 
 const AGENT_ID = "synthesis";
+
+/**
+ * Constrains decoding to the shape `parseSectionResponse` validates. Length
+ * limits (excerpt ≤ 500 characters) are not expressible in a structured
+ * output schema and stay in the parser.
+ */
+const SECTION_SCHEMA = {
+  type: "object",
+  properties: {
+    content_markdown: { type: "string" },
+    sources_cited: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          url: { type: "string" },
+          title: { type: "string" },
+          accessed_at: { type: "string" },
+          excerpt: { type: "string" },
+        },
+        required: ["url", "title", "accessed_at", "excerpt"],
+        additionalProperties: false,
+      },
+    },
+    validation_issues: { type: "array", items: { type: "string" } },
+  },
+  required: ["content_markdown", "sources_cited", "validation_issues"],
+  additionalProperties: false,
+};
 const PROMPT_NAME = "synthesis";
 const DEFAULT_PROMPT_PATH = "prompts/synthesis.prompt";
 
@@ -111,6 +140,7 @@ export async function executeSynthesis(
       const rendered = renderPrompt(AGENT_ID, loaded, inputs);
       const completion = await callModel(AGENT_ID, llm, loaded, rendered, {
         tools: [],
+        outputSchema: SECTION_SCHEMA,
         errorContext: `while synthesising '${section.id}'`,
       });
       const parsed = parseSectionResponse(completion.text, section, sourcesByAgent);
@@ -381,7 +411,7 @@ function parseSectionResponse(
   section: FormatSection,
   knownSources: KnownSourcesIndex
 ): ParsedSectionResponse {
-  const stripped = stripJsonFences(raw).trim();
+  const stripped = extractJsonText(raw);
   if (stripped.length === 0) {
     throw new InvalidAgentOutputError(
       AGENT_ID,

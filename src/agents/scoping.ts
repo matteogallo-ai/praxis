@@ -16,7 +16,7 @@
  * Any deviation surfaces as one of the typed errors in `./errors.ts`.
  */
 
-import { callModel, loadPrompt, renderPrompt, stripJsonFences } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, extractJsonText } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { AgentContext, ScopingResult } from "./types.ts";
 import {
@@ -24,6 +24,26 @@ import {
 } from "./errors.ts";
 
 const AGENT_ID = "scoping";
+
+const STRING_LIST = { type: "array", items: { type: "string" } };
+
+/** Constrains decoding to the shape `parseScopingResult` validates. */
+const SCOPING_SCHEMA = {
+  type: "object",
+  properties: {
+    reformulated_question: { type: "string" },
+    hidden_questions: STRING_LIST,
+    scope_boundaries: STRING_LIST,
+    assumptions_to_validate: STRING_LIST,
+  },
+  required: [
+    "reformulated_question",
+    "hidden_questions",
+    "scope_boundaries",
+    "assumptions_to_validate",
+  ],
+  additionalProperties: false,
+};
 const PROMPT_NAME = "scope";
 const DEFAULT_PROMPT_PATH = "prompts/scoping.prompt";
 
@@ -47,12 +67,15 @@ export async function executeScoping(
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);
-  const completion = await callModel(AGENT_ID, llm, loaded, rendered, { tools: [] });
+  const completion = await callModel(AGENT_ID, llm, loaded, rendered, {
+    tools: [],
+    outputSchema: SCOPING_SCHEMA,
+  });
   return parseScopingResult(completion.text);
 }
 
 function parseScopingResult(raw: string): ScopingResult {
-  const stripped = stripJsonFences(raw).trim();
+  const stripped = extractJsonText(raw);
   let value: unknown;
   try {
     value = JSON.parse(stripped);

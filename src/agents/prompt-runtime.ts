@@ -133,6 +133,12 @@ export interface CallModelOptions {
   tools: Tool[];
   /** Cap on pause_turn continuations; required when `tools` is non-empty. */
   maxToolRounds?: number;
+  /**
+   * JSON Schema for the answer, sent only on calls without tools: the API
+   * rejects structured outputs alongside citations, which web search always
+   * produces.
+   */
+  outputSchema?: Record<string, unknown>;
   /** Appended to the provider-error message, e.g. "while synthesising 'risks'". */
   errorContext?: string;
 }
@@ -160,7 +166,9 @@ export async function callModel(
   let completion: CompletionResult;
   try {
     if (options.tools.length === 0 && typeof llm.complete === "function") {
-      const text = await llm.complete(userText, placement);
+      const completeOptions: Parameters<LLMProvider["complete"]>[1] = { ...placement };
+      if (options.outputSchema !== undefined) completeOptions.output_schema = options.outputSchema;
+      const text = await llm.complete(userText, completeOptions);
       completion = { text, tool_calls: [], rounds: 1, stop_reason: "end_turn" };
     } else if (typeof llm.completeWithTools === "function") {
       const toolOptions: Parameters<NonNullable<LLMProvider["completeWithTools"]>>[2] = {
@@ -193,11 +201,63 @@ export async function callModel(
   return completion;
 }
 
-/** Removes one enclosing ```json fence, if the whole answer is fenced. */
-export function stripJsonFences(raw: string): string {
-  const fenced = raw.match(/^```(?:json)?\n([\s\S]*?)\n```\s*$/);
-  if (fenced && fenced[1] !== undefined) return fenced[1];
-  return raw;
+/**
+ * The JSON object inside a model answer, as text for the caller to parse.
+ *
+ * Models put prose before or after the object, or wrap it in a fence, even
+ * when told to return JSON only. This returns the largest balanced `{…}`
+ * span that parses as an object (braces inside strings and escapes are
+ * skipped). With no such span it returns the trimmed answer, so the caller's
+ * `JSON.parse` error still describes what the model sent. Nothing is
+ * repaired: a truncated object stays invalid.
+ */
+export function extractJsonText(raw: string): string {
+  const trimmed = raw.trim();
+  if (isJsonObject(trimmed)) return trimmed;
+  let best: string | undefined;
+  for (const candidate of balancedObjects(trimmed)) {
+    if ((best === undefined || candidate.length > best.length) && isJsonObject(candidate)) {
+      best = candidate;
+    }
+  }
+  return best ?? trimmed;
+}
+
+function isJsonObject(text: string): boolean {
+  if (!text.startsWith("{")) return false;
+  try {
+    const v: unknown = JSON.parse(text);
+    return typeof v === "object" && v !== null && !Array.isArray(v);
+  } catch {
+    // Not JSON is an expected answer here, not an error: the caller tries the
+    // next candidate, and reports the parse failure itself if none fits.
+    return false;
+  }
+}
+
+/** Every top-level balanced `{…}` span, scanning strings and escapes properly. */
+function* balancedObjects(text: string): Generator<string> {
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"' && depth > 0) inString = true;
+    else if (ch === "{") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === "}" && depth > 0) {
+      depth--;
+      if (depth === 0) yield text.slice(start, i + 1);
+    }
+  }
 }
 
 /** Typed field readers whose errors carry the agent id. */
