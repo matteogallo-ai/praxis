@@ -75,6 +75,18 @@ stages before it rather than sharing one implementation.
   (`max_uses`) from `src/agents/stage-limits.ts`; the provider's own 4096
   tokens and 60 s apply only to callers that set neither.
 
+## Usage and cost
+
+When a caller passes a `UsageLedger` (`src/orchestrator/ledger.ts`), every
+stage gets the provider wrapped so each call's `usage` (input, output and
+cache tokens, web searches) is recorded under its stage and priced from a
+table (`src/llm/pricing.ts`: list prices by default, a JSON file through
+`loadPriceTable`). A model missing from the table is costed `null`, not
+guessed. With `maxCostUsd` set, no call starts once the briefing has spent
+the cap, so a briefing ends above it by at most its last call.
+`benchmarks/run-all.ts` writes the summary to `metadata.json` under `usage`.
+The mock provider simulates usage from text length (`simulated: true`).
+
 ## Known weaknesses
 
 These are confirmed in the code and are why live runs fail or cannot be
@@ -88,7 +100,6 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 - Web search results and earlier stages' output enter the next prompt
   between `---` lines with a label, but with no instruction to treat them as
   data, and `---` also separates the system text from the user text.
-- Token usage and cost are not recorded.
 
 ## Dependencies
 

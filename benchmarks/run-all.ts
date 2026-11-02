@@ -32,6 +32,7 @@ import { parseYaml } from "@promptlang/yaml-parser";
 
 import { FormatRegistry } from "../src/registry/registry.ts";
 import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
+import { UsageLedger } from "../src/orchestrator/ledger.ts";
 import { MockLLMProvider } from "../src/llm/mock-provider.ts";
 import { AnthropicLLMProvider } from "../src/llm/anthropic-provider.ts";
 import type { LLMProvider } from "../src/llm/provider.ts";
@@ -227,12 +228,15 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
         registry.get(b.format);
         mkdirSync(outDir, { recursive: true });
 
+        // Mock usage is simulated from text length, so it is flagged and its
+        // durations are left out to keep the artefacts byte-identical.
+        const ledger = new UsageLedger({ simulated: mode === "mock" });
         const result = await orchestrator.briefWithCritiqueAndRerun(
           b.question,
           b.format,
           mode === "mock"
-            ? { now: MOCK_CLOCK, onSourcingFailure: "degrade" }
-            : { onSourcingFailure: "degrade" }
+            ? { now: MOCK_CLOCK, onSourcingFailure: "degrade", ledger }
+            : { onSourcingFailure: "degrade", ledger }
         );
 
         // Always render md + pdf + docx regardless of the format's
@@ -274,6 +278,7 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
             result,
             mode === "mock" ? null : Date.now() - started
           ),
+          usage: ledger.summary(mode !== "mock"),
           artefacts,
         };
         const metadataPath = join(outDir, "metadata.json");

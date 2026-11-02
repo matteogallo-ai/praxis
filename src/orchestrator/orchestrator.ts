@@ -55,10 +55,16 @@ import {
   type SourcedArtefacts,
 } from "../sourcing/insufficient.ts";
 import { OrchestrationError } from "./errors.ts";
+import { meter, type UsageLedger } from "./ledger.ts";
 
 export interface ScopeOptions {
   /** Overrides the scoping prompt file path — used in tests. */
   scopingPromptPath?: string;
+  /**
+   * Records every model call's tokens and cost under its stage, and
+   * enforces the ledger's budget cap before each call.
+   */
+  ledger?: UsageLedger;
 }
 
 export interface ResearchAfterScopingOptions extends ScopeOptions {
@@ -648,6 +654,11 @@ export class Orchestrator {
     };
   }
 
+  /** The provider for one stage: metered under that stage when a ledger is set. */
+  private llmFor(stage: string, options: ScopeOptions): LLMProvider {
+    return options.ledger === undefined ? this.llm : meter(this.llm, options.ledger, stage);
+  }
+
   private prepareForScoping(question: string, formatId: string): Format {
     if (question.trim().length === 0) {
       throw new OrchestrationError("Question is empty. Provide a non-blank briefing question.");
@@ -672,8 +683,8 @@ export class Orchestrator {
       targetWords: format.target_length.words,
     };
     return options.scopingPromptPath === undefined
-      ? executeScoping(ctx, this.llm)
-      : executeScoping(ctx, this.llm, { promptPath: options.scopingPromptPath });
+      ? executeScoping(ctx, this.llmFor("scoping", options))
+      : executeScoping(ctx, this.llmFor("scoping", options), { promptPath: options.scopingPromptPath });
   }
 
   private doResearch(
@@ -694,7 +705,7 @@ export class Orchestrator {
     if (options.researchMaxToolRounds !== undefined) {
       execOpts.maxToolRounds = options.researchMaxToolRounds;
     }
-    return executeResearch(ctx, this.llm, execOpts);
+    return executeResearch(ctx, this.llmFor("research", options), execOpts);
   }
 
   private doMapStakeholders(
@@ -711,7 +722,7 @@ export class Orchestrator {
     if (options.stakeholderMaxToolRounds !== undefined) {
       execOpts.maxToolRounds = options.stakeholderMaxToolRounds;
     }
-    return executeStakeholderMapping(ctx, this.llm, execOpts);
+    return executeStakeholderMapping(ctx, this.llmFor("stakeholder", options), execOpts);
   }
 
   private doAssessRisks(
@@ -729,7 +740,7 @@ export class Orchestrator {
     if (options.riskMaxToolRounds !== undefined) {
       execOpts.maxToolRounds = options.riskMaxToolRounds;
     }
-    return executeRiskAnalysis(ctx, this.llm, execOpts);
+    return executeRiskAnalysis(ctx, this.llmFor("risk", options), execOpts);
   }
 
   private doGenerateOptions(
@@ -748,7 +759,7 @@ export class Orchestrator {
     if (options.optionsMaxToolRounds !== undefined) {
       execOpts.maxToolRounds = options.optionsMaxToolRounds;
     }
-    return executeOptionsGeneration(ctx, this.llm, execOpts);
+    return executeOptionsGeneration(ctx, this.llmFor("options", options), execOpts);
   }
 
   private doSynthesize(
@@ -776,7 +787,7 @@ export class Orchestrator {
     if (options.synthesisPromptPath !== undefined) {
       execOpts.promptPath = options.synthesisPromptPath;
     }
-    return executeSynthesis(ctx, this.llm, execOpts);
+    return executeSynthesis(ctx, this.llmFor("synthesis", options), execOpts);
   }
 
   private doAdversarial(
@@ -804,7 +815,7 @@ export class Orchestrator {
     if (options.adversarialMaxToolRounds !== undefined) {
       execOpts.maxToolRounds = options.adversarialMaxToolRounds;
     }
-    return executeAdversarialCritique(ctx, this.llm, execOpts);
+    return executeAdversarialCritique(ctx, this.llmFor("adversarial", options), execOpts);
   }
 }
 

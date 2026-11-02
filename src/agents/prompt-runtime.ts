@@ -14,6 +14,7 @@ import { parse } from "promptlang/parser";
 import type { MessageSection, Program, PromptDeclaration } from "promptlang/ast";
 
 import { stageLimits } from "./stage-limits.ts";
+import { BudgetExceededError } from "../llm/errors.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { CompletionResult, Tool } from "../llm/types.ts";
 import type { SourceStatus } from "../sourcing/types.ts";
@@ -201,7 +202,9 @@ export async function callModel(
       );
     }
   } catch (err) {
-    if (err instanceof AgentExecutionError) throw err;
+    // A budget stop is the caller's decision, not a provider failure: it
+    // must reach the orchestrator with its own type.
+    if (err instanceof AgentExecutionError || err instanceof BudgetExceededError) throw err;
     const message = err instanceof Error ? err.message : String(err);
     const where = options.errorContext === undefined ? "" : ` ${options.errorContext}`;
     throw new AgentExecutionError(agentId, `LLM provider error${where} — ${message}`, {

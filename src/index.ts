@@ -44,7 +44,10 @@ export type {
   ToolCall,
   CompletionResult,
   CompleteWithToolsOptions,
+  TokenUsage,
 } from "./llm/types.ts";
+export { DEFAULT_PRICE_TABLE, loadPriceTable } from "./llm/pricing.ts";
+export type { PriceTable } from "./llm/pricing.ts";
 export { MockLLMProvider } from "./llm/mock-provider.ts";
 export type { MockFixture, MockLLMProviderOptions } from "./llm/mock-provider.ts";
 export { AnthropicLLMProvider } from "./llm/anthropic-provider.ts";
@@ -181,6 +184,8 @@ export { CRITIQUE_CATEGORIES, CRITIQUE_SEVERITIES } from "./agents/types.ts";
 
 export { Orchestrator } from "./orchestrator/orchestrator.ts";
 export { computeReSynthesisDeviations } from "./orchestrator/orchestrator.ts";
+export { UsageLedger } from "./orchestrator/ledger.ts";
+export type { StageUsage, UsageSummary, UsageLedgerOptions } from "./orchestrator/ledger.ts";
 export type {
   // Options types for every method.
   ScopeOptions,
