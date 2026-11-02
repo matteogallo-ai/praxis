@@ -1,215 +1,78 @@
-# Benchmarking methodology (v0.10)
+# Benchmarking methodology
 
-Praxis ships two things labelled "benchmarks":
+Praxis has two kinds of benchmark output, and only one of them can say
+anything about quality.
 
-- **Objective checks** — automated, deterministic, format /
-  structure / freshness verifications on the ten calibrated
-  briefings. Shipped in v0.9. See
-  `benchmarks/CHECKLIST.md § Objective checks`.
-- **AI-assisted qualitative scoring** — a Claude Sonnet 4.5 pass
-  over each briefing that returns a 7-criterion 1-to-5 score plus
-  a systematic analysis. Framework shipped in v0.10.0;
-  empirical results (mock-vs-live delta table in `RESULTS.md`)
-  land in **v0.10.1** when a maintainer with API credits runs
-  `bun run score`.
+| Run | What it proves | What it cannot prove |
+| --- | --- | --- |
+| `bun run bench:mock` (renderer smoke test) | Every stage, the sourcing checks and the renderers are wired; output is reproducible. | Anything about what a model writes. |
+| `bun run bench:live` (paid) | Whether the pipeline completes against a real model, and at what cost. | Quality, until the output is scored as below. |
 
-This document covers the second track: the rubric, the prompt,
-the model choice, the known biases, and how to reproduce.
+## The old benchmark was circular
 
----
+From v0.10 to v1.3.0 the published "AI-assisted qualitative scoring" graded
+the **mock** briefings with a Claude model and reported 7 criteria on a 1–5
+scale. Three faults made those numbers meaningless as a measure of Praxis:
+
+1. **The input was not model output.** The mock provider replays fixtures
+   written by hand and selected by format, not by question; every briefing of
+   a given format had the same body text. Eleven scores covered four
+   distinct texts.
+2. **The score could be moved by editing fixtures.** v1.3.0 rewrote four
+   opening-section fixtures to lead with the decision and planned to re-score
+   them to show that `framing_clarity` improved (see
+   [`v1.3.1-runbook.md`](v1.3.1-runbook.md)). The measurement would have
+   graded the hand edit.
+3. **No check on the scorer.** The judge was the same model family as the
+   pipeline's default, and it was never compared with a human reading.
+
+Those scores are withdrawn from [`benchmarks/RESULTS.md`](../benchmarks/RESULTS.md),
+and `benchmarks/score-all.ts` refuses mock briefings.
+
+## The method for live briefings
+
+Adopted on 2026-11-02. No briefing has been scored with it: none has completed
+live ([`CLAIMS.md`](CLAIMS.md) C14, C18).
+
+1. **Only live output is scored.** Each scored briefing has a committed run
+   artefact under `benchmarks/outputs/live/<date>/`: the briefing, and a
+   `metadata.json` with the model IDs, prompt versions, tokens, cost, duration
+   per stage and git SHA. Failed runs are committed with their cause.
+2. **The rubric** is the 7-criterion grid below, each scored 1–5 (total /35).
+3. **The judge is checked.** Either the judge is from another model family
+   than the pipeline, or a human annotates at least two briefings on the same
+   grid; judge–human agreement is computed and published next to the scores.
+   A judged score without that check is labelled *unvalidated*.
+4. **Every number states its `n`.** `RESULTS.md` is generated from the
+   artefacts by a script, and CI runs it with `--check` so the page cannot
+   drift from the data.
 
 ## The rubric
 
-Seven criteria, each scored 1–5, summed to a total /35. Higher
-is better.
+1. **Framing clarity**: is the question stated, and the reader oriented, in
+   the first paragraph?
+2. **Non-hedging**: does the brief commit, or hedge with "may", "could",
+   "arguably"?
+3. **Decisive recommendation**: is there a clear call to action?
+4. **Concrete trade-offs**: are cost, time and exposure dimensioned?
+5. **Perceived sourcing**: do the citations look credible to a senior reader?
+6. **Adversarial usefulness**: does the critique steelman real objections?
+7. **Format fidelity**: does it read like the target format?
 
-1. **Framing clarity** — Is the question stated, and is the
-   reader oriented, within the first paragraph?
-2. **Non-hedging** — Does the brief commit, or does it fill
-   itself with `may` / `could` / `arguably`?
-3. **Decisive recommendation** — Is there a clear call to
-   action, or is the reader left with "on the one hand …"?
-4. **Concrete tradeoffs** — Are cost / time / exposure
-   dimensioned, or hand-waved?
-5. **Perceived sourcing** — Do the citations look tier-1 to a
-   senior reader, or thin?
-6. **Adversarial usefulness** — Does the critique steelman real
-   objections, or straw-man?
-7. **Format fidelity** — Does it read like the target format
-   (McKinsey MECE, exec pre-read, position paper), or generic?
+| Score | Meaning |
+| --- | --- |
+| 1 | Unusable on that criterion. |
+| 2 | Below what a junior analyst would produce. |
+| 3 | Passable; most competent output lands here. |
+| 4 | Above expectations. |
+| 5 | Excellent; surprises a senior reader. |
 
-The score bands are calibrated:
+The scoring prompt is `benchmarks/scoring-prompt.txt`; the parser
+(`parseScoringPayload` in `benchmarks/score-all.ts`) rejects anything but the
+expected JSON.
 
-| Score | Meaning                                         |
-| ----- | ----------------------------------------------- |
-| 1     | Actively bad — unusable at that criterion.      |
-| 2     | Below expectations for a junior analyst.        |
-| 3     | Normal / passable. Most competent output lives here. |
-| 4     | Above expectations — the reader is grateful.    |
-| 5     | Genuinely excellent — surprises a senior partner. |
+## Cost
 
-**Do not inflate.** A brief that averages 3.0 is not failing. A
-brief that averages 4.0 is genuinely strong. Scores at 5.0
-across the board should be rare; if the aggregate ever creeps
-there, the rubric or the prompt is broken.
-
----
-
-## The prompt
-
-Text lives at `benchmarks/scoring-prompt.txt`. Verbatim contract
-of what the scorer receives; edited by the release owner, never
-by the scorer, never by the CLI at runtime.
-
-Key discipline choices in the prompt:
-
-- **"You are NOT the author"** — casts the scorer as a reviewer,
-  not the writer. Reduces the "praise everything" pull.
-- **"Executives who read weak briefings make bad decisions —
-  your rigor protects them"** — grounds the incentive.
-- **"BE HONEST. A score of 3/5 is NORMAL"** — repeated because
-  LLMs default to leniency. Empirical: this line alone typically
-  drops average scores by 0.5 points.
-- **"For each criterion, provide: score, example, improvement"**
-  — forces per-criterion specificity, harder to bluff.
-- **"Return ONLY this JSON"** — the parser
-  (`parseScoringPayload`) rejects any preamble or trailing text.
-
-If you edit the prompt, keep the JSON schema stable — the parser
-is strict and any deviation surfaces as a `ScoringParseError`.
-
----
-
-## Model choice
-
-`claude-sonnet-4-5` — the same model the Synthesis and
-Adversarial agents run against by default. Consistency matters:
-
-- **Same-family scoring**. Claude scores Claude output. This is
-  a **known bias** (see § Limitations below).
-- **Cost sanity**. Sonnet is cheap enough for 20+ scorings per
-  release, unlike Opus.
-- **Reasoning quality**. Under the calibrated prompt Sonnet is
-  strict, mostly refuses to hand out 5s, and produces the
-  per-criterion `example` fields at analytical depth.
-
-The model id is hard-coded in `score-all.ts` as the constructor
-argument to `AnthropicLLMProvider`. Change it there if you want
-to experiment with a different model.
-
----
-
-## Known biases and limitations
-
-- **Same-family scoring bias.** Claude Sonnet is likely to
-  reward the phrasing conventions of Claude-authored briefs.
-  Interpret mock-vs-live deltas as **comparative** signal (does
-  live outperform mock?) more than **absolute** quality. Absolute
-  scores are directional, not gospel.
-- **Deterministic mock content.** The MockLLMProvider fixtures
-  respond to the format id, not the question. Every mock brief
-  for a given format contains identical body text. Ten mock
-  scorings across three formats therefore give the scorer only
-  three distinct texts to grade, which produces artificially
-  clustered mock scores.
-- **Scoring covers all 10 mock briefings (v1.1.1+).** Previous
-  releases (v0.10.0 / v1.1.0) shipped only 7/10 mocks scorable —
-  the three `position-paper-corporate` briefings (08–10) lacked
-  `brief.md` because that format does not declare `md` in
-  `output_targets[]` and `benchmarks/run-all.ts` was honouring
-  that declaration. v1.1.1 makes the benchmark harness emit the
-  full `md`/`pdf`/`docx` trifecta regardless of `output_targets[]`
-  (the harness is not a user-facing artefact, so uniform
-  coverage takes precedence over the format's declared
-  consumption preferences). Regression guarded by
-  `tests/benchmarks/coverage.test.ts`.
-- **No calibration against human reviewers.** A future release
-  will hand the ten mocks + ten lives to a senior consultant
-  for a blind score, and correlate against the AI scoring. That
-  is the acid test.
-- **Cache TTL is 24 h.** A retry within 24 hours reads from
-  `.scoring-cache/` (gitignored) and does not spend tokens. On
-  cache miss the full pass runs; use `--refresh <slug>` to
-  bypass the cache for a single briefing.
-
----
-
-## Reproducing
-
-Prerequisites: `ANTHROPIC_API_KEY` in `.env` or exported in your
-shell, funded to ~$10 (see § Budget below).
-
-```bash
-# Generate the ten mock briefings if you haven't already.
-bun run bench:mock
-
-# Generate the ten live briefings (Anthropic API).
-bun run bench:live
-
-# Score every briefing on disk (mock + live).
-bun run score
-
-# Or scope the scoring to one mode.
-bun run score:mock
-bun run score:live
-
-# Dry-run: enumerate what would be scored, no API call.
-bun run score:dry
-
-# Force a refresh for one slug.
-bun run benchmarks/score-all.ts --refresh 01-german-market-entry
-```
-
-`bun run score` rewrites the "AI-Assisted Qualitative Scoring"
-block in `benchmarks/RESULTS.md`. It preserves the v0.9
-"Automated objective checks" block above it verbatim.
-
----
-
-## Budget
-
-Ballpark, at v0.10 rates (subject to Anthropic pricing changes):
-
-- **Live benchmark generation** (10 × 7 agents +
-  strict_editorial retries + rerun): **~$3–5**
-- **Scoring** (20 briefings × one 5–8 kToken prompt + short
-  JSON response): **~$0.50–1.50**
-- **Total per full pass**: **~$5–7**
-
-Cache TTL (24 h) means development-time iterations on the
-prompt or aggregation are effectively free after the first pass.
-
----
-
-## Interpretation guide
-
-When the empirical RESULTS.md table finally lands, read it like
-this:
-
-- The **delta** column is the load-bearing figure. If live
-  ≥ mock + 1.5 on `perceived_sourcing`, that is the value of
-  the live provider paying off. If the delta is < 0.5, the
-  test bar is too permissive.
-- **Low mock scores are expected** on
-  `perceived_sourcing` and `concrete_tradeoffs`. The mock
-  fixtures cite second-tier sources on purpose; the scorer
-  should catch that.
-- **High mock scores** on `format_fidelity` and
-  `framing_clarity` validate the Format Registry — the
-  structural discipline is format-agnostic to LLM quality.
-- **Weakest aspect** is a release backlog item; every release
-  should try to lift the previous weakest.
-
----
-
-## When to trust the scores
-
-- Trust the **relative** signal (mock-vs-live delta, per-format
-  ranking, per-criterion trend across releases).
-- Trust the **outliers** more than the averages. A briefing
-  scoring 14/35 is a real regression to investigate; a briefing
-  scoring 34/35 is worth reading closely to see what worked.
-- Trust the `weakest_aspect` and `strongest_aspect` free-text
-  fields — they are the scorer's honest one-line take.
-- **Do NOT** use AI scoring as a substitute for a senior human
-  read. It is a coarse gate, not the final review.
+Every live run and every scoring pass is a paid API call. Each needs a
+written estimate (tokens × price per model × number of briefings, web search
+included) and the maintainer's approval before it runs.
