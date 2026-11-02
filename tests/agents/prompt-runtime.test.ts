@@ -1,3 +1,4 @@
+import { stageLimits } from "../../src/agents/stage-limits.ts";
 import { describe, expect, test } from "bun:test";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -73,7 +74,38 @@ describe("loadPrompt / renderPrompt", () => {
   });
 });
 
+const LIMITS = {
+  max_tokens: stageLimits("demo").maxTokens,
+  timeout_ms: stageLimits("demo").timeoutMs,
+};
+
 describe("callModel", () => {
+  test("each stage sends its own max_tokens, timeout and search cap", async () => {
+    const { llm, seen } = recordingProvider(true);
+    const tools = [{ type: "web_search", name: "web_search" }];
+    await callModel("scoping", llm, loaded(), rendered, { tools: [] });
+    await callModel("research", llm, loaded(), rendered, { tools });
+    expect(seen[0]!.options).toMatchObject({ max_tokens: 8_000, timeout_ms: 240_000 });
+    expect(seen[0]!.tools).toEqual([]);
+    expect(seen[1]!.options).toMatchObject({ max_tokens: 16_000, timeout_ms: 480_000 });
+    expect(seen[1]!.tools).toEqual([{ type: "web_search", name: "web_search", max_uses: 5 }]);
+  });
+
+  test("a provider with only complete() still serves tool-less stages", async () => {
+    const seen: Seen[] = [];
+    const llm: LLMProvider = {
+      name: "plain",
+      acceptsSystemPrompt: true,
+      async complete(prompt, options) {
+        seen.push({ prompt, options });
+        return "{}";
+      },
+    };
+    const out = await callModel("synthesis", llm, loaded(), rendered, { tools: [] });
+    expect(out.text).toBe("{}");
+    expect(seen[0]!.options).toMatchObject({ max_tokens: 8_000, timeout_ms: 240_000 });
+  });
+
   const loaded = () => loadPrompt("demo", writePrompt(PROMPT), "demo");
   const rendered = { system: "SYS", user: "USER" };
 
@@ -81,18 +113,19 @@ describe("callModel", () => {
     const { llm, seen } = recordingProvider(true);
     await callModel("demo", llm, loaded(), rendered, { tools: [] });
     expect(seen[0]!.prompt).toBe("USER");
-    expect(seen[0]!.options).toEqual({ system: "SYS", model: "claude-haiku-5-5" });
+    expect(seen[0]!.options).toEqual({ system: "SYS", model: "claude-haiku-5-5", ...LIMITS });
   });
 
   test("with tools, the same placement goes through completeWithTools", async () => {
     const { llm, seen } = recordingProvider(true);
     const tools = [{ type: "web_search", name: "web_search" }];
     await callModel("demo", llm, loaded(), rendered, { tools, maxToolRounds: 3 });
-    expect(seen[0]!.tools).toEqual(tools);
+    expect(seen[0]!.tools).toEqual([{ ...tools[0]!, max_uses: stageLimits("demo").maxSearches }]);
     expect(seen[0]!.options).toEqual({
       system: "SYS",
       model: "claude-haiku-5-5",
       max_tool_rounds: 3,
+      ...LIMITS,
     });
   });
 
@@ -104,6 +137,7 @@ describe("callModel", () => {
       system: "SYS",
       model: "claude-haiku-5-5",
       output_schema: schema,
+      ...LIMITS,
     });
     await callModel("demo", llm, loaded(), rendered, {
       tools: [{ type: "web_search", name: "web_search" }],
@@ -116,7 +150,7 @@ describe("callModel", () => {
     const { llm, seen } = recordingProvider(undefined);
     await callModel("demo", llm, loaded(), rendered, { tools: [] });
     expect(seen[0]!.prompt).toBe("SYS\n\n---\n\nUSER");
-    expect(seen[0]!.options).toEqual({ model: "claude-haiku-5-5" });
+    expect(seen[0]!.options).toEqual({ model: "claude-haiku-5-5", ...LIMITS });
   });
 
   test("a provider error keeps its type as the cause", async () => {

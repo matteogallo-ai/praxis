@@ -71,7 +71,9 @@ Wire-level features:
   deprecated `temperature` option is accepted and ignored.
 - **Model:** defaults to `claude-sonnet-5-5`; overridable via the
   `ANTHROPIC_MODEL` env var or the constructor `model` option.
-- **Timeout:** 60s per request, enforced via `AbortController`.
+- **Timeout:** 60s per request by default, enforced via `AbortController`;
+  `timeout_ms` on a call overrides it, and every Praxis stage sets its own
+  (`src/agents/stage-limits.ts`).
 - **Retries:** up to 3 attempts total on `429` and `5xx`, with
   exponential backoff `1s → 2s → 4s`. Never retries on `4xx`.
 - **Tool use:** maps the Praxis-side tool identifier `web_search` to

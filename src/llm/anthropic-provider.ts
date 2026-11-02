@@ -34,6 +34,7 @@ import type {
   ToolCall,
   CompletionResult,
   CompleteWithToolsOptions,
+  TokenUsage,
 } from "./types.ts";
 import {
   AnthropicAuthenticationError,
@@ -113,6 +114,8 @@ interface AnthropicMessage {
 interface AnthropicResponseBody {
   content?: unknown;
   stop_reason?: unknown;
+  model?: unknown;
+  usage?: unknown;
 }
 
 export class AnthropicLLMProvider implements LLMProvider {
@@ -146,6 +149,7 @@ export class AnthropicLLMProvider implements LLMProvider {
       model: this.modelFor(options.model),
       system: options.system,
       outputSchema: options.output_schema,
+      timeoutMs: options.timeout_ms ?? this.timeoutMs,
     });
     return extractText(body);
   }
@@ -161,6 +165,8 @@ export class AnthropicLLMProvider implements LLMProvider {
     const messages: AnthropicMessage[] = [{ role: "user", content: prompt }];
 
     const collectedToolCalls: ToolCall[] = [];
+    const usage = emptyUsage();
+    let answeredBy: string | undefined;
     let rounds = 0;
     let stopReason = "";
     let finalText = "";
@@ -172,9 +178,12 @@ export class AnthropicLLMProvider implements LLMProvider {
         model,
         system: options.system,
         // Structured outputs are a 400 alongside citations, and web search
-        // citations are always on, so tool calls never carry a schema.
-        outputSchema: undefined,
+        // citations are always on, so a schema rides only on tool-less calls.
+        outputSchema: tools.length === 0 ? options.output_schema : undefined,
+        timeoutMs: options.timeout_ms ?? this.timeoutMs,
       });
+      addUsage(usage, body.usage);
+      if (typeof body.model === "string") answeredBy = body.model;
       const raw = rawContentBlocks(body);
       const content = parseContentBlocks(raw);
       collectedToolCalls.push(...extractToolCalls(content));
@@ -191,12 +200,15 @@ export class AnthropicLLMProvider implements LLMProvider {
       }
       break;
     }
-    return {
+    const result: CompletionResult = {
       text: finalText,
       tool_calls: collectedToolCalls,
       rounds,
       stop_reason: stopReason,
+      usage,
     };
+    if (answeredBy !== undefined) result.model = answeredBy;
+    return result;
   }
 
   /** Pinned model, else the stage's `@model`, else the built-in default. */
@@ -212,6 +224,7 @@ export class AnthropicLLMProvider implements LLMProvider {
       model: string;
       system: string | undefined;
       outputSchema: Record<string, unknown> | undefined;
+      timeoutMs: number;
     }
   ): Promise<AnthropicResponseBody> {
     const payload: Record<string, unknown> = {
@@ -231,7 +244,7 @@ export class AnthropicLLMProvider implements LLMProvider {
 
     let lastRetriableBody = "";
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
-      const response = await this.fetchWithTimeout(payload);
+      const response = await this.fetchWithTimeout(payload, opts.timeoutMs);
       if (response.ok) {
         const text = await response.text();
         try {
@@ -265,9 +278,12 @@ export class AnthropicLLMProvider implements LLMProvider {
     throw new AnthropicRateLimitError(this.maxAttempts, lastRetriableBody);
   }
 
-  private async fetchWithTimeout(payload: Record<string, unknown>): Promise<Response> {
+  private async fetchWithTimeout(
+    payload: Record<string, unknown>,
+    timeoutMs: number
+  ): Promise<Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await this.fetchFn(ANTHROPIC_API_URL, {
         method: "POST",
@@ -282,7 +298,7 @@ export class AnthropicLLMProvider implements LLMProvider {
       return response;
     } catch (err) {
       if (isAbortError(err)) {
-        throw new AnthropicTimeoutError(this.timeoutMs);
+        throw new AnthropicTimeoutError(timeoutMs);
       }
       throw err;
     } finally {
@@ -293,7 +309,34 @@ export class AnthropicLLMProvider implements LLMProvider {
 
 function mapToolToAnthropic(tool: Tool): Record<string, unknown> {
   const anthropicType = TOOL_TYPE_MAP[tool.type] ?? tool.type;
-  return { type: anthropicType, name: tool.name };
+  const mapped: Record<string, unknown> = { type: anthropicType, name: tool.name };
+  if (tool.max_uses !== undefined) mapped["max_uses"] = tool.max_uses;
+  return mapped;
+}
+
+function emptyUsage(): TokenUsage {
+  return {
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_creation_input_tokens: 0,
+    cache_read_input_tokens: 0,
+    web_search_requests: 0,
+  };
+}
+
+/** Adds one response's `usage` object to the running total; absent fields count 0. */
+function addUsage(total: TokenUsage, raw: unknown): void {
+  if (typeof raw !== "object" || raw === null) return;
+  const u = raw as Record<string, unknown>;
+  const n = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+  total.input_tokens += n(u["input_tokens"]);
+  total.output_tokens += n(u["output_tokens"]);
+  total.cache_creation_input_tokens += n(u["cache_creation_input_tokens"]);
+  total.cache_read_input_tokens += n(u["cache_read_input_tokens"]);
+  const server = u["server_tool_use"];
+  if (typeof server === "object" && server !== null) {
+    total.web_search_requests += n((server as Record<string, unknown>)["web_search_requests"]);
+  }
 }
 
 function rawContentBlocks(body: AnthropicResponseBody): readonly unknown[] {

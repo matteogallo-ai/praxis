@@ -13,6 +13,7 @@ import { tokenize } from "promptlang/lexer";
 import { parse } from "promptlang/parser";
 import type { MessageSection, Program, PromptDeclaration } from "promptlang/ast";
 
+import { stageLimits } from "./stage-limits.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { CompletionResult, Tool } from "../llm/types.ts";
 import type { SourceStatus } from "../sourcing/types.ts";
@@ -163,19 +164,36 @@ export async function callModel(
   if (separate) placement.system = rendered.system;
   if (prompt.model !== undefined) placement.model = prompt.model;
 
+  const limits = stageLimits(agentId);
+  const tools = options.tools.map((tool) =>
+    tool.type === "web_search" && limits.maxSearches > 0
+      ? { ...tool, max_uses: limits.maxSearches }
+      : tool
+  );
   let completion: CompletionResult;
   try {
-    if (options.tools.length === 0 && typeof llm.complete === "function") {
-      const completeOptions: Parameters<LLMProvider["complete"]>[1] = { ...placement };
+    // completeWithTools is preferred even without tools because only it
+    // returns token usage, which the cost ledger needs.
+    if (typeof llm.completeWithTools === "function") {
+      const toolOptions: Parameters<NonNullable<LLMProvider["completeWithTools"]>>[2] = {
+        ...placement,
+        max_tokens: limits.maxTokens,
+        timeout_ms: limits.timeoutMs,
+      };
+      if (options.maxToolRounds !== undefined) toolOptions.max_tool_rounds = options.maxToolRounds;
+      if (options.outputSchema !== undefined && tools.length === 0) {
+        toolOptions.output_schema = options.outputSchema;
+      }
+      completion = await llm.completeWithTools(userText, tools, toolOptions);
+    } else if (tools.length === 0 && typeof llm.complete === "function") {
+      const completeOptions: Parameters<LLMProvider["complete"]>[1] = {
+        ...placement,
+        max_tokens: limits.maxTokens,
+        timeout_ms: limits.timeoutMs,
+      };
       if (options.outputSchema !== undefined) completeOptions.output_schema = options.outputSchema;
       const text = await llm.complete(userText, completeOptions);
       completion = { text, tool_calls: [], rounds: 1, stop_reason: "end_turn" };
-    } else if (typeof llm.completeWithTools === "function") {
-      const toolOptions: Parameters<NonNullable<LLMProvider["completeWithTools"]>>[2] = {
-        ...placement,
-      };
-      if (options.maxToolRounds !== undefined) toolOptions.max_tool_rounds = options.maxToolRounds;
-      completion = await llm.completeWithTools(userText, options.tools, toolOptions);
     } else {
       throw new AgentExecutionError(
         agentId,

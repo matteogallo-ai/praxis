@@ -175,7 +175,7 @@ describe("executeStakeholderMapping — nominal flow", () => {
   test("passes the web_search tool to the LLM", async () => {
     const { provider, seen } = capturingToolsProvider(VALID_RESPONSE);
     await executeStakeholderMapping(CTX, provider);
-    expect(seen.tools).toEqual([{ type: "web_search", name: "web_search" }]);
+    expect(seen.tools).toEqual([{ type: "web_search", name: "web_search", max_uses: 5 }]);
   });
 
   test("tolerates fenced ```json``` responses", async () => {

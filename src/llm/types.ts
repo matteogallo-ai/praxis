@@ -21,6 +21,17 @@ export interface Tool {
   type: string;
   /** Human-readable name surfaced to the LLM. */
   name: string;
+  /** Cap on uses of this tool per request, for tools that support one. */
+  max_uses?: number;
+}
+
+/** Tokens and server-tool calls one completion consumed, summed over its rounds. */
+export interface TokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_input_tokens: number;
+  cache_read_input_tokens: number;
+  web_search_requests: number;
 }
 
 /**
@@ -47,6 +58,10 @@ export interface CompletionResult {
   tool_calls: ToolCall[];
   rounds: number;
   stop_reason: string;
+  /** What the call consumed, when the provider reports it. */
+  usage?: TokenUsage;
+  /** The model that answered, when the provider reports it. */
+  model?: string;
 }
 
 export interface CompleteWithToolsOptions {
@@ -62,4 +77,8 @@ export interface CompleteWithToolsOptions {
   model?: string;
   /** System prompt; see `CompleteOptions.system`. */
   system?: string;
+  /** See `CompleteOptions.output_schema`; ignored when tools are present. */
+  output_schema?: Record<string, unknown>;
+  /** Per-request timeout for this call, overriding the provider default. */
+  timeout_ms?: number;
 }

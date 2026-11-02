@@ -32,6 +32,8 @@ export interface CompleteOptions {
    * enforce it; the others may ignore it, so callers still validate.
    */
   output_schema?: Record<string, unknown>;
+  /** Per-request timeout for this call, overriding the provider default. */
+  timeout_ms?: number;
   /**
    * @deprecated Ignored. Anthropic API version 2026-10-21 rejects sampling
    * parameters; the field stays so 1.x callers that set it still compile.

@@ -69,16 +69,19 @@ stages before it rather than sharing one implementation.
   fixture, so every question with the same format gets the same text.
 - `AnthropicLLMProvider` calls `/v1/messages` with `fetch`: default model
   `claude-sonnet-5-5` (or `ANTHROPIC_MODEL`), API version `2026-10-21` with no
-  sampling parameters, 4096 output tokens, a 60 s
-  timeout per request, up to 3 attempts with backoff on 429 and 5xx, and up
-  to 5 `pause_turn` rounds for the server-side `web_search` tool.
+  sampling parameters, up to 3 attempts with backoff on 429 and 5xx, and up
+  to 5 `pause_turn` rounds for the server-side `web_search` tool. Each stage
+  sends its own `max_tokens`, request timeout and web-search cap
+  (`max_uses`) from `src/agents/stage-limits.ts`; the provider's own 4096
+  tokens and 60 s apply only to callers that set neither.
 
 ## Known weaknesses
 
 These are confirmed in the code and are why live runs fail or cannot be
 trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
-- One timeout (60 s) applies to every stage, including the web-search ones.
+- The per-stage timeouts are derived from each stage's token and search
+  ceilings, not from measured durations; no live stage duration exists yet.
 - A failure at any stage loses the stages before it: there is no checkpoint.
 - Freshness is checked on `accessed_at`, which Praxis sets to the retrieval
   time; the page's own age (`page_age`) is not used.
