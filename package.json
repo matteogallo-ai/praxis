@@ -40,7 +40,6 @@
     "bench:mock": "bun run benchmarks/run-all.ts --mock-only",
     "bench:live": "bun run benchmarks/run-all.ts --live-only",
     "score": "bun run benchmarks/score-all.ts",
-    "score:mock": "bun run benchmarks/score-all.ts --mock-only",
     "score:live": "bun run benchmarks/score-all.ts --live-only",
     "score:dry": "bun run benchmarks/score-all.ts --dry-run"
   },

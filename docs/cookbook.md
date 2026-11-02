@@ -394,14 +394,9 @@ exported.
 # Enumerate what will be scored; no API call, no cost.
 bun run score:dry
 
-# Score every mock briefing on disk.
-bun run score:mock
-
 # Score every live briefing on disk (requires bench:live first).
+# Mock briefings are not scored: their text is fixture output.
 bun run score:live
-
-# Score both.
-bun run score
 
 # Bypass the 24h cache for a single slug.
 bun run benchmarks/score-all.ts --refresh 01-german-market-entry

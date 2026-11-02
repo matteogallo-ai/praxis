@@ -25,12 +25,10 @@
  *      checks block is preserved verbatim).
  *
  * Flags:
- *   default          — score mock + live (skipping the modes with
- *                      no output directory).
- *   --mock-only      — score mock only.
+ *   default          — score the live briefings that exist.
+ *   --mock-only      — refused: mock text is fixture output.
  *   --live-only      — score live only; error if no live outputs.
- *   --refresh <slug> — ignore the cache for this slug (mock+live
- *                      variants both refreshed).
+ *   --refresh <slug> — ignore the cache for this slug.
  *   --dry-run        — enumerate briefings, print what WOULD be
  *                      scored, do NOT call the API. Exit 0.
  *   --root <path>    — override the repo root (used by tests).
@@ -115,6 +113,13 @@ export interface ScoreAllOptions {
 // CLI parsing
 // ---------------------------------------------------------------------------
 
+/**
+ * Mock briefings replay hand-written fixtures chosen by format, not by
+ * question, so a score on them grades the fixtures (standards rule 3).
+ */
+const MOCK_REFUSAL =
+  "mock briefings are not scored: their text is fixture output, so a score measures nothing. Score live briefings only.";
+
 export function parseScoreArgs(argv: readonly string[]): ScoreAllOptions {
   let mockOnly = false;
   let liveOnly = false;
@@ -123,7 +128,7 @@ export function parseScoreArgs(argv: readonly string[]): ScoreAllOptions {
   let root = resolve(import.meta.dir, "..");
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
-    if (a === "--mock-only") mockOnly = true;
+    if (a === "--mock-only") throw new Error(MOCK_REFUSAL);
     else if (a === "--live-only") liveOnly = true;
     else if (a === "--dry-run") dryRun = true;
     else if (a === "--refresh") {
@@ -693,10 +698,8 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
   }
   const template = readFileSync(templatePath, "utf-8");
 
-  const refs = enumerateBriefings(opts.root, {
-    mockOnly: opts.mockOnly,
-    liveOnly: opts.liveOnly,
-  });
+  if (opts.mockOnly) throw new Error(MOCK_REFUSAL);
+  const refs = enumerateBriefings(opts.root, { mockOnly: false, liveOnly: true });
 
   if (opts.liveOnly && refs.filter((r) => r.mode === "live").length === 0) {
     throw new Error(

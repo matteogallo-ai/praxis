@@ -19,8 +19,8 @@ reference set they can regenerate at any commit.
   Sonnet 4.5 via the calibrated prompt in `scoring-prompt.txt`,
   and rewrites the "AI-Assisted Qualitative Scoring" section of
   `RESULTS.md` with per-criterion and per-briefing scores plus
-  systematic observations. Modes: `--mock-only`, `--live-only`,
-  `--refresh <slug>`, `--dry-run`.
+  systematic observations. Modes: `--live-only`, `--refresh <slug>`,
+  `--dry-run`; `--mock-only` is refused.
 - **v0.10** `scoring-prompt.txt` — the calibrated
   anti-complaisance prompt (7 criteria × 1–5 scale, "score of 3
   is normal", "do NOT inflate"). Edited by the release owner,
@@ -55,9 +55,8 @@ bun run bench          # both if a key is present; mock only otherwise
 
 ```
 bun run score:dry      # enumerate what would be scored, no API call
-bun run score:mock     # AI-assisted scoring of the mock briefings
-bun run score:live     # AI-assisted scoring of the live briefings
-bun run score          # both if a key is present; mock only otherwise
+bun run score:live     # AI-assisted scoring of the live briefings (paid)
+bun run score          # same; mock briefings are never scored
 ```
 
 `score:*` rewrites the "AI-Assisted Qualitative Scoring" block in
