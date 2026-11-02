@@ -57,13 +57,16 @@ prompt options(
 
     For every option's `supporting_evidence` field, use EITHER:
 
-      (a) A real, verifiable source with all four fields:
+      (a) A real, verifiable source with these three fields:
           {
             "url": "https://…",
             "title": "…",
-            "accessed_at": "<ISO 8601 UTC datetime>",
             "excerpt": "<the passage that supports the option, ≤500 chars>"
           }
+
+      Do not write `accessed_at`: Praxis records when the search ran.
+      Cite only a URL that web_search returned to you; copy its title
+      and quote the excerpt from that result.
 
       OR
 
@@ -72,6 +75,9 @@ prompt options(
             "status": "SOURCE_MISSING",
             "searched_for": "<what you tried to find, in your own words>"
           }
+
+    Use SOURCE_MISSING only when no search result supports the item,
+    never because a field is awkward to fill.
 
     NEVER fabricate a URL, title, or excerpt.
 

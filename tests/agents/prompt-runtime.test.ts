@@ -3,7 +3,13 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { callModel, loadPrompt, renderPrompt } from "../../src/agents/prompt-runtime.ts";
+import {
+  callModel,
+  loadPrompt,
+  outputReader,
+  renderPrompt,
+  stampRetrievalTime,
+} from "../../src/agents/prompt-runtime.ts";
 import { AgentExecutionError, MaxToolRoundsExceededError } from "../../src/agents/errors.ts";
 import type { CompleteOptions, LLMProvider } from "../../src/llm/provider.ts";
 import type { CompleteWithToolsOptions, Tool } from "../../src/llm/types.ts";
@@ -148,5 +154,47 @@ describe("callModel", () => {
         maxToolRounds: 2,
       })
     ).rejects.toBeInstanceOf(MaxToolRoundsExceededError);
+  });
+});
+
+describe("retrieval time", () => {
+  const reader = outputReader("research");
+  const at = new Date("2026-11-02T10:00:00.000Z");
+
+  test("a source without accessed_at parses, then gets the call's time", () => {
+    const parsed = reader.parseSource(
+      { url: "https://www.destatis.de/x", title: "Destatis", excerpt: "GDP rose 0.2%" },
+      "findings[0].source",
+      "raw"
+    );
+    const result = stampRetrievalTime({ findings: [{ source: parsed }] }, at);
+    expect(result.findings[0]!.source).toEqual({
+      url: "https://www.destatis.de/x",
+      title: "Destatis",
+      accessed_at: "2026-11-02T10:00:00.000Z",
+      excerpt: "GDP rose 0.2%",
+    });
+  });
+
+  test("a timestamp already present and SOURCE_MISSING markers are left alone", () => {
+    const result = stampRetrievalTime(
+      {
+        a: { url: "https://x.example", title: "t", accessed_at: "2026-10-01T00:00:00Z", excerpt: "" },
+        b: { status: "SOURCE_MISSING", searched_for: "q" },
+      },
+      at
+    );
+    expect(result.a.accessed_at).toBe("2026-10-01T00:00:00Z");
+    expect(result.b).toEqual({ status: "SOURCE_MISSING", searched_for: "q" });
+  });
+
+  test("a non-string accessed_at is still rejected", () => {
+    expect(() =>
+      reader.parseSource(
+        { url: "https://x.example", title: "t", accessed_at: 20261102, excerpt: "" },
+        "findings[0].source",
+        "raw"
+      )
+    ).toThrow("findings[0].source.accessed_at must be an ISO 8601 string when present");
   });
 });

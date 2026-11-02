@@ -313,15 +313,18 @@ export function outputReader(agentId: string): OutputReader {
         }
         return { status: "SOURCE_MISSING", searched_for: searchedFor };
       }
-      const { url, title, accessed_at: accessedAt, excerpt } = obj;
+      const { url, title, excerpt } = obj;
+      // Absent is the normal case: prompts leave the retrieval time to
+      // stampRetrievalTime, since the model cannot know the clock.
+      const accessedAt = obj["accessed_at"] ?? "";
       if (typeof url !== "string" || url.length === 0) {
         return fail(`${path}.url must be a non-empty string (or use SOURCE_MISSING)`, raw);
       }
       if (typeof title !== "string" || title.length === 0) {
         return fail(`${path}.title must be a non-empty string`, raw);
       }
-      if (typeof accessedAt !== "string" || accessedAt.length === 0) {
-        return fail(`${path}.accessed_at must be a non-empty ISO 8601 string`, raw);
+      if (typeof accessedAt !== "string") {
+        return fail(`${path}.accessed_at must be an ISO 8601 string when present`, raw);
       }
       if (typeof excerpt !== "string") {
         return fail(`${path}.excerpt must be a string`, raw);
@@ -332,4 +335,26 @@ export function outputReader(agentId: string): OutputReader {
       return { url, title, accessed_at: accessedAt, excerpt };
     },
   };
+}
+
+/**
+ * Fills every empty `accessed_at` in a parsed stage result with the time the
+ * stage's model call returned, which is when its searches ran. The model is
+ * not asked for it: it has no clock, and a guessed or malformed date fails
+ * the freshness check (`ageInDays`) under strict sourcing.
+ */
+export function stampRetrievalTime<T>(result: T, retrievedAt: Date): T {
+  const iso = retrievedAt.toISOString();
+  const visit = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const item of node) visit(item);
+      return;
+    }
+    if (typeof node !== "object" || node === null) return;
+    const rec = node as Record<string, unknown>;
+    if (typeof rec["url"] === "string" && rec["accessed_at"] === "") rec["accessed_at"] = iso;
+    for (const value of Object.values(rec)) visit(value);
+  };
+  visit(result);
+  return result;
 }

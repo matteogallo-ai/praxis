@@ -22,7 +22,7 @@
  * verbatim.
  */
 
-import { callModel, loadPrompt, renderPrompt, extractJsonText, outputReader } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -108,7 +108,7 @@ export async function executeStakeholderMapping(
     maxToolRounds,
   });
 
-  return parseStakeholderMapResult(completion.text);
+  return stampRetrievalTime(parseStakeholderMapResult(completion.text), new Date());
 }
 
 function parseStakeholderMapResult(raw: string): StakeholderMapResult {

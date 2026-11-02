@@ -28,7 +28,7 @@
  *          must be a non-empty string
  */
 
-import { callModel, loadPrompt, renderPrompt, extractJsonText, outputReader } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -108,7 +108,7 @@ export async function executeAdversarialCritique(
     maxToolRounds,
   });
 
-  return parseAdversarialCritiqueResult(completion.text, ctx);
+  return stampRetrievalTime(parseAdversarialCritiqueResult(completion.text, ctx), new Date());
 }
 
 // ---------------------------------------------------------------------------

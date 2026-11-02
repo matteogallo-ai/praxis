@@ -63,9 +63,10 @@ prompt adversarial(
 
     (c) `counter_evidence` follows the same sourcing discipline as
         the research agent: EITHER a real `SourceReference` with
-        url + title + accessed_at + excerpt OR an explicit
-        `SOURCE_MISSING` marker with `searched_for`. Fabricated
-        counter-evidence is misconduct.
+        url + title + excerpt, taken from a web_search result, OR an
+        explicit `SOURCE_MISSING` marker with `searched_for`. Do not
+        write `accessed_at`: Praxis records when the search ran.
+        Fabricated counter-evidence is misconduct.
 
     (d) `steelmanned_position` MUST be at least 20 words. Bâclé
         critiques are rejected at parse time. If you cannot spend

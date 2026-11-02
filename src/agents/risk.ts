@@ -24,7 +24,7 @@
  * only validates SHAPE and CROSS-REFERENCES.
  */
 
-import { callModel, loadPrompt, renderPrompt, extractJsonText, outputReader } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -109,7 +109,7 @@ export async function executeRiskAnalysis(
     maxToolRounds,
   });
 
-  return parseRiskAnalysisResult(completion.text, ctx.stakeholders);
+  return stampRetrievalTime(parseRiskAnalysisResult(completion.text, ctx.stakeholders), new Date());
 }
 
 // ---------------------------------------------------------------------------
