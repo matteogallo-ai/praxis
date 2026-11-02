@@ -95,6 +95,7 @@ paid, and in its current state it is expected to fail (see Status).
 - Reproducible mock benchmark: `bun run bench:mock` twice leaves `git status` clean (C12).
 - Paid live tests run only on explicit opt-in (C13).
 - Handling of the three observed live failures: prose around the JSON, a degraded briefing instead of an abort under `strict` sourcing, per-stage timeouts; tested on fixtures, not live (C15).
+- `brief --full` checkpoints every stage and resumes a failed run with `--resume <run-id>`; bounded retry per stage; tokens and cost per stage in `metadata.json`; `--max-cost-usd` budget cap (C16).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
 prove it; CI fails if one of them does not pass.
@@ -102,7 +103,6 @@ prove it; CI fails if one of them does not pass.
 ## Roadmap
 
 - Live briefings that complete against Anthropic, with committed run artefacts (C14).
-- Per-stage checkpoints and resume (C16).
 - Prompt-injection defence for web results and inter-stage content (C17).
 - Live-output quality scored by a judge validated against human labels (C18).
 - Clean install without the sibling PromptLang checkout (C19).

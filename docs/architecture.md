@@ -75,6 +75,17 @@ stages before it rather than sharing one implementation.
   (`max_uses`) from `src/agents/stage-limits.ts`; the provider's own 4096
   tokens and 60 s apply only to callers that set neither.
 
+## Checkpoints, retry and resume
+
+Every stage runs through `Orchestrator.stage()`: with a `CheckpointStore`
+in the options it first looks for `<runs>/<run-id>/<stage>.json` and reuses
+it; otherwise it runs the stage, retrying once on a recoverable error
+(`src/orchestrator/retry.ts`), and writes the output. `praxis brief --full`
+creates a run under `--runs-dir` (default `$PRAXIS_RUNS_DIR`, else
+`.praxis/runs`), prints its id, and writes `metadata.json` there even when
+the run fails; `--resume <run-id>` reruns from the first stage without a
+checkpoint, with the question and format the run recorded.
+
 ## Usage and cost
 
 When a caller passes a `UsageLedger` (`src/orchestrator/ledger.ts`), every
@@ -94,7 +105,6 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
 - The per-stage timeouts are derived from each stage's token and search
   ceilings, not from measured durations; no live stage duration exists yet.
-- A failure at any stage loses the stages before it: there is no checkpoint.
 - Freshness is checked on `accessed_at`, which Praxis sets to the retrieval
   time; the page's own age (`page_age`) is not used.
 - Web search results and earlier stages' output enter the next prompt
