@@ -263,3 +263,62 @@ describe("stageAttempts", () => {
     expect(researchCalls()).toBe(1);
   });
 });
+
+describe("checkpoint round trip on every shipped format", () => {
+  const FORMATS = ["executive-pre-read", "mckinsey-style-note", "position-paper-corporate", "family-office-memo"];
+  const refusing: LLMProvider = {
+    name: "mock",
+    acceptsSystemPrompt: true,
+    complete: async () => {
+      throw new Error("a resumed finished run must not call the model");
+    },
+    completeWithTools: async () => {
+      throw new Error("a resumed finished run must not call the model");
+    },
+  };
+
+  for (const format of FORMATS) {
+    test(`${format}: every stage's checkpoint, rerun and critique included, is accepted and reused`, async () => {
+      const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
+      const store = CheckpointStore.create(runsDir, QUESTION, format, NOW);
+      const opts = { onSourcingFailure: "degrade" as const };
+      const first = await orchestrator(countingProvider({ failOptions: false }).llm).briefWithCritiqueAndRerun(
+        QUESTION,
+        format,
+        { ...opts, checkpoints: store }
+      );
+      const again = await orchestrator(refusing).briefWithCritiqueAndRerun(QUESTION, format, {
+        ...opts,
+        checkpoints: CheckpointStore.open(runsDir, store.manifest.run_id),
+      });
+      expect(again).toEqual(first);
+    });
+  }
+});
+
+describe("stageAttempts and synthesis", () => {
+  test("stageAttempts: 1 also stops a malformed synthesis section from being retried", async () => {
+    const mock = new MockLLMProvider({ fixturesDir: "tests/fixtures/mock-llm" });
+    let synthesisCalls = 0;
+    const llm: LLMProvider = {
+      name: "mock",
+      acceptsSystemPrompt: true,
+      complete: (p, o) => mock.complete(p, o),
+      completeWithTools: async (prompt, tools, options) => {
+        if ((options?.system ?? "").startsWith("You are a senior editor")) {
+          synthesisCalls += 1;
+          return { text: "no JSON here", tool_calls: [], rounds: 1, stop_reason: "end_turn" };
+        }
+        return mock.completeWithTools(prompt, tools, options);
+      },
+    };
+    const err = await orchestrator(llm)
+      .brief(QUESTION, FORMAT, { now: NOW, onSourcingFailure: "degrade", stageAttempts: 1 })
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(InvalidAgentOutputError);
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    // One call per section, none repeated.
+    expect(synthesisCalls).toBe(registry.get(FORMAT).sections.length);
+  });
+});

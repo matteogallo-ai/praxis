@@ -144,3 +144,22 @@ describe("praxis brief --max-cost-usd", () => {
     expect(extractRunArgs(["Q", "--price-table=p.json"])).toMatchObject({ rest: ["Q"], run: { priceTable: "p.json" } });
   });
 });
+
+describe("praxis brief --resume with a corrupt metadata.json", () => {
+  test("a stage entry without cost or models is refused, so the cap cannot be silently disabled", async () => {
+    const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
+    const broken = { formatsDir: "formats", fixturesDir: fixtures("this is not JSON") };
+    await runBriefCli([QUESTION, "--format", FORMAT, "--full", "--runs-dir", runsDir], broken);
+    const runId = onlyRun(runsDir);
+    const path = join(runsDir, runId, "metadata.json");
+    const meta = JSON.parse(readFileSync(path, "utf-8"));
+    delete meta.usage.stages.research.cost_usd;
+    delete meta.usage.stages.scoping.models;
+    writeFileSync(path, JSON.stringify(meta));
+
+    err = [];
+    const fixed = { formatsDir: "formats", fixturesDir: fixtures() };
+    expect(await runBriefCli(["--resume", runId, "--runs-dir", runsDir, "--max-cost-usd", "100"], fixed)).toBe(1);
+    expect(err.join("")).toContain("Checkpoint 'metadata'");
+  });
+});

@@ -54,7 +54,14 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - The orchestrator's four staged entry points share one implementation, and
   the seven agents share one prompt runtime.
 - Each stage is retried once on a timeout, rate limit, 5xx or malformed JSON
-  (`stageAttempts`), so a failing stage can cost two calls.
+  (synthesis per section), so a failing stage can cost two calls; minor
+  behaviour change under `docs/SEMVER-CONTRACT.md`, turned off with
+  `stageAttempts: 1`.
+- A checkpoint is validated on load by its stage's own output parser; a
+  corrupt one (or a corrupt `metadata.json` on resume) raises
+  `OrchestrationError` naming the file. `CheckpointStore.load(stage,
+  validate)` takes the validator. A resume under another provider, sourcing
+  mode, prompts or format is refused.
 - `callModel` prefers `completeWithTools` (with no tools for scoping and
   synthesis) because only it returns usage; a custom provider implementing
   both now receives tool-less calls there.

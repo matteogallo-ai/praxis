@@ -74,6 +74,41 @@ const NO_USAGE: TokenUsage = {
   web_search_requests: 0,
 };
 
+/**
+ * A `UsageSummary` read back from a run's `metadata.json`, checked field by
+ * field: a missing cost would make the spend NaN, and NaN never reaches a
+ * cap.
+ */
+export function parseUsageSummary(value: unknown): UsageSummary {
+  const isObj = (v: unknown): v is Record<string, unknown> =>
+    typeof v === "object" && v !== null && !Array.isArray(v);
+  const isCount = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v) && v >= 0;
+  if (!isObj(value) || !isObj(value["stages"])) throw new Error("'usage.stages' must be an object");
+  for (const [name, s] of Object.entries(value["stages"])) {
+    if (!isObj(s)) throw new Error(`'usage.stages.${name}' must be an object`);
+    for (const key of [
+      "calls",
+      "input_tokens",
+      "output_tokens",
+      "cache_creation_input_tokens",
+      "cache_read_input_tokens",
+      "web_search_requests",
+    ]) {
+      if (!isCount(s[key])) throw new Error(`'usage.stages.${name}.${key}' must be a non-negative number`);
+    }
+    if (s["cost_usd"] !== null && !isCount(s["cost_usd"])) {
+      throw new Error(`'usage.stages.${name}.cost_usd' must be a non-negative number or null`);
+    }
+    if (!Array.isArray(s["models"]) || !s["models"].every((m) => typeof m === "string")) {
+      throw new Error(`'usage.stages.${name}.models' must be an array of strings`);
+    }
+    if (s["duration_ms"] !== undefined && !isCount(s["duration_ms"])) {
+      throw new Error(`'usage.stages.${name}.duration_ms' must be a non-negative number`);
+    }
+  }
+  return value as unknown as UsageSummary;
+}
+
 export class UsageLedger {
   private readonly prices: PriceTable;
   private readonly maxCostUsd: number | undefined;

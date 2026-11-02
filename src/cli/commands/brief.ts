@@ -52,7 +52,7 @@
 import { FormatRegistry } from "../../registry/registry.ts";
 import { Orchestrator, type BriefWithCritiqueOptions } from "../../orchestrator/orchestrator.ts";
 import { CheckpointStore } from "../../orchestrator/checkpoint.ts";
-import { UsageLedger, type UsageSummary } from "../../orchestrator/ledger.ts";
+import { parseUsageSummary, UsageLedger } from "../../orchestrator/ledger.ts";
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -443,12 +443,9 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
     });
     // Earlier attempts' spend counts toward this run's report and its cap.
     const previous = store.load("metadata", (text) => {
-      const meta = JSON.parse(text) as { usage?: UsageSummary };
-      if (meta.usage !== undefined && (typeof meta.usage.stages !== "object" || meta.usage.stages === null)) {
-        throw new Error("'usage.stages' must be an object");
-      }
-      return meta;
-    })?.usage;
+      const meta = JSON.parse(text) as { usage?: unknown };
+      return meta.usage === undefined ? undefined : parseUsageSummary(meta.usage);
+    });
     if (previous !== undefined) ledger.restore(previous);
     runOptions.checkpoints = store;
     runOptions.ledger = ledger;
