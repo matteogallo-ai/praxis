@@ -11,8 +11,8 @@
 // struct fields, so the full schema of `ScopingResult` is documented in the
 // `system:` block and enforced on the Praxis side in `src/agents/scoping.ts`.
 
-@version "1.0.0"
-@model claude-opus-4.7
+@version "2.0.0"
+@model claude-opus-5-5
 @description "Praxis scoping agent — reformulates the brief, surfaces hidden questions, defines scope."
 
 prompt scope(question: string, format_id: string, target_words: number) -> string {

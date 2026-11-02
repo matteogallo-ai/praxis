@@ -78,11 +78,6 @@ stages before it rather than sharing one implementation.
 These are confirmed in the code and are why live runs fail or cannot be
 trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
-- Each agent renders its `.prompt` file's `system` and `user` sections and
-  joins them into one string (`system`, `---`, `user`) sent as a single user
-  message; the API's `system` field is never used.
-- The `@model` declared in each `.prompt` file is never passed to the
-  provider; every stage runs on the provider's default model.
 - Model output is parsed with `JSON.parse` after stripping a code fence;
   prose before the JSON fails the stage.
 - One timeout (60 s) applies to every stage, including the web-search ones.
@@ -91,8 +86,6 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
   between `---` lines with a label, but with no instruction to treat them as
   data, and `---` also separates the system text from the user text.
 - Token usage and cost are not recorded.
-- `loadPromptDeclaration`, `validateParameterCoverage`, `renderSection` and
-  `stripJsonFences` are copied in all seven agent modules.
 
 ## Dependencies
 

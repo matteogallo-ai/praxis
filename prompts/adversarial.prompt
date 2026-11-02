@@ -17,8 +17,8 @@
 // in return positions. The full schema is enforced Praxis-side in
 // src/agents/adversarial.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-opus-5-5
 @description "Praxis adversarial critique agent — stress-tests a briefing with steelmanned counter-arguments."
 
 prompt adversarial(

@@ -18,8 +18,8 @@
 // struct fields. The full RiskAnalysisResult schema is enforced
 // Praxis-side in src/agents/risk.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-sonnet-5-5
 @description "Praxis risk analysis agent — identifies sourced risks with stakeholder links and mitigations."
 
 prompt risk(

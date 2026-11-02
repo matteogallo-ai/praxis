@@ -21,8 +21,8 @@
 // in struct fields. The full OptionsGenerationResult schema is
 // enforced Praxis-side in src/agents/options.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-opus-5-5
 @description "Praxis options generation agent — enumerates decision options with tradeoffs and cross-artefact links."
 
 prompt options(

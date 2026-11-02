@@ -19,8 +19,8 @@
 // The full response schema is enforced Praxis-side in
 // src/agents/synthesis.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-sonnet-5-5
 @description "Praxis synthesis agent — assembles one briefing section, respecting the target format's constraints."
 
 prompt synthesis(

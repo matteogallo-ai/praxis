@@ -15,8 +15,8 @@
 // fields. The full ResearchResult schema is enforced Praxis-side in
 // src/agents/research.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-sonnet-5-5
 @description "Praxis research agent — gathers evidence with rigorous sourcing."
 
 prompt research(

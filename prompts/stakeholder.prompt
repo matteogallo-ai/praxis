@@ -20,8 +20,8 @@
 // array types in struct fields. The full StakeholderMapResult schema
 // is enforced Praxis-side in src/agents/stakeholder.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-sonnet-5-5
 @description "Praxis stakeholder mapping agent — maps actors, positions, power, priority."
 
 prompt stakeholder(
