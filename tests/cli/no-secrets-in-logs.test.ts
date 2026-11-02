@@ -27,7 +27,8 @@ beforeEach(() => {
   err = [];
   savedWrite = process.stderr.write;
   savedOut = process.stdout.write;
-  process.stderr.write = ((chunk: unknown) => err.push(String(chunk)) > 0) as typeof process.stderr.write;
+  process.stderr.write = ((chunk: unknown) =>
+    err.push(chunk instanceof Uint8Array ? new TextDecoder().decode(chunk) : String(chunk)) > 0) as typeof process.stderr.write;
   process.stdout.write = (() => true) as typeof process.stdout.write;
   savedKey = process.env["ANTHROPIC_API_KEY"];
   process.env["ANTHROPIC_API_KEY"] = KEY;
@@ -96,5 +97,19 @@ describe("redactSecrets", () => {
     expect(redactSecrets("token=custom-key-1234567", { ANTHROPIC_API_KEY: "custom-key-1234567" })).toBe(
       "token=[redacted]"
     );
+  });
+});
+
+describe("redaction: review findings", () => {
+  test("a Bearer token after Authorization is masked whole", () => {
+    expect(redactSecrets("Authorization: Bearer abc.def.ghi123")).toBe("Authorization: [redacted]");
+  });
+
+  test("a Buffer written to stderr is redacted too", async () => {
+    const { withRedactedStderr } = await import("../../src/cli/redact.ts");
+    await withRedactedStderr(async () => {
+      process.stderr.write(new TextEncoder().encode(`key ${KEY}\n`));
+    });
+    expect(err.join("")).not.toContain(KEY);
   });
 });

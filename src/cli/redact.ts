@@ -24,7 +24,10 @@ export function redactSecrets(
     }
   }
   out = out.replace(/sk-ant-[A-Za-z0-9_-]{8,}/g, "sk-ant-[redacted]");
-  out = out.replace(/(x-api-key|authorization)(["']?\s*[:=]\s*["']?)[^\s"',}]+/gi, "$1$2[redacted]");
+  out = out.replace(
+    /(x-api-key|authorization)(["']?\s*[:=]\s*["']?)(?:(?:bearer|basic)\s+)?[^\s"',}]+/gi,
+    "$1$2[redacted]"
+  );
   out = out.replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "[email]");
   const home = env["HOME"];
   if (home !== undefined && home.length > 1) out = out.split(home).join("~");
@@ -33,14 +36,19 @@ export function redactSecrets(
 
 /**
  * Runs `fn` with `process.stderr.write` routed through `redactSecrets`,
- * restoring the previous writer afterwards.
+ * restoring the previous writer afterwards. Each write is redacted on its
+ * own: a secret split across two writes is not caught.
  */
 export async function withRedactedStderr<T>(fn: () => Promise<T>): Promise<T> {
   const write = process.stderr.write;
   process.stderr.write = ((chunk: unknown, ...rest: unknown[]) =>
     (write as (...a: unknown[]) => boolean).call(
       process.stderr,
-      typeof chunk === "string" ? redactSecrets(chunk) : chunk,
+      typeof chunk === "string"
+        ? redactSecrets(chunk)
+        : chunk instanceof Uint8Array
+          ? redactSecrets(new TextDecoder().decode(chunk))
+          : chunk,
       ...rest
     )) as typeof process.stderr.write;
   try {
