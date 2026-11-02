@@ -155,5 +155,9 @@ export function mergeReports(
   const totalItems = reports.reduce((acc, r) => acc + r.total_items, 0);
   const allWarnings: SourcingWarning[] = [];
   for (const r of reports) allWarnings.push(...r.warnings);
-  return buildReport(policy, totalItems, allWarnings);
+  const merged = buildReport(policy, totalItems, allWarnings);
+  if (reports.some((r) => r.insufficiently_sourced === true)) {
+    merged.insufficiently_sourced = true;
+  }
+  return merged;
 }

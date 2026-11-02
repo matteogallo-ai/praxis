@@ -186,6 +186,13 @@ export interface SourcingReport {
    * they hold is post-critique-edited check this flag.
    */
   edited_after_critique?: boolean;
+
+  /**
+   * `true` when strict sourcing failed and the run was told to degrade
+   * rather than abort (`onSourcingFailure: "degrade"`): the briefing then
+   * carries an "Insufficiently sourced" section listing the failing items.
+   */
+  insufficiently_sourced?: boolean;
 }
 
 // ---------------------------------------------------------------------------

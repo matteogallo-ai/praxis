@@ -230,7 +230,9 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
         const result = await orchestrator.briefWithCritiqueAndRerun(
           b.question,
           b.format,
-          mode === "mock" ? { now: MOCK_CLOCK } : {}
+          mode === "mock"
+            ? { now: MOCK_CLOCK, onSourcingFailure: "degrade" }
+            : { onSourcingFailure: "degrade" }
         );
 
         // Always render md + pdf + docx regardless of the format's
@@ -374,6 +376,8 @@ function buildMetadata(
       counts: result.sourcing_report.counts,
       edited_after_critique:
         result.sourcing_report.edited_after_critique === true,
+      insufficiently_sourced:
+        result.sourcing_report.insufficiently_sourced === true,
     },
   };
 }

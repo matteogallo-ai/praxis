@@ -28,6 +28,10 @@
  *                           (for audit / downstream tooling).
  *     --with-sourcing-report  Appends the detailed sourcing report
  *                             beneath the briefing.
+ *   --on-sourcing-failure abort|degrade
+ *                         What a strict sourcing failure does (default
+ *                         degrade: keep going and add an "Insufficiently
+ *                         sourced" section; ADR 0002).
  *
  * Providers:
  *   --provider mock       (default) reads pre-scripted fixtures under
@@ -95,6 +99,7 @@ interface BriefCommandOptions {
   theme: string | null;
   includeToc: boolean;
   includeAppendices: boolean;
+  onSourcingFailure: "abort" | "degrade";
   formatsDir: string;
   fixturesDir: string;
 }
@@ -116,6 +121,8 @@ export interface ParsedBriefArgs {
   theme: string | null;
   includeToc: boolean;
   includeAppendices: boolean;
+  /** Absent on parse errors; `"degrade"` unless `--on-sourcing-failure abort`. */
+  onSourcingFailure?: "abort" | "degrade";
   error?: string;
 }
 
@@ -141,6 +148,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   let theme: string | null = null;
   let includeToc = false;
   let includeAppendices = false;
+  let onSourcingFailure: "abort" | "degrade" = "degrade";
 
   const errorReturn = (error: string): ParsedBriefArgs => ({
     question: "",
@@ -242,6 +250,12 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       includeToc = true;
     } else if (a === "--include-appendices") {
       includeAppendices = true;
+    } else if (a === "--on-sourcing-failure" || a.startsWith("--on-sourcing-failure=")) {
+      const value = a.includes("=") ? a.slice(a.indexOf("=") + 1) : args[++i];
+      if (value !== "abort" && value !== "degrade") {
+        return errorReturn("--on-sourcing-failure expects 'abort' or 'degrade'");
+      }
+      onSourcingFailure = value;
     } else {
       positional.push(a);
     }
@@ -384,6 +398,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     theme,
     includeToc,
     includeAppendices,
+    onSourcingFailure,
   };
 }
 
@@ -392,6 +407,7 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   const registry = new FormatRegistry();
   registry.loadDirectory(opts.formatsDir);
   const orchestrator = new Orchestrator(registry, llm);
+  const runOptions = { onSourcingFailure: opts.onSourcingFailure };
 
   progress("loaded formats", `${AUTO_FORMAT_IDS.length} shipped, provider=${opts.provider}`);
 
@@ -407,10 +423,10 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
       `format=${opts.formatId}`
     );
     const result = opts.withRerun
-      ? await orchestrator.briefWithCritiqueAndRerun(opts.question, opts.formatId)
+      ? await orchestrator.briefWithCritiqueAndRerun(opts.question, opts.formatId, runOptions)
       : opts.critique
-        ? await orchestrator.briefWithCritique(opts.question, opts.formatId)
-        : await orchestrator.brief(opts.question, opts.formatId);
+        ? await orchestrator.briefWithCritique(opts.question, opts.formatId, runOptions)
+        : await orchestrator.brief(opts.question, opts.formatId, runOptions);
     progress("pipeline complete", `${result.synthesis.total_word_count} words`);
 
     // Surface a one-line rerun note to stderr so operators know the
@@ -495,10 +511,7 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
         `${c.dim("note:")} --with-risks implies --with-stakeholders (and --with-research); running the full pipeline.\n`
       );
     }
-    const result = await orchestrator.assessRisksAfterStakeholders(
-      opts.question,
-      opts.formatId
-    );
+    const result = await orchestrator.assessRisksAfterStakeholders(opts.question, opts.formatId, runOptions);
     if (opts.sourcingReport && !opts.withRisks && !opts.json) {
       process.stdout.write(
         `${c.dim("note:")} --sourcing-report implies --with-risks; running the full pipeline.\n`
@@ -527,19 +540,13 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
         `${c.dim("note:")} --with-stakeholders implies --with-research; running the full pipeline.\n`
       );
     }
-    const result = await orchestrator.mapStakeholdersAfterResearch(
-      opts.question,
-      opts.formatId
-    );
+    const result = await orchestrator.mapStakeholdersAfterResearch(opts.question, opts.formatId, runOptions);
     printFullPipeline(result.scoping, result.research, result.stakeholders, opts.json);
     return 0;
   }
 
   if (opts.withResearch) {
-    const result = await orchestrator.researchAfterScoping(
-      opts.question,
-      opts.formatId
-    );
+    const result = await orchestrator.researchAfterScoping(opts.question, opts.formatId, runOptions);
     printScopingPlusResearch(result.scoping, result.research, opts.json);
     return 0;
   }
@@ -785,6 +792,7 @@ export async function runBriefCli(
       theme: parsed.theme,
       includeToc: parsed.includeToc,
       includeAppendices: parsed.includeAppendices,
+      onSourcingFailure: parsed.onSourcingFailure ?? "degrade",
       formatsDir: ctx.formatsDir,
       fixturesDir: ctx.fixturesDir,
     });

@@ -80,6 +80,8 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
 - One timeout (60 s) applies to every stage, including the web-search ones.
 - A failure at any stage loses the stages before it: there is no checkpoint.
+- Freshness is checked on `accessed_at`, which Praxis sets to the retrieval
+  time; the page's own age (`page_age`) is not used.
 - Web search results and earlier stages' output enter the next prompt
   between `---` lines with a label, but with no instruction to treat them as
   data, and `---` also separates the system text from the user text.

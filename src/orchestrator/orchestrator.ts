@@ -49,6 +49,11 @@ import {
   NoopSourcingAccumulator,
 } from "../sourcing/dedupe.ts";
 import { buildReport, mergeReports } from "../sourcing/report.ts";
+import { SourcingValidationError } from "../sourcing/errors.ts";
+import {
+  buildInsufficientlySourcedSection,
+  type SourcedArtefacts,
+} from "../sourcing/insufficient.ts";
 import { OrchestrationError } from "./errors.ts";
 
 export interface ScopeOptions {
@@ -57,6 +62,15 @@ export interface ScopeOptions {
 }
 
 export interface ResearchAfterScopingOptions extends ScopeOptions {
+  /**
+   * What a strict sourcing failure does. `"abort"` (default) throws the
+   * `SourcingValidationError`. `"degrade"` records it, carries on, flags the
+   * report `insufficiently_sourced` and adds an "Insufficiently sourced"
+   * section to the briefing; the run still aborts when no research finding
+   * has a source at all, since nothing would support the analysis.
+   * See docs/adr/0002-degrade-on-insufficient-sourcing.md.
+   */
+  onSourcingFailure?: "abort" | "degrade";
   /** Overrides the research prompt file path — used in tests. */
   researchPromptPath?: string;
   /** Hard cap on tool-use rounds for the Research agent. */
@@ -416,23 +430,48 @@ export class Orchestrator {
     }
     const policy = format.sourcing_policy;
     const reports: SourcingReport[] = [];
+    let degraded = false;
+    const check = (validate: () => SourcingReport): void => {
+      try {
+        reports.push(validate());
+      } catch (err) {
+        if (options.onSourcingFailure !== "degrade" || !(err instanceof SourcingValidationError)) {
+          throw err;
+        }
+        reports.push(err.report);
+        degraded = true;
+      }
+    };
     const scoping = await this.doScoping(question, format, options);
     const run: PipelineRun = {
       scoping,
       generatedAt: now.toISOString(),
-      sourcingReport: () => mergeReports(policy, reports),
+      sourcingReport: () => {
+        const merged = mergeReports(policy, reports);
+        if (degraded) merged.insufficiently_sourced = true;
+        return merged;
+      },
     };
 
     run.research = await this.doResearch(scoping, format, options);
-    reports.push(validateSourcing(run.research, policy, validateOpts));
+    const research = run.research;
+    check(() => validateSourcing(research, policy, validateOpts));
+    if (degraded && research.findings.every((f) => isSourceMissing(f.source))) {
+      throw new SourcingValidationError(
+        run.sourcingReport(),
+        "Sourcing validation failed under 'strict' policy: no research finding has a source, so there is nothing to base the briefing on."
+      );
+    }
     if (last === "research") return run;
 
     run.stakeholders = await this.doMapStakeholders(scoping, run.research, format, options);
-    reports.push(validateStakeholderSourcing(run.stakeholders, policy, validateOpts));
+    const stakeholders = run.stakeholders;
+    check(() => validateStakeholderSourcing(stakeholders, policy, validateOpts));
     if (last === "stakeholder") return run;
 
     run.risks = await this.doAssessRisks(scoping, run.research, run.stakeholders, format, options);
-    reports.push(validateRiskSourcing(run.risks, policy, validateOpts));
+    const risks = run.risks;
+    check(() => validateRiskSourcing(risks, policy, validateOpts));
     if (last === "risk") return run;
 
     run.options = await this.doGenerateOptions(
@@ -452,6 +491,9 @@ export class Orchestrator {
       format,
       options
     );
+    if (degraded) {
+      run.synthesis = withInsufficientlySourcedSection(run.synthesis, run.sourcingReport(), run);
+    }
     return run;
   }
 
@@ -573,9 +615,14 @@ export class Orchestrator {
       revisionContext
     );
 
+    const rerunWithSection =
+      initial.sourcing_report.insufficiently_sourced === true
+        ? withInsufficientlySourcedSection(rerunSynthesis, initial.sourcing_report, initial)
+        : rerunSynthesis;
+
     const deviations = computeReSynthesisDeviations(
       initial.synthesis,
-      rerunSynthesis
+      rerunWithSection
     );
 
     const rerunReason = buildRerunReason(
@@ -585,7 +632,7 @@ export class Orchestrator {
 
     return {
       ...initial,
-      synthesis: rerunSynthesis,
+      synthesis: rerunWithSection,
       sourcing_report: {
         ...initial.sourcing_report,
         edited_after_critique: true,
@@ -759,6 +806,18 @@ export class Orchestrator {
     }
     return executeAdversarialCritique(ctx, this.llm, execOpts);
   }
+}
+
+/** Appends the code-written "Insufficiently sourced" section to a synthesis. */
+function withInsufficientlySourcedSection(
+  synthesis: SynthesisResult,
+  report: SourcingReport,
+  artefacts: SourcedArtefacts
+): SynthesisResult {
+  return {
+    ...synthesis,
+    sections: [...synthesis.sections, buildInsufficientlySourcedSection(report, artefacts)],
+  };
 }
 
 /**
