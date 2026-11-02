@@ -1,0 +1,31 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    // Markdown, YAML and .prompt sources are hand-formatted prose; Biome only owns code and JSON.
+    "includes": [
+      "**/*.ts",
+      "**/*.json",
+      "**/*.jsonc",
+      "!**/node_modules",
+      "!bun.lock",
+      "!benchmarks/outputs"
+    ]
+  },
+  // The tree predates Biome and does not follow its layout; reformatting every file in
+  // one commit would bury `git blame` for no behaviour gain. Biome lints only.
+  "formatter": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "complexity": {
+        // Model JSON is parsed as Record<string, unknown> and checked field by field;
+        // bracket access marks those reads as unvalidated input, and `process.env["X"]`
+        // is the form `noUncheckedIndexedAccess` types correctly.
+        "useLiteralKeys": "off"
+      }
+    }
+  },
+  "assist": { "enabled": false }
+}

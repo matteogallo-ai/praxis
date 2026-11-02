@@ -30,6 +30,8 @@
   "scripts": {
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit",
+    "lint": "biome lint .",
+    "knip": "knip",
     "cli": "bun run src/cli/index.ts",
     "bench": "bun run benchmarks/run-all.ts",
     "bench:mock": "bun run benchmarks/run-all.ts --mock-only",
@@ -44,8 +46,10 @@
     "pdfkit": "^0.19.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@types/bun": "latest",
     "@types/pdfkit": "^0.17.6",
+    "knip": "6.44.1",
     "typescript": "^5.6.0"
   },
   "engines": {
