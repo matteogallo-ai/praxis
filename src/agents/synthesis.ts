@@ -683,7 +683,7 @@ function buildFormatConformance(
 // Upstream sources index — used to enforce the no-invention rule.
 // ---------------------------------------------------------------------------
 
-interface KnownSourcesIndex {
+export interface KnownSourcesIndex {
   hasUrl(url: string): boolean;
   /** Every upstream URL, longest first. */
   urls(): string[];
@@ -738,7 +738,7 @@ function checkProse(content: string, where: string, knownSources: KnownSourcesIn
  * be empty), and a URL that some upstream stage returned. Fabricated URLs
  * are structurally forbidden.
  */
-function parseCitedSource(
+export function parseCitedSource(
   s: unknown,
   where: string,
   knownSources: KnownSourcesIndex,
