@@ -91,7 +91,7 @@ paid, and in its current state it is expected to fail (see Status).
 - Markdown, PDF and DOCX renderers (C08).
 - CLI with format listing, inspection, validation and keyword-based `--format auto` (C09).
 - Library entry point with a typed error hierarchy (C10).
-- Anthropic provider with the server-side `web_search` tool loop and bounded retries, tested against recorded responses (C11).
+- Anthropic provider with the server-side `web_search` tool loop and bounded retries, tested against hand-written API-shaped fixtures, not the live API (C11).
 - Reproducible mock benchmark: `bun run bench:mock` twice leaves `git status` clean (C12).
 - Paid live tests run only on explicit opt-in (C13).
 
@@ -154,7 +154,10 @@ bun run bench:mock                   # renderer smoke test, writes benchmarks/ou
 
 `CLAUDE.md` lists every command, including the paid ones. The `.claude/`
 directory holds the Claude Code permission settings used to build this repo:
-reads, tests and commits are allowed; `git push`, `curl` and `rm -rf` are denied.
+reads, tests, `bun run *`, commits and `git tag` are allowed without a prompt;
+`git push`, `curl`, `wget`, `rm -rf` and `npm install` are denied. Because
+`bun run *` is allowed, the paid `bench:live` and `score:live` scripts are not
+blocked by these settings; the approval rule in `CLAUDE.md` is what stops them.
 
 ## How this was built
 

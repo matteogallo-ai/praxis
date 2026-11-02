@@ -87,7 +87,8 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 - One timeout (60 s) applies to every stage, including the web-search ones.
 - A failure at any stage loses the stages before it: there is no checkpoint.
 - Web search results and earlier stages' output enter the next prompt
-  without delimiters or an untrusted-content instruction.
+  between `---` lines with a label, but with no instruction to treat them as
+  data, and `---` also separates the system text from the user text.
 - Token usage and cost are not recorded.
 - `loadPromptDeclaration`, `validateParameterCoverage`, `renderSection` and
   `stripJsonFences` are copied in all seven agent modules.

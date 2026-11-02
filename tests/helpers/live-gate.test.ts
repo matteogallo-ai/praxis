@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { liveTestsEnabled } from "./live-gate.ts";
 
 describe("liveTestsEnabled", () => {
@@ -24,5 +27,17 @@ describe("liveTestsEnabled", () => {
     expect(
       liveTestsEnabled({ PRAXIS_LIVE_TESTS: "true", ANTHROPIC_API_KEY: "sk-ant-test" })
     ).toBe(false);
+  });
+});
+
+describe("tests/live/", () => {
+  test("every live test file is gated by liveTestsEnabled", () => {
+    const dir = join(import.meta.dir, "..", "live");
+    const files = readdirSync(dir).filter((f) => f.endsWith(".test.ts"));
+    expect(files.length).toBeGreaterThan(0);
+    const ungated = files.filter(
+      (f) => !readFileSync(join(dir, f), "utf8").includes("liveTestsEnabled(process.env)")
+    );
+    expect(ungated).toEqual([]);
   });
 });

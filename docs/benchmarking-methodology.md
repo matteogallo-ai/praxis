@@ -34,18 +34,23 @@ and `benchmarks/score-all.ts` refuses mock briefings.
 Adopted on 2026-11-02. No briefing has been scored with it: none has completed
 live ([`CLAIMS.md`](CLAIMS.md) C14, C18).
 
+A score is published only when all of the following hold. None of the tooling
+for points 1 and 4 exists today; it is roadmap work (C14, C18).
+
 1. **Only live output is scored.** Each scored briefing has a committed run
    artefact under `benchmarks/outputs/live/<date>/`: the briefing, and a
    `metadata.json` with the model IDs, prompt versions, tokens, cost, duration
-   per stage and git SHA. Failed runs are committed with their cause.
+   per stage and git SHA. Failed runs are committed with their cause. Today's
+   live metadata records none of tokens, cost or prompt versions.
 2. **The rubric** is the 7-criterion grid below, each scored 1–5 (total /35).
 3. **The judge is checked.** Either the judge is from another model family
    than the pipeline, or a human annotates at least two briefings on the same
    grid; judge–human agreement is computed and published next to the scores.
    A judged score without that check is labelled *unvalidated*.
-4. **Every number states its `n`.** `RESULTS.md` is generated from the
-   artefacts by a script, and CI runs it with `--check` so the page cannot
-   drift from the data.
+4. **Every number states its `n`.** Scores in `RESULTS.md` come from a script
+   that reads the artefacts, and CI runs it with `--check` so the page cannot
+   drift from the data. Until that script exists, `RESULTS.md` publishes no
+   score.
 
 ## The rubric
 

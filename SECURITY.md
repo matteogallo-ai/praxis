@@ -37,7 +37,9 @@ C17 in [`docs/CLAIMS.md`](docs/CLAIMS.md).
 What limits the damage today: the output is a document for a human reader,
 not an action; Praxis executes no tool other than web search and writes only
 to the output path you give it; under the `strict` sourcing policy every
-cited URL must pass the format's freshness and domain-trust checks.
+source cited by the research, stakeholder and risk stages must pass the
+format's freshness and domain-trust checks. Sources cited by the options and
+adversarial stages, and the synthesis text, are not checked.
 
 ### 2. Uncontrolled cost
 
