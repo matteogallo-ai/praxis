@@ -211,6 +211,44 @@ export async function executeSynthesis(
 }
 
 
+/**
+ * A stored `SynthesisResult` (a checkpoint), checked before reuse: one
+ * section per format section, in format order, each with the fields the
+ * renderers read. Synthesis has no single parser for its whole output (it
+ * is assembled from per-section answers), so this checks the assembled shape.
+ */
+export function parseStoredSynthesis(stored: string, format: Format): SynthesisResult {
+  const fail = (what: string): never => {
+    throw new InvalidAgentOutputError(AGENT_ID, what, stored);
+  };
+  const value: unknown = JSON.parse(stored);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) fail("expected an object");
+  const obj = value as Record<string, unknown>;
+  const sections = obj["sections"];
+  if (!Array.isArray(sections)) return fail("'sections' must be an array");
+  const expected = format.sections.map((s) => s.id);
+  const ids = sections.map((s) => (s as Record<string, unknown> | null)?.["section_id"]);
+  if (JSON.stringify(ids) !== JSON.stringify(expected)) {
+    fail(`'sections' must be the format's sections in order (${expected.join(", ")})`);
+  }
+  for (const [i, raw] of sections.entries()) {
+    const s = raw as Record<string, unknown>;
+    for (const key of ["title", "content_markdown"]) {
+      if (typeof s[key] !== "string") fail(`sections[${i}].${key} must be a string`);
+    }
+    for (const key of ["word_count", "final_attempt_number"]) {
+      if (typeof s[key] !== "number") fail(`sections[${i}].${key} must be a number`);
+    }
+    for (const key of ["sources_cited", "validation_issues", "editorial_attempts"]) {
+      if (!Array.isArray(s[key])) fail(`sections[${i}].${key} must be an array`);
+    }
+  }
+  if (typeof obj["total_word_count"] !== "number") fail("'total_word_count' must be a number");
+  const conformance = obj["format_conformance"];
+  if (typeof conformance !== "object" || conformance === null) fail("'format_conformance' must be an object");
+  return value as SynthesisResult;
+}
+
 function buildSectionInputs(
   ctx: SynthesisContext,
   section: FormatSection,

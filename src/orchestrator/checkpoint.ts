@@ -116,11 +116,28 @@ export class CheckpointStore {
     return new Date(this.manifest.started_at);
   }
 
-  /** The saved output of `stage`, or `undefined` when it has not finished. */
-  load<T>(stage: string): T | undefined {
+  /**
+   * The saved output of `stage`, or `undefined` when it has not finished.
+   * `validate` receives the file's text and returns the typed value or
+   * throws; a file it rejects (truncated, hand-edited, written by another
+   * version) is refused with `OrchestrationError` rather than fed to the
+   * next stage.
+   */
+  load<T>(stage: string, validate: (stored: string) => T): T | undefined {
     const path = join(this.dir, `${stage}.json`);
     if (!existsSync(path)) return undefined;
-    return JSON.parse(readFileSync(path, "utf-8")) as T;
+    const text = readFileSync(path, "utf-8");
+    try {
+      return validate(text);
+    } catch (err) {
+      // Any rejection — a JSON syntax error or a validator's typed error —
+      // means the same thing here; it is kept as the cause.
+      const reason = err instanceof Error ? err.message : String(err);
+      throw new OrchestrationError(
+        `Checkpoint '${stage}' of run '${this.manifest.run_id}' is invalid: ${reason}. Delete ${path} to run that stage again, or start a new run.`,
+        { cause: err }
+      );
+    }
   }
 
   save(stage: string, value: unknown): void {

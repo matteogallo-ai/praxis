@@ -6,7 +6,7 @@
  * briefing a run without the failure produces.
  */
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -165,5 +165,65 @@ describe("withRetry", () => {
       }, 5)
     ).rejects.toBe(err);
     expect(calls).toBe(1);
+  });
+});
+
+describe("corrupt checkpoints", () => {
+  /** A finished run whose `stage` checkpoint is then replaced by `content`. */
+  async function runWithCorrupt(stage: string, content: string): Promise<{ store: CheckpointStore; runsDir: string }> {
+    const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
+    const store = CheckpointStore.create(runsDir, QUESTION, FORMAT, NOW);
+    await orchestrator(countingProvider({ failOptions: false }).llm).brief(QUESTION, FORMAT, {
+      checkpoints: store,
+      onSourcingFailure: "degrade",
+    });
+    writeFileSync(join(store.dir, `${stage}.json`), content);
+    return { store, runsDir };
+  }
+
+  const resume = (runsDir: string, store: CheckpointStore) =>
+    orchestrator(countingProvider({ failOptions: false }).llm)
+      .brief(QUESTION, FORMAT, {
+        checkpoints: CheckpointStore.open(runsDir, store.manifest.run_id),
+        onSourcingFailure: "degrade",
+      })
+      .catch((e: unknown) => e);
+
+  test("a checkpoint with the wrong shape is refused with a clear message", async () => {
+    const { store, runsDir } = await runWithCorrupt("research", JSON.stringify({ findings: "none" }));
+    const err = await resume(runsDir, store);
+    expect(err).toBeInstanceOf(OrchestrationError);
+    expect((err as Error).message).toContain(`Checkpoint 'research' of run '${store.manifest.run_id}' is invalid`);
+    expect((err as Error).message).toContain("'findings' must be an array");
+  });
+
+  test("a checkpoint that is not JSON is refused", async () => {
+    const { store, runsDir } = await runWithCorrupt("scoping", "{ truncated");
+    const err = await resume(runsDir, store);
+    expect(err).toBeInstanceOf(OrchestrationError);
+    expect((err as Error).message).toContain("Checkpoint 'scoping'");
+  });
+
+  test("a risk checkpoint naming an unknown stakeholder is refused", async () => {
+    const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
+    const store = CheckpointStore.create(runsDir, QUESTION, FORMAT, NOW);
+    await orchestrator(countingProvider({ failOptions: false }).llm).brief(QUESTION, FORMAT, {
+      checkpoints: store,
+      onSourcingFailure: "degrade",
+    });
+    const path = join(store.dir, "risk.json");
+    const risks = JSON.parse(readFileSync(path, "utf-8"));
+    risks.risks[0].affected_stakeholders = ["Nobody In Particular"];
+    writeFileSync(path, JSON.stringify(risks));
+    const err = await resume(runsDir, store);
+    expect(err).toBeInstanceOf(OrchestrationError);
+    expect((err as Error).message).toContain("Checkpoint 'risk'");
+  });
+
+  test("a synthesis checkpoint missing its sections is refused", async () => {
+    const { store, runsDir } = await runWithCorrupt("synthesis", JSON.stringify({ total_word_count: 3 }));
+    const err = await resume(runsDir, store);
+    expect(err).toBeInstanceOf(OrchestrationError);
+    expect((err as Error).message).toContain("Checkpoint 'synthesis'");
   });
 });

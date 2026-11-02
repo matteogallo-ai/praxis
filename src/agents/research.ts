@@ -75,7 +75,7 @@ export async function executeResearch(
   return stampRetrievalTime(parseResearchResult(completion.text), new Date());
 }
 
-function parseResearchResult(raw: string): ResearchResult {
+export function parseResearchResult(raw: string): ResearchResult {
   const stripped = extractJsonText(raw);
   if (stripped.length === 0) {
     throw new InvalidAgentOutputError(AGENT_ID, "empty response", raw);

@@ -111,7 +111,7 @@ export async function executeStakeholderMapping(
   return stampRetrievalTime(parseStakeholderMapResult(completion.text), new Date());
 }
 
-function parseStakeholderMapResult(raw: string): StakeholderMapResult {
+export function parseStakeholderMapResult(raw: string): StakeholderMapResult {
   const stripped = extractJsonText(raw);
   if (stripped.length === 0) {
     throw new InvalidAgentOutputError(AGENT_ID, "empty response", raw);

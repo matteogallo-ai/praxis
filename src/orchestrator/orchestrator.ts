@@ -32,13 +32,13 @@ import type {
   SourcingWarning,
 } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
-import { executeScoping } from "../agents/scoping.ts";
-import { executeResearch } from "../agents/research.ts";
-import { executeStakeholderMapping } from "../agents/stakeholder.ts";
-import { executeRiskAnalysis } from "../agents/risk.ts";
-import { executeOptionsGeneration } from "../agents/options.ts";
-import { executeSynthesis } from "../agents/synthesis.ts";
-import { executeAdversarialCritique } from "../agents/adversarial.ts";
+import { executeScoping, parseScopingResult } from "../agents/scoping.ts";
+import { executeResearch, parseResearchResult } from "../agents/research.ts";
+import { executeStakeholderMapping, parseStakeholderMapResult } from "../agents/stakeholder.ts";
+import { executeRiskAnalysis, parseRiskAnalysisResult } from "../agents/risk.ts";
+import { executeOptionsGeneration, parseOptionsGenerationResult } from "../agents/options.ts";
+import { executeSynthesis, parseStoredSynthesis } from "../agents/synthesis.ts";
+import { executeAdversarialCritique, parseAdversarialCritiqueResult } from "../agents/adversarial.ts";
 import {
   validateRiskSourcing,
   validateSourcing,
@@ -282,7 +282,7 @@ export class Orchestrator {
     options: ScopeOptions = {}
   ): Promise<ScopingResult> {
     const format = this.prepareForScoping(question, formatId);
-    return this.stage("scoping", options, () => this.doScoping(question, format, options));
+    return this.stage("scoping", options, () => this.doScoping(question, format, options), parseScopingResult);
   }
 
   /**
@@ -457,8 +457,11 @@ export class Orchestrator {
         degraded = true;
       }
     };
-    const scoping = await this.stage("scoping", options, () =>
-      this.doScoping(question, format, options)
+    const scoping = await this.stage(
+      "scoping",
+      options,
+      () => this.doScoping(question, format, options),
+      parseScopingResult
     );
     const run: PipelineRun = {
       scoping,
@@ -470,8 +473,11 @@ export class Orchestrator {
       },
     };
 
-    run.research = await this.stage("research", options, () =>
-      this.doResearch(scoping, format, options)
+    run.research = await this.stage(
+      "research",
+      options,
+      () => this.doResearch(scoping, format, options),
+      parseResearchResult
     );
     const research = run.research;
     check(() => validateSourcing(research, policy, validateOpts));
@@ -483,22 +489,31 @@ export class Orchestrator {
     }
     if (last === "research") return run;
 
-    run.stakeholders = await this.stage("stakeholder", options, () =>
-      this.doMapStakeholders(scoping, research, format, options)
+    run.stakeholders = await this.stage(
+      "stakeholder",
+      options,
+      () => this.doMapStakeholders(scoping, research, format, options),
+      parseStakeholderMapResult
     );
     const stakeholders = run.stakeholders;
     check(() => validateStakeholderSourcing(stakeholders, policy, validateOpts));
     if (last === "stakeholder") return run;
 
-    run.risks = await this.stage("risk", options, () =>
-      this.doAssessRisks(scoping, research, stakeholders, format, options)
+    run.risks = await this.stage(
+      "risk",
+      options,
+      () => this.doAssessRisks(scoping, research, stakeholders, format, options),
+      (stored) => parseRiskAnalysisResult(stored, stakeholders)
     );
     const risks = run.risks;
     check(() => validateRiskSourcing(risks, policy, validateOpts));
     if (last === "risk") return run;
 
-    const optionsResult = await this.stage("options", options, () =>
-      this.doGenerateOptions(scoping, research, stakeholders, risks, format, options)
+    const optionsResult = await this.stage(
+      "options",
+      options,
+      () => this.doGenerateOptions(scoping, research, stakeholders, risks, format, options),
+      (stored) => parseOptionsGenerationResult(stored, stakeholders, risks)
     );
     run.options = optionsResult;
     // Synthesis retries per section (see doSynthesize), not as a whole.
@@ -506,6 +521,7 @@ export class Orchestrator {
       "synthesis",
       options,
       () => this.doSynthesize(scoping, research, stakeholders, risks, optionsResult, format, options),
+      (stored) => parseStoredSynthesis(stored, format),
       1
     );
     if (degraded) {
@@ -544,8 +560,11 @@ export class Orchestrator {
     const brief = await this.brief(question, formatId, options);
     const format = this.registry.get(formatId);
 
-    const adversarial = await this.stage("adversarial", options, () =>
-      this.doAdversarial(brief, format, options)
+    const adversarial = await this.stage(
+      "adversarial",
+      options,
+      () => this.doAdversarial(brief, format, options),
+      (stored) => parseAdversarialCritiqueResult(stored, adversarialContext(brief, format))
     );
 
     const sourcing_report = withCritiqueSources(
@@ -634,6 +653,7 @@ export class Orchestrator {
         options,
         revisionContext
       ),
+      (stored) => parseStoredSynthesis(stored, format),
       1
     );
 
@@ -671,16 +691,18 @@ export class Orchestrator {
   }
 
   /**
-   * Runs one stage: reuses its checkpoint when there is one; otherwise runs
-   * it with bounded retry, records its wall time, and checkpoints the output.
+   * Runs one stage: reuses its checkpoint when there is one, after `validate`
+   * (the stage's own output validator) accepts it; otherwise runs it with
+   * bounded retry, records its wall time, and checkpoints the output.
    */
   private async stage<T>(
     name: string,
     options: ScopeOptions,
     run: () => Promise<T>,
+    validate: (stored: string) => T,
     attempts = options.stageAttempts ?? 2
   ): Promise<T> {
-    const saved = options.checkpoints?.load<T>(name);
+    const saved = options.checkpoints?.load(name, validate);
     if (saved !== undefined) return saved;
     const started = Date.now();
     const value = await withRetry(run, attempts);
@@ -832,19 +854,7 @@ export class Orchestrator {
     format: Format,
     options: BriefWithCritiqueOptions
   ): Promise<AdversarialCritiqueResult> {
-    const ctx = {
-      brief_result: {
-        scoping: brief.scoping,
-        research: brief.research,
-        stakeholders: brief.stakeholders,
-        risks: brief.risks,
-        options: brief.options,
-        synthesis: brief.synthesis,
-        format_id: brief.format_id,
-        question: brief.question,
-      },
-      format,
-    };
+    const ctx = adversarialContext(brief, format);
     const execOpts: Parameters<typeof executeAdversarialCritique>[2] = {};
     if (options.adversarialPromptPath !== undefined) {
       execOpts.promptPath = options.adversarialPromptPath;
@@ -854,6 +864,23 @@ export class Orchestrator {
     }
     return executeAdversarialCritique(ctx, this.llmFor("adversarial", options), execOpts);
   }
+}
+
+/** What the adversarial agent, and its checkpoint validator, read. */
+function adversarialContext(brief: BriefResult, format: Format) {
+  return {
+    brief_result: {
+      scoping: brief.scoping,
+      research: brief.research,
+      stakeholders: brief.stakeholders,
+      risks: brief.risks,
+      options: brief.options,
+      synthesis: brief.synthesis,
+      format_id: brief.format_id,
+      question: brief.question,
+    },
+    format,
+  };
 }
 
 /** Appends the code-written "Insufficiently sourced" section to a synthesis. */

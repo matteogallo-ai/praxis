@@ -74,7 +74,7 @@ export async function executeScoping(
   return parseScopingResult(completion.text);
 }
 
-function parseScopingResult(raw: string): ScopingResult {
+export function parseScopingResult(raw: string): ScopingResult {
   const stripped = extractJsonText(raw);
   let value: unknown;
   try {

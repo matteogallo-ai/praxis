@@ -442,7 +442,13 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
       ...(opts.run.maxCostUsd === null ? {} : { maxCostUsd: opts.run.maxCostUsd }),
     });
     // Earlier attempts' spend counts toward this run's report and its cap.
-    const previous = store.load<{ usage?: UsageSummary }>("metadata")?.usage;
+    const previous = store.load("metadata", (text) => {
+      const meta = JSON.parse(text) as { usage?: UsageSummary };
+      if (meta.usage !== undefined && (typeof meta.usage.stages !== "object" || meta.usage.stages === null)) {
+        throw new Error("'usage.stages' must be an object");
+      }
+      return meta;
+    })?.usage;
     if (previous !== undefined) ledger.restore(previous);
     runOptions.checkpoints = store;
     runOptions.ledger = ledger;
