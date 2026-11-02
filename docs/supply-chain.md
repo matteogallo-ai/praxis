@@ -54,7 +54,9 @@ A check renamed in a workflow must be renamed here in the same pull request,
 or `main` waits for a check that never reports.
 
 **The `release` environment.** The release job waits for the maintainer's
-approval; admins cannot bypass it; only `v*` tags may deploy to it:
+approval; admins cannot bypass it; only `v*` tags may deploy to it. It
+guards against a tag pushed by mistake, not against a tool holding the
+maintainer's token (SECURITY.md lists what that tool can still do):
 
 ```bash
 gh api -X PUT repos/matteogallo-ai/praxis/environments/release \
@@ -63,10 +65,12 @@ gh api -X POST repos/matteogallo-ai/praxis/environments/release/deployment-branc
   --input .github/settings/environment-release-tags.json
 ```
 
-**Dependabot security updates (A2).** Dependabot's version updates come from
-`.github/dependabot.yml`; security updates are a repository switch:
+**Dependabot alerts and security updates (A2).** Dependabot's version
+updates come from `.github/dependabot.yml`; alerts and security updates are
+repository switches, alerts first (security updates require them):
 
 ```bash
+gh api -X PUT repos/matteogallo-ai/praxis/vulnerability-alerts
 gh api -X PUT repos/matteogallo-ai/praxis/automated-security-fixes
 ```
 
@@ -83,7 +87,7 @@ are expected and are not hidden:
 | CII-Best-Practices | No OpenSSF Best Practices badge yet (DoD F2, self-certified by the maintainer). |
 | Maintained | Counts activity over 90 days; a young or quiet repository scores low whatever its state. |
 | Packaging | Nothing is published to a package registry (see "The release artefact"). |
-| Signed-Releases | Scores the last releases; those before `release.yml` carry no signature. It rises with each signed release. |
+| Signed-Releases | Scores the last five releases; v0.10.0 to v1.3.0 predate `release.yml` and carry no signature. Each new release scores up to 8 of 10 (a Sigstore bundle; 10 needs an in-toto provenance file). |
 | Fuzzing | Low until Scorecard finds a fuzzer or a property-based testing library it recognises. |
 
 The live score is on the badge in the README; the results also land in the

@@ -8,17 +8,23 @@
  * repository's YAML parser has no flow sequences, which the matrices use.
  */
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
-const WORKFLOWS = ["ci.yml", "security.yml"];
+/** Every workflow a pull request triggers: their jobs are the checks a merge waits for. */
+const WORKFLOWS = readdirSync(".github/workflows")
+  .filter((f) => f.endsWith(".yml"))
+  .map((f) => readFileSync(`.github/workflows/${f}`, "utf-8"))
+  .filter((yaml) => /^ {2}pull_request:/m.test(yaml));
 
 /** The check names a workflow reports: one per job, one per matrix value. */
 function checkNames(yaml: string): string[] {
   const names: string[] = [];
   const jobs = yaml.split(/^jobs:\n/m)[1] ?? "";
   for (const block of jobs.split(/^(?= {2}[\w-]+:\n)/m)) {
-    const name = /^ {4}name: (.+)$/m.exec(block)?.[1];
-    if (name === undefined) continue;
+    const id = /^ {2}([\w-]+):\n/.exec(block)?.[1];
+    if (id === undefined) continue;
+    // A job without a name reports under its id.
+    const name = (/^ {4}name: (.+)$/m.exec(block)?.[1] ?? id).replace(/^(["'])(.*)\1$/, "$2");
     const variable = /\$\{\{ matrix\.(\w+) \}\}/.exec(name);
     if (variable === null) {
       names.push(name);
@@ -32,7 +38,7 @@ function checkNames(yaml: string): string[] {
   return names;
 }
 
-const declared = WORKFLOWS.flatMap((f) => checkNames(readFileSync(`.github/workflows/${f}`, "utf-8")));
+const declared = WORKFLOWS.flatMap(checkNames);
 const ruleset = JSON.parse(readFileSync(".github/settings/ruleset-main.json", "utf-8")) as {
   rules: { type: string; parameters?: { required_status_checks?: { context: string }[] } }[];
 };
@@ -41,7 +47,7 @@ const required = ruleset.rules
   .map((c) => c.context);
 
 describe("required checks on main", () => {
-  test("the workflows are read", () => {
+  test("the pull-request workflows are read", () => {
     expect(declared).toContain("typecheck · test");
     expect(declared).toContain("CodeQL (actions)");
     expect(declared).toContain("test · wall clock at 2040-06-01T00:00:00Z");

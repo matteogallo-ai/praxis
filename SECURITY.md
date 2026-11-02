@@ -78,9 +78,17 @@ protections that hold:
   A tool running with the maintainer's admin credentials can therefore push
   a tag. A tag alone publishes nothing: the release job
   (`.github/workflows/release.yml`) runs in the `release` environment and
-  waits for its required reviewer, with admin bypass disabled. That approval
-  is the barrier between a tag and a published release
-  ([`docs/supply-chain.md`](docs/supply-chain.md) has the settings).
+  waits for its required reviewer, with admin bypass disabled
+  ([`docs/supply-chain.md`](docs/supply-chain.md) has the settings). That
+  approval is the barrier between a tag and a published release, for a tag
+  pushed by mistake or by anything that does not hold the maintainer's
+  token. It does not stop a tool that does hold it, because the same token
+  can (a) push a commit whose `release.yml` drops the environment and then
+  tag it (the job's gate is read from the tagged commit), (b) approve the
+  pending deployment itself, the maintainer being the only reviewer, or (c)
+  create a release through the API. Against that tool, what holds is not
+  giving it the token, and the published release staying visible to the
+  maintainer.
 - `--max-cost-usd` bounds what a briefing can spend whatever starts it.
 
 ### 3. The API key

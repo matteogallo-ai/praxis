@@ -36,10 +36,11 @@ jobs:
           git archive --format=tar.gz --prefix="praxis-${version}/" -o "praxis-${version}.tar.gz" "$TAG"
           # The CHANGELOG section of this version, heading excluded; a tag with
           # no section stops here rather than publish empty notes.
-          awk -v v="$version" '
-            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+          # index() compares literally: the dots of a version are not wildcards.
+          awk -v h="## [$version]" '
+            index($0, h) == 1 { on = 1; next }
             on && /^## \[/ { exit }
-            on { print }
+            on && !/^\[[^]]+\]: / { print }
           ' CHANGELOG.md > notes.md
           test -s notes.md || { echo "CHANGELOG.md has no section for $version"; exit 1; }
       - id: attest
