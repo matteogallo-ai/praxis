@@ -102,6 +102,9 @@ async function buildPdf(
       Author: "Praxis",
       Subject: brief.format_id,
       Producer: "Praxis (pdfkit)",
+      // pdfkit stamps the wall clock by default; the brief's own timestamp
+      // makes the same brief render to the same bytes.
+      CreationDate: new Date(brief.generated_at),
     },
   });
 
