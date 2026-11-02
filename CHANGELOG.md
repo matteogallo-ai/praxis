@@ -22,6 +22,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   `bench:mock` drift check, Conventional Commits.
 - `docs/CLAIMS.md` and `scripts/check-claims.ts`; `CLAUDE.md`; `SECURITY.md`;
   pull request and issue templates; `docs/ENGINEERING_STANDARDS.md`.
+- `docs/THREAT_MODEL.md` (OWASP LLM Top 10 2025, each mitigation with its
+  test, checked by `tests/docs/threat-model.test.ts`), `docs/SYSTEM_CARD.md`,
+  `docs/SLO.md`, `docs/RUNBOOK.md` (replaces the abandoned v1.3.1 runbook),
+  and the ADR index with what the author would do differently.
 - Supply chain (`docs/supply-chain.md`): actions pinned to commit SHAs,
   Dependabot (bun, GitHub Actions), CodeQL and OSV-Scanner on every pull
   request and weekly, OpenSSF Scorecard with its badge, and a release
@@ -79,6 +83,14 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   system text carries an untrusted-content rule, and an answer repeating the
   system text is rejected (C17).
 - The API key is held in a private field and CLI stderr is redacted (C20).
+
+### Security
+
+- A cited source URL must be an absolute `http(s)` URL; a synthesis
+  section's prose may hold no image and no link or URL other than an
+  upstream source's; the Markdown renderer writes model text inert (raw HTML,
+  `-->` in a validation issue, link targets). OWASP LLM05, in
+  `docs/THREAT_MODEL.md`.
 
 ### Deprecated
 
