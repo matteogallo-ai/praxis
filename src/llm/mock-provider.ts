@@ -35,6 +35,7 @@ import type {
   ToolCall,
   CompletionResult,
   CompleteWithToolsOptions,
+  TokenUsage,
 } from "./types.ts";
 import { LLMError, MockFixtureNotFoundError } from "./errors.ts";
 
@@ -73,15 +74,19 @@ export class MockLLMProvider implements LLMProvider {
 
   async completeWithTools(
     prompt: string,
-    _tools: Tool[],
+    tools: Tool[],
     options?: CompleteWithToolsOptions
   ): Promise<CompletionResult> {
-    const fixture = this.matchFixture(matchText(prompt, options?.system));
+    const text = matchText(prompt, options?.system);
+    const fixture = this.matchFixture(text);
+    const toolCalls = fixture.tool_calls ?? [];
     return {
       text: fixture.response,
-      tool_calls: fixture.tool_calls ?? [],
+      tool_calls: toolCalls,
       rounds: fixture.rounds ?? 1,
       stop_reason: fixture.stop_reason ?? "end_turn",
+      usage: simulatedUsage(text, fixture.response, tools.length === 0 ? 0 : toolCalls.length),
+      model: options?.model ?? "mock",
     };
   }
 
@@ -94,6 +99,21 @@ export class MockLLMProvider implements LLMProvider {
     const hash = createHash("sha256").update(prompt).digest("hex").slice(0, 12);
     throw new MockFixtureNotFoundError(hash, this.fixturesDir);
   }
+}
+
+/**
+ * Usage the mock reports so the cost ledger runs end to end offline: four
+ * characters per token, one search per scripted tool call. Deterministic,
+ * so mock artefacts stay byte-identical; it measures nothing.
+ */
+function simulatedUsage(input: string, output: string, searches: number): TokenUsage {
+  return {
+    input_tokens: Math.ceil(input.length / 4),
+    output_tokens: Math.ceil(output.length / 4),
+    cache_creation_input_tokens: 0,
+    cache_read_input_tokens: 0,
+    web_search_requests: searches,
+  };
 }
 
 /**

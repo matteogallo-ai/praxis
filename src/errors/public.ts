@@ -44,6 +44,8 @@ export {
   AnthropicAPIError,
   AnthropicRateLimitError,
   AnthropicTimeoutError,
+  PriceTableError,
+  BudgetExceededError,
 } from "../llm/errors.ts";
 
 // Agents (structural + cross-artefact validation).
