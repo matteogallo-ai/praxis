@@ -44,6 +44,29 @@ jobs:
       - run: bun test
         working-directory: praxis
 
+  prompt-semver:
+    name: prompt semver-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: praxis
+          # The base commit must be present for semver-check to read the old prompts.
+          fetch-depth: 0
+      # semver-check is not in the v1.2.0 tag the other jobs build against; this
+      # job pins the PromptLang main commit that ships it.
+      - uses: actions/checkout@v4
+        with:
+          repository: matteogallo-ai/promptlang
+          ref: 28c92230b722b63881de598d43261f0bd49b9e6e
+          path: promptlang
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      # A changed prompt body needs a version bump; a changed @model needs a major one.
+      - run: bun run ../promptlang/src/cli/cli.ts semver-check prompts/ --base "${{ github.event.pull_request.base.sha || github.event.before }}"
+        working-directory: praxis
+
   lint:
     name: biome · knip
     runs-on: ubuntu-latest
