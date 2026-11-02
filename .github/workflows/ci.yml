@@ -117,7 +117,10 @@ jobs:
       - run: bun run bench:mock
         working-directory: praxis
       - name: The committed mock artefacts are exactly what the run produces
-        run: git diff --exit-code -- benchmarks/outputs
+        # porcelain also catches new untracked files, which `git diff` would miss.
+        run: |
+          git status --porcelain -- benchmarks/outputs
+          test -z "$(git status --porcelain -- benchmarks/outputs)"
         working-directory: praxis
 
   commits:
