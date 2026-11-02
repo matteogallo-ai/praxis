@@ -1,0 +1,36 @@
+# Claims
+
+Every capability the README states, the code that implements it, and the tests that
+prove it. `scripts/check-claims.ts` (CI job `claims`) parses the table below and fails
+when a `shipped` claim has no test, a listed test does not exist or does not pass, or
+the README's Features / Roadmap sections disagree with a claim's status.
+
+A test is written `path` (every test in the file) or `path::name` (the tests whose
+full name, describe blocks included, contains `name`). A claim is `shipped` only if
+every listed test passes; a skipped test does not count. `roadmap` means not
+implemented or not proven; the README lists it under Roadmap, never under Features.
+
+Tests that run on the mock provider prove that the code is wired correctly. They say
+nothing about the quality of what a real model writes; no claim below says otherwise.
+
+| ID | Claim | Implementation | Tests | Status |
+|---|---|---|---|---|
+| C01 | Briefing formats are YAML files validated against a typed schema; invalid files are rejected with every issue listed. | `src/registry/` | `tests/registry/validator.test.ts`<br>`tests/registry/loader.test.ts`<br>`tests/registry/registry.test.ts` | shipped |
+| C02 | Four formats ship: `executive-pre-read`, `mckinsey-style-note`, `position-paper-corporate`, `family-office-memo`. | `formats/` | `tests/formats/formats-integrity.test.ts` | shipped |
+| C03 | The seven stages (scoping → research → stakeholders → risks → options → synthesis → adversarial review) run in sequence end to end on the mock provider. Pipeline smoke test, not a quality measure. | `src/orchestrator/orchestrator.ts`, `src/agents/` | `tests/orchestrator/orchestrator.test.ts::Orchestrator.brief() — end-to-end`<br>`tests/orchestrator/orchestrator.test.ts::Orchestrator.briefWithCritique() — end-to-end`<br>`tests/integration/full-brief-e2e.test.ts` | shipped |
+| C04 | Each stage's model output is parsed and validated (counts, ids, cross-references); malformed output raises a typed error. | `src/agents/` | `tests/agents/research.test.ts::executeResearch — LLM output errors`<br>`tests/agents/adversarial.test.ts::parseAdversarialCritiqueResult — structural errors`<br>`tests/agents/options.test.ts`<br>`tests/agents/risk.test.ts`<br>`tests/agents/stakeholder.test.ts` | shipped |
+| C05 | Sourcing checks: every evidence item carries a source or an explicit `SOURCE_MISSING` marker; freshness, domain trust and cross-stage duplicate checks; `strict` policy rejects, `permissive` reports. | `src/sourcing/` | `tests/sourcing/validator.test.ts`<br>`tests/sourcing/freshness.test.ts`<br>`tests/sourcing/domain-trust.test.ts`<br>`tests/sourcing/dedupe.test.ts`<br>`tests/integration/sourcing-hardened-e2e.test.ts` | shipped |
+| C06 | When the adversarial review asks for a revised recommendation, synthesis runs once more, at most once. | `src/orchestrator/orchestrator.ts` | `tests/orchestrator/rerun.test.ts` | shipped |
+| C07 | `strict_editorial` formats reject and regenerate sections that break forbidden terms, length caps or validation rules, within a bounded number of attempts. | `src/agents/synthesis.ts` | `tests/agents/synthesis-editorial.test.ts` | shipped |
+| C08 | Renderers write Markdown, PDF (pdfkit) and DOCX (no external dependency). | `src/renderers/` | `tests/renderers/markdown-enhanced.test.ts`<br>`tests/renderers/pdf.test.ts`<br>`tests/renderers/docx.test.ts`<br>`tests/integration/render-pipeline-e2e.test.ts` | shipped |
+| C09 | CLI: `brief`, `formats list / inspect / validate`, `version`, and `--format auto` keyword routing. | `src/cli/` | `tests/cli/brief.test.ts`<br>`tests/cli/list.test.ts`<br>`tests/cli/inspect.test.ts`<br>`tests/cli/validate.test.ts`<br>`tests/cli/format-auto.test.ts` | shipped |
+| C10 | Library entry point `src/index.ts` exports the registry, orchestrator, providers, renderers and the typed error hierarchy. | `src/index.ts`, `src/errors/public.ts` | `tests/library/public-api.test.ts`<br>`tests/library/errors-public-api.test.ts` | shipped |
+| C11 | Anthropic provider: Messages API requests, the server-side `web_search` tool loop, typed errors and bounded retries. Verified against recorded API responses, not against the live API. | `src/llm/anthropic-provider.ts` | `tests/llm/anthropic-provider.test.ts` | shipped |
+| C12 | `bun run bench:mock` is reproducible: a second run rewrites the committed mock artefacts byte for byte. | `benchmarks/run-all.ts`, `src/renderers/pdf.ts` | `tests/benchmarks/run-all-mock.test.ts::mock reproducibility`<br>`tests/renderers/pdf.test.ts::reproducible output` | shipped |
+| C13 | `bun test` never calls a paid API unless `PRAXIS_LIVE_TESTS=1` is set. | `tests/helpers/live-gate.ts` | `tests/helpers/live-gate.test.ts` | shipped |
+| C14 | Live briefings against Anthropic: the full pipeline completes on real questions, with committed run artefacts (models, prompt versions, tokens, cost, duration). | — | — | roadmap |
+| C15 | Model output with prose around the JSON, sparse sourcing under `strict`, and slow web-search stages are handled without aborting the whole briefing. | — | — | roadmap |
+| C16 | Per-stage checkpoints and `--resume <run-id>`. | — | — | roadmap |
+| C17 | Untrusted content (web search results, earlier stages' output) is delimited and labelled in every prompt, with adversarial prompt-injection tests. | — | — | roadmap |
+| C18 | Quality of live briefings scored with a validated judge (judge–human agreement published). | — | — | roadmap |
+| C19 | Installable from a clean clone without a sibling PromptLang checkout (`@promptlang/core` from npm). | — | — | roadmap |
