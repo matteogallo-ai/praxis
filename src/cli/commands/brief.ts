@@ -438,7 +438,7 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
     runOptions.ledger = ledger;
     progress(
       opts.run.resume === null ? "run" : "resuming run",
-      `${store.manifest.run_id} (${store.dir}; resume with --resume ${store.manifest.run_id})`
+      `${store.manifest.run_id} in ${store.dir}; resume with --resume ${store.manifest.run_id}`
     );
     try {
       return await fullBrief(opts, registry, orchestrator, runOptions);
