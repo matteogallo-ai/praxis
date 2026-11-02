@@ -48,8 +48,12 @@ const PATTERNS: ReadonlyArray<{ kind: FindingKind; regex: RegExp }> = [
     kind: "future",
     regex: /\bwill (?:add|support|ship|implement|introduce|provide|allow|enable)\b/i,
   },
-  { kind: "future", regex: /\bcoming soon\b|\bplanned for\b|\b(?:a|the) future release\b/i },
+  { kind: "future", regex: /\bcoming soon\b|\bplanned for\b/i },
   { kind: "future", regex: /\bstill on the roadmap\b/i },
+  { kind: "future", regex: /\bfuture releases?\b|\b(?:a|the) later release\b/i },
+  { kind: "future", regex: /\blater \w+(?: \w+)? (?:pass|release|version) will\b/i },
+  { kind: "future", regex: /\bwe will\b/i },
+  { kind: "future", regex: /\bv\d+(?:\.\d+)*\b[^.]*\bwill\b/ },
   { kind: "sprint", regex: /\bsprints?\b/i },
   { kind: "sprint", regex: /(?<![\w/.])S[0-7]\.\d+\b/ },
   // "RISK-XXX" in a prompt is an id placeholder, not a marker.

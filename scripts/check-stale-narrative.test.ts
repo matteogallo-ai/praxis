@@ -20,6 +20,11 @@ describe("scanText", () => {
     ["Built during sprint 4.", "sprint"],
     ["Wired in S4.2.", "sprint"],
     ["TODO: handle timeouts", "todo-without-issue"],
+    ["They are declarative — future releases will interpret them.", "future"],
+    ["Sub-typing may land in a later release.", "future"],
+    ["A later Sourcing Layer pass will dedupe.", "future"],
+    ["When PromptLang ships array types, we will migrate them.", "future"],
+    ["The v0.7 Adversarial Critique agent will read the brief.", "future"],
   ])("flags %p as %p", (line, kind) => {
     expect(kinds(line)).toEqual([kind]);
   });
@@ -30,6 +35,7 @@ describe("scanText", () => {
     ['"risks_mitigated": ["RISK-XXX", …],'],
     ["If the reader disagrees, no argument that follows will land."],
     ["Released in v1.2.0 (see CHANGELOG)."],
+    ["The validator will reject an unknown value."],
   ])("does not flag %p", (line) => {
     expect(kinds(line)).toEqual([]);
   });
@@ -50,6 +56,7 @@ describe("scanRepository", () => {
     }
     const stale = "Planned for v2.0.";
     writeFileSync(join(root, "src", "a.ts"), stale);
+    writeFileSync(join(root, "docs", "x.md"), stale);
     writeFileSync(join(root, "prompts", "p.prompt"), stale);
     writeFileSync(join(root, "formats", "f.yaml"), stale);
     writeFileSync(join(root, "benchmarks", "RESULTS.md"), stale);
@@ -62,6 +69,7 @@ describe("scanRepository", () => {
     expect(files).toEqual([
       "README.md",
       "benchmarks/RESULTS.md",
+      "docs/x.md",
       "formats/f.yaml",
       "prompts/p.prompt",
       "src/a.ts",
