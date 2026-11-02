@@ -193,6 +193,8 @@ the user message; and the `@model` declared in each `.prompt` file never
 reaching the API. This README, `docs/CLAIMS.md`, the CI workflow and
 [`docs/ENGINEERING_STANDARDS.md`](docs/ENGINEERING_STANDARDS.md) are the first
 response; the fixes to the pipeline itself are listed under Roadmap.
+The design decisions, and what I would do differently, are in
+[`docs/adr/`](docs/adr/README.md).
 
 ## FAQ
 
