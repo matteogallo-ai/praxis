@@ -35,7 +35,6 @@ import {
   callModel,
   extractJsonText,
   loadPrompt,
-  outputReader,
   renderPrompt,
   untrusted,
   untrustedJson,
@@ -58,7 +57,6 @@ import type {
 } from "../registry/schema.ts";
 import { DEFAULT_MAX_REGENERATION_ATTEMPTS } from "../registry/schema.ts";
 import type { SourceReference } from "../sourcing/types.ts";
-import { isSourceMissing } from "../sourcing/types.ts";
 import {
   EditorialFailureError,
   InvalidAgentOutputError,
@@ -220,15 +218,18 @@ export async function executeSynthesis(
 }
 
 
-const storedSources = outputReader(AGENT_ID);
-
 /**
  * A stored `SynthesisResult` (a checkpoint), checked before reuse: one
  * section per format section, in format order, each with the fields the
  * renderers read. Synthesis has no single parser for its whole output (it
  * is assembled from per-section answers), so this checks the assembled shape.
  */
-export function parseStoredSynthesis(stored: string, format: Format): SynthesisResult {
+export function parseStoredSynthesis(
+  stored: string,
+  format: Format,
+  upstream: Omit<SynthesisContext, "format" | "revision_context">
+): SynthesisResult {
+  const knownSources = collectUpstreamSources({ ...upstream, format });
   const fail = (what: string): never => {
     throw new InvalidAgentOutputError(AGENT_ID, what, stored);
   };
@@ -254,10 +255,7 @@ export function parseStoredSynthesis(stored: string, format: Format): SynthesisR
       if (!Array.isArray(s[key])) fail(`sections[${i}].${key} must be an array`);
     }
     for (const [j, source] of (s["sources_cited"] as unknown[]).entries()) {
-      const path = `sections[${i}].sources_cited[${j}]`;
-      if (isSourceMissing(storedSources.parseSource(source, path, stored))) {
-        fail(`${path} must be a source reference, not SOURCE_MISSING`);
-      }
+      parseCitedSource(source, `sections[${i}].sources_cited[${j}]`, knownSources, stored);
     }
   }
   if (typeof obj["total_word_count"] !== "number") fail("'total_word_count' must be a number");
@@ -527,44 +525,9 @@ function parseSectionResponse(
       raw
     );
   }
-  const sources: SourceReference[] = [];
-  for (const [i, s] of rawSources.entries()) {
-    if (typeof s !== "object" || s === null || Array.isArray(s)) {
-      throw new InvalidAgentOutputError(
-        AGENT_ID,
-        `section '${section.id}': sources_cited[${i}] must be an object`,
-        raw
-      );
-    }
-    const so = s as Record<string, unknown>;
-    const url = so["url"];
-    const title = so["title"];
-    const accessedAt = so["accessed_at"];
-    const excerpt = so["excerpt"];
-    if (
-      typeof url !== "string" ||
-      url.length === 0 ||
-      typeof title !== "string" ||
-      title.length === 0 ||
-      typeof accessedAt !== "string" ||
-      accessedAt.length === 0 ||
-      typeof excerpt !== "string"
-    ) {
-      throw new InvalidAgentOutputError(
-        AGENT_ID,
-        `section '${section.id}': sources_cited[${i}] must have url/title/accessed_at/excerpt (all strings)`,
-        raw
-      );
-    }
-    // Non-invention guard: the cited URL must exist somewhere in the
-    // upstream artefacts. Fabricated URLs are structurally forbidden.
-    if (!knownSources.hasUrl(url)) {
-      throw new SynthesisError(
-        `section '${section.id}': cited source url '${url}' is not present in any upstream artefact. Synthesis must not invent sources.`
-      );
-    }
-    sources.push({ url, title, accessed_at: accessedAt, excerpt });
-  }
+  const sources = rawSources.map((s, i) =>
+    parseCitedSource(s, `section '${section.id}': sources_cited[${i}]`, knownSources, raw)
+  );
 
   const issuesRaw = obj["validation_issues"];
   if (!Array.isArray(issuesRaw)) {
@@ -721,6 +684,50 @@ interface KnownSourcesIndex {
   hasUrl(url: string): boolean;
 }
 
+
+
+/**
+ * One entry of a section's `sources_cited`, for a fresh answer and for a
+ * stored synthesis alike: the four fields as non-empty strings (excerpt may
+ * be empty), and a URL that some upstream stage returned. Fabricated URLs
+ * are structurally forbidden.
+ */
+function parseCitedSource(
+  s: unknown,
+  where: string,
+  knownSources: KnownSourcesIndex,
+  raw: string
+): SourceReference {
+  if (typeof s !== "object" || s === null || Array.isArray(s)) {
+    throw new InvalidAgentOutputError(AGENT_ID, `${where} must be an object`, raw);
+  }
+  const so = s as Record<string, unknown>;
+  const url = so["url"];
+  const title = so["title"];
+  const accessedAt = so["accessed_at"];
+  const excerpt = so["excerpt"];
+  if (
+    typeof url !== "string" ||
+    url.length === 0 ||
+    typeof title !== "string" ||
+    title.length === 0 ||
+    typeof accessedAt !== "string" ||
+    accessedAt.length === 0 ||
+    typeof excerpt !== "string"
+  ) {
+    throw new InvalidAgentOutputError(
+      AGENT_ID,
+      `${where} must have url/title/accessed_at/excerpt (all strings)`,
+      raw
+    );
+  }
+  if (!knownSources.hasUrl(url)) {
+    throw new SynthesisError(
+      `${where}: cited source url '${url}' is not present in any upstream artefact. Synthesis must not invent sources.`
+    );
+  }
+  return { url, title, accessed_at: accessedAt, excerpt };
+}
 function collectUpstreamSources(ctx: SynthesisContext): KnownSourcesIndex {
   const urls = new Set<string>();
   for (const f of ctx.research.findings) {

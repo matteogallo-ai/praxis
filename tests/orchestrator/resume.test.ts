@@ -345,3 +345,40 @@ describe("synthesis checkpoint sources", () => {
     expect((err as Error).message).toContain("sections[0].sources_cited[0]");
   });
 });
+
+describe("synthesis checkpoint sources follow the live rule", () => {
+  async function resumeWithEditedSource(edit: (source: Record<string, string>) => void): Promise<unknown> {
+    const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
+    const store = CheckpointStore.create(runsDir, QUESTION, FORMAT, NOW);
+    await orchestrator(countingProvider({ failOptions: false }).llm).brief(QUESTION, FORMAT, {
+      checkpoints: store,
+      onSourcingFailure: "degrade",
+    });
+    const path = join(store.dir, "synthesis.json");
+    const synthesis = JSON.parse(readFileSync(path, "utf-8"));
+    const section = synthesis.sections.find((s: { sources_cited: unknown[] }) => s.sources_cited.length > 0);
+    edit(section.sources_cited[0]);
+    writeFileSync(path, JSON.stringify(synthesis));
+    return orchestrator(countingProvider({ failOptions: false }).llm)
+      .brief(QUESTION, FORMAT, {
+        checkpoints: CheckpointStore.open(runsDir, store.manifest.run_id),
+        onSourcingFailure: "degrade",
+      })
+      .catch((e: unknown) => e);
+  }
+
+  test("a URL no upstream stage returned is refused", async () => {
+    const err = await resumeWithEditedSource((s) => {
+      s["url"] = "https://invented.example/report";
+    });
+    expect(err).toBeInstanceOf(OrchestrationError);
+    expect((err as Error).message).toContain("not present in any upstream artefact");
+  });
+
+  test("an excerpt longer than 500 characters, which the live check accepts, is accepted", async () => {
+    const result = await resumeWithEditedSource((s) => {
+      s["excerpt"] = "x".repeat(600);
+    });
+    expect(result).not.toBeInstanceOf(Error);
+  });
+});

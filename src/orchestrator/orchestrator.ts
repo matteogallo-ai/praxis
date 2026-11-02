@@ -524,7 +524,8 @@ export class Orchestrator {
       "synthesis",
       options,
       () => this.doSynthesize(scoping, research, stakeholders, risks, optionsResult, format, options),
-      (stored) => parseStoredSynthesis(stored, format),
+      (stored) =>
+        parseStoredSynthesis(stored, format, { scoping, research, stakeholders, risks, options: optionsResult }),
       1
     );
     if (degraded) {
@@ -656,7 +657,7 @@ export class Orchestrator {
         options,
         revisionContext
       ),
-      (stored) => parseStoredSynthesis(stored, format),
+      (stored) => parseStoredSynthesis(stored, format, initial),
       1
     );
 
