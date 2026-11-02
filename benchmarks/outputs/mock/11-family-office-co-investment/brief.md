@@ -2,7 +2,7 @@
 question: "Should the family council approve the co-investment opportunity in the Zurich-based fintech proposed by our external advisor?"
 format: "family-office-memo"
 provider: "mock"
-generated_at: "2026-08-20T07:44:25.042Z"
+generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "medium"
 sourcing_summary: "total=26 ok=15 stale=0 untrusted=0 duplicated=9 missing=2"

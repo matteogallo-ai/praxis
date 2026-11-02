@@ -8,8 +8,7 @@
     "strategic"
   ],
   "mode": "mock",
-  "duration_ms": 15,
-  "generated_at": "2026-08-20T07:44:24.961Z",
+  "generated_at": "2026-08-20T00:00:00.000Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 372,
@@ -42,7 +41,7 @@
   },
   "artefacts": {
     "brief.md": 16814,
-    "brief.pdf": 47414,
-    "brief.docx": 7785
+    "brief.pdf": 47409,
+    "brief.docx": 7781
   }
 }

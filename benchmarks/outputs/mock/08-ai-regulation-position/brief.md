@@ -2,7 +2,7 @@
 question: "Draft our corporate position on the incoming AI regulatory framework."
 format: "position-paper-corporate"
 provider: "mock"
-generated_at: "2026-08-20T07:44:24.993Z"
+generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2"

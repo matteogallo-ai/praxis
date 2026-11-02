@@ -2,7 +2,7 @@
 question: "Should we enter the German market?"
 format: "mckinsey-style-note"
 provider: "mock"
-generated_at: "2026-08-20T07:44:24.855Z"
+generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=32 ok=28 stale=0 untrusted=0 duplicated=2 missing=2"
