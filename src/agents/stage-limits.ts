@@ -7,8 +7,8 @@
  * one recorded live timeout is the research stage at 60 000 ms (CHANGELOG
  * 1.2.1). A plain completion (scoping, one synthesis section) is shorter.
  *
- * How the numbers are derived. No per-stage duration has been measured yet,
- * so each timeout is computed from its own ceiling, not guessed:
+ * How the numbers are derived. No live per-stage duration exists, so each
+ * timeout is computed from its own ceiling, not guessed:
  *   timeout ≥ max_tokens / 40 tokens·s⁻¹ (a slow decode rate, thinking
  *             tokens included) + max_searches × 10 s (one search and fetch),
  * rounded up to the next minute. `metadata.json` records each stage's real

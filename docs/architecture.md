@@ -84,11 +84,17 @@ stages before it rather than sharing one implementation.
 Every stage runs through `Orchestrator.stage()`: with a `CheckpointStore`
 in the options it first looks for `<runs>/<run-id>/<stage>.json` and reuses
 it; otherwise it runs the stage, retrying once on a recoverable error
-(`src/orchestrator/retry.ts`), and writes the output. `praxis brief --full`
+(`src/agents/retry.ts`), and writes the output. `praxis brief --full`
 creates a run under `--runs-dir` (default `$PRAXIS_RUNS_DIR`, else
 `.praxis/runs`), prints its id, and writes `metadata.json` there even when
 the run fails; `--resume <run-id>` reruns from the first stage without a
-checkpoint, with the question and format the run recorded.
+checkpoint, with the question and format the run recorded. `run.json` also
+records the provider, the sourcing mode and fingerprints of the prompts and
+the format; a resume with any of them changed is refused, so a mock run
+cannot be finished live and outputs are not reused under changed prompts.
+A resumed run starts its ledger from the earlier attempts' `metadata.json`,
+so the report and the cap cover the whole briefing. Synthesis retries per
+section, so one bad section does not rewrite the others.
 
 ## Usage and cost
 
@@ -98,7 +104,10 @@ cache tokens, web searches) is recorded under its stage and priced from a
 table (`src/llm/pricing.ts`: list prices by default, a JSON file through
 `loadPriceTable`). A model missing from the table is costed `null`, not
 guessed. With `maxCostUsd` set, no call starts once the briefing has spent
-the cap, so a briefing ends above it by at most its last call.
+the cap, so a briefing ends above it by the calls in flight at that moment
+(one, or one per section during synthesis). With a cap, a call whose model
+has no price stops the run; a dated model id is priced as its alias. A
+timed-out request reports no usage and is not counted.
 `benchmarks/run-all.ts` writes the summary to `metadata.json` under `usage`.
 The mock provider simulates usage from text length (`simulated: true`).
 
