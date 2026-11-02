@@ -14,7 +14,6 @@
       "Bash(git diff *)",
       "Bash(git branch *)",
       "Bash(git tag)",
-      "Bash(git tag *)",
       "Bash(git add *)",
       "Bash(git commit -m *)",
       "Bash(git commit *)",
@@ -25,7 +24,6 @@
     "deny": [
       "Bash(rm -rf *)",
       "Bash(sudo *)",
-      "Bash(git push *)",
       "Bash(curl *)",
       "Bash(wget *)",
       "Bash(chmod 777 *)",
