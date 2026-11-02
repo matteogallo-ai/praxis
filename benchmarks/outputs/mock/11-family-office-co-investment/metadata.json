@@ -37,7 +37,8 @@
       "duplicated": 9,
       "missing": 2
     },
-    "edited_after_critique": false
+    "edited_after_critique": false,
+    "insufficiently_sourced": false
   },
   "artefacts": {
     "brief.md": 19313,
