@@ -16,18 +16,12 @@
  * Any deviation surfaces as one of the typed errors in `./errors.ts`.
  */
 
-import { readFileSync, existsSync } from "node:fs";
-
-import { tokenize } from "promptlang/lexer";
-import { parse } from "promptlang/parser";
-import type { Program, PromptDeclaration, MessageSection } from "promptlang/ast";
-
+import { loadPrompt, renderPrompt, stripJsonFences } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { AgentContext, ScopingResult } from "./types.ts";
 import {
   AgentExecutionError,
   InvalidAgentOutputError,
-  PromptFileError,
 } from "./errors.ts";
 
 const AGENT_ID = "scoping";
@@ -45,7 +39,7 @@ export async function executeScoping(
   options: ExecuteScopingOptions = {}
 ): Promise<ScopingResult> {
   const promptPath = options.promptPath ?? DEFAULT_PROMPT_PATH;
-  const declaration = loadPromptDeclaration(promptPath);
+  const loaded = loadPrompt(AGENT_ID, promptPath, PROMPT_NAME);
 
   const inputs: Record<string, string> = {
     question: ctx.question,
@@ -53,11 +47,8 @@ export async function executeScoping(
     target_words: String(ctx.targetWords),
   };
 
-  validateParameterCoverage(declaration, inputs, promptPath);
-
-  const systemText = renderSection(declaration, "system", inputs, promptPath);
-  const userText = renderSection(declaration, "user", inputs, promptPath);
-  const prompt = `${systemText.trim()}\n\n---\n\n${userText.trim()}`;
+  const rendered = renderPrompt(AGENT_ID, loaded, inputs);
+  const prompt = `${rendered.system}\n\n---\n\n${rendered.user}`;
 
   let raw: string;
   try {
@@ -69,93 +60,6 @@ export async function executeScoping(
   }
 
   return parseScopingResult(raw);
-}
-
-function loadPromptDeclaration(path: string): PromptDeclaration {
-  if (!existsSync(path)) {
-    throw new PromptFileError(AGENT_ID, path, "file not found");
-  }
-  let source: string;
-  try {
-    source = readFileSync(path, "utf-8");
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new PromptFileError(AGENT_ID, path, `read failed — ${message}`);
-  }
-
-  let program: Program;
-  try {
-    program = parse(tokenize(source));
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new PromptFileError(AGENT_ID, path, `parse failed — ${message}`);
-  }
-
-  const decl = program.declarations.find(
-    (d): d is PromptDeclaration =>
-      d.kind === "PromptDeclaration" && d.name === PROMPT_NAME
-  );
-  if (!decl) {
-    throw new PromptFileError(
-      AGENT_ID,
-      path,
-      `missing prompt declaration '${PROMPT_NAME}'`
-    );
-  }
-  return decl;
-}
-
-function validateParameterCoverage(
-  decl: PromptDeclaration,
-  inputs: Record<string, string>,
-  path: string
-): void {
-  const declared = new Set(decl.parameters.map((p) => p.name));
-  for (const name of Object.keys(inputs)) {
-    if (!declared.has(name)) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `runtime passed input '${name}' but the prompt does not declare it as a parameter`
-      );
-    }
-  }
-  for (const name of declared) {
-    if (!(name in inputs)) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `prompt declares parameter '${name}' but the runtime did not provide it`
-      );
-    }
-  }
-}
-
-function renderSection(
-  decl: PromptDeclaration,
-  role: "system" | "user",
-  inputs: Record<string, string>,
-  path: string
-): string {
-  const section = decl.sections.find(
-    (s): s is MessageSection => s.kind === "MessageSection" && s.role === role
-  );
-  if (!section) {
-    throw new PromptFileError(AGENT_ID, path, `missing '${role}:' section`);
-  }
-  const raw = section.content.value;
-  const rendered = raw.replace(/\{\{(\w+)\}\}/g, (_, varName: string) => {
-    const value = inputs[varName];
-    if (value === undefined) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `'${role}:' references unknown parameter '{{${varName}}}'`
-      );
-    }
-    return value;
-  });
-  return rendered;
 }
 
 function parseScopingResult(raw: string): ScopingResult {
@@ -222,8 +126,3 @@ function requireStringArray(
   return out;
 }
 
-function stripJsonFences(raw: string): string {
-  const fenced = raw.match(/^```(?:json)?\n([\s\S]*?)\n```\s*$/);
-  if (fenced && fenced[1] !== undefined) return fenced[1];
-  return raw;
-}
