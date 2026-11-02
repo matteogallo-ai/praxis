@@ -2,10 +2,12 @@
  * Live integration test for the Stakeholder Mapping agent end-to-end
  * against the real Anthropic API.
  *
- * SKIPPED unless `ANTHROPIC_API_KEY` is set.
+ * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set.
  */
 
 import { describe, expect, test } from "bun:test";
+
+import { liveTestsEnabled } from "../helpers/live-gate.ts";
 
 import { AnthropicLLMProvider } from "../../src/llm/anthropic-provider.ts";
 import { executeStakeholderMapping } from "../../src/agents/stakeholder.ts";
@@ -13,9 +15,7 @@ import { isSourceMissing } from "../../src/sourcing/types.ts";
 import type { StakeholderContext } from "../../src/agents/types.ts";
 import type { Format } from "../../src/registry/schema.ts";
 
-const hasKey =
-  typeof process.env["ANTHROPIC_API_KEY"] === "string" &&
-  process.env["ANTHROPIC_API_KEY"]!.length > 0;
+const hasKey = liveTestsEnabled(process.env);
 
 const FMT: Format = {
   id: "executive-pre-read",

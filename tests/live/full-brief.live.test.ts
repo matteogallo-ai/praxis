@@ -2,11 +2,13 @@
  * Live end-to-end integration test for the v0.6 full brief pipeline:
  * Scoping → Research → Stakeholders → Risks → Options → Synthesis.
  *
- * SKIPPED unless `ANTHROPIC_API_KEY` is set. When run, writes a full
+ * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set. When run, writes a full
  * Markdown briefing to /tmp for human inspection.
  */
 
 import { describe, expect, test } from "bun:test";
+
+import { liveTestsEnabled } from "../helpers/live-gate.ts";
 import { writeFileSync } from "node:fs";
 
 import { FormatRegistry } from "../../src/registry/registry.ts";
@@ -14,9 +16,7 @@ import { AnthropicLLMProvider } from "../../src/llm/anthropic-provider.ts";
 import { Orchestrator } from "../../src/orchestrator/orchestrator.ts";
 import { renderFullBrief } from "../../src/cli/output.ts";
 
-const hasKey =
-  typeof process.env["ANTHROPIC_API_KEY"] === "string" &&
-  process.env["ANTHROPIC_API_KEY"]!.length > 0;
+const hasKey = liveTestsEnabled(process.env);
 
 describe.skipIf(!hasKey)("Full brief pipeline (live, executive-pre-read)", () => {
   test("brief() returns a complete BriefResult and the Markdown renders", async () => {

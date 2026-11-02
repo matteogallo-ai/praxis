@@ -1,13 +1,15 @@
 /**
  * Live integration test for the Adversarial Critique agent (v0.7).
  *
- * SKIPPED unless `ANTHROPIC_API_KEY` is set. Uses a small synthetic
+ * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set. Uses a small synthetic
  * `BriefResult` as the critique input so the test does not spend
  * eight LLM round-trips to construct a fresh brief just to exercise
  * the adversarial step.
  */
 
 import { describe, expect, test } from "bun:test";
+
+import { liveTestsEnabled } from "../helpers/live-gate.ts";
 
 import { AnthropicLLMProvider } from "../../src/llm/anthropic-provider.ts";
 import { executeAdversarialCritique } from "../../src/agents/adversarial.ts";
@@ -21,9 +23,7 @@ import type {
 } from "../../src/agents/types.ts";
 import type { Format } from "../../src/registry/schema.ts";
 
-const hasKey =
-  typeof process.env["ANTHROPIC_API_KEY"] === "string" &&
-  process.env["ANTHROPIC_API_KEY"]!.length > 0;
+const hasKey = liveTestsEnabled(process.env);
 
 const SOURCE = {
   url: "https://digital-strategy.ec.europa.eu/en/policies/ai-act",

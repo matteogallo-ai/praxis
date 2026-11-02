@@ -1,19 +1,18 @@
 # `tests/live/`
 
 Live integration tests against the real Anthropic API. **Skipped by
-default** — they only run when `ANTHROPIC_API_KEY` is set in the
-environment.
+default**: they run only when both `PRAXIS_LIVE_TESTS=1` and
+`ANTHROPIC_API_KEY` are set (`tests/helpers/live-gate.ts`).
 
-These tests do NOT run under `bun test` when `ANTHROPIC_API_KEY` is
-absent. They also don't count toward the release test total, because
-they hit external services and their availability depends on network
-and quota.
+A key alone is not enough on purpose: Bun loads `.env` automatically,
+so a key kept there would otherwise turn every `bun test` into paid
+API calls. Every run of these tests costs money and needs a cost
+estimate and the maintainer's approval first.
 
 ## Run them
 
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-…
-bun test tests/live/
+PRAXIS_LIVE_TESTS=1 bun test tests/live/
 ```
 
 ## What they cover
@@ -45,5 +44,4 @@ bun test tests/live/
   Synthesis) and writes the assembled Markdown brief to
   `/tmp/praxis-live-brief-<ts>.md` for post-hoc human review.
 
-Costs are minimal (a handful of small requests per invocation) but
-still real. Do not include these tests in CI unless you budget for it.
+CI never sets `PRAXIS_LIVE_TESTS`, so these tests are skipped there.
