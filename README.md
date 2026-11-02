@@ -97,6 +97,7 @@ paid, and in its current state it is expected to fail (see Status).
 - Handling of the three observed live failures: prose around the JSON, a degraded briefing instead of an abort under `strict` sourcing, per-stage timeouts; tested on fixtures, not live (C15).
 - `brief --full` checkpoints every stage and resumes a failed run with `--resume <run-id>`; bounded retry per stage; tokens and cost per stage in `metadata.json`; `--max-cost-usd` budget cap (C16).
 - Untrusted content (earlier stages' output, web page excerpts) delimited in every prompt; answers that obey an injected instruction are rejected; tested on a simulated poisoned search result, not against a live model (C17).
+- The API key never reaches stderr, run files or a printed provider; home paths and e-mail addresses in stderr are masked (C20).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
 prove it; CI fails if one of them does not pass.

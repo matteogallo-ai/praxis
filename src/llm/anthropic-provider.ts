@@ -121,7 +121,9 @@ interface AnthropicResponseBody {
 export class AnthropicLLMProvider implements LLMProvider {
   readonly name = "anthropic";
   readonly acceptsSystemPrompt = true;
-  private readonly apiKey: string;
+  // An ECMAScript private field: absent from JSON.stringify, Object.keys and
+  // inspect output, so printing the provider cannot print the key.
+  readonly #apiKey: string;
   private readonly pinnedModel: string | undefined;
   private readonly timeoutMs: number;
   private readonly maxAttempts: number;
@@ -133,7 +135,7 @@ export class AnthropicLLMProvider implements LLMProvider {
     if (typeof key !== "string" || key.length === 0) {
       throw new AnthropicAuthenticationError();
     }
-    this.apiKey = key;
+    this.#apiKey = key;
     const envModel = process.env["ANTHROPIC_MODEL"];
     this.pinnedModel = options.model ?? (envModel !== "" ? envModel : undefined);
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -288,7 +290,7 @@ export class AnthropicLLMProvider implements LLMProvider {
       const response = await this.fetchFn(ANTHROPIC_API_URL, {
         method: "POST",
         headers: {
-          "x-api-key": this.apiKey,
+          "x-api-key": this.#apiKey,
           "anthropic-version": ANTHROPIC_VERSION,
           "content-type": "application/json",
         },

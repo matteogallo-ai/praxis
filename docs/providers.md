@@ -71,6 +71,9 @@ Wire-level features:
   deprecated `temperature` option is accepted and ignored.
 - **Model:** defaults to `claude-sonnet-5-5`; overridable via the
   `ANTHROPIC_MODEL` env var or the constructor `model` option.
+- **API key:** held in an ECMAScript private field (`#apiKey`), so printing
+  or serialising the provider cannot show it; the CLI also routes stderr
+  through `redactSecrets` (`src/cli/redact.ts`).
 - **Timeout:** 60s per request by default, enforced via `AbortController`;
   `timeout_ms` on a call overrides it, and every Praxis stage sets its own
   (`src/agents/stage-limits.ts`).
