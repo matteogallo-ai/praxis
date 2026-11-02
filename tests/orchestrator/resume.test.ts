@@ -347,7 +347,9 @@ describe("synthesis checkpoint sources", () => {
 });
 
 describe("synthesis checkpoint sources follow the live rule", () => {
-  async function resumeWithEditedSource(edit: (source: Record<string, string>) => void): Promise<unknown> {
+  async function resumeWithEditedSource(
+    edit: (source: Record<string, string>, section: Record<string, unknown>) => void
+  ): Promise<unknown> {
     const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
     const store = CheckpointStore.create(runsDir, QUESTION, FORMAT, NOW);
     await orchestrator(countingProvider({ failOptions: false }).llm).brief(QUESTION, FORMAT, {
@@ -357,7 +359,7 @@ describe("synthesis checkpoint sources follow the live rule", () => {
     const path = join(store.dir, "synthesis.json");
     const synthesis = JSON.parse(readFileSync(path, "utf-8"));
     const section = synthesis.sections.find((s: { sources_cited: unknown[] }) => s.sources_cited.length > 0);
-    edit(section.sources_cited[0]);
+    edit(section.sources_cited[0], section);
     writeFileSync(path, JSON.stringify(synthesis));
     return orchestrator(countingProvider({ failOptions: false }).llm)
       .brief(QUESTION, FORMAT, {
@@ -373,6 +375,14 @@ describe("synthesis checkpoint sources follow the live rule", () => {
     });
     expect(err).toBeInstanceOf(OrchestrationError);
     expect((err as Error).message).toContain("not present in any upstream artefact");
+  });
+
+  test("an image in the stored prose is refused, as in a fresh answer", async () => {
+    const err = await resumeWithEditedSource((_source, section) => {
+      section["content_markdown"] = `${section["content_markdown"]} ![x](https://attacker.example/p.png)`;
+    });
+    expect(err).toBeInstanceOf(OrchestrationError);
+    expect((err as Error).message).toContain("an image");
   });
 
   test("an excerpt longer than 500 characters, which the live check accepts, is accepted", async () => {
