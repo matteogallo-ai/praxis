@@ -256,3 +256,34 @@ describe("source URLs (OWASP LLM05)", () => {
     expect(reader.parseSource(source(url), "findings[0].source", "raw")).toMatchObject({ url });
   });
 });
+
+describe("terminal control characters in an answer (OWASP LLM05)", () => {
+  // JSON can carry ESC and other control characters as \u escapes; parsed,
+  // they reach the terminal the CLI prints to (colours, hidden text, links).
+  const loaded = () => loadPrompt("demo", writePrompt(PROMPT), "demo");
+  const answering = (text: string): LLMProvider => ({
+    name: "plain",
+    acceptsSystemPrompt: true,
+    async complete() {
+      return text;
+    },
+  });
+
+  test.each([
+    ["ESC", '{"claim": "a \\u001b[31mred\\u001B[0m b"}'],
+    ["CSI (C1)", '{"claim": "a \\u009b31m b"}'],
+    ["BEL and backspace", '{"claim": "a \\u0007\\u0008 b"}'],
+    ["DEL", '{"claim": "a \\u007f b"}'],
+  ])("%s escapes parse to U+FFFD", async (_label, answer) => {
+    const out = await callModel("demo", answering(answer), loaded(), { system: "SYS", user: "U" }, { tools: [] });
+    const claim = (JSON.parse(out.text) as { claim: string }).claim;
+    expect(claim).not.toMatch(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/);
+    expect(claim).toContain("�");
+  });
+
+  test("tab, newline, an escaped backslash before u, and ordinary escapes are kept", async () => {
+    const answer = '{"claim": "a\\tb\\nc \\\\u001b \\u00e9"}';
+    const out = await callModel("demo", answering(answer), loaded(), { system: "SYS", user: "U" }, { tools: [] });
+    expect((JSON.parse(out.text) as { claim: string }).claim).toBe("a\tb\nc \\u001b é");
+  });
+});

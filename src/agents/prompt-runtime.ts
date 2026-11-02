@@ -286,7 +286,23 @@ export async function callModel(
   ) {
     throw new MaxToolRoundsExceededError(options.maxToolRounds);
   }
-  return completion;
+  return { ...completion, text: withoutControlCharacters(completion.text) };
+}
+
+// A JSON escape for a C0 control other than tab, LF and CR, for DEL or a C1
+// control, or the short forms \b and \f, not itself escaped by a backslash.
+const CONTROL_ESCAPE = /(?<!\\)((?:\\\\)*)\\(?:u(?:00(?:0[0-8bcefBCEF]|1[0-9a-fA-F]|7[fF]|[89][0-9a-fA-F]))|[bf])/g;
+// The same characters written raw.
+const CONTROL_RAW = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g;
+
+/**
+ * An answer's control characters replaced by U+FFFD, raw or as JSON escapes.
+ * Parsed answers are printed to the terminal, where ESC and C1 sequences
+ * recolour, hide or rewrite text and can carry links (OWASP LLM05). Every
+ * stage's answer passes here, so no parser has to remember it.
+ */
+function withoutControlCharacters(text: string): string {
+  return text.replace(CONTROL_ESCAPE, "$1\\ufffd").replace(CONTROL_RAW, "\ufffd");
 }
 
 /**
