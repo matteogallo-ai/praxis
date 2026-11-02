@@ -13,7 +13,10 @@ Read this first. `docs/ENGINEERING_STANDARDS.md` is the full standard;
 
 ## Pipeline
 
-Stages run one after another; each reads the typed output of the earlier ones.
+Stages run one after another; each reads the typed output of the earlier ones
+(risks cite stakeholder names, options cite risk ids). Only the synthesis
+sections are independent of each other, so they run concurrently. Each stage is
+checkpointed and retried once on a recoverable error.
 
 ```
 1 scoping      ← question, format
@@ -21,7 +24,7 @@ Stages run one after another; each reads the typed output of the earlier ones.
 3 stakeholder  ← 1, 2             (web_search)  → sourcing check
 4 risk         ← 1, 2, 3          (web_search)  → sourcing check
 5 options      ← 1–4              (web_search)
-6 synthesis    ← 1–5, one call per format section
+6 synthesis    ← 1–5, one call per format section, sections in parallel
 7 adversarial  ← assembled brief  (web_search)  → may trigger one synthesis rerun
 ```
 

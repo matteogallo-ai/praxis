@@ -104,12 +104,14 @@ export async function executeSynthesis(
   const promptPath = options.promptPath ?? DEFAULT_PROMPT_PATH;
   const loaded = loadPrompt(AGENT_ID, promptPath, PROMPT_NAME);
 
-  const sections: SynthesizedSection[] = [];
   const sourcesByAgent = collectUpstreamSources(ctx);
   const editorial = buildEditorialConfig(ctx.format);
   const revisionBlockGlobal = buildRevisionInstruction(ctx.revision_context);
 
-  for (const section of ctx.format.sections) {
+  // Each section's prompt reads the upstream stages and its own format
+  // entry, never another section's text, so sections are written
+  // concurrently; editorial regeneration stays sequential within a section.
+  const synthesizeSection = async (section: FormatSection): Promise<SynthesizedSection> => {
     const attempts: EditorialAttempt[] = [];
     let lastReason: EditorialReason | undefined;
     let lastDetails: string | undefined;
@@ -180,12 +182,13 @@ export async function executeSynthesis(
     }
 
     const post = postValidate(acceptedParsed, section, ctx);
-    sections.push({
+    return {
       ...post,
       editorial_attempts: attempts,
       final_attempt_number: acceptedAttempt,
-    });
-  }
+    };
+  };
+  const sections = await Promise.all(ctx.format.sections.map(synthesizeSection));
 
   const totalWordCount = sections.reduce((acc, s) => acc + s.word_count, 0);
   const conformance = buildFormatConformance(ctx, sections, totalWordCount);

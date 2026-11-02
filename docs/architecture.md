@@ -42,12 +42,16 @@ passes each stage the typed results of the earlier ones.
 | 3 | Stakeholders | `agents/stakeholder.ts` | `web_search` | scoping, research | `validateStakeholderSourcing` |
 | 4 | Risks | `agents/risk.ts` | `web_search` | scoping, research, stakeholders | `validateRiskSourcing` |
 | 5 | Options | `agents/options.ts` | `web_search` | stages 1–4 | — |
-| 6 | Synthesis | `agents/synthesis.ts` | — | stages 1–5, one call per format section | format conformance (length, forbidden terms) |
+| 6 | Synthesis | `agents/synthesis.ts` | — | stages 1–5, one call per format section, all sections concurrently | format conformance (length, forbidden terms) |
 | 7 | Adversarial review | `agents/adversarial.ts` | `web_search` | the assembled brief | if it asks for a revised recommendation, stage 6 runs once more |
 
 Every stage awaits the previous one, and each reads the one before it: risks
 reference stakeholder names, options reference risk IDs. In the current data
 flow no two stages can run concurrently without changing what a stage reads.
+Within stage 6, each section's call reads stages 1–5 and its own format entry,
+never another section, so the sections are written concurrently and
+reassembled in format order; editorial regeneration stays sequential within
+a section.
 
 The sourcing checks follow the format's `sourcing_policy`. Under `strict`, a
 finding, position or risk without a valid source throws and the whole brief

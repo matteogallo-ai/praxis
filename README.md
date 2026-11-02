@@ -36,7 +36,7 @@ flowchart LR
     V3 --> S4[4 Risks<br/>web_search]
     S4 --> V4{{sourcing check}}
     V4 --> S5[5 Options<br/>web_search]
-    S5 --> S6[6 Synthesis<br/>one call per section]
+    S5 --> S6[6 Synthesis<br/>one call per section,<br/>sections in parallel]
     S6 --> S7[7 Adversarial review<br/>web_search]
     S7 -- revised recommendation needed --> S6b[Synthesis rerun<br/>at most once]
     S7 --> R([Renderers<br/>md · pdf · docx])
