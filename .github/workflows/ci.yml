@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+  # Every base, not only main: a pull request stacked on another work branch
+  # needs the same checks before it is merged into that branch.
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read
