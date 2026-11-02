@@ -1,357 +1,106 @@
-# Praxis Architecture — v0.4
+# Architecture
 
-This document maps the layers of Praxis as of v0.4, and explains the
-responsibilities and boundaries between them. v0.1 shipped the Format
-Registry, v0.2 added the LLM abstraction and the Scoping agent, v0.3
-added a real Anthropic provider, the Research agent, and the
-embryonic Sourcing & Verification layer. v0.4 adds the Stakeholder
-Mapping agent — the first agent whose input includes both prior
-outputs — and extends the sourcing layer to a second agent.
+Praxis is a pipeline of seven LLM calls in a fixed order. This page maps the
+modules as the code stands, the data that flows between stages, and the known
+weaknesses that keep the live path from working. The status of each
+capability is in [`CLAIMS.md`](CLAIMS.md).
 
----
-
-## 1. Layer map
-
-Praxis is organised into five layers, each with a single
-responsibility. No layer reaches past its immediate neighbours.
+## Modules
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  CLI                                                                │
-│  src/cli/index.ts, src/cli/commands/*.ts                            │
-│  parse argv → dispatch to command → render output                   │
-└──────────────────────────────────┬──────────────────────────────────┘
-                                   │
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  Orchestrator                                    src/orchestrator/  │
-│  reads a Format from the Registry, decides which agents to run     │
-│  v0.4:  scope() + researchAfterScoping() +                          │
-│         mapStakeholdersAfterResearch() are implemented              │
-│         brief() throws NotImplementedError (v0.6+)                  │
-└─────────┬────────────────────────┬───────────────┬──────────────────┘
-          │                        │               │
-          ▼                        ▼               ▼
-┌────────────────────┐   ┌──────────────────┐  ┌──────────────────────┐
-│  Agents            │   │ Sourcing Layer   │  │ Format Registry (v0.1)│
-│  src/agents/*.ts   │   │ src/sourcing/    │  │ src/registry/*.ts     │
-│  scoping,          │   │ validateSourcing │  │ YAML load, validate,  │
-│  research (v0.3),  │   │ + validateStake- │  │ lookup, filter        │
-│  stakeholder (v0.4)│   │ holderSourcing   │  │                       │
-│                    │   │ (v0.4)           │  │                       │
-└────────┬───────────┘   └──────────────────┘  └──────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  LLM Provider                                          src/llm/     │
-│  LLMProvider interface + optional completeWithTools()               │
-│  MockLLMProvider (offline)  +  AnthropicLLMProvider (v0.3, live)    │
-└─────────────────────────────────────────────────────────────────────┘
+src/
+  cli/            argv parsing, commands (brief, formats list/inspect/validate, version),
+                  terminal and Markdown output, --format auto keyword routing
+  orchestrator/   Orchestrator: runs the stages in order, applies the sourcing checks,
+                  the adversarial review and the single synthesis rerun
+  agents/         one module per stage: load its .prompt file, render it, call the
+                  provider, parse and validate the JSON answer into a typed result
+  sourcing/       source checks: SOURCE_MISSING markers, freshness, domain trust,
+                  cross-stage duplicates; strict policy throws, permissive reports
+  registry/       format schema, YAML loader, validator, in-memory registry
+  renderers/      Markdown, PDF (pdfkit) and DOCX (hand-written OPC parts) renderers
+  llm/            LLMProvider interface, MockLLMProvider (fixtures), AnthropicLLMProvider
+  errors/         the public error hierarchy re-exported by src/index.ts
+  index.ts        library entry point
+prompts/          one PromptLang .prompt file per stage
+formats/          the four shipped format YAML files
+benchmarks/       questions.yaml, run-all.ts (bench:mock / bench:live), score-all.ts
 ```
 
-External dependency (workspace-linked, sibling checkout of PromptLang):
+The CLI and the library both go through `Orchestrator`. Agents depend on
+`llm/` and `sourcing/` types, never on each other's modules; the orchestrator
+passes each stage the typed results of the earlier ones.
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  PromptLang                                    ~/dev/promptlang/    │
-│  used by:                                                           │
-│    - src/registry/loader.ts  → parseYaml    (@promptlang/yaml-parser)│
-│    - src/agents/scoping.ts     → lexer, parser, AST (promptlang/*)  │
-│    - src/agents/research.ts    → lexer, parser, AST (promptlang/*)  │
-│    - src/agents/stakeholder.ts → lexer, parser, AST (promptlang/*)  │
-└─────────────────────────────────────────────────────────────────────┘
-```
+## Stage flow
 
----
+`Orchestrator.briefWithCritiqueAndRerun()` is the full path:
 
-## 2. End-to-end flow: `praxis brief --with-stakeholders`
+| # | Stage | Module | Tools | Input | After the stage |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Scoping | `agents/scoping.ts` | — | question, format | — |
+| 2 | Research | `agents/research.ts` | `web_search` | scoping | `validateSourcing` |
+| 3 | Stakeholders | `agents/stakeholder.ts` | `web_search` | scoping, research | `validateStakeholderSourcing` |
+| 4 | Risks | `agents/risk.ts` | `web_search` | scoping, research, stakeholders | `validateRiskSourcing` |
+| 5 | Options | `agents/options.ts` | `web_search` | stages 1–4 | — |
+| 6 | Synthesis | `agents/synthesis.ts` | — | stages 1–5, one call per format section | format conformance (length, forbidden terms) |
+| 7 | Adversarial review | `agents/adversarial.ts` | `web_search` | the assembled brief | if it asks for a revised recommendation, stage 6 runs once more |
 
-The v0.4 pipeline extends the v0.3 flow with a third agent stage and a
-second sourcing check. The Orchestrator method is
-`mapStakeholdersAfterResearch`, and the CLI trigger is
-`--with-stakeholders`. All prior modes (`--with-research`, default
-scoping-only) remain unchanged.
+Every stage awaits the previous one, and each reads the one before it: risks
+reference stakeholder names, options reference risk IDs. In the current data
+flow no two stages can run concurrently without changing what a stage reads.
 
-The three-agent flow, in condensed form:
+The sourcing checks follow the format's `sourcing_policy`. Under `strict`, a
+finding, position or risk without a valid source throws and the whole brief
+is lost; under `permissive`, the problem is recorded in the sourcing report.
 
-```
-argv → CLI dispatch → briefCommand → Orchestrator.mapStakeholdersAfterResearch
-  ├─ doScoping()  → ScopingResult
-  ├─ doResearch(scoping, format)  → ResearchResult
-  ├─ validateSourcing(research, format.sourcing_policy)
-  ├─ doMapStakeholders(scoping, research, format)  → StakeholderMapResult
-  │      (input includes BOTH prior outputs — first agent to do so)
-  ├─ validateStakeholderSourcing(stakeholders, format.sourcing_policy)
-  └─ return { scoping, research, stakeholders }
-```
+`Orchestrator` also exposes the shorter paths the CLI flags use: `scope()`,
+`researchAfterScoping()`, `mapStakeholdersAfterResearch()`,
+`assessRisksAfterStakeholders()`, `brief()` (stages 1–6) and
+`briefWithCritique()` (1–7, no rerun). Each restates the sequence of the
+stages before it rather than sharing one implementation.
 
-Under strict sourcing, either validator can throw
-`SourcingValidationError` and abort the pipeline. Under permissive
-sourcing, both return `SourcingReport`s with warnings that later
-releases will surface in the final briefing.
+## Providers
 
-### v0.3 end-to-end flow: `praxis brief --with-research`
+`LLMProvider` has `complete(prompt)` and an optional
+`completeWithTools(prompt, tools)`. Both take a single prompt string.
 
-```
-$ praxis brief "Should we enter Germany?" \
-    --format executive-pre-read --with-research
-```
+- `MockLLMProvider` returns the fixture under `tests/fixtures/mock-llm/` whose
+  key matches the stage and the format id. The question does not select the
+  fixture, so every question with the same format gets the same text.
+- `AnthropicLLMProvider` calls `/v1/messages` with `fetch`: default model
+  `claude-sonnet-4-5` (or `ANTHROPIC_MODEL`), 4096 output tokens, a 60 s
+  timeout per request, up to 3 attempts with backoff on 429 and 5xx, and up
+  to 5 `pause_turn` rounds for the server-side `web_search` tool.
 
-Step-by-step:
+## Known weaknesses
 
-```
-argv
-  │
-  ▼
-[1] CLI dispatcher (src/cli/index.ts)
-     matches "brief" → forwards to runBriefCli
-  │
-  ▼
-[2] Brief command (src/cli/commands/brief.ts)
-     parses flags (--format, --provider, --json, --with-research)
-     selects LLM provider (mock default, or anthropic if requested)
-     builds FormatRegistry, loads formats/
-     constructs Orchestrator(registry, provider)
-     branches on --with-research
-  │
-  ▼
-[3] Orchestrator.researchAfterScoping(question, formatId)
-     prepareForScoping: check format has scoping agent required
-     check format has research agent required
-     doScoping(...)  → ScopingResult
-     doResearch(scoping, format)  → ResearchResult
-     validateSourcing(research, format.sourcing_policy)
-     return { scoping, research }
-  │
-  ├─ (a) Scoping ─────────────────────────────────────────────────┐
-  │      executeScoping loads prompts/scoping.prompt              │
-  │      renders {{question}}/{{format_id}}/{{target_words}}      │
-  │      llm.complete(prompt)  → JSON string                      │
-  │      parse+validate → ScopingResult                           │
-  │                                                                │
-  ├─ (b) Research ────────────────────────────────────────────────┤
-  │      executeResearch loads prompts/research.prompt            │
-  │      renders {{scoping_json}}/{{format_id}}/{{sourcing_policy}}/│
-  │              {{target_words}}                                  │
-  │      llm.completeWithTools(prompt, [web_search])              │
-  │        provider handles multi-round tool loop (up to 5)       │
-  │        collects text + tool_calls[]                            │
-  │      parse+validate → ResearchResult (findings, opens, queries)│
-  │                                                                │
-  └─ (c) Sourcing ────────────────────────────────────────────────┘
-         validateSourcing(result, "strict")
-           iterate findings, flag SOURCE_MISSING
-           strict → throw SourcingValidationError if any missing
-           permissive → return SourcingReport with warnings
-  │
-  ▼
-[4] Brief command — render
-     default: two sections (Scoping JSON + Research findings with sources)
-     --json:  combined { scoping, research } object
-  │
-  ▼
-stdout, exit 0
-```
+These are confirmed in the code and are why live runs fail or cannot be
+trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
-Any failure surfaces as a typed subclass of `PraxisError` (see §4),
-which the CLI catches and renders with a `✗` marker and exit 1.
+- Each agent renders its `.prompt` file's `system` and `user` sections and
+  joins them into one string (`system`, `---`, `user`) sent as a single user
+  message; the API's `system` field is never used.
+- The `@model` declared in each `.prompt` file is never passed to the
+  provider; every stage runs on the provider's default model.
+- Model output is parsed with `JSON.parse` after stripping a code fence;
+  prose before the JSON fails the stage.
+- One timeout (60 s) applies to every stage, including the web-search ones.
+- A failure at any stage loses the stages before it: there is no checkpoint.
+- Web search results and earlier stages' output enter the next prompt
+  without delimiters or an untrusted-content instruction.
+- Token usage and cost are not recorded.
+- `loadPromptDeclaration`, `validateParameterCoverage`, `renderSection` and
+  `stripJsonFences` are copied in all seven agent modules.
 
----
+## Dependencies
 
-## 3. Boundaries and invariants
+- `pdfkit` for PDF output.
+- `@promptlang/yaml-parser` (npm) for format YAML.
+- PromptLang's lexer and parser, imported as `promptlang/*` through
+  `tsconfig.json` `paths` pointing at a sibling checkout (`../promptlang`).
+  CI checks that repository out at a pinned tag.
 
-- **Agents do not know about the Format Registry.** They receive an
-  `AgentContext` / `ResearchContext` — plain objects — from the
-  Orchestrator. This keeps agents composable and unit-testable in
-  isolation.
-- **The Orchestrator does not touch the LLM directly.** It hands the
-  provider to the agent and lets the agent decide how to use it. This
-  keeps the Orchestrator provider-agnostic and prompt-agnostic.
-- **The LLM provider does not know about prompts, agents, or formats.**
-  It takes a string (and optional tools) and returns a string (or a
-  `CompletionResult`). Everything above is Praxis's concern; everything
-  below is the model's.
-- **Agents do not know about the Sourcing Layer.** They emit findings
-  with typed sources. The Orchestrator is the one who calls
-  `validateSourcing` — sourcing enforcement is a policy decision the
-  Orchestrator owns.
-- **The CLI is a thin dispatcher.** Command modules are pure functions
-  over their inputs; nothing about `process.argv`, `stdout`, or
-  formatting leaks upward.
-- **Tool identifiers are vendor-neutral.** Agents pass Praxis-side
-  names (`web_search`); providers map them to versioned API strings
-  (`web_search_20250305`). Swapping tool backends does not require
-  touching agent code.
+## Errors
 
----
-
-## 4. Error hierarchy
-
-```
-Error
-└── PraxisError                              (src/registry/errors.ts)
-    ├── ValidationError                      (registry — v0.1)
-    ├── YamlSyntaxError                      (registry — v0.1)
-    ├── FileNotFoundError                    (registry — v0.1)
-    ├── DuplicateFormatError                 (registry — v0.1)
-    ├── FormatNotFoundError                  (registry — v0.1)
-    │
-    ├── LLMError                             (src/llm/errors.ts)
-    │   ├── ProviderNotSupportedError
-    │   ├── MockFixtureNotFoundError
-    │   ├── ToolUseNotSupportedError          (v0.3)
-    │   ├── AnthropicAuthenticationError      (v0.3)
-    │   ├── AnthropicAPIError                 (v0.3)
-    │   ├── AnthropicRateLimitError           (v0.3)
-    │   └── AnthropicTimeoutError             (v0.3)
-    │
-    ├── AgentExecutionError                  (src/agents/errors.ts)
-    │   ├── InvalidAgentOutputError
-    │   ├── PromptFileError
-    │   ├── StakeholderMappingError           (v0.4)
-    │   └── ResearchAgentError                (v0.3)
-    │        └── MaxToolRoundsExceededError   (v0.3)
-    │
-    ├── SourcingValidationError              (src/sourcing/errors.ts, v0.3)
-    │
-    ├── NotImplementedError                  (src/orchestrator/errors.ts)
-    └── OrchestrationError                   (src/orchestrator/errors.ts)
-```
-
-Everything a user might see routes through this tree. The CLI has a
-single `catch (err instanceof PraxisError)` per command, so adding a
-new subclass automatically gets a clean stderr rendering.
-
----
-
-## 5. What is deliberately absent in v0.3
-
-- **Parallel agent execution.** The Orchestrator runs one agent at a
-  time. Parallelism will be added only if profiling shows it worth the
-  coordination cost.
-- **Prompt-level caching.** No caching yet. Anthropic supports prompt
-  caching server-side, which we may opt into in a later release for
-  large system prompts.
-- **Streaming.** `LLMProvider.complete` / `completeWithTools` return
-  the whole payload. A streaming variant will land when at least one
-  agent's UX depends on it.
-- **Chained agent calls.** No agent calls another agent. Coordination
-  is exclusively the Orchestrator's job.
-- **Sourcing beyond `strict` / `permissive`.** Freshness gates,
-  domain-trust bands, dedupe, and retrieval retry are noted in
-  [`docs/sourcing.md`](sourcing.md) as follow-on work.
-
-These will each earn their place when they earn their place.
-
----
-
-## 6. See also
-
-- [`docs/providers.md`](providers.md) — provider interface,
-  configuration, cost model, how to add a new provider.
-- [`docs/sourcing.md`](sourcing.md) — sourcing philosophy, source
-  types, policy semantics.
-- [`docs/writing-a-prompt.md`](writing-a-prompt.md) — how to author a
-  new `.prompt` file for a Praxis agent.
-- [`docs/format-schema.md`](format-schema.md) — the Format YAML
-  contract.
-- [`docs/creating-a-format.md`](creating-a-format.md) — walkthrough for
-  adding a new briefing format.
-
----
-
-## 7. Final pipeline (v0.9)
-
-Diagram of the complete pipeline as of v0.9. The v0.5-v0.8
-additions layered onto the v0.4 baseline are the hardened
-sourcing layer, the Options and Synthesis agents, the
-Adversarial Critique agent, and the v0.8 editorial re-run loop
-(hard-cap 1). The v0.9 release adds no agent — only CLI polish,
-`--format auto`, and the benchmarks framework.
-
-```
-    question, --format <id> (or --format auto)
-                │
-                ▼
-        ┌───────────────┐
-        │   Scoping     │            (v0.2)
-        └───────────────┘
-                │ScopingResult
-                ▼
-        ┌───────────────┐
-        │   Research    │◀───── web_search (tool)
-        └───────────────┘            (v0.3)
-                │ResearchResult
-                ▼
-        ┌───────────────┐
-        │ Stakeholders  │            (v0.4)
-        └───────────────┘
-                │StakeholderMapResult
-                ▼
-        ┌───────────────────────────────────┐
-        │   Hardened sourcing layer         │ (v0.5)
-        │   freshness · trust · dedupe      │
-        └───────────────────────────────────┘
-                │
-                ▼
-        ┌───────────────┐
-        │     Risks     │            (v0.5)
-        └───────────────┘
-                │RiskAnalysisResult
-                ▼
-        ┌───────────────┐
-        │    Options    │            (v0.6)
-        └───────────────┘
-                │OptionsGenerationResult
-                ▼
-        ┌───────────────┐
-        │   Synthesis   │◀───── strict_editorial retry (v0.8)
-        │               │       max_regeneration_attempts
-        └───────────────┘            (v0.6 + v0.8)
-                │SynthesisResult
-                ▼
-        ┌───────────────┐
-        │  Adversarial  │            (v0.7)
-        │   Critique    │
-        └───────────────┘
-                │AdversarialCritiqueResult
-                │
-                │  revised_recommendation_needed?
-                ├──── no ──▶ (done)
-                │
-                yes (hard cap: exactly 1 iteration)
-                │
-                ▼
-        ┌───────────────┐
-        │   Synthesis   │  REVISION MODE — critiques + steelman
-        │  (2nd pass)   │  (v0.8)
-        └───────────────┘
-                │SynthesisResult (post-rerun)
-                ▼
-        BriefWithCritiqueAndRerunResult
-                │
-                ▼
-        ┌───────────────────────────────────┐
-        │   Renderers dispatcher            │ (v0.7)
-        │   md-enhanced · docx · pdf        │
-        └───────────────────────────────────┘
-                │
-                ▼
-       Buffer  ──▶  --output <path>
-```
-
-Invariants worth stressing:
-
-- **No recursion in the rerun loop.** Exactly one 2nd Synthesis
-  pass. A hypothetical critique on the post-rerun output is
-  ignored — the caller can invoke the method again if they want
-  another pass, but the library never loops on its own.
-- **No agent calls another agent.** The Orchestrator is the sole
-  coordinator. The `revision_context` and strict_editorial
-  retry inputs are Orchestrator-owned inputs to the Synthesis
-  agent, not agent-to-agent calls.
-- **Rendering is always the last stage.** No agent writes files
-  during the pipeline; every artefact is produced by the
-  renderers after the pipeline returns.
-- [PromptLang syntax reference](https://github.com/matteogallo-ai/promptlang/blob/main/docs/syntax-reference.md)
-  — the DSL used by every Praxis prompt.
+Every error the library throws extends `PraxisError`. The public classes are
+listed in `src/errors/public.ts`; [`api.md`](api.md) groups them by layer.
