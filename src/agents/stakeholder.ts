@@ -22,7 +22,7 @@
  * verbatim.
  */
 
-import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -96,8 +96,8 @@ export async function executeStakeholderMapping(
   const loaded = loadPrompt(AGENT_ID, promptPath, PROMPT_NAME);
 
   const inputs: Record<string, string> = {
-    scoping_json: JSON.stringify(ctx.scoping, null, 2),
-    research_json: JSON.stringify(ctx.research, null, 2),
+    scoping_json: untrustedJson("scoping", ctx.scoping),
+    research_json: untrustedJson("research", ctx.research),
     format_id: ctx.format.id,
     sourcing_policy: ctx.format.sourcing_policy,
   };

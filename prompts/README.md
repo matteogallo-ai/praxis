@@ -38,6 +38,15 @@ not declare `acceptsSystemPrompt` receives both joined by a `---` line, as
 before. A model pinned on `AnthropicLLMProvider` (constructor `model` or
 `ANTHROPIC_MODEL`) overrides every `@model`.
 
+Earlier stages' output (`{{*_json}}`) and the critique text of a synthesis
+rerun reach the prompt inside `<untrusted_data source="…">` blocks, with every
+`<` in the content escaped so it cannot close the block. Every stage's system
+text ends with `UNTRUSTED_CONTENT_RULE`, which tells the model that those
+blocks and every web_search result are data, never instructions. Code then
+checks the answer: `callModel` rejects one that repeats twelve consecutive
+words of the system text, and each stage's validator rejects references to
+options, risks or stakeholders that do not exist.
+
 Changing any line inside a `prompt` body changes what the model receives:
 bump `@version`. CI runs `promptlang semver-check` against `main`; a changed
 `@model` needs a major bump.

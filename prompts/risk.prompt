@@ -186,19 +186,13 @@ prompt risk(
     Risk analysis task for briefing '{{format_id}}' under {{sourcing_policy}} sourcing.
 
     Scoping output (JSON):
-    ---
     {{scoping_json}}
-    ---
 
     Research output (JSON):
-    ---
     {{research_json}}
-    ---
 
     Stakeholder mapping output (JSON):
-    ---
     {{stakeholders_json}}
-    ---
 
     Produce the RiskAnalysis JSON now. Search the web as needed for
     precedent, benchmarks, and regulatory guidance. Remember: real

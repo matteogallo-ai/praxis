@@ -10,6 +10,7 @@ import {
   outputReader,
   renderPrompt,
   stampRetrievalTime,
+  UNTRUSTED_CONTENT_RULE,
 } from "../../src/agents/prompt-runtime.ts";
 import { AgentExecutionError, MaxToolRoundsExceededError } from "../../src/agents/errors.ts";
 import type { CompleteOptions, LLMProvider } from "../../src/llm/provider.ts";
@@ -69,7 +70,7 @@ describe("loadPrompt / renderPrompt", () => {
     const loaded = loadPrompt("demo", writePrompt(PROMPT), "demo");
     expect(loaded.model).toBe("claude-haiku-5-5");
     const rendered = renderPrompt("demo", loaded, { topic: "Germany" });
-    expect(rendered.system).toBe("You are a careful analyst.");
+    expect(rendered.system).toBe(`You are a careful analyst.\n\n${UNTRUSTED_CONTENT_RULE}`);
     expect(rendered.user).toBe("Topic: Germany");
   });
 });

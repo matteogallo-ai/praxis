@@ -94,9 +94,7 @@ prompt research(
     Target briefing length: about {{target_words}} words.
 
     Scoping output (JSON):
-    ---
     {{scoping_json}}
-    ---
 
     Produce the Research JSON now. Search the web as needed. Remember:
     real source or SOURCE_MISSING — never invent.

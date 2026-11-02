@@ -28,7 +28,7 @@
  *          must be a non-empty string
  */
 
-import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -97,7 +97,7 @@ export async function executeAdversarialCritique(
   const loaded = loadPrompt(AGENT_ID, promptPath, PROMPT_NAME);
 
   const inputs: Record<string, string> = {
-    brief_json: JSON.stringify(ctx.brief_result, null, 2),
+    brief_json: untrustedJson("brief", ctx.brief_result),
     format_id: ctx.format.id,
     question: ctx.brief_result.question,
   };

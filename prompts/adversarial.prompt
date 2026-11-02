@@ -160,9 +160,7 @@ prompt adversarial(
     Complete brief result (JSON) — this is the output of the six
     upstream agents (Scoping → Research → Stakeholders → Risks →
     Options → Synthesis) that you must stress-test:
-    ---
     {{brief_json}}
-    ---
 
     Produce the AdversarialCritique JSON now. Search the web as
     needed for counter-evidence. Remember: steelman, reference

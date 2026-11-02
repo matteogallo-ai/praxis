@@ -22,7 +22,7 @@
  * and does not silently fill them in.
  */
 
-import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -60,7 +60,7 @@ export async function executeResearch(
   const loaded = loadPrompt(AGENT_ID, promptPath, PROMPT_NAME);
 
   const inputs: Record<string, string> = {
-    scoping_json: JSON.stringify(ctx.scoping, null, 2),
+    scoping_json: untrustedJson("scoping", ctx.scoping),
     format_id: ctx.formatId,
     sourcing_policy: ctx.sourcingPolicy,
     target_words: String(ctx.targetWords),

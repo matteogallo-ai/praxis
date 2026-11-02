@@ -111,9 +111,9 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
   ceilings, not from measured durations; no live stage duration exists yet.
 - Freshness is checked on `accessed_at`, which Praxis sets to the retrieval
   time; the page's own age (`page_age`) is not used.
-- Web search results and earlier stages' output enter the next prompt
-  between `---` lines with a label, but with no instruction to treat them as
-  data, and `---` also separates the system text from the user text.
+- Web search results arrive inside the model's own turn, so Praxis cannot
+  wrap them; they are covered by the system rule alone. Whether a live model
+  resists an injected instruction has not been measured.
 
 ## Dependencies
 

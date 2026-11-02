@@ -30,7 +30,7 @@
  * upstream agents.
  */
 
-import { callModel, loadPrompt, renderPrompt, extractJsonText } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, extractJsonText, untrusted, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
   EditorialAttempt,
@@ -208,11 +208,11 @@ function buildSectionInputs(
   retryBlock: string
 ): Record<string, string> {
   return {
-    scoping_json: JSON.stringify(ctx.scoping, null, 2),
-    research_json: JSON.stringify(ctx.research, null, 2),
-    stakeholders_json: JSON.stringify(ctx.stakeholders, null, 2),
-    risks_json: JSON.stringify(ctx.risks, null, 2),
-    options_json: JSON.stringify(ctx.options, null, 2),
+    scoping_json: untrustedJson("scoping", ctx.scoping),
+    research_json: untrustedJson("research", ctx.research),
+    stakeholders_json: untrustedJson("stakeholders", ctx.stakeholders),
+    risks_json: untrustedJson("risks", ctx.risks),
+    options_json: untrustedJson("options", ctx.options),
     format_id: ctx.format.id,
     section_id: section.id,
     section_title: section.title,
@@ -365,19 +365,22 @@ function buildSectionRevisionInstruction(
   const critiquesText =
     relevant.length === 0
       ? "(no critiques targeted at this section — align recommendation and prose with the steelmanned alternative)"
-      : relevant
-          .map(
-            (c) =>
-              `- ${c.id} [${c.severity}, ${c.category}]: ${c.steelmanned_position}\n    implication_if_true: ${c.implication_if_true}\n    suggested_revision: ${c.suggested_revision}`
-          )
-          .join("\n");
+      : untrusted(
+          "adversarial critiques",
+          relevant
+            .map(
+              (c) =>
+                `- ${c.id} [${c.severity}, ${c.category}]: ${c.steelmanned_position}\n    implication_if_true: ${c.implication_if_true}\n    suggested_revision: ${c.suggested_revision}`
+            )
+            .join("\n")
+        );
   return [
     `${global.header} — the initial synthesis attracted adversarial critiques that this pass MUST address.`,
     "",
     "Critiques to address:",
     critiquesText,
     "",
-    `Steelmanned alternative recommendation:\n${global.alt}`,
+    `Steelmanned alternative recommendation:\n${untrusted("steelmanned alternative", global.alt)}`,
     "",
     `Instruction: ${global.instruction}`,
     "",

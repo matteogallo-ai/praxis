@@ -142,14 +142,10 @@ prompt stakeholder(
     Stakeholder mapping task for briefing '{{format_id}}' under {{sourcing_policy}} sourcing.
 
     Scoping output (JSON):
-    ---
     {{scoping_json}}
-    ---
 
     Research output (JSON):
-    ---
     {{research_json}}
-    ---
 
     Produce the StakeholderMap JSON now. Search the web to confirm
     positions when needed. Remember: real source or SOURCE_MISSING —

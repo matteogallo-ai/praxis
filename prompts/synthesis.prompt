@@ -145,29 +145,19 @@ prompt synthesis(
     Forbidden terms:                  {{forbidden_terms}}
 
     Scoping output (JSON):
-    ---
     {{scoping_json}}
-    ---
 
     Research output (JSON):
-    ---
     {{research_json}}
-    ---
 
     Stakeholder mapping output (JSON):
-    ---
     {{stakeholders_json}}
-    ---
 
     Risk analysis output (JSON):
-    ---
     {{risks_json}}
-    ---
 
     Options generation output (JSON):
-    ---
     {{options_json}}
-    ---
 
     {{revision_block}}
 
