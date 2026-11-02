@@ -406,7 +406,7 @@ describe("executeSynthesis — links and images in the prose", () => {
     const result = (await synthesize(`Per [Precedent A](${SOURCE_A.url}), margins held.`)) as {
       sections: { content_markdown: string }[];
     };
-    expect(result.sections[0]!.content_markdown).toContain(SOURCE_A.url);
+    expect(result.sections[0]?.content_markdown).toContain(SOURCE_A.url);
   });
 });
 

