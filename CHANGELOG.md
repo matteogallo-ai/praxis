@@ -24,7 +24,8 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   pull request and issue templates; `docs/ENGINEERING_STANDARDS.md`.
 - `PRAXIS_NOW` (a UTC date and time) freezes the CLI clock: freshness
   verdicts and run ids no longer depend on the day a briefing runs. The test
-  suite sets it, and CI runs the suite with the wall clock in 2020 and 2040.
+  suite sets it, and CI runs the suite with the in-process wall clock in 2029
+  and 2040.
 - Per-stage checkpoints and `praxis brief --resume <run-id>`; `--runs-dir`
   (default `$PRAXIS_RUNS_DIR`, else `.praxis/runs`) (C16).
 - `UsageLedger`: tokens, web searches and cost per stage and per briefing,

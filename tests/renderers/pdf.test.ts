@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, setSystemTime, test } from "bun:test";
+import { restoreSystemTime } from "../helpers/clock.ts";
 
 import { pdfRenderer } from "../../src/renderers/pdf.ts";
 import type {
@@ -309,7 +310,7 @@ describe("pdfRenderer — reproducible output", () => {
       const second = await pdfRenderer.render(brief, {});
       expect(Buffer.compare(first, second)).toBe(0);
     } finally {
-      setSystemTime();
+      restoreSystemTime();
     }
   });
 });

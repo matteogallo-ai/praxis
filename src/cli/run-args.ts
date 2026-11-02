@@ -1,8 +1,8 @@
 /**
  * The `brief` flags that control a run rather than what it produces:
  * `--resume <run-id>`, `--runs-dir <path>`, `--max-cost-usd <n>` and
- * `--price-table <path>`, and the clock (`PRAXIS_NOW`). They are taken out of the argument list before
- * the briefing flags are parsed; `--resume` puts back the question and
+ * `--price-table <path>`, and the clock (`PRAXIS_NOW`). They are taken out
+ * of the argument list before the briefing flags are parsed; `--resume` puts back the question and
  * format recorded in the run, and `--full`, so a resumed run cannot drift
  * from the one it continues.
  */

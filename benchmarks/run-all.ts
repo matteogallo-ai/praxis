@@ -42,6 +42,7 @@ import {
   docxRenderer,
 } from "../src/renderers/index.ts";
 import type { BriefWithCritiqueAndRerunResult } from "../src/orchestrator/orchestrator.ts";
+import { FIXTURE_CLOCK } from "../tests/fixtures/clock.ts";
 
 // ---------------------------------------------------------------------------
 // CLI parsing
@@ -169,11 +170,11 @@ function requireStringList(
 /**
  * Mock runs use a fixed clock so `bun run bench:mock` rewrites the committed
  * artefacts byte for byte (rule: a rerun leaves `git status` clean). The date
- * is when the fixtures were written: their sources' `accessed_at` values are
+ * is when the fixtures were written (`tests/fixtures/clock.ts`): their sources' `accessed_at` values are
  * classified as fresh against it, whatever the real date. Mock metadata also
  * omits `duration_ms`, which measures the machine, not the pipeline.
  */
-const MOCK_CLOCK = new Date("2026-08-20T00:00:00.000Z");
+const MOCK_CLOCK = new Date(FIXTURE_CLOCK);
 
 export interface BenchmarkOutcome {
   id: string;

@@ -45,15 +45,18 @@ jobs:
       - run: bun test
         working-directory: praxis
 
-  # The suite pins the CLI clock (tests/helpers/preload.ts); running it with the
-  # wall clock moved years either way, and PRAXIS_NOW set to the same date for
-  # the preload to override, proves no test reads the real date.
+  # The suite pins the CLI clock (tests/helpers/preload.ts). This job runs it
+  # with the in-process wall clock years ahead, and PRAXIS_NOW set to the same
+  # date for the preload to override: a test that breaks as time passes fails
+  # here first. Spawned CLIs keep the real wall clock; PRAXIS_NOW pins them.
+  # Only later dates: a format's last_reviewed must not be in the future, and
+  # that test reads the real date on purpose.
   test-other-dates:
     name: test · wall clock at ${{ matrix.at }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        at: ["2020-01-01T00:00:00Z", "2040-06-01T00:00:00Z"]
+        at: ["2029-01-01T00:00:00Z", "2040-06-01T00:00:00Z"]
     steps:
       - uses: actions/checkout@v4
         with:
