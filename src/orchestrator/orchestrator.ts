@@ -56,6 +56,8 @@ import {
 } from "../sourcing/insufficient.ts";
 import { OrchestrationError } from "./errors.ts";
 import { meter, type UsageLedger } from "./ledger.ts";
+import type { CheckpointStore } from "./checkpoint.ts";
+import { withRetry } from "./retry.ts";
 
 export interface ScopeOptions {
   /** Overrides the scoping prompt file path — used in tests. */
@@ -65,6 +67,13 @@ export interface ScopeOptions {
    * enforces the ledger's budget cap before each call.
    */
   ledger?: UsageLedger;
+  /**
+   * Saves each stage's output once accepted and, on a later call with the
+   * same store, reuses it instead of running the stage again (`--resume`).
+   */
+  checkpoints?: CheckpointStore;
+  /** Attempts per stage on recoverable errors (see `retry.ts`). Default 2. */
+  stageAttempts?: number;
 }
 
 export interface ResearchAfterScopingOptions extends ScopeOptions {
@@ -273,7 +282,7 @@ export class Orchestrator {
     options: ScopeOptions = {}
   ): Promise<ScopingResult> {
     const format = this.prepareForScoping(question, formatId);
-    return this.doScoping(question, format, options);
+    return this.stage("scoping", options, () => this.doScoping(question, format, options));
   }
 
   /**
@@ -422,7 +431,7 @@ export class Orchestrator {
       }
     }
 
-    const now = options.now ?? new Date();
+    const now = options.now ?? options.checkpoints?.startedAt ?? new Date();
     const hardened = last === "risk" || last === "synthesis";
     const validateOpts: Parameters<typeof validateSourcing>[2] = {};
     if (hardened) {
@@ -448,7 +457,9 @@ export class Orchestrator {
         degraded = true;
       }
     };
-    const scoping = await this.doScoping(question, format, options);
+    const scoping = await this.stage("scoping", options, () =>
+      this.doScoping(question, format, options)
+    );
     const run: PipelineRun = {
       scoping,
       generatedAt: now.toISOString(),
@@ -459,7 +470,9 @@ export class Orchestrator {
       },
     };
 
-    run.research = await this.doResearch(scoping, format, options);
+    run.research = await this.stage("research", options, () =>
+      this.doResearch(scoping, format, options)
+    );
     const research = run.research;
     check(() => validateSourcing(research, policy, validateOpts));
     if (degraded && research.findings.every((f) => isSourceMissing(f.source))) {
@@ -470,32 +483,26 @@ export class Orchestrator {
     }
     if (last === "research") return run;
 
-    run.stakeholders = await this.doMapStakeholders(scoping, run.research, format, options);
+    run.stakeholders = await this.stage("stakeholder", options, () =>
+      this.doMapStakeholders(scoping, research, format, options)
+    );
     const stakeholders = run.stakeholders;
     check(() => validateStakeholderSourcing(stakeholders, policy, validateOpts));
     if (last === "stakeholder") return run;
 
-    run.risks = await this.doAssessRisks(scoping, run.research, run.stakeholders, format, options);
+    run.risks = await this.stage("risk", options, () =>
+      this.doAssessRisks(scoping, research, stakeholders, format, options)
+    );
     const risks = run.risks;
     check(() => validateRiskSourcing(risks, policy, validateOpts));
     if (last === "risk") return run;
 
-    run.options = await this.doGenerateOptions(
-      scoping,
-      run.research,
-      run.stakeholders,
-      run.risks,
-      format,
-      options
+    const optionsResult = await this.stage("options", options, () =>
+      this.doGenerateOptions(scoping, research, stakeholders, risks, format, options)
     );
-    run.synthesis = await this.doSynthesize(
-      scoping,
-      run.research,
-      run.stakeholders,
-      run.risks,
-      run.options,
-      format,
-      options
+    run.options = optionsResult;
+    run.synthesis = await this.stage("synthesis", options, () =>
+      this.doSynthesize(scoping, research, stakeholders, risks, optionsResult, format, options)
     );
     if (degraded) {
       run.synthesis = withInsufficientlySourcedSection(run.synthesis, run.sourcingReport(), run);
@@ -533,7 +540,9 @@ export class Orchestrator {
     const brief = await this.brief(question, formatId, options);
     const format = this.registry.get(formatId);
 
-    const adversarial = await this.doAdversarial(brief, format, options);
+    const adversarial = await this.stage("adversarial", options, () =>
+      this.doAdversarial(brief, format, options)
+    );
 
     const sourcing_report = withCritiqueSources(
       brief.sourcing_report,
@@ -610,15 +619,17 @@ export class Orchestrator {
         "revise sections and align recommendation with the steelmanned alternative",
     };
 
-    const rerunSynthesis = await this.doSynthesize(
-      initial.scoping,
-      initial.research,
-      initial.stakeholders,
-      initial.risks,
-      initial.options,
-      format,
-      options,
-      revisionContext
+    const rerunSynthesis = await this.stage("synthesis-rerun", options, () =>
+      this.doSynthesize(
+        initial.scoping,
+        initial.research,
+        initial.stakeholders,
+        initial.risks,
+        initial.options,
+        format,
+        options,
+        revisionContext
+      )
     );
 
     const rerunWithSection =
@@ -652,6 +663,20 @@ export class Orchestrator {
         re_synthesis_deviations: deviations,
       },
     };
+  }
+
+  /**
+   * Runs one stage: reuses its checkpoint when there is one; otherwise runs
+   * it with bounded retry, records its wall time, and checkpoints the output.
+   */
+  private async stage<T>(name: string, options: ScopeOptions, run: () => Promise<T>): Promise<T> {
+    const saved = options.checkpoints?.load<T>(name);
+    if (saved !== undefined) return saved;
+    const started = Date.now();
+    const value = await withRetry(run, options.stageAttempts ?? 2);
+    options.ledger?.recordDuration(name, Date.now() - started);
+    options.checkpoints?.save(name, value);
+    return value;
   }
 
   /** The provider for one stage: metered under that stage when a ledger is set. */
