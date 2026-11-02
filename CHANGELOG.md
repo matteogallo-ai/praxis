@@ -22,6 +22,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   `bench:mock` drift check, Conventional Commits.
 - `docs/CLAIMS.md` and `scripts/check-claims.ts`; `CLAUDE.md`; `SECURITY.md`;
   pull request and issue templates; `docs/ENGINEERING_STANDARDS.md`.
+- Supply chain (`docs/supply-chain.md`): actions pinned to commit SHAs,
+  Dependabot (bun, GitHub Actions), CodeQL and OSV-Scanner on every pull
+  request and weekly, OpenSSF Scorecard with its badge, and a release
+  workflow that publishes a tag's attested source archive with its Sigstore
+  bundle once the `release` environment's reviewer approves.
 - `PRAXIS_NOW` (a UTC date and time) freezes the CLI clock: freshness
   verdicts and run ids no longer depend on the day a briefing runs. The test
   suite sets it, and CI runs the suite with the in-process wall clock in 2029

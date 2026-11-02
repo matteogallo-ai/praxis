@@ -73,10 +73,14 @@ protections that hold:
 
 - The GitHub ruleset on `main` (pull request required, no force-push, no
   deletion, no bypass actor) refuses a direct push whatever the client.
-- The ruleset on `v*` tags restricts creating, moving and deleting them, but
-  lets repository admins bypass it. A tool running with the maintainer's
-  admin credentials can therefore still push a tag; for tags the deny rules
-  and the project rule are the only guard.
+- The ruleset on `v*` tags restricts creating, moving and deleting them and
+  lets repository admins bypass it, by choice: the maintainer tags releases.
+  A tool running with the maintainer's admin credentials can therefore push
+  a tag. A tag alone publishes nothing: the release job
+  (`.github/workflows/release.yml`) runs in the `release` environment and
+  waits for its required reviewer, with admin bypass disabled. That approval
+  is the barrier between a tag and a published release
+  ([`docs/supply-chain.md`](docs/supply-chain.md) has the settings).
 - `--max-cost-usd` bounds what a briefing can spend whatever starts it.
 
 ### 3. The API key
