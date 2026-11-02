@@ -1,20 +1,15 @@
 // scoping.prompt
-// Praxis v0.2 — Scoping agent.
+// Praxis — Scoping stage.
 //
 // Reformulates the user's raw question into a precise briefing brief,
 // surfaces implicit questions the reader is really asking, defines the
 // scope boundaries the analysis must respect, and lists the assumptions
 // that need validation before writing.
 //
-// Executed by the Praxis runtime against any LLMProvider. In v0.2 only
-// the MockLLMProvider is wired in the CLI; real providers land in v0.3.
-//
-// NOTE — the `output: string` declaration is deliberate. PromptLang v1.1
-// does not yet support array types (`string[]`) in struct fields, so the
-// full schema of `ScopingResult` is documented in the `system:` block
-// and enforced on the Praxis side in `src/agents/scoping.ts`. When
-// PromptLang ships array types, the return type will migrate to a proper
-// struct without any behavioural change.
+// NOTE — the `output: string` declaration is deliberate. The PromptLang
+// version this file was written for has no array types (`string[]`) in
+// struct fields, so the full schema of `ScopingResult` is documented in the
+// `system:` block and enforced on the Praxis side in `src/agents/scoping.ts`.
 
 @version "1.0.0"
 @model claude-opus-4.7
