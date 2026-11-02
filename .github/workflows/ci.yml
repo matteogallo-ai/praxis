@@ -45,6 +45,35 @@ jobs:
       - run: bun test
         working-directory: praxis
 
+  # The suite pins the CLI clock (tests/helpers/preload.ts); running it with the
+  # wall clock moved years either way, and PRAXIS_NOW set to the same date for
+  # the preload to override, proves no test reads the real date.
+  test-other-dates:
+    name: test · wall clock at ${{ matrix.at }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        at: ["2020-01-01T00:00:00Z", "2040-06-01T00:00:00Z"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: praxis
+      - uses: actions/checkout@v4
+        with:
+          repository: matteogallo-ai/promptlang
+          ref: ${{ env.PROMPTLANG_REF }}
+          path: promptlang
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - run: bun install --frozen-lockfile
+        working-directory: praxis
+      - run: bun test
+        working-directory: praxis
+        env:
+          PRAXIS_TEST_SYSTEM_TIME: ${{ matrix.at }}
+          PRAXIS_NOW: ${{ matrix.at }}
+
   prompt-semver:
     name: prompt semver-check
     runs-on: ubuntu-latest
