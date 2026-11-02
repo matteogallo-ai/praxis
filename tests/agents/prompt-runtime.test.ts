@@ -233,3 +233,26 @@ describe("retrieval time", () => {
     ).toThrow("findings[0].source.accessed_at must be an ISO 8601 string when present");
   });
 });
+
+describe("source URLs (OWASP LLM05)", () => {
+  const reader = outputReader("research");
+  const source = (url: string) => ({ url, title: "t", excerpt: "" });
+
+  // A model steered by a page it searched can cite any string as a URL; the
+  // Markdown briefing turns it into a link the reader clicks.
+  test.each([
+    "javascript:alert(document.cookie)",
+    "data:text/html,<script>alert(1)</script>",
+    "file:///etc/passwd",
+    "www.destatis.de/x",
+    "not a url",
+  ])("refuses %p", (url) => {
+    expect(() => reader.parseSource(source(url), "findings[0].source", "raw")).toThrow(
+      "findings[0].source.url must be an absolute http(s) URL"
+    );
+  });
+
+  test.each(["https://www.destatis.de/x?y=1#z", "http://example.org/a_(b)"])("accepts %p", (url) => {
+    expect(reader.parseSource(source(url), "findings[0].source", "raw")).toMatchObject({ url });
+  });
+});

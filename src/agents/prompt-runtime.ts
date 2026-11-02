@@ -408,6 +408,9 @@ export function outputReader(agentId: string): OutputReader {
       if (typeof url !== "string" || url.length === 0) {
         return fail(`${path}.url must be a non-empty string (or use SOURCE_MISSING)`, raw);
       }
+      if (!isWebUrl(url)) {
+        return fail(`${path}.url must be an absolute http(s) URL`, raw);
+      }
       if (typeof title !== "string" || title.length === 0) {
         return fail(`${path}.title must be a non-empty string`, raw);
       }
@@ -423,6 +426,17 @@ export function outputReader(agentId: string): OutputReader {
       return { url, title, accessed_at: accessedAt, excerpt };
     },
   };
+}
+
+/**
+ * Whether `url` is an absolute http or https URL. A cited URL becomes a link
+ * in the Markdown briefing, so `javascript:`, `data:` or `file:` from a
+ * steered model would be a link the reader clicks (OWASP LLM05).
+ */
+function isWebUrl(url: string): boolean {
+  if (!URL.canParse(url)) return false;
+  const { protocol } = new URL(url);
+  return protocol === "https:" || protocol === "http:";
 }
 
 /**
