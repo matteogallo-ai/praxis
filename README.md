@@ -154,10 +154,13 @@ bun run bench:mock                   # renderer smoke test, writes benchmarks/ou
 
 `CLAUDE.md` lists every command, including the paid ones. The `.claude/`
 directory holds the Claude Code permission settings used to build this repo:
-reads, tests, `bun run *`, commits and `git tag` are allowed without a prompt;
-`git push`, `curl`, `wget`, `rm -rf` and `npm install` are denied. Because
-`bun run *` is allowed, the paid `bench:live` and `score:live` scripts are not
-blocked by these settings; the approval rule in `CLAUDE.md` is what stops them.
+reads, tests, `bun run *` and commits are allowed without a prompt;
+`git push`, `git tag`, `curl`, `wget`, `rm -rf` and `npm install` are denied,
+and so are the paid entry points: `bun run bench` and `bun run bench:live`,
+every `bun run score*` script (including the free `score:dry`), and any
+command starting with `PRAXIS_LIVE_TESTS=1`. `bun run bench:mock` stays
+allowed. The deny rules match command prefixes, so they are a backstop, not
+a guarantee: the approval rule in `CLAUDE.md` still applies to every paid run.
 
 ## How this was built
 

@@ -55,6 +55,8 @@ Controls in place:
 - `bun test` never calls the API unless `PRAXIS_LIVE_TESTS=1` is set, even
   with a key in `.env` (Bun loads `.env` automatically).
 - CI holds no API key.
+- `.claude/settings.json` denies Claude Code the paid entry points
+  (`bun run bench`, `bench:live`, `score*`, `PRAXIS_LIVE_TESTS=1 …`).
 - Project rule: no paid run without a cost estimate and the maintainer's
   approval (`CLAUDE.md`).
 
