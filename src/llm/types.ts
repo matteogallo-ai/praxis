@@ -60,4 +60,6 @@ export interface CompleteWithToolsOptions {
   max_tool_rounds?: number;
   /** Overrides the provider's default model, if supported. */
   model?: string;
+  /** System prompt; see `CompleteOptions.system`. */
+  system?: string;
 }

@@ -13,8 +13,15 @@ import { tokenize } from "promptlang/lexer";
 import { parse } from "promptlang/parser";
 import type { MessageSection, Program, PromptDeclaration } from "promptlang/ast";
 
+import type { LLMProvider } from "../llm/provider.ts";
+import type { CompletionResult, Tool } from "../llm/types.ts";
 import type { SourceStatus } from "../sourcing/types.ts";
-import { InvalidAgentOutputError, PromptFileError } from "./errors.ts";
+import {
+  AgentExecutionError,
+  InvalidAgentOutputError,
+  MaxToolRoundsExceededError,
+  PromptFileError,
+} from "./errors.ts";
 
 /** A parsed `.prompt` file reduced to the one declaration a stage runs. */
 export interface LoadedPrompt {
@@ -119,6 +126,71 @@ function renderSection(
     }
     return value;
   });
+}
+
+export interface CallModelOptions {
+  /** Server tools the stage may use; empty for a plain completion. */
+  tools: Tool[];
+  /** Cap on pause_turn continuations; required when `tools` is non-empty. */
+  maxToolRounds?: number;
+  /** Appended to the provider-error message, e.g. "while synthesising 'risks'". */
+  errorContext?: string;
+}
+
+/**
+ * Sends one rendered prompt to the provider: system text in the system
+ * field when the provider takes one, the stage's `@model`, and the tools.
+ * A provider error comes back as `AgentExecutionError` with the original
+ * error as `cause`; a turn still paused after `maxToolRounds` is
+ * `MaxToolRoundsExceededError`.
+ */
+export async function callModel(
+  agentId: string,
+  llm: LLMProvider,
+  prompt: LoadedPrompt,
+  rendered: RenderedPrompt,
+  options: CallModelOptions
+): Promise<CompletionResult> {
+  const separate = llm.acceptsSystemPrompt === true;
+  const userText = separate ? rendered.user : `${rendered.system}\n\n---\n\n${rendered.user}`;
+  const placement: { system?: string; model?: string } = {};
+  if (separate) placement.system = rendered.system;
+  if (prompt.model !== undefined) placement.model = prompt.model;
+
+  let completion: CompletionResult;
+  try {
+    if (options.tools.length === 0 && typeof llm.complete === "function") {
+      const text = await llm.complete(userText, placement);
+      completion = { text, tool_calls: [], rounds: 1, stop_reason: "end_turn" };
+    } else if (typeof llm.completeWithTools === "function") {
+      const toolOptions: Parameters<NonNullable<LLMProvider["completeWithTools"]>>[2] = {
+        ...placement,
+      };
+      if (options.maxToolRounds !== undefined) toolOptions.max_tool_rounds = options.maxToolRounds;
+      completion = await llm.completeWithTools(userText, options.tools, toolOptions);
+    } else {
+      throw new AgentExecutionError(
+        agentId,
+        `LLM provider '${llm.name}' implements neither complete() nor completeWithTools()`
+      );
+    }
+  } catch (err) {
+    if (err instanceof AgentExecutionError) throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    const where = options.errorContext === undefined ? "" : ` ${options.errorContext}`;
+    throw new AgentExecutionError(agentId, `LLM provider error${where} — ${message}`, {
+      cause: err,
+    });
+  }
+
+  if (
+    options.maxToolRounds !== undefined &&
+    completion.stop_reason === "pause_turn" &&
+    completion.rounds >= options.maxToolRounds
+  ) {
+    throw new MaxToolRoundsExceededError(options.maxToolRounds);
+  }
+  return completion;
 }
 
 /** Removes one enclosing ```json fence, if the whole answer is fenced. */

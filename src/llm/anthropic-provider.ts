@@ -69,7 +69,10 @@ export type FetchLike = (
 export interface AnthropicLLMProviderOptions {
   /** Overrides the ANTHROPIC_API_KEY env var. Primarily for tests. */
   apiKey?: string;
-  /** Overrides the ANTHROPIC_MODEL env var and the built-in default. */
+  /**
+   * Pins one model for every call, overriding each stage's `@model`. The
+   * ANTHROPIC_MODEL env var does the same when this option is absent.
+   */
   model?: string;
   /** Per-request timeout in ms. Default 60_000. */
   timeoutMs?: number;
@@ -114,8 +117,9 @@ interface AnthropicResponseBody {
 
 export class AnthropicLLMProvider implements LLMProvider {
   readonly name = "anthropic";
+  readonly acceptsSystemPrompt = true;
   private readonly apiKey: string;
-  private readonly defaultModel: string;
+  private readonly pinnedModel: string | undefined;
   private readonly timeoutMs: number;
   private readonly maxAttempts: number;
   private readonly fetchFn: FetchLike;
@@ -127,8 +131,8 @@ export class AnthropicLLMProvider implements LLMProvider {
       throw new AnthropicAuthenticationError();
     }
     this.apiKey = key;
-    this.defaultModel =
-      options.model ?? process.env["ANTHROPIC_MODEL"] ?? DEFAULT_MODEL;
+    const envModel = process.env["ANTHROPIC_MODEL"];
+    this.pinnedModel = options.model ?? (envModel !== "" ? envModel : undefined);
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.maxAttempts = options.maxAttempts ?? RETRY_BACKOFF_MS.length;
     this.fetchFn = options.fetchFn ?? fetch;
@@ -139,7 +143,8 @@ export class AnthropicLLMProvider implements LLMProvider {
     const messages: AnthropicMessage[] = [{ role: "user", content: prompt }];
     const body = await this.request(messages, [], {
       max_tokens: options.max_tokens ?? DEFAULT_MAX_TOKENS,
-      model: this.defaultModel,
+      model: this.modelFor(options.model),
+      system: options.system,
     });
     return extractText(body);
   }
@@ -150,7 +155,7 @@ export class AnthropicLLMProvider implements LLMProvider {
     options: CompleteWithToolsOptions = {}
   ): Promise<CompletionResult> {
     const maxRounds = options.max_tool_rounds ?? DEFAULT_MAX_TOOL_ROUNDS;
-    const model = options.model ?? this.defaultModel;
+    const model = this.modelFor(options.model);
     const max_tokens = options.max_tokens ?? DEFAULT_MAX_TOKENS;
     const messages: AnthropicMessage[] = [{ role: "user", content: prompt }];
 
@@ -161,7 +166,11 @@ export class AnthropicLLMProvider implements LLMProvider {
 
     for (let i = 0; i < maxRounds; i++) {
       rounds++;
-      const body = await this.request(messages, tools, { max_tokens, model });
+      const body = await this.request(messages, tools, {
+        max_tokens,
+        model,
+        system: options.system,
+      });
       const raw = rawContentBlocks(body);
       const content = parseContentBlocks(raw);
       collectedToolCalls.push(...extractToolCalls(content));
@@ -186,16 +195,24 @@ export class AnthropicLLMProvider implements LLMProvider {
     };
   }
 
+  /** Pinned model, else the stage's `@model`, else the built-in default. */
+  private modelFor(requested: string | undefined): string {
+    return this.pinnedModel ?? requested ?? DEFAULT_MODEL;
+  }
+
   private async request(
     messages: AnthropicMessage[],
     tools: Tool[],
-    opts: { max_tokens: number; model: string }
+    opts: { max_tokens: number; model: string; system: string | undefined }
   ): Promise<AnthropicResponseBody> {
     const payload: Record<string, unknown> = {
       model: opts.model,
       max_tokens: opts.max_tokens,
-      messages,
     };
+    if (opts.system !== undefined && opts.system.length > 0) {
+      payload["system"] = opts.system;
+    }
+    payload["messages"] = messages;
     if (tools.length > 0) {
       payload["tools"] = tools.map(mapToolToAnthropic);
     }

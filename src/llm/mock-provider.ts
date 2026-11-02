@@ -57,6 +57,7 @@ export interface MockLLMProviderOptions {
 
 export class MockLLMProvider implements LLMProvider {
   readonly name = "mock";
+  readonly acceptsSystemPrompt = true;
   private readonly fixtures: readonly MockFixture[];
   private readonly fixturesDir: string;
 
@@ -65,17 +66,17 @@ export class MockLLMProvider implements LLMProvider {
     this.fixtures = loadFixtures(options.fixturesDir);
   }
 
-  async complete(prompt: string, _options?: CompleteOptions): Promise<string> {
-    const fixture = this.matchFixture(prompt);
+  async complete(prompt: string, options?: CompleteOptions): Promise<string> {
+    const fixture = this.matchFixture(matchText(prompt, options?.system));
     return fixture.response;
   }
 
   async completeWithTools(
     prompt: string,
     _tools: Tool[],
-    _options?: CompleteWithToolsOptions
+    options?: CompleteWithToolsOptions
   ): Promise<CompletionResult> {
-    const fixture = this.matchFixture(prompt);
+    const fixture = this.matchFixture(matchText(prompt, options?.system));
     return {
       text: fixture.response,
       tool_calls: fixture.tool_calls ?? [],
@@ -93,6 +94,15 @@ export class MockLLMProvider implements LLMProvider {
     const hash = createHash("sha256").update(prompt).digest("hex").slice(0, 12);
     throw new MockFixtureNotFoundError(hash, this.fixturesDir);
   }
+}
+
+/**
+ * Fixtures match on a substring of the system and user text together, laid
+ * out as agents joined them before the system field existed, so fixtures
+ * written against either layout keep matching.
+ */
+function matchText(prompt: string, system: string | undefined): string {
+  return system === undefined ? prompt : `${system}\n\n---\n\n${prompt}`;
 }
 
 function loadFixtures(dir: string): MockFixture[] {

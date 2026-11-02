@@ -30,7 +30,7 @@
  * upstream agents.
  */
 
-import { loadPrompt, renderPrompt, stripJsonFences } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stripJsonFences } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
   EditorialAttempt,
@@ -50,7 +50,6 @@ import type {
 import { DEFAULT_MAX_REGENERATION_ATTEMPTS } from "../registry/schema.ts";
 import type { SourceReference } from "../sourcing/types.ts";
 import {
-  AgentExecutionError,
   EditorialFailureError,
   InvalidAgentOutputError,
   SynthesisError,
@@ -110,21 +109,11 @@ export async function executeSynthesis(
         retryBlock
       );
       const rendered = renderPrompt(AGENT_ID, loaded, inputs);
-      const prompt = `${rendered.system}\n\n---\n\n${rendered.user}`;
-
-      let text: string;
-      try {
-        text = await callLLM(llm, prompt);
-      } catch (err) {
-        if (err instanceof AgentExecutionError) throw err;
-        const message = err instanceof Error ? err.message : String(err);
-        throw new AgentExecutionError(
-          AGENT_ID,
-          `LLM provider error while synthesising '${section.id}' — ${message}`
-        );
-      }
-
-      const parsed = parseSectionResponse(text, section, sourcesByAgent);
+      const completion = await callModel(AGENT_ID, llm, loaded, rendered, {
+        tools: [],
+        errorContext: `while synthesising '${section.id}'`,
+      });
+      const parsed = parseSectionResponse(completion.text, section, sourcesByAgent);
 
       if (editorial.strict) {
         const check = checkEditorialConformance(parsed, section, ctx, editorial);
@@ -178,22 +167,6 @@ export async function executeSynthesis(
   };
 }
 
-async function callLLM(llm: LLMProvider, prompt: string): Promise<string> {
-  // Synthesis does not use tools — call `complete` directly. Some
-  // providers may only implement `completeWithTools`; fall back to it
-  // with an empty tool list.
-  if (typeof llm.complete === "function") {
-    return llm.complete(prompt);
-  }
-  if (typeof llm.completeWithTools === "function") {
-    const r = await llm.completeWithTools(prompt, []);
-    return r.text;
-  }
-  throw new AgentExecutionError(
-    AGENT_ID,
-    `LLM provider '${llm.name}' implements neither complete() nor completeWithTools()`
-  );
-}
 
 function buildSectionInputs(
   ctx: SynthesisContext,

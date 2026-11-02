@@ -24,9 +24,9 @@
  * only validates SHAPE and CROSS-REFERENCES.
  */
 
-import { loadPrompt, renderPrompt, stripJsonFences, outputReader } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stripJsonFences, outputReader } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
-import type { CompletionResult, Tool } from "../llm/types.ts";
+import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
 import type {
   AggregatedRiskLevel,
@@ -47,10 +47,8 @@ import {
   RISK_TIMEFRAMES,
 } from "./types.ts";
 import {
-  AgentExecutionError,
   InvalidAgentOutputError,
   InvalidRiskStakeholderReference,
-  MaxToolRoundsExceededError,
   RiskAnalysisError,
   RiskInflationError,
 } from "./errors.ts";
@@ -106,22 +104,10 @@ export async function executeRiskAnalysis(
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);
-  const prompt = `${rendered.system}\n\n---\n\n${rendered.user}`;
-
-  let completion: CompletionResult;
-  try {
-    completion = await llm.completeWithTools(prompt, [WEB_SEARCH_TOOL], {
-      max_tool_rounds: maxToolRounds,
-    });
-  } catch (err) {
-    if (err instanceof AgentExecutionError) throw err;
-    const message = err instanceof Error ? err.message : String(err);
-    throw new AgentExecutionError(AGENT_ID, `LLM provider error — ${message}`);
-  }
-
-  if (completion.stop_reason === "pause_turn" && completion.rounds >= maxToolRounds) {
-    throw new MaxToolRoundsExceededError(maxToolRounds);
-  }
+  const completion = await callModel(AGENT_ID, llm, loaded, rendered, {
+    tools: [WEB_SEARCH_TOOL],
+    maxToolRounds,
+  });
 
   return parseRiskAnalysisResult(completion.text, ctx.stakeholders);
 }

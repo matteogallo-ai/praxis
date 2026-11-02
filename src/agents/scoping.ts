@@ -16,11 +16,10 @@
  * Any deviation surfaces as one of the typed errors in `./errors.ts`.
  */
 
-import { loadPrompt, renderPrompt, stripJsonFences } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stripJsonFences } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { AgentContext, ScopingResult } from "./types.ts";
 import {
-  AgentExecutionError,
   InvalidAgentOutputError,
 } from "./errors.ts";
 
@@ -48,18 +47,8 @@ export async function executeScoping(
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);
-  const prompt = `${rendered.system}\n\n---\n\n${rendered.user}`;
-
-  let raw: string;
-  try {
-    raw = await llm.complete(prompt);
-  } catch (err) {
-    if (err instanceof AgentExecutionError) throw err;
-    const message = err instanceof Error ? err.message : String(err);
-    throw new AgentExecutionError(AGENT_ID, `LLM provider error — ${message}`);
-  }
-
-  return parseScopingResult(raw);
+  const completion = await callModel(AGENT_ID, llm, loaded, rendered, { tools: [] });
+  return parseScopingResult(completion.text);
 }
 
 function parseScopingResult(raw: string): ScopingResult {

@@ -59,7 +59,7 @@ describe("Anthropic request contract — API version 2026-10-21", () => {
   test("complete(): headers, endpoint and body keys", async () => {
     const { fn, calls } = capturingFetch();
     const p = new AnthropicLLMProvider({ apiKey: "sk-test", fetchFn: fn });
-    await p.complete("hello", { max_tokens: 100 });
+    await p.complete("hello", { max_tokens: 100, system: "rules" });
 
     const call = calls[0]!;
     expect(call.url).toBe("https://api.anthropic.com/v1/messages");
@@ -99,6 +99,25 @@ describe("Anthropic request contract — API version 2026-10-21", () => {
       messages: [{ role: "user", content: "question" }],
       tools: [{ type: "web_search_20250305", name: "web_search" }],
     });
+  });
+
+  test("system text goes in the system field, never in the user message", async () => {
+    const { fn, calls } = capturingFetch();
+    const p = new AnthropicLLMProvider({ apiKey: "sk-test", fetchFn: fn });
+    await p.complete("the question", { system: "the rules", model: "claude-opus-5-5" });
+    expect(calls[0]!.body).toEqual({
+      model: "claude-opus-5-5",
+      max_tokens: 4096,
+      system: "the rules",
+      messages: [{ role: "user", content: "the question" }],
+    });
+  });
+
+  test("a pinned model (constructor or ANTHROPIC_MODEL) overrides the stage's model", async () => {
+    const { fn, calls } = capturingFetch();
+    const p = new AnthropicLLMProvider({ apiKey: "sk-test", fetchFn: fn, model: "claude-haiku-5-5" });
+    await p.complete("q", { model: "claude-opus-5-5" });
+    expect(calls[0]!.body["model"]).toBe("claude-haiku-5-5");
   });
 
   test("the built-in default model is neither retired nor deprecated", async () => {

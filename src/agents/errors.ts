@@ -7,8 +7,9 @@ import { PraxisError } from "../registry/errors.ts";
 export class AgentExecutionError extends PraxisError {
   readonly agentId: string;
 
-  constructor(agentId: string, message: string) {
-    super(`Agent '${agentId}' failed: ${message}`);
+  /** `options.cause` keeps the provider error, so callers can tell a timeout from a 400. */
+  constructor(agentId: string, message: string, options?: ErrorOptions) {
+    super(`Agent '${agentId}' failed: ${message}`, options);
     this.name = "AgentExecutionError";
     this.agentId = agentId;
   }
