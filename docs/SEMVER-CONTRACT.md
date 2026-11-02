@@ -1,7 +1,7 @@
 # Praxis SemVer contract (v1.0+)
 
 Praxis 1.0 freezes the public API. This document is the
-contract; every future release respects it.
+contract that every 1.x release is held to.
 
 ## What is public
 

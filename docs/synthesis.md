@@ -187,11 +187,11 @@ price of admission.
 
 ---
 
-## Why no adversarial pass yet?
+## Why the adversarial review is a separate stage
 
-The v0.7 Adversarial Critique agent will read the completed brief
-and stress-test the recommendation. That is deliberately not
-inside Synthesis because:
+The Adversarial Critique stage reads the completed brief and
+stress-tests the recommendation (`docs/adversarial.md`). It is
+deliberately not inside Synthesis because:
 
 - Synthesis's job is assembly, not judgment. Mixing them muddles
   both.

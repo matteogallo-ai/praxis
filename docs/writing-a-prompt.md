@@ -36,11 +36,10 @@ Every Praxis prompt file must contain, in this order:
 5. Inside the prompt: exactly one `system:` section, exactly one
    `user:` section, one `output:` declaration.
 
-Optional: a `type` declaration for the output struct. In v0.2 this is
-mostly documentation because PromptLang v1.1 does not yet parse array
-types inside struct fields — Praxis validates the JSON output on its
-own side. When PromptLang ships array types, we will migrate output
-types to proper structs.
+Optional: a `type` declaration for the output struct. It is mostly
+documentation: the PromptLang version Praxis builds against has no
+array types inside struct fields, so Praxis validates the JSON output
+on its own side.
 
 ---
 
