@@ -20,9 +20,8 @@ scale. Three faults made those numbers meaningless as a measure of Praxis:
    distinct texts.
 2. **The score could be moved by editing fixtures.** v1.3.0 rewrote four
    opening-section fixtures to lead with the decision and planned to re-score
-   them to show that `framing_clarity` improved (see
-   [`v1.3.1-runbook.md`](v1.3.1-runbook.md)). The measurement would have
-   graded the hand edit.
+   them, in a v1.3.1 release, to show that `framing_clarity` improved. The
+   measurement would have graded the hand edit; v1.3.1 was abandoned.
 3. **No check on the scorer.** The judge was the same model family as the
    pipeline's default, and it was never compared with a human reading.
 

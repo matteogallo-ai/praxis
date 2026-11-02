@@ -14,7 +14,7 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   README, ROADMAP and `docs/architecture.md` now say so.
 - The "AI-assisted qualitative scoring" of mock briefings is withdrawn: mock text
   is fixture output chosen by format, so the scores graded the fixtures. The
-  v1.3.1 re-scoring plan is abandoned (`docs/v1.3.1-runbook.md`).
+  v1.3.1 re-scoring plan is abandoned (`docs/benchmarking-methodology.md`).
 
 ### Added
 

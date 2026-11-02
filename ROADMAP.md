@@ -19,7 +19,7 @@ The remediation runs in three parts, each a pull request:
 
 - **A — CI, standards and documentation truth.** CI, `docs/CLAIMS.md`,
   an honest README and results page, the v1.3.1 re-scoring abandoned
-  ([`docs/v1.3.1-runbook.md`](./docs/v1.3.1-runbook.md)).
+  ([`docs/benchmarking-methodology.md`](./docs/benchmarking-methodology.md)).
 - **B — pipeline fixes, without live calls.** PromptLang from npm, the
   Messages API `system` field and per-stage `@model`, tolerant JSON
   extraction, graceful sourcing under `strict`, per-stage timeouts,
@@ -451,7 +451,7 @@ eleven mock briefings were regenerated via `bun run bench:mock`.
 Zero API surface change; zero new npm dependency; all tests
 pass. The planned mock re-scoring (v1.3.1) is abandoned.
 
-## v1.3.1 — Empirical validation of v1.3.0 prompt improvements (abandoned, see `docs/v1.3.1-runbook.md`)
+## v1.3.1 — Empirical validation of v1.3.0 prompt improvements (abandoned, see `docs/benchmarking-methodology.md`)
 
 Chore release. A maintainer with `ANTHROPIC_API_KEY` and
 ~$1 credit runs:
