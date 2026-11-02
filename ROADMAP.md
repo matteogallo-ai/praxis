@@ -10,33 +10,29 @@ release depends on it.
 
 ---
 
-## Project status — Feature-complete at v1.3.0
+## Project status — live execution under repair (2026-11-02)
 
-Praxis is **functionally complete**. The 7-agent pipeline, 4 calibrated
-formats, 3 rendering targets, sourcing layer with structural
-anti-hallucination guards, editorial re-run with strict_editorial mode,
-adversarial critique with steelmanning enforcement, and stable public
-library API are all shipped, tested (1216 tests + 11 optional live
-tests), and documented.
+The status this section used to give ("feature-complete at v1.3.0",
+followed by maintenance mode after a v1.3.1 mock re-scoring) was wrong.
+The pipeline has never completed a briefing against a real model: the
+only live benchmark aborted on 5 of 5 briefings, and the published
+scores graded hand-written fixtures. An independent audit on
+2026-11-02 recorded this.
 
-### Planned releases
+The remediation runs in three parts, each a pull request:
 
-- **v1.3.1** — empirical validation of the v1.3.0 framing_clarity
-  improvement (mock re-scoring only, ~$1 API cost, ~20 min). Ship
-  gates: framing_clarity ≥ 3.0 mock average, no other criterion
-  regresses > -0.3. Blocked only on Anthropic API credits refill.
-  Executable in three shell commands per
-  [`docs/v1.3.1-runbook.md`](./docs/v1.3.1-runbook.md).
+- **A — CI, standards and documentation truth.** CI, `docs/CLAIMS.md`,
+  an honest README and results page, the v1.3.1 re-scoring abandoned
+  ([`docs/v1.3.1-runbook.md`](./docs/v1.3.1-runbook.md)).
+- **B — pipeline fixes, without live calls.** PromptLang from npm, the
+  Messages API `system` field and per-stage `@model`, tolerant JSON
+  extraction, graceful sourcing under `strict`, per-stage timeouts,
+  checkpoints and resume, cost measurement, prompt-injection defence.
+- **C — live proof.** Live briefings with committed artefacts and a
+  scored sample whose judge is checked against human labels; then a
+  release and maintenance mode.
 
-### Post-v1.3.1 status: maintenance mode
-
-After v1.3.1, Praxis enters **maintenance mode**:
-
-- Bug fixes only. No new features by default.
-- Community contributions welcome via PRs.
-- Any major evolution (new format, new agent, v2.0 Corporate Reasoning
-  Engine) will be a deliberate future decision, not a natural next
-  step.
+The capability list with its evidence is [`docs/CLAIMS.md`](./docs/CLAIMS.md).
 
 ### The v2.0 hypothesis (not committed)
 

@@ -41,6 +41,7 @@ mapping will fail. Fix:
 
 ```bash
 git clone https://github.com/matteogallo-ai/promptlang.git ~/dev/promptlang
+git -C ~/dev/promptlang checkout v1.2.0   # the tag CI uses
 git clone https://github.com/matteogallo-ai/praxis.git ~/dev/praxis
 ```
 
@@ -60,7 +61,8 @@ $EDITOR .env
 ```
 
 - `ANTHROPIC_API_KEY` — required for `--provider anthropic` and the
-  live tests. Never commit this file.
+  live tests, which also need `PRAXIS_LIVE_TESTS=1` (a key alone never
+  triggers paid calls). Never commit this file.
 - `ANTHROPIC_MODEL` — optional. Defaults to `claude-sonnet-4-5`.
 
 `.env` is git-ignored by default. The provider reads these variables
@@ -74,9 +76,9 @@ the environment.
 ```bash
 cd ~/dev/praxis
 bun install
-bun test                 # 309 tests, all should pass (3 live tests skipped)
+bun test                 # all pass; the paid live tests are skipped
 bunx tsc --noEmit        # zero errors
-bun run cli version      # praxis v0.3.0
+bun run cli version
 ```
 
 If any of those fail, stop and file an issue with the output — do not
