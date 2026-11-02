@@ -102,13 +102,13 @@
         ]
       },
       "synthesis": {
-        "calls": 12,
-        "input_tokens": 128685,
-        "output_tokens": 2088,
+        "calls": 6,
+        "input_tokens": 62526,
+        "output_tokens": 1044,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 0,
-        "cost_usd": 0.27825,
+        "cost_usd": 0.135492,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -124,6 +124,18 @@
         "models": [
           "claude-opus-5-5"
         ]
+      },
+      "synthesis-rerun": {
+        "calls": 6,
+        "input_tokens": 66159,
+        "output_tokens": 1044,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.142758,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
       }
     },
     "total": {
@@ -133,7 +145,7 @@
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 14,
-      "cost_usd": 0.6661499999999999,
+      "cost_usd": 0.66615,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"
