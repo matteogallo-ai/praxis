@@ -68,10 +68,16 @@ Controls in place:
 
 These deny rules match command prefixes. They are a safety net, not a
 guarantee: the same effect is reachable through another spelling (a
-subshell, a script, a different flag order). The protections that hold are
-the GitHub ruleset on `main` and release tags, which refuses a push whatever
-the client, and `--max-cost-usd`, which bounds what a briefing can spend
-whatever starts it.
+subshell, a script, `git push origin v1.2.3`, `--follow-tags`). The
+protections that hold:
+
+- The GitHub ruleset on `main` (pull request required, no force-push, no
+  deletion, no bypass actor) refuses a direct push whatever the client.
+- The ruleset on `v*` tags restricts creating, moving and deleting them, but
+  lets repository admins bypass it. A tool running with the maintainer's
+  admin credentials can therefore still push a tag; for tags the deny rules
+  and the project rule are the only guard.
+- `--max-cost-usd` bounds what a briefing can spend whatever starts it.
 
 ### 3. The API key
 
