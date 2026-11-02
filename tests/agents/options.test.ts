@@ -416,7 +416,7 @@ describe("parseOptionsGenerationResult — happy path", () => {
   });
 
   test("strips JSON code fences", () => {
-    const raw = "```json\n" + JSON.stringify(goodResult(2)) + "\n```";
+    const raw = `\`\`\`json\n${JSON.stringify(goodResult(2))}\n\`\`\``;
     const parsed = parseOptionsGenerationResult(
       raw,
       baseStakeholders(),

@@ -33,7 +33,7 @@ import { parse } from "promptlang/parser";
 import type { Program, PromptDeclaration, MessageSection } from "promptlang/ast";
 
 import type { LLMProvider } from "../llm/provider.ts";
-import type { Tool } from "../llm/types.ts";
+import type { CompletionResult, Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
 import type {
   Option,
@@ -72,9 +72,9 @@ export const MIN_OPTIONS = 2;
 /** Hard ceiling: beyond 4 the reader can't hold the space. */
 export const MAX_OPTIONS = 4;
 /** Minimum concrete tradeoff dimensions per option. */
-export const MIN_TRADEOFFS_PER_OPTION = 3;
+const MIN_TRADEOFFS_PER_OPTION = 3;
 /** Maximum tradeoff dimensions before we're padding. */
-export const MAX_TRADEOFFS_PER_OPTION = 6;
+const MAX_TRADEOFFS_PER_OPTION = 6;
 
 const WEB_SEARCH_TOOL: Tool = { type: "web_search", name: "web_search" };
 
@@ -141,7 +141,7 @@ export async function executeOptionsGeneration(
   const userText = renderSection(declaration, "user", inputs, promptPath);
   const prompt = `${systemText.trim()}\n\n---\n\n${userText.trim()}`;
 
-  let completion;
+  let completion: CompletionResult;
   try {
     completion = await llm.completeWithTools(prompt, [WEB_SEARCH_TOOL], {
       max_tool_rounds: maxToolRounds,
@@ -790,10 +790,3 @@ function stripJsonFences(raw: string): string {
   if (fenced && fenced[1] !== undefined) return fenced[1];
   return raw;
 }
-
-/** Re-exported so callers can construct richer errors. */
-export {
-  OptionsGenerationError,
-  InvalidOptionStakeholderReference,
-  InvalidOptionRiskReference,
-};

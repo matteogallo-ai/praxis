@@ -521,13 +521,13 @@ export function insertScoringSection(
   if (startIdx === -1) {
     // Append at the end.
     const sep = existingResults.endsWith("\n") ? "\n" : "\n\n";
-    return existingResults + sep + scoringBlock + "\n";
+    return `${existingResults + sep + scoringBlock}\n`;
   }
   // Find the next top-level "## " AFTER our marker to bound the block.
   const afterStart = existingResults.indexOf("\n## ", startIdx + marker.length);
   const before = existingResults.slice(0, startIdx);
   const after = afterStart === -1 ? "" : existingResults.slice(afterStart + 1);
-  return before + scoringBlock + (after.length > 0 ? "\n" + after : "\n");
+  return before + scoringBlock + (after.length > 0 ? `\n${after}` : "\n");
 }
 
 export function renderScoringSection(

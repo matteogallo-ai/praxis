@@ -22,7 +22,7 @@ export function escapeXmlText(v: string): string {
 }
 
 /** XML-escape an attribute value. Same rules as text for our use. */
-export function escapeXmlAttr(v: string): string {
+function escapeXmlAttr(v: string): string {
   return escapeXmlText(v);
 }
 
@@ -30,7 +30,7 @@ export function escapeXmlAttr(v: string): string {
  * Emit an element opening tag with `name` and `attrs`. Attribute
  * values are XML-escaped.
  */
-export function openTag(name: string, attrs: Record<string, string> = {}): string {
+function openTag(name: string, attrs: Record<string, string> = {}): string {
   const attrStr = Object.entries(attrs)
     .map(([k, v]) => ` ${k}="${escapeXmlAttr(v)}"`)
     .join("");
@@ -38,16 +38,8 @@ export function openTag(name: string, attrs: Record<string, string> = {}): strin
 }
 
 /** Emit an element closing tag. */
-export function closeTag(name: string): string {
+function closeTag(name: string): string {
   return `</${name}>`;
-}
-
-/** Emit a self-closing element (`<name attrs />`). */
-export function selfClosing(name: string, attrs: Record<string, string> = {}): string {
-  const attrStr = Object.entries(attrs)
-    .map(([k, v]) => ` ${k}="${escapeXmlAttr(v)}"`)
-    .join("");
-  return `<${name}${attrStr}/>`;
 }
 
 /**

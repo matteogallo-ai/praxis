@@ -25,7 +25,7 @@
 
 import type { DomainTrustRule } from "./types.ts";
 
-export type DomainTrustClass = "trusted" | "untrusted";
+type DomainTrustClass = "trusted" | "untrusted";
 
 export interface DomainTrustResult {
   classification: DomainTrustClass;
@@ -78,7 +78,7 @@ export function matchHostPattern(host: string, pattern: string): boolean {
   // Generic wildcard fallback: translate `*` into `[^.]*` (never crosses
   // a dot) and match the full host.
   const regex = new RegExp(
-    "^" + p.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]*") + "$"
+    `^${p.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]*")}$`
   );
   return regex.test(h);
 }

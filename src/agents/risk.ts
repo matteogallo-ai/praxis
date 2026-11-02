@@ -31,7 +31,7 @@ import { parse } from "promptlang/parser";
 import type { Program, PromptDeclaration, MessageSection } from "promptlang/ast";
 
 import type { LLMProvider } from "../llm/provider.ts";
-import type { Tool } from "../llm/types.ts";
+import type { CompletionResult, Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
 import type {
   AggregatedRiskLevel,
@@ -67,14 +67,12 @@ const PROMPT_NAME = "risk";
 const DEFAULT_PROMPT_PATH = "prompts/risk.prompt";
 const DEFAULT_MAX_TOOL_ROUNDS = 5;
 
-/** Lower bound the parser flags as a warning; runs still succeed. */
-export const MIN_RISKS = 5;
 /** Hard ceiling. Beyond this the parser throws `RiskInflationError`. */
 export const MAX_RISKS = 25;
 /** Minimum number of concrete mitigations per risk. */
-export const MIN_MITIGATIONS_PER_RISK = 1;
+const MIN_MITIGATIONS_PER_RISK = 1;
 /** Maximum number of mitigations per risk. */
-export const MAX_MITIGATIONS_PER_RISK = 3;
+const MAX_MITIGATIONS_PER_RISK = 3;
 
 const WEB_SEARCH_TOOL: Tool = { type: "web_search", name: "web_search" };
 
@@ -119,7 +117,7 @@ export async function executeRiskAnalysis(
   const userText = renderSection(declaration, "user", inputs, promptPath);
   const prompt = `${systemText.trim()}\n\n---\n\n${userText.trim()}`;
 
-  let completion;
+  let completion: CompletionResult;
   try {
     completion = await llm.completeWithTools(prompt, [WEB_SEARCH_TOOL], {
       max_tool_rounds: maxToolRounds,
@@ -737,10 +735,3 @@ function stripJsonFences(raw: string): string {
   if (fenced && fenced[1] !== undefined) return fenced[1];
   return raw;
 }
-
-/** Re-exported so callers can construct richer errors. */
-export {
-  RiskAnalysisError,
-  InvalidRiskStakeholderReference,
-  RiskInflationError,
-};

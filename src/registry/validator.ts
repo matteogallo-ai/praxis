@@ -689,7 +689,7 @@ function validateDomainTrustRule(
   const allowList = optionalStringArray(raw["allow_list"], `${path}.allow_list`, issues);
   const denyList = optionalStringArray(raw["deny_list"], `${path}.deny_list`, issues);
 
-  let tiers: ReputationTiers | null | undefined = undefined;
+  let tiers: ReputationTiers | null | undefined ;
   if (raw["reputation_tiers"] !== undefined && raw["reputation_tiers"] !== null) {
     tiers = validateReputationTiers(raw["reputation_tiers"], issues);
   }

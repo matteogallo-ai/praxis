@@ -18,7 +18,7 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["bun-types"],
+    "types": ["bun"],
     "lib": ["ES2022"],
     "paths": {
       "promptlang": ["../promptlang/src/index.ts"],

@@ -174,7 +174,7 @@ function addFooters(
 ): void {
   const q =
     brief.question.length > 60
-      ? brief.question.slice(0, 57) + "…"
+      ? `${brief.question.slice(0, 57)}…`
       : brief.question;
   const range = doc.bufferedPageRange();
   for (let i = 0; i < range.count; i++) {

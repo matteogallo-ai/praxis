@@ -118,7 +118,6 @@ Two heuristics from the prompt:
 
 | Cap                   | Value | Rationale                                             |
 | --------------------- | ----- | ----------------------------------------------------- |
-| `MIN_RISKS`           | 5     | Guide; below it, coverage is likely too thin.         |
 | `MAX_RISKS`           | 25    | Hard ceiling — raises `RiskInflationError`.           |
 | Mitigations per risk  | 1-3   | Ceiling avoids busywork lists.                        |
 | Ideal risk count      | 5-15  | The band the prompt asks the model to aim for.        |

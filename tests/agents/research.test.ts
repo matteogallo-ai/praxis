@@ -116,7 +116,7 @@ describe("executeResearch — nominal flow", () => {
   });
 
   test("tolerates fenced ```json``` responses", async () => {
-    const fenced = "```json\n" + VALID_RESPONSE + "\n```";
+    const fenced = `\`\`\`json\n${VALID_RESPONSE}\n\`\`\``;
     const result = await executeResearch(CTX, fixedToolsProvider({ text: fenced }));
     expect(result.findings).toHaveLength(1);
   });

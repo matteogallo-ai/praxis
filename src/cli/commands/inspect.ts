@@ -10,11 +10,11 @@ export interface InspectArgs {
 export function inspectCommand(args: InspectArgs): number {
   const registry = loadRegistry(args.formatsDir);
   const format = registry.get(args.id);
-  process.stdout.write(renderFormat(format) + "\n");
+  process.stdout.write(`${renderFormat(format)}\n`);
   return 0;
 }
 
-export function renderFormat(f: Format): string {
+function renderFormat(f: Format): string {
   const parts: string[] = [];
 
   parts.push(c.bold(c.magenta(`${f.name}  `)) + c.dim(`(${f.id} v${f.version})`));
@@ -31,7 +31,7 @@ export function renderFormat(f: Format): string {
 
   parts.push(renderSectionHeader("Sections"));
   for (const s of f.sections) {
-    parts.push(c.bold("  " + s.title) + c.dim(`  (${s.id}, ${s.max_length.words}w)`));
+    parts.push(c.bold(`  ${s.title}`) + c.dim(`  (${s.id}, ${s.max_length.words}w)`));
     parts.push(`    ${c.dim("purpose:")} ${s.purpose}`);
     parts.push(`    ${c.dim("tone:")}    ${s.tone_directives}`);
     parts.push(

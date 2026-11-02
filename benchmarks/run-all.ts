@@ -260,7 +260,7 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
           artefacts,
         };
         const metadataPath = join(outDir, "metadata.json");
-        writeFileSync(metadataPath, JSON.stringify(meta, null, 2) + "\n");
+        writeFileSync(metadataPath, `${JSON.stringify(meta, null, 2)}\n`);
 
         outcomes.push({
           id: b.id,

@@ -348,7 +348,7 @@ describe("parseRiskAnalysisResult — happy path", () => {
 
   test("strips JSON code fences", () => {
     const g = goodResult(5);
-    const raw = "```json\n" + JSON.stringify(g) + "\n```";
+    const raw = `\`\`\`json\n${JSON.stringify(g)}\n\`\`\``;
     const parsed = parseRiskAnalysisResult(raw, baseStakeholders());
     expect(parsed.risks).toHaveLength(5);
   });

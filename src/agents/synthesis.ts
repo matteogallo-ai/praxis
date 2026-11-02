@@ -784,10 +784,10 @@ export function countWords(markdown: string): number {
 function countOccurrences(haystack: string, needle: string): number {
   if (needle.length === 0) return 0;
   let count = 0;
-  let idx = 0;
-  while ((idx = haystack.indexOf(needle, idx)) !== -1) {
+  let idx = haystack.indexOf(needle);
+  while (idx !== -1) {
     count += 1;
-    idx += needle.length;
+    idx = haystack.indexOf(needle, idx + needle.length);
   }
   return count;
 }
@@ -797,6 +797,3 @@ function stripJsonFences(raw: string): string {
   if (fenced && fenced[1] !== undefined) return fenced[1];
   return raw;
 }
-
-/** Re-exported so callers can construct richer errors. */
-export { SynthesisError };

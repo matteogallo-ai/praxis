@@ -9,7 +9,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { basename } from "node:path";
 
-import { parseYaml, ConfigParseError } from "@promptlang/yaml-parser";
+import { parseYaml, ConfigParseError, type YamlValue } from "@promptlang/yaml-parser";
 import { validateFormat } from "./validator.ts";
 import type { Format } from "./schema.ts";
 import { FileNotFoundError, YamlSyntaxError } from "./errors.ts";
@@ -31,7 +31,7 @@ export function loadFormatFile(path: string): Format {
  * in error messages (usually the file path or a fixture name).
  */
 export function loadFormatFromSource(source: string, label: string): Format {
-  let parsed;
+  let parsed: YamlValue;
   try {
     parsed = parseYaml(source);
   } catch (err) {
