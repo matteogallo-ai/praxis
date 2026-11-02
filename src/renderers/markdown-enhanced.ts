@@ -22,6 +22,14 @@ import type {
 import type { SourceReference } from "../sourcing/types.ts";
 import type { RenderOptions, Renderer } from "./types.ts";
 import { hasCritique } from "./types.ts";
+import {
+  escapeMarkdownHeading,
+  escapeMarkdownLinkText,
+  inert,
+  linkTarget,
+  renderSynthesisSections,
+  yamlString,
+} from "./markdown-text.ts";
 
 /**
  * A `Renderer` returning a UTF-8 Buffer holding the enhanced
@@ -44,42 +52,16 @@ export function renderMarkdownEnhanced(
   brief: BriefResult | BriefWithCritiqueResult,
   options: RenderOptions = {}
 ): string {
-  const parts: string[] = [];
-  parts.push(renderFrontMatter(brief));
-  parts.push(`# ${escapeMarkdownHeading(brief.question)}\n\n`);
-
-  if (options.include_toc) {
-    parts.push(renderToc(brief, options));
-  }
-
-  for (const section of brief.synthesis.sections) {
-    parts.push(`## ${escapeMarkdownHeading(section.title)}\n\n`);
-    parts.push(`${section.content_markdown.trim()}\n\n`);
-    if (section.sources_cited.length > 0) {
-      parts.push("**Sources:**\n\n");
-      for (const s of section.sources_cited) {
-        parts.push(`- [${escapeMarkdownLinkText(s.title)}](${linkTarget(s.url)})\n`);
-      }
-      parts.push("\n");
-    }
-    if (section.validation_issues.length > 0) {
-      parts.push(COMMENT_OPEN);
-      for (const issue of section.validation_issues) parts.push(`  - ${issue}\n`);
-      parts.push(COMMENT_CLOSE);
-    }
-  }
-
-  if (options.include_critique && hasCritique(brief)) {
-    parts.push(renderCritiqueSection(brief));
-  }
-
-  if (options.include_appendices) {
-    parts.push(renderAppendices(brief));
-  }
-
-  parts.push(renderSourcesSection(brief, options));
-  // Every part but the renderer's own comment markers carries model text.
-  return parts.map((p) => (p === COMMENT_OPEN || p === COMMENT_CLOSE ? p : inert(p))).join("");
+  // The front matter holds YAML-quoted values; every other part is Markdown
+  // that carries model text, made inert (src/renderers/markdown-text.ts).
+  const parts: string[] = [renderFrontMatter(brief)];
+  parts.push(inert(`# ${escapeMarkdownHeading(brief.question)}\n\n`));
+  if (options.include_toc) parts.push(inert(renderToc(brief, options)));
+  parts.push(renderSynthesisSections(brief.synthesis.sections));
+  if (options.include_critique && hasCritique(brief)) parts.push(inert(renderCritiqueSection(brief)));
+  if (options.include_appendices) parts.push(inert(renderAppendices(brief)));
+  parts.push(inert(renderSourcesSection(brief, options)));
+  return parts.join("");
 }
 
 // ---------------------------------------------------------------------------
@@ -288,37 +270,6 @@ function extractHost(url: string): string {
   } catch {
     return "(unparseable)";
   }
-}
-
-function yamlString(v: string): string {
-  const escaped = v.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  return `"${escaped}"`;
-}
-
-function escapeMarkdownHeading(v: string): string {
-  return v.replace(/[\r\n]+/g, " ");
-}
-
-const COMMENT_OPEN = "<!-- Validation issues:\n";
-const COMMENT_CLOSE = "-->\n\n";
-
-/**
- * Model text (and the web pages behind it) is data here, never markup: a
- * raw `<img>` would be fetched when the briefing is opened, and `-->` in a
- * validation issue would close the comment it sits in (OWASP LLM05). The
- * cost: a literal `<` inside a code span shows as `&lt;`.
- */
-function inert(v: string): string {
-  return v.replace(/</g, "&lt;").replace(/-->/g, "--&gt;");
-}
-
-/** A URL as one Markdown link destination: `(`, `)`, `<`, `>` and spaces would end it early. */
-function linkTarget(url: string): string {
-  return url.replace(/[()<>\s]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
-}
-
-function escapeMarkdownLinkText(v: string): string {
-  return v.replace(/\[/g, "\\[").replace(/\]/g, "\\]");
 }
 
 /** Table-cell escaping (pipes need to be escaped in Markdown tables). */

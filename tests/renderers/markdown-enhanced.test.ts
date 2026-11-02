@@ -459,6 +459,24 @@ describe("renderMarkdownEnhanced — model text cannot become markup", () => {
     expect(md).toContain('Margins held. &lt;img src="https://attacker.example/b?d=1">');
   });
 
+  test("an image in a claim or a critique is not an image", () => {
+    const { brief, finding } = briefAndFirstSection();
+    finding.claim = "c1 ![x](https://attacker.example/b.png?d=1)";
+    const critiqued = makeBriefWithCritique();
+    const [critique] = critiqued.adversarial.critiques;
+    if (critique === undefined) throw new Error("makeBriefWithCritique has a critique");
+    critique.suggested_revision = "![y](https://attacker.example/c.png)";
+    const md = renderMarkdownEnhanced(brief, { include_appendices: true });
+    const mdCritique = renderMarkdownEnhanced(critiqued, { include_critique: true });
+    expect(md).not.toContain("![x]");
+    expect(mdCritique).not.toContain("![y]");
+  });
+
+  test("the question keeps its characters in the front matter", () => {
+    const md = renderMarkdownEnhanced(makeBrief({ question: "Is X < Y?" }));
+    expect(md).toContain('question: "Is X < Y?"');
+  });
+
   test("a validation issue cannot close the comment it is written in", () => {
     const { brief, first } = briefAndFirstSection();
     first.validation_issues = ["fine --> # Injected heading"];

@@ -526,6 +526,12 @@ function describeWarning(w: SourcingReport["warnings"][number]): string {
 // ---------------------------------------------------------------------------
 
 import type { BriefResult } from "../orchestrator/orchestrator.ts";
+import {
+  escapeMarkdownHeading,
+  inert,
+  renderSynthesisSections,
+  yamlString,
+} from "../renderers/markdown-text.ts";
 
 /**
  * Render a `BriefResult` as a self-contained Markdown document with a
@@ -564,46 +570,9 @@ export function renderFullBrief(result: BriefResult): string {
   );
   parts.push("---\n\n");
 
-  parts.push(`# ${escapeMarkdownHeading(result.question)}\n\n`);
-
-  for (const section of result.synthesis.sections) {
-    parts.push(`## ${escapeMarkdownHeading(section.title)}\n\n`);
-    parts.push(`${section.content_markdown.trim()}\n\n`);
-    if (section.sources_cited.length > 0) {
-      parts.push("**Sources:**\n\n");
-      for (const s of section.sources_cited) {
-        parts.push(`- [${escapeMarkdownLinkText(s.title)}](${s.url})\n`);
-      }
-      parts.push("\n");
-    }
-    if (section.validation_issues.length > 0) {
-      parts.push("<!-- Validation issues:\n");
-      for (const issue of section.validation_issues) {
-        parts.push(`  - ${issue}\n`);
-      }
-      parts.push("-->\n\n");
-    }
-  }
-
+  parts.push(inert(`# ${escapeMarkdownHeading(result.question)}\n\n`));
+  parts.push(renderSynthesisSections(result.synthesis.sections));
   return parts.join("");
-}
-
-/**
- * A safe YAML string encoder for scalar values that may contain
- * quotes or colons. Uses double-quotes and escapes embedded quotes
- * and backslashes.
- */
-function yamlString(v: string): string {
-  const escaped = v.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  return `"${escaped}"`;
-}
-
-function escapeMarkdownHeading(v: string): string {
-  return v.replace(/[\r\n]+/g, " ");
-}
-
-function escapeMarkdownLinkText(v: string): string {
-  return v.replace(/\[/g, "\\[").replace(/\]/g, "\\]");
 }
 
 // ---------------------------------------------------------------------------
