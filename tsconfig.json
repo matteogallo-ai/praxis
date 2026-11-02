@@ -30,5 +30,5 @@
       "promptlang/lexer-errors": ["../promptlang/src/lexer/errors.ts"]
     }
   },
-  "include": ["src/**/*", "tests/**/*"]
+  "include": ["src/**/*", "tests/**/*", "scripts/**/*", "benchmarks/**/*.ts"]
 }
