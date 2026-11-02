@@ -370,7 +370,7 @@ contract.
   or changing an error class's inheritance requires v2.0.
   See `docs/SEMVER-CONTRACT.md` for the full contract text.
 - **Public release.** Repo becomes the reference implementation
-  of the multi-agent briefing pattern. External contributors
+  of the staged-pipeline briefing pattern. External contributors
   onboarded via `CONTRIBUTING.md`.
 - **Compatibility commitment (v1.x).** Additive changes only —
   new agents, formats, renderers, providers, optional fields,

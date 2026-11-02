@@ -1,6 +1,6 @@
 # Get your first briefing in 5 minutes
 
-Praxis is a multi-agent CLI + library that produces analytical
+Praxis is a 7-stage LLM pipeline (CLI + library) that produces analytical
 briefings — executive pre-reads, McKinsey-style notes, corporate
 position papers — in the exact codes of the target organization.
 This guide walks you from a fresh clone to a rendered PDF in

@@ -176,7 +176,7 @@ export type {
 export { CRITIQUE_CATEGORIES, CRITIQUE_SEVERITIES } from "./agents/types.ts";
 
 // ---------------------------------------------------------------------------
-// Orchestrator (the sole entry point for multi-agent runs).
+// Orchestrator (the sole entry point for pipeline runs).
 // ---------------------------------------------------------------------------
 
 export { Orchestrator } from "./orchestrator/orchestrator.ts";
