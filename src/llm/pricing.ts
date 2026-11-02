@@ -85,7 +85,8 @@ export function loadPriceTable(path: string): PriceTable {
 
 /** USD for one call, or `null` when `model` is not in the table. */
 export function costOf(usage: TokenUsage, model: string, table: PriceTable): number | null {
-  const p = table.models[model];
+  // The API may answer with a dated id (`claude-opus-5-5-20261001`) for an alias.
+  const p = table.models[model] ?? table.models[model.replace(/-\d{8}$/, "")];
   if (p === undefined) return null;
   const perToken =
     usage.input_tokens * p.input +

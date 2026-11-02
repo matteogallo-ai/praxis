@@ -79,3 +79,36 @@ describe("UsageLedger and the synthesis rerun", () => {
     expect(stages["synthesis-rerun"]!.calls).toBe(stages["synthesis"]!.calls);
   });
 });
+
+describe("budget cap: review findings", () => {
+  const u = (input: number): import("../../src/llm/types.ts").TokenUsage => ({
+    input_tokens: input,
+    output_tokens: 0,
+    cache_creation_input_tokens: 0,
+    cache_read_input_tokens: 0,
+    web_search_requests: 0,
+  });
+
+  test("a dated model id is priced as its alias", () => {
+    const ledger = new UsageLedger();
+    ledger.record("risk", "claude-opus-5-5-20261001", u(1_000_000));
+    expect(ledger.summary().total.cost_usd).toBeCloseTo(4, 10);
+  });
+
+  test("with a cap, a call that cannot be priced stops the run", () => {
+    const ledger = new UsageLedger({ maxCostUsd: 100 });
+    ledger.record("risk", "claude-unknown-9", u(10));
+    expect(() => ledger.assertWithinBudget("options")).toThrow(BudgetExceededError);
+  });
+
+  test("a resumed ledger starts from what earlier attempts spent", () => {
+    const first = new UsageLedger({ maxCostUsd: 5 });
+    first.record("research", "claude-opus-5-5", u(1_000_000)); // $4
+    const resumed = new UsageLedger({ maxCostUsd: 5 });
+    resumed.restore(first.summary());
+    resumed.record("options", "claude-opus-5-5", u(500_000)); // $2
+    expect(() => resumed.assertWithinBudget("synthesis")).toThrow(BudgetExceededError);
+    expect(Object.keys(resumed.summary().stages)).toEqual(["research", "options"]);
+    expect(resumed.summary().total.cost_usd).toBeCloseTo(6, 10);
+  });
+});

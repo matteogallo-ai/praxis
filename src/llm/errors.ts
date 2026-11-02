@@ -144,9 +144,11 @@ export class PriceTableError extends LLMError {
 export class BudgetExceededError extends LLMError {
   readonly spentUsd: number;
   readonly capUsd: number;
-  constructor(spentUsd: number, capUsd: number, stage: string) {
+  constructor(spentUsd: number, capUsd: number, stage: string, reason?: string) {
     super(
-      `Budget cap reached before stage '${stage}': $${spentUsd.toFixed(4)} spent of a $${capUsd.toFixed(4)} cap.`
+      reason === undefined
+        ? `Budget cap reached before stage '${stage}': $${spentUsd.toFixed(4)} spent of a $${capUsd.toFixed(4)} cap.`
+        : `Budget cap stops the run before stage '${stage}': ${reason} ($${spentUsd.toFixed(4)} spent of a $${capUsd.toFixed(4)} cap).`
     );
     this.name = "BudgetExceededError";
     this.spentUsd = spentUsd;

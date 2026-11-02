@@ -5,7 +5,12 @@
  * every call is recorded under its stage without the agents knowing. The
  * cap is checked before each call: once the briefing has spent `maxCostUsd`
  * no further call starts. A call's cost is known only after it returns, so
- * a briefing can end above the cap by at most the cost of its last call.
+ * a briefing can end above the cap by the cost of the calls already in
+ * flight when it was reached: one call, or one per section while synthesis
+ * sections run concurrently. With a cap set, a call whose model has no
+ * price stops the run, since the cap could no longer be enforced. A request
+ * that times out is billed by the server but reports no usage, so it is not
+ * counted.
  */
 import type { LLMProvider } from "../llm/provider.ts";
 import type { CompletionResult, TokenUsage } from "../llm/types.ts";
@@ -75,6 +80,7 @@ export class UsageLedger {
   private readonly simulated: boolean;
   private readonly stages = new Map<string, StageUsage>();
   private spent = 0;
+  private unpriced: string | undefined;
 
   constructor(options: UsageLedgerOptions = {}) {
     this.prices = options.prices ?? DEFAULT_PRICE_TABLE;
@@ -93,7 +99,16 @@ export class UsageLedger {
 
   /** Throws `BudgetExceededError` when the cap is already spent. */
   assertWithinBudget(stage: string): void {
-    if (this.maxCostUsd !== undefined && this.spent >= this.maxCostUsd) {
+    if (this.maxCostUsd === undefined) return;
+    if (this.unpriced !== undefined) {
+      throw new BudgetExceededError(
+        this.spent,
+        this.maxCostUsd,
+        stage,
+        `model '${this.unpriced}' has no price, so the cap cannot be enforced`
+      );
+    }
+    if (this.spent >= this.maxCostUsd) {
       throw new BudgetExceededError(this.spent, this.maxCostUsd, stage);
     }
   }
@@ -102,6 +117,28 @@ export class UsageLedger {
     const cost = costOf(usage ?? NO_USAGE, model, this.prices);
     add(this.stage(stage), usage ?? NO_USAGE, model, cost);
     if (cost !== null) this.spent += cost;
+    else if (usage !== undefined) this.unpriced ??= model;
+  }
+
+  /**
+   * Adds what earlier attempts of the same run recorded, so a resumed run
+   * reports, and is capped on, the whole briefing's spend.
+   */
+  restore(previous: UsageSummary): void {
+    for (const [name, s] of Object.entries(previous.stages)) {
+      const entry = this.stage(name);
+      const { calls, cost_usd, models, duration_ms, ...tokens } = s;
+      entry.calls += calls;
+      entry.input_tokens += tokens.input_tokens;
+      entry.output_tokens += tokens.output_tokens;
+      entry.cache_creation_input_tokens += tokens.cache_creation_input_tokens;
+      entry.cache_read_input_tokens += tokens.cache_read_input_tokens;
+      entry.web_search_requests += tokens.web_search_requests;
+      entry.cost_usd = entry.cost_usd === null || cost_usd === null ? null : entry.cost_usd + cost_usd;
+      for (const m of models) if (!entry.models.includes(m)) entry.models.push(m);
+      if (duration_ms !== undefined) entry.duration_ms = (entry.duration_ms ?? 0) + duration_ms;
+      if (cost_usd !== null) this.spent += cost_usd;
+    }
   }
 
   recordDuration(stage: string, ms: number): void {
