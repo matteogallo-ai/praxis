@@ -107,6 +107,8 @@ prove it; CI fails if one of them does not pass.
 - Live briefings that complete against Anthropic, with committed run artefacts (C14).
 - Live-output quality scored by a judge validated against human labels (C18).
 - Clean install without the sibling PromptLang checkout (C19).
+- Source freshness judged on each page's own age (`page_age`) (C21).
+- Web search with dynamic filtering (`web_search_20260209`), evaluated against the basic tool (C22).
 
 ## Formats
 

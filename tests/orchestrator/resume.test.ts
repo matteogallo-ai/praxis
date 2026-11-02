@@ -227,3 +227,39 @@ describe("corrupt checkpoints", () => {
     expect((err as Error).message).toContain("Checkpoint 'synthesis'");
   });
 });
+
+describe("stageAttempts", () => {
+  /** The mock, answering the research stage with prose `failures` times first. */
+  function flakyResearch(failures: number): { llm: LLMProvider; researchCalls: () => number } {
+    const mock = new MockLLMProvider({ fixturesDir: "tests/fixtures/mock-llm" });
+    let calls = 0;
+    const llm: LLMProvider = {
+      name: "mock",
+      acceptsSystemPrompt: true,
+      complete: (p, o) => mock.complete(p, o),
+      completeWithTools: async (prompt, tools, options) => {
+        if ((options?.system ?? "").startsWith("You are the Research analyst")) {
+          calls += 1;
+          if (calls <= failures) return { text: "no JSON here", tool_calls: [], rounds: 1, stop_reason: "end_turn" };
+        }
+        return mock.completeWithTools(prompt, tools, options);
+      },
+    };
+    return { llm, researchCalls: () => calls };
+  }
+
+  test("by default a malformed answer is retried once", async () => {
+    const { llm, researchCalls } = flakyResearch(1);
+    await orchestrator(llm).researchAfterScoping(QUESTION, FORMAT, { onSourcingFailure: "degrade" });
+    expect(researchCalls()).toBe(2);
+  });
+
+  test("stageAttempts: 1 turns retry off", async () => {
+    const { llm, researchCalls } = flakyResearch(1);
+    const err = await orchestrator(llm)
+      .researchAfterScoping(QUESTION, FORMAT, { onSourcingFailure: "degrade", stageAttempts: 1 })
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(InvalidAgentOutputError);
+    expect(researchCalls()).toBe(1);
+  });
+});

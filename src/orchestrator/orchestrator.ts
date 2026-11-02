@@ -72,7 +72,10 @@ export interface ScopeOptions {
    * same store, reuses it instead of running the stage again (`--resume`).
    */
   checkpoints?: CheckpointStore;
-  /** Attempts per stage on recoverable errors (see `retry.ts`). Default 2. */
+  /**
+   * Attempts per stage on recoverable errors (see `src/agents/retry.ts`).
+   * Default 2; `1` turns retry off (docs/SEMVER-CONTRACT.md).
+   */
   stageAttempts?: number;
 }
 

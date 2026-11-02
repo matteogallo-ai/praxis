@@ -35,3 +35,5 @@ nothing about the quality of what a real model writes; no claim below says other
 | C18 | Quality of live briefings scored with a validated judge (judge–human agreement published). | — | — | roadmap |
 | C19 | Installable from a clean clone without a sibling PromptLang checkout (`@promptlang/core` from npm). | — | — | roadmap |
 | C20 | The API key never appears in CLI stderr, in a run's `metadata.json` or checkpoints, or when the provider object is printed or serialised; home-directory paths and e-mail addresses in stderr are masked. | `src/cli/redact.ts`, `src/cli/index.ts`, `src/llm/anthropic-provider.ts` | `tests/cli/no-secrets-in-logs.test.ts` | shipped |
+| C21 | Source freshness judged on the page's own age (`page_age` from web search results), not only on the retrieval time. | — | — | roadmap |
+| C22 | Web search with dynamic filtering (`web_search_20260209`) on the models that support it, evaluated against the basic tool for result quality and cost. | — | — | roadmap |
