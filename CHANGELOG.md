@@ -7,16 +7,34 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Planned in v1.3.1
+### Corrected
 
-Empirical validation of v1.3.0 framing_clarity improvement.
-Runbook in [`docs/v1.3.1-runbook.md`](./docs/v1.3.1-runbook.md).
-Blocked only on Anthropic API credits refill.
+- The project was described as feature-complete and as running live against
+  Anthropic. It has never completed a live briefing (5 of 5 aborted, see 1.2.1).
+  README, ROADMAP and `docs/architecture.md` now say so.
+- The "AI-assisted qualitative scoring" of mock briefings is withdrawn: mock text
+  is fixture output chosen by format, so the scores graded the fixtures. The
+  v1.3.1 re-scoring plan is abandoned (`docs/v1.3.1-runbook.md`).
 
-### Post-v1.3.1
+### Added
 
-Praxis enters maintenance mode. See
-[`ROADMAP.md § Project status`](./ROADMAP.md#project-status--feature-complete-at-v130).
+- CI: typecheck, tests, Biome, knip, `check:claims`, `check:stale-narrative`,
+  `bench:mock` drift check, Conventional Commits.
+- `docs/CLAIMS.md` and `scripts/check-claims.ts`; `CLAUDE.md`; `SECURITY.md`;
+  pull request and issue templates; `docs/ENGINEERING_STANDARDS.md`.
+
+### Changed
+
+- Live tests run only with `PRAXIS_LIVE_TESTS=1`; a key in `.env` no longer
+  makes `bun test` call the paid API.
+- `bun run bench:mock` is reproducible (fixed clock in mock runs, PDF creation
+  date taken from the brief); `duration_ms` is omitted from mock metadata.
+- `benchmarks/score-all.ts` refuses mock briefings; `score:mock` is removed.
+
+### Removed
+
+- **BREAKING:** `NotImplementedError` is no longer exported; nothing threw it.
+- Unused internal exports and three dead helpers found by knip.
 
 ## [1.3.0] — 2026-08-20
 
