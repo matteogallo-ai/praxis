@@ -1,7 +1,7 @@
 /**
  * Live integration test for `AnthropicLLMProvider`.
  *
- * SKIPPED unless `ANTHROPIC_API_KEY` is set in the environment.
+ * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set.
  *
  * These tests hit the real Anthropic API. They cost real money and
  * depend on network availability — never run them from CI without
@@ -10,10 +10,11 @@
 
 import { describe, expect, test } from "bun:test";
 
+import { liveTestsEnabled } from "../helpers/live-gate.ts";
+
 import { AnthropicLLMProvider } from "../../src/llm/anthropic-provider.ts";
 
-const hasKey = typeof process.env["ANTHROPIC_API_KEY"] === "string" &&
-  process.env["ANTHROPIC_API_KEY"]!.length > 0;
+const hasKey = liveTestsEnabled(process.env);
 
 describe.skipIf(!hasKey)("AnthropicLLMProvider (live)", () => {
   test("complete() returns non-empty text for a trivial prompt", async () => {

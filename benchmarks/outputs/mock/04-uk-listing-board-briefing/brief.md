@@ -2,7 +2,7 @@
 question: "Prepare the board pre-read on a proposed UK dual-listing decision."
 format: "executive-pre-read"
 provider: "mock"
-generated_at: "2026-08-20T07:44:24.928Z"
+generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=34 ok=31 stale=0 untrusted=0 duplicated=1 missing=2"

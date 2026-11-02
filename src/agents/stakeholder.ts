@@ -29,7 +29,7 @@ import { parse } from "promptlang/parser";
 import type { Program, PromptDeclaration, MessageSection } from "promptlang/ast";
 
 import type { LLMProvider } from "../llm/provider.ts";
-import type { Tool } from "../llm/types.ts";
+import type { CompletionResult, Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
 import type {
   StakeholderContext,
@@ -116,7 +116,7 @@ export async function executeStakeholderMapping(
   const userText = renderSection(declaration, "user", inputs, promptPath);
   const prompt = `${systemText.trim()}\n\n---\n\n${userText.trim()}`;
 
-  let completion;
+  let completion: CompletionResult;
   try {
     completion = await llm.completeWithTools(prompt, [WEB_SEARCH_TOOL], {
       max_tool_rounds: maxToolRounds,
@@ -498,6 +498,3 @@ function stripJsonFences(raw: string): string {
   if (fenced && fenced[1] !== undefined) return fenced[1];
   return raw;
 }
-
-/** Re-exported so callers can construct richer errors. */
-export { StakeholderMappingError };

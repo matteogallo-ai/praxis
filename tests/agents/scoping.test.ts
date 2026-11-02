@@ -95,13 +95,13 @@ describe("executeScoping — nominal flow", () => {
   });
 
   test("tolerates ```json ... ``` fenced responses from the LLM", async () => {
-    const fenced = "```json\n" + VALID_RESPONSE + "\n```";
+    const fenced = `\`\`\`json\n${VALID_RESPONSE}\n\`\`\``;
     const result = await executeScoping(CTX, fixedProvider(fenced));
     expect(result.reformulated_question).toBe("Reformulated Q.");
   });
 
   test("tolerates a bare ``` ... ``` fence", async () => {
-    const fenced = "```\n" + VALID_RESPONSE + "\n```";
+    const fenced = `\`\`\`\n${VALID_RESPONSE}\n\`\`\``;
     const result = await executeScoping(CTX, fixedProvider(fenced));
     expect(result.reformulated_question).toBe("Reformulated Q.");
   });

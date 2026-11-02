@@ -7,8 +7,7 @@
     "capital-markets"
   ],
   "mode": "mock",
-  "duration_ms": 16,
-  "generated_at": "2026-08-20T07:44:24.928Z",
+  "generated_at": "2026-08-20T00:00:00.000Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 355,
@@ -41,7 +40,7 @@
   },
   "artefacts": {
     "brief.md": 17260,
-    "brief.pdf": 47539,
-    "brief.docx": 8122
+    "brief.pdf": 47534,
+    "brief.docx": 8118
   }
 }

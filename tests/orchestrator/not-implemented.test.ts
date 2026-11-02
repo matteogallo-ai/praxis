@@ -1,11 +1,6 @@
 /**
- * `NotImplementedError` unit tests.
- *
- * v0.2-v0.5 also asserted that `Orchestrator.brief()` throws this
- * error; v0.6 implements `brief()` end-to-end, so that assertion has
- * moved to `orchestrator.test.ts` (as a positive test). The class
- * itself remains part of the public API surface (re-exported from
- * `src/index.ts`) for downstream tooling.
+ * `NotImplementedError` is deprecated but still public (docs/SEMVER-CONTRACT.md);
+ * these tests keep its 1.x behaviour stable until it is removed.
  */
 
 import { describe, expect, test } from "bun:test";

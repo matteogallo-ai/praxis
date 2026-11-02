@@ -129,5 +129,5 @@ export class AnthropicTimeoutError extends LLMError {
 }
 
 function truncate(s: string, max: number): string {
-  return s.length <= max ? s : s.slice(0, max) + "…";
+  return s.length <= max ? s : `${s.slice(0, max)}…`;
 }

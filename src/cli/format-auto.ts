@@ -61,7 +61,7 @@ export type AutoFormatResult =
   | { kind: "ambiguous"; matches: readonly AutoMatch[] }
   | { kind: "no-match" };
 
-export interface AutoMatch {
+interface AutoMatch {
   id: AutoFormatId;
   matched_keywords: string[];
 }

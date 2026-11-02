@@ -77,7 +77,7 @@ import type { SourcingReport } from "../../sourcing/types.ts";
 import { render as dispatchRender } from "../../renderers/index.ts";
 import { RENDER_THEMES, type RenderOptions, type RenderTheme } from "../../renderers/types.ts";
 
-export interface BriefCommandOptions {
+interface BriefCommandOptions {
   question: string;
   formatId: string;
   provider: string;
@@ -387,7 +387,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   };
 }
 
-export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
+async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   const llm = selectProvider(opts.provider, opts.fixturesDir);
   const registry = new FormatRegistry();
   registry.loadDirectory(opts.formatsDir);
@@ -459,7 +459,7 @@ export async function briefCommand(opts: BriefCommandOptions): Promise<number> {
 
     // No --render: plain Markdown / JSON stdout output (v0.6 behaviour).
     if (opts.json) {
-      const payload = JSON.stringify(result, null, 2) + "\n";
+      const payload = `${JSON.stringify(result, null, 2)}\n`;
       writeOrEmit(payload, opts.outputPath);
       return 0;
     }
@@ -576,7 +576,7 @@ function selectProvider(name: string, fixturesDir: string): LLMProvider {
 
 function printScopingOnly(result: ScopingResult, json: boolean): void {
   if (json) {
-    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
   process.stdout.write(renderScopingResult(result));
@@ -591,7 +591,7 @@ function printScopingPlusResearch(
   json: boolean
 ): void {
   if (json) {
-    process.stdout.write(JSON.stringify({ scoping, research }, null, 2) + "\n");
+    process.stdout.write(`${JSON.stringify({ scoping, research }, null, 2)}\n`);
     return;
   }
   process.stdout.write(renderScopingResult(scoping));
@@ -609,7 +609,7 @@ function printFullPipeline(
 ): void {
   if (json) {
     process.stdout.write(
-      JSON.stringify({ scoping, research, stakeholders }, null, 2) + "\n"
+      `${JSON.stringify({ scoping, research, stakeholders }, null, 2)}\n`
     );
     return;
   }
@@ -631,11 +631,11 @@ function printFullPipelineWithRisks(
 ): void {
   if (json) {
     process.stdout.write(
-      JSON.stringify(
+      `${JSON.stringify(
         { scoping, research, stakeholders, risks, sourcing_report },
         null,
         2
-      ) + "\n"
+      )}\n`
     );
     return;
   }
@@ -651,7 +651,7 @@ function printFullPipelineWithRisks(
 
 function printSourcingReportOnly(report: SourcingReport, json: boolean): void {
   if (json) {
-    process.stdout.write(JSON.stringify(report, null, 2) + "\n");
+    process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
   }
   process.stdout.write(renderSourcingReport(report));

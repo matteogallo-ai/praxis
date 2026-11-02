@@ -39,9 +39,9 @@ exactly one of these two shapes:
 
 The `searched_for` field is not a query string per se — it is a
 one-line human-readable description of the intent (`"effect size of X
-on Y"`, `"median deal size for German mid-market SaaS"`). Future
-releases will use these strings to drive automated retries and to
-surface residual research debt in the final briefing.
+on Y"`, `"median deal size for German mid-market SaaS"`). It is shown
+to the reader next to the `SOURCE MISSING` marker in the CLI output and
+in the sourcing warnings, so the gap stays visible.
 
 ---
 

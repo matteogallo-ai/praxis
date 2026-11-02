@@ -165,6 +165,15 @@ function requireStringList(
 // Runner
 // ---------------------------------------------------------------------------
 
+/**
+ * Mock runs use a fixed clock so `bun run bench:mock` rewrites the committed
+ * artefacts byte for byte (rule: a rerun leaves `git status` clean). The date
+ * is when the fixtures were written: their sources' `accessed_at` values are
+ * classified as fresh against it, whatever the real date. Mock metadata also
+ * omits `duration_ms`, which measures the machine, not the pipeline.
+ */
+const MOCK_CLOCK = new Date("2026-08-20T00:00:00.000Z");
+
 export interface BenchmarkOutcome {
   id: string;
   mode: "mock" | "live";
@@ -220,7 +229,8 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
 
         const result = await orchestrator.briefWithCritiqueAndRerun(
           b.question,
-          b.format
+          b.format,
+          mode === "mock" ? { now: MOCK_CLOCK } : {}
         );
 
         // Always render md + pdf + docx regardless of the format's
@@ -256,11 +266,16 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
         artefacts["brief.docx"] = docx.length;
 
         const meta = {
-          ...buildMetadata(b, mode, result, Date.now() - started),
+          ...buildMetadata(
+            b,
+            mode,
+            result,
+            mode === "mock" ? null : Date.now() - started
+          ),
           artefacts,
         };
         const metadataPath = join(outDir, "metadata.json");
-        writeFileSync(metadataPath, JSON.stringify(meta, null, 2) + "\n");
+        writeFileSync(metadataPath, `${JSON.stringify(meta, null, 2)}\n`);
 
         outcomes.push({
           id: b.id,
@@ -320,7 +335,7 @@ function buildMetadata(
   b: BenchmarkEntry,
   mode: "mock" | "live",
   result: BriefWithCritiqueAndRerunResult,
-  duration_ms: number
+  duration_ms: number | null
 ): Record<string, unknown> {
   return {
     id: b.id,
@@ -328,7 +343,7 @@ function buildMetadata(
     format: b.format,
     tags: b.tags,
     mode,
-    duration_ms,
+    ...(duration_ms === null ? {} : { duration_ms }),
     generated_at: result.generated_at,
     provider_name: result.provider_name,
     synthesis: {

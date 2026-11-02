@@ -97,8 +97,6 @@ export {
   markdownEnhancedRenderer,
   docxRenderer,
   pdfRenderer,
-  UnsupportedRenderTargetError,
-  RenderError,
 };
 export type { Renderer, RenderOptions, RenderTarget } from "./types.ts";
 export { RENDER_TARGETS, RENDER_THEMES, hasCritique } from "./types.ts";

@@ -1,8 +1,8 @@
 {
   "name": "praxis",
   "version": "1.3.0",
-  "description": "Format Registry for producing consultant-grade analytical briefings in the exact codes of the target organization",
-  "author": "Matteo Gallo <matteo.gallo@gallarti.io>",
+  "description": "7-stage LLM pipeline that turns a business question into a briefing in a declared format (Markdown, PDF, DOCX)",
+  "author": "Matteo Gallo <matteogallo.office@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -11,7 +11,7 @@
   "homepage": "https://github.com/matteogallo-ai/praxis",
   "bugs": "https://github.com/matteogallo-ai/praxis/issues",
   "keywords": [
-    "multi-agent",
+    "llm-pipeline",
     "briefings",
     "consulting",
     "analytical-writing",
@@ -30,12 +30,16 @@
   "scripts": {
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit",
+    "lint": "biome lint .",
+    "knip": "knip",
+    "check:claims": "bun run scripts/check-claims.ts",
+    "check:stale-narrative": "bun run scripts/check-stale-narrative.ts",
+    "check:commits": "bun run scripts/check-commits.ts",
     "cli": "bun run src/cli/index.ts",
     "bench": "bun run benchmarks/run-all.ts",
     "bench:mock": "bun run benchmarks/run-all.ts --mock-only",
     "bench:live": "bun run benchmarks/run-all.ts --live-only",
     "score": "bun run benchmarks/score-all.ts",
-    "score:mock": "bun run benchmarks/score-all.ts --mock-only",
     "score:live": "bun run benchmarks/score-all.ts --live-only",
     "score:dry": "bun run benchmarks/score-all.ts --dry-run"
   },
@@ -44,8 +48,10 @@
     "pdfkit": "^0.19.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@types/bun": "latest",
     "@types/pdfkit": "^0.17.6",
+    "knip": "6.44.1",
     "typescript": "^5.6.0"
   },
   "engines": {

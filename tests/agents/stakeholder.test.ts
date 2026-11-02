@@ -179,7 +179,7 @@ describe("executeStakeholderMapping — nominal flow", () => {
   });
 
   test("tolerates fenced ```json``` responses", async () => {
-    const fenced = "```json\n" + VALID_RESPONSE + "\n```";
+    const fenced = `\`\`\`json\n${VALID_RESPONSE}\n\`\`\``;
     const result = await executeStakeholderMapping(
       CTX,
       fixedToolsProvider({ text: fenced })

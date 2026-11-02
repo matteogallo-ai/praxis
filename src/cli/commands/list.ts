@@ -43,7 +43,7 @@ export function listCommand(args: ListArgs): number {
     rows
   );
 
-  process.stdout.write(table + "\n");
+  process.stdout.write(`${table}\n`);
   process.stdout.write(
     c.dim(`\n${formats.length} format${formats.length === 1 ? "" : "s"} registered.\n`)
   );

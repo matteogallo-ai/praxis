@@ -462,7 +462,7 @@ describe("parseAdversarialCritiqueResult — happy path", () => {
   });
 
   test("strips JSON code fences", () => {
-    const raw = "```json\n" + JSON.stringify(makeResult(seq(3, "minor"))) + "\n```";
+    const raw = `\`\`\`json\n${JSON.stringify(makeResult(seq(3, "minor")))}\n\`\`\``;
     const parsed = parseAdversarialCritiqueResult(raw, CTX_BASE);
     expect(parsed.critiques).toHaveLength(3);
   });

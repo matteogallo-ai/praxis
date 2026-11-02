@@ -1,321 +1,207 @@
 # Praxis
 
-![tests: 1100+](https://img.shields.io/badge/tests-1100%2B-brightgreen)
-![bun: 1.3+](https://img.shields.io/badge/bun-1.3%2B-orange)
-![typescript: strict](https://img.shields.io/badge/typescript-strict-blue)
-![license: MIT](https://img.shields.io/badge/license-MIT-lightgrey)
-![release: v1.0](https://img.shields.io/badge/release-v1.0-brightgreen)
-![status](https://img.shields.io/badge/status-feature--complete_at_v1.3.0-blue)
+[![CI](https://github.com/matteogallo-ai/praxis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/matteogallo-ai/praxis/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/matteogallo-ai/praxis)](LICENSE)
 
-> Multi-agent briefing system that produces senior-analyst-grade
-> documents in your organization's exact format — with rigorous
-> sourcing, adversarial stress-testing, and PDF / DOCX / Markdown
-> renderers.
+> A 7-stage LLM pipeline that turns a business question into an analytical
+> briefing shaped by a declared format (executive pre-read, McKinsey-style
+> note, position paper, family-office memo), with sourcing checks, an
+> adversarial review and Markdown / PDF / DOCX output.
+
+## Status: live execution under repair
+
+Praxis has **not yet produced a briefing against a real model**. Every
+recorded live run failed (5 of 5, see [`CHANGELOG.md` § 1.2.1](CHANGELOG.md)):
+three aborted on the `strict` sourcing policy because the model returned
+findings without source URLs, one on prose before the JSON, one on a 60 s
+timeout during web search. Everything listed under [Features](#features) is
+proven on the mock provider, which replays hand-written fixtures; that proves
+the wiring, not the quality of a model's output.
+
+Making the live path work, and measuring it (cost, tokens, duration, a scored
+sample), is the work under [Roadmap](#roadmap).
 
 ## Architecture
 
-The pipeline chains seven specialized agents. Each stage's output
-feeds the next; the final adversarial pass can trigger a synthesis
-rerun if it finds material weaknesses.
+Seven LLM calls in a fixed order, each stage receiving the earlier stages'
+typed output. Stages run one after another; nothing runs in parallel today.
 
 ```mermaid
 flowchart LR
-    Q([Question]) --> S1[Scoping]
-    S1 --> S2[Research]
-    S2 --> S3[Stakeholders]
-    S3 --> S4[Risks]
-    S4 --> S5[Options]
-    S5 --> S6[Synthesis]
-    S6 --> S7[Adversarial<br/>Critique]
-    S7 --> R([Briefing<br/>PDF / DOCX / MD])
-
-    classDef agent fill:#eef,stroke:#557,stroke-width:1px,color:#113;
-    classDef io fill:#efe,stroke:#575,stroke-width:1px,color:#131;
-    class S1,S2,S3,S4,S5,S6,S7 agent;
-    class Q,R io;
+    Q([Question + format]) --> S1[1 Scoping]
+    S1 --> S2[2 Research<br/>web_search]
+    S2 --> V2{{sourcing check}}
+    V2 --> S3[3 Stakeholders<br/>web_search]
+    S3 --> V3{{sourcing check}}
+    V3 --> S4[4 Risks<br/>web_search]
+    S4 --> V4{{sourcing check}}
+    V4 --> S5[5 Options<br/>web_search]
+    S5 --> S6[6 Synthesis<br/>one call per section]
+    S6 --> S7[7 Adversarial review<br/>web_search]
+    S7 -- revised recommendation needed --> S6b[Synthesis rerun<br/>at most once]
+    S7 --> R([Renderers<br/>md · pdf · docx])
+    S6b --> R
 ```
 
-Praxis is CLI-first and library-second. Zero paid dependencies
-beyond `pdfkit` (see § FAQ). Runs offline against a
-fixture-driven mock provider; runs live against Anthropic when
-you export a key.
+| Stage | Reads | Writes |
+| --- | --- | --- |
+| 1 Scoping | question, format | reformulated question, sub-questions |
+| 2 Research | scoping | sourced findings |
+| 3 Stakeholders | scoping, research | stakeholders and positions |
+| 4 Risks | scoping, research, stakeholders | risks, likelihood, impact, mitigations |
+| 5 Options | stages 1–4 | 2–4 options with trade-offs |
+| 6 Synthesis | stages 1–5, format sections | one text per format section |
+| 7 Adversarial review | the assembled brief | critiques and whether to revise |
 
----
-
-## Project status
-
-Praxis reached **feature completeness at v1.3.0**. The pipeline,
-formats, renderers, sourcing layer, and library API are stable.
-One patch release (v1.3.1) is planned to add empirical validation
-of the v1.3.0 framing improvements. After v1.3.1, Praxis enters
-maintenance mode.
-
-See [`ROADMAP.md`](./ROADMAP.md) for the closure plan and
-post-v1.3.1 status.
-
----
-
-## What Praxis does
-
-Ask a question. Get an analytical briefing shaped like a
-consultant's:
-
-```
-$ bun run cli brief "Should we enter the German market?" \
-    --format executive-pre-read --full
-
----
-question: "Should we enter the German market?"
-format: "executive-pre-read"
-recommended_option: "OPT-A"
-aggregated_risk: "high"
-sourcing_summary: "total=29 ok=28 stale=0 untrusted=0 duplicated=1 missing=0"
-total_word_count: 338
----
-
-# Should we enter the German market?
-
-## Context
-The German market represents Europe's largest SaaS opportunity
-outside the UK, with a 2026 addressable spend of €14.2bn…
-
-## Recommendation
-Enter Germany via a Munich-based sales beachhead in Q2 2027,
-with a capped €4-6m first-year envelope and an explicit reversal
-option at month 9. (see OPT-A.)
-
-## Risks and Mitigations
-- RISK-001 (regulatory): the EU AI Act's GPAI provisions apply…
-```
-
-The pipeline behind that: seven analytical agents (Scoping,
-Research, Stakeholders, Risks, Options, Synthesis, Adversarial
-Critique), a hardened sourcing layer, an optional editorial
-re-run loop, and three renderers.
-
----
+The sourcing check after stages 2–4 enforces the format's `sourcing_policy`:
+under `strict` a missing, stale or untrusted source aborts the brief; under
+`permissive` it is reported. `docs/architecture.md` has the module map.
 
 ## Quick start
 
-Three commands.
+Requirements: [Bun](https://bun.sh) 1.3 or later, git, and the
+[PromptLang](https://github.com/matteogallo-ai/promptlang) repository checked
+out **next to** this one at tag `v1.2.0`. Praxis imports PromptLang's
+lexer and parser through `tsconfig` paths (`../promptlang/src`); without that
+sibling checkout the CLI fails with `Cannot find module 'promptlang/lexer'`.
 
 ```bash
+git clone https://github.com/matteogallo-ai/promptlang.git
+git -C promptlang checkout v1.2.0
 git clone https://github.com/matteogallo-ai/praxis.git
 cd praxis && bun install
 bun run cli brief "Should we enter the German market?" --format auto --full
 ```
 
-That's the offline path (mock provider, no API key). For live
-briefings against Anthropic:
+That runs on the mock provider: no key, no network. Its text comes from
+fixtures chosen by format, so every question with the same format gets the
+same briefing.
 
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-bun run cli brief "Q" --format auto --full --provider anthropic
-```
+`--provider anthropic` with `ANTHROPIC_API_KEY` set calls the real API. It is
+paid, and in its current state it is expected to fail (see Status).
 
-For the 5-minute walkthrough (formats, rendering, verbosity, the
-editorial re-run loop) see [`docs/getting-started.md`](docs/getting-started.md).
+## Features
 
----
+- Briefing formats as YAML files checked against a typed schema (C01); four of them ship (C02).
+- Seven stages run end to end on the mock provider; pipeline smoke test, not a quality measure (C03).
+- Every stage's model output is parsed and validated into typed records; malformed output is a typed error (C04).
+- Sourcing checks: explicit `SOURCE_MISSING` markers, freshness, domain trust, cross-stage duplicates, `strict` or `permissive` (C05).
+- One bounded synthesis rerun when the adversarial review asks for it (C06).
+- `strict_editorial` formats regenerate sections that break their rules (C07).
+- Markdown, PDF and DOCX renderers (C08).
+- CLI with format listing, inspection, validation and keyword-based `--format auto` (C09).
+- Library entry point with a typed error hierarchy (C10).
+- Anthropic provider with the server-side `web_search` tool loop and bounded retries, tested against hand-written API-shaped fixtures, not the live API (C11).
+- Reproducible mock benchmark: `bun run bench:mock` twice leaves `git status` clean (C12).
+- Paid live tests run only on explicit opt-in (C13).
 
-## How it works
+Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
+prove it; CI fails if one of them does not pass.
 
-Seven agents. Deterministic sequencing. Every agent's output is
-a typed JSON record the next stage validates.
+## Roadmap
 
-```
-┌─────────────┐   ┌──────────────┐   ┌───────────────┐
-│  Scoping    │──▶│  Research    │──▶│ Stakeholders  │
-└─────────────┘   └──────────────┘   └───────────────┘
-                          │                  │
-                          ▼                  ▼
-                  ┌─────────────────────────────────┐
-                  │   Hardened sourcing layer       │
-                  │  (freshness · trust · dedupe)   │
-                  └─────────────────────────────────┘
-                                 │
-                 ┌───────────────┼───────────────┐
-                 ▼               ▼               ▼
-           ┌─────────┐    ┌─────────┐    ┌─────────────┐
-           │  Risks  │──▶ │ Options │──▶ │ Synthesis   │
-           └─────────┘    └─────────┘    └─────────────┘
-                                                │
-                                                ▼
-                                     ┌───────────────────┐
-                                     │  Adversarial      │
-                                     │  Critique         │
-                                     └───────────────────┘
-                                                │
-                     (optional v0.8 loop)       │
-                     ┌──────────────────────────┤
-                     ▼                          ▼
-             ┌─────────────┐           ┌─────────────────┐
-             │  Rerun in   │           │  Renderers      │
-             │ REVISION    │           │  md · pdf · docx│
-             │  MODE (×1)  │           └─────────────────┘
-             └─────────────┘
-```
+- Live briefings that complete against Anthropic, with committed run artefacts (C14).
+- Tolerant handling of the three observed live failures (C15).
+- Per-stage checkpoints and resume (C16).
+- Prompt-injection defence for web results and inter-stage content (C17).
+- Live-output quality scored by a judge validated against human labels (C18).
+- Clean install without the sibling PromptLang checkout (C19).
 
-Design notes:
+## Formats
 
-- **Format discipline is enforced upstream.** Every section's
-  tone directives, max-length, `forbidden_terms`, and
-  `validation_rules` are contract, not documentation. The
-  Synthesis agent respects them; the optional
-  `strict_editorial` mode makes them structural.
-- **Sources are structural.** Every finding, position, and
-  risk-evidence carries either a real `SourceReference` or an
-  explicit `SOURCE_MISSING` marker. Fabricated URLs are
-  structurally forbidden.
-- **The critique is a stress test, not decoration.** The
-  Adversarial agent produces 3–15 steelmanned counter-arguments;
-  if the derived signal flags the recommendation, the editorial
-  re-run loop invokes Synthesis a second time to address them.
-  Hard cap: one rerun (no oscillation).
+| id | intent | length |
+| --- | --- | --- |
+| `executive-pre-read` | Board / executive decision, 6 sections | ~800 words |
+| `mckinsey-style-note` | Situation / Complication / Answer / So-What | ~1200 words |
+| `position-paper-corporate` | Public position on a regulatory or policy question | ~1500 words |
+| `family-office-memo` | Patrimonial memo, `strict_editorial` | ~1200 words |
 
----
-
-## Formats included
-
-Four shipped formats calibrated across the corporate and
-patrimonial briefing spectrum:
-
-| id                         | intent                                                             | length      | targets       |
-| -------------------------- | ------------------------------------------------------------------ | ----------- | ------------- |
-| `executive-pre-read`       | Board / executive decision, 6 sections                             | ~800 words  | md, pdf       |
-| `mckinsey-style-note`      | Situation / Complication / Answer / So-What arc                    | ~1200 words | md, pdf, docx |
-| `position-paper-corporate` | Public position on a regulatory or policy question                 | ~1500 words | pdf, docx     |
-| `family-office-memo`       | Discreet patrimonial memo for a family principal or family council | ~1200 words | md, pdf, docx |
-
-The `family-office-memo` format (shipped in v1.2.0) enforces a
-strict-editorial posture — sections that trip forbidden terms,
-length caps, or validation rules are rejected and regenerated
-rather than surfaced as warnings. See
-[`docs/formats/family-office-memo.md`](docs/formats/family-office-memo.md)
-for the discretion protocols and sourcing standards.
-
-Adding a fifth format is one YAML file. See
-[`docs/cookbook.md § 1`](docs/cookbook.md).
-
----
+A format is one YAML file under `formats/`; see
+[`docs/creating-a-format.md`](docs/creating-a-format.md).
 
 ## As a library
 
-`src/index.ts` is the v1.0 stable API surface. Every named
-export is covered by SemVer.
-
 ```ts
-import {
-  FormatRegistry,
-  AnthropicLLMProvider,
-  Orchestrator,
-  PraxisError,
-} from "praxis";
+import { FormatRegistry, MockLLMProvider, Orchestrator } from "praxis";
 
 const registry = new FormatRegistry();
 registry.loadDirectory("formats");
-
-const orch = new Orchestrator(registry, new AnthropicLLMProvider());
-
-try {
-  const out = await orch.briefWithCritiqueAndRerun(
-    "Should we enter the German market?",
-    "executive-pre-read"
-  );
-  console.log(out.synthesis.total_word_count, "words");
-  console.log("rerun:", out.rerun_performed);
-} catch (e) {
-  if (e instanceof PraxisError) console.error(e.name, e.message);
-  else throw e;
-}
+const orch = new Orchestrator(
+  registry,
+  new MockLLMProvider({ fixturesDir: "tests/fixtures/mock-llm" })
+);
+const out = await orch.briefWithCritiqueAndRerun(
+  "Should we enter the German market?",
+  "executive-pre-read"
+);
+console.log(out.synthesis.total_word_count, out.rerun_performed);
 ```
 
-Full API reference: [`docs/api.md`](docs/api.md). Embedding
-quick-start: [`docs/embedding-praxis.md`](docs/embedding-praxis.md).
-
----
+Reference: [`docs/api.md`](docs/api.md).
 
 ## Development
 
-Praxis runs on [Bun](https://bun.sh) 1.3+. Since v1.1
-[`@promptlang/yaml-parser`](https://www.npmjs.com/package/@promptlang/yaml-parser)
-resolves from the npm registry — no sibling checkout is needed for
-that piece. The `promptlang` **core** (lexer / parser / ast /
-runtime) is still consumed via TypeScript `paths` from a sibling
-checkout under `~/dev/promptlang/`, so both repos must currently
-live side by side:
-
-```
-~/dev/
-├── praxis/        ← this repo
-└── promptlang/    ← required for the promptlang core imports
-```
-
-Setup:
-
 ```bash
-git clone https://github.com/matteogallo-ai/promptlang.git ~/dev/promptlang
-git clone https://github.com/matteogallo-ai/praxis.git ~/dev/praxis
-cd ~/dev/praxis
-bun install
-bun run typecheck   # bunx tsc --noEmit — 0 errors
-bun test            # 1146 pass, 11 skip (live tests gated on API key)
-bun run bench:mock  # 10 benchmarks against the mock provider
+bun install --frozen-lockfile
+bun run typecheck                    # tsc --noEmit, strict
+bun test                             # mock provider only; live tests need PRAXIS_LIVE_TESTS=1
+bun run lint                         # Biome
+bun run knip                         # unused files, exports, dependencies
+bun run check:claims                 # docs/CLAIMS.md ≡ passing tests ≡ this README
+bun run check:stale-narrative        # no future tense or untracked TODOs in shipped text
+bun run bench:mock                   # renderer smoke test, writes benchmarks/outputs/mock/
 ```
 
-Publishing the `promptlang` core to npm (removing this last sibling
-requirement) is planned for a future release.
+`CLAUDE.md` lists every command, including the paid ones. The `.claude/`
+directory holds the Claude Code permission settings used to build this repo:
+reads, tests, `bun run *` and commits are allowed without a prompt;
+`git push`, `git tag`, `curl`, `wget`, `rm -rf` and `npm install` are denied,
+and so are the paid entry points: `bun run bench` and `bun run bench:live`,
+every `bun run score*` script (including the free `score:dry`), and any
+command starting with `PRAXIS_LIVE_TESTS=1`. `bun run bench:mock` stays
+allowed. The deny rules match command prefixes, so they are a backstop, not
+a guarantee: the approval rule in `CLAUDE.md` still applies to every paid run.
 
-CLI dev loop:
+## How this was built
 
-```bash
-bun run cli version
-bun run cli formats list
-bun run cli brief "Q" --format auto --full --verbose
-```
+Praxis was written with [Claude Code](https://claude.com/claude-code) between
+14 and 20 August 2026, v0.1 to v1.3.0 in about 135 commits. Each release
+started from a written spec; the agent wrote the code, the tests and the
+fixtures.
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor
-walkthrough and the coding conventions (TypeScript strict,
-`any`-free src, no new npm deps).
+What went wrong is instructive:
 
----
+- **The tests could only prove wiring.** Every agent was developed against a
+  mock provider that returns hand-written, perfectly formed JSON with four
+  verified sources per finding. A real model does not behave like that, and
+  the first live benchmark aborted on all five briefings (Status above).
+- **The benchmark measured the fixtures.** The published "AI-assisted
+  scoring" graded mock briefings whose text does not depend on the question;
+  a follow-up release rewrote fixtures by hand and planned to re-score them.
+  Those scores are withdrawn ([`benchmarks/RESULTS.md`](benchmarks/RESULTS.md)).
+- **The project was declared feature-complete without a live briefing,**
+  and the README claimed it "runs live against Anthropic".
+
+An independent audit on 2 November 2026 found the above, plus: no CI; a
+quickstart that fails on a fresh clone (it omitted the sibling PromptLang
+checkout); every stage sending its system prompt concatenated into
+the user message; and the `@model` declared in each `.prompt` file never
+reaching the API. This README, `docs/CLAIMS.md`, the CI workflow and
+[`docs/ENGINEERING_STANDARDS.md`](docs/ENGINEERING_STANDARDS.md) are the first
+response; the fixes to the pipeline itself are listed under Roadmap.
 
 ## FAQ
 
-**Why only one npm dep (`pdfkit`)?** From-scratch PDF generation
-would triple the renderer LOC and require font-embedding (AFM
-parsing, Type 1 programs, encoding tables) for zero incremental
-capability. `pdfkit` was called out as the one planned exception
-in the v0.1 migration prompt; every other renderer stays
-from-scratch (the DOCX renderer emits Open Packaging Convention
-parts by hand and uses `node:zlib` for DEFLATE).
+**Why `pdfkit`?** Writing PDF font embedding by hand would triple the renderer
+for no gain. The DOCX renderer writes its Open Packaging parts by hand with
+`node:zlib`.
 
-**Why still a sibling PromptLang checkout?** Since v1.1, the
-`@promptlang/yaml-parser` sub-package is on npm and no longer
-needs one. The `promptlang` **core** (lexer / parser / ast /
-runtime), which the agents import for prompt-file parsing, is not
-yet published to npm — Praxis reaches it via `tsconfig` `paths`
-against `~/dev/promptlang/`. Publishing the core is a future
-release.
-
-**Does Praxis need an API key?** No — the mock provider is
-fixture-driven and produces every artefact type. Live runs need
-`ANTHROPIC_API_KEY`; nothing else does.
-
-**Can I hit OpenAI / OpenRouter / a local model?** Yes. Implement
-`LLMProvider` (two methods) and pass your instance to the
-Orchestrator. Recipe:
-[`docs/cookbook.md § 2`](docs/cookbook.md).
-
-**Is there a Web UI?** No, and there isn't planned to be one in
-v1.0. The library API is the contract; UIs are downstream
-projects on top of it.
-
----
+**Can I use another model provider?** Implement `LLMProvider` (`complete`, and
+`completeWithTools` for the web-search stages) and pass it to the
+`Orchestrator`. See [`docs/cookbook.md`](docs/cookbook.md) § 2.
 
 ## License, contact
 
-MIT. See [`LICENSE`](LICENSE).
-
-Maintainer: Matteo Gallo — matteo.gallo@gallarti.io. Bug
-reports and feature requests via GitHub Issues.
+MIT, see [`LICENSE`](LICENSE). Maintainer: Matteo Gallo —
+matteogallo.office@gmail.com. Bugs and requests via GitHub Issues; security
+reports as described in [`SECURITY.md`](SECURITY.md).

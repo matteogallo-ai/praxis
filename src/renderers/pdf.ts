@@ -102,6 +102,9 @@ async function buildPdf(
       Author: "Praxis",
       Subject: brief.format_id,
       Producer: "Praxis (pdfkit)",
+      // pdfkit stamps the wall clock by default; the brief's own timestamp
+      // makes the same brief render to the same bytes.
+      CreationDate: new Date(brief.generated_at),
     },
   });
 
@@ -174,7 +177,7 @@ function addFooters(
 ): void {
   const q =
     brief.question.length > 60
-      ? brief.question.slice(0, 57) + "…"
+      ? `${brief.question.slice(0, 57)}…`
       : brief.question;
   const range = doc.bufferedPageRange();
   for (let i = 0; i < range.count; i++) {

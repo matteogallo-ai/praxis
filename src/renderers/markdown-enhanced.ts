@@ -54,7 +54,7 @@ export function renderMarkdownEnhanced(
 
   for (const section of brief.synthesis.sections) {
     parts.push(`## ${escapeMarkdownHeading(section.title)}\n\n`);
-    parts.push(section.content_markdown.trim() + "\n\n");
+    parts.push(`${section.content_markdown.trim()}\n\n`);
     if (section.sources_cited.length > 0) {
       parts.push("**Sources:**\n\n");
       for (const s of section.sources_cited) {

@@ -1,42 +1,34 @@
-# Praxis — Roadmap to v1.0
+# Praxis — Roadmap
 
-Praxis targets v1.0 in ten releases. Each release ships something a real
-user can exercise — no waterfall, no big-bang. The unifying north star:
-**produce a consultant-grade briefing that a senior reader mistakes for
-the work of their own analysts.**
-
-The Format Registry (v0.1) is the pierre angulaire. Every subsequent
-release depends on it.
+The goal: a briefing that a senior reader would take for the work of their
+own analysts. The current status comes first; the release history after it
+is kept as written in August 2026.
 
 ---
 
-## Project status — Feature-complete at v1.3.0
+## Project status — live execution under repair (2026-11-02)
 
-Praxis is **functionally complete**. The 7-agent pipeline, 4 calibrated
-formats, 3 rendering targets, sourcing layer with structural
-anti-hallucination guards, editorial re-run with strict_editorial mode,
-adversarial critique with steelmanning enforcement, and stable public
-library API are all shipped, tested (1216 tests + 11 optional live
-tests), and documented.
+The status this section used to give ("feature-complete at v1.3.0",
+followed by maintenance mode after a v1.3.1 mock re-scoring) was wrong.
+The pipeline has never completed a briefing against a real model: the
+only live benchmark aborted on 5 of 5 briefings, and the published
+scores graded hand-written fixtures. An independent audit on
+2026-11-02 recorded this.
 
-### Planned releases
+The remediation runs in three parts, each a pull request:
 
-- **v1.3.1** — empirical validation of the v1.3.0 framing_clarity
-  improvement (mock re-scoring only, ~$1 API cost, ~20 min). Ship
-  gates: framing_clarity ≥ 3.0 mock average, no other criterion
-  regresses > -0.3. Blocked only on Anthropic API credits refill.
-  Executable in three shell commands per
-  [`docs/v1.3.1-runbook.md`](./docs/v1.3.1-runbook.md).
+- **A — CI, standards and documentation truth.** CI, `docs/CLAIMS.md`,
+  an honest README and results page, the v1.3.1 re-scoring abandoned
+  ([`docs/v1.3.1-runbook.md`](./docs/v1.3.1-runbook.md)).
+- **B — pipeline fixes, without live calls.** PromptLang from npm, the
+  Messages API `system` field and per-stage `@model`, tolerant JSON
+  extraction, graceful sourcing under `strict`, per-stage timeouts,
+  checkpoints and resume, cost measurement, prompt-injection defence.
+- **C — live proof.** Live briefings with committed artefacts and a
+  scored sample whose judge is checked against human labels; then a
+  release and maintenance mode.
 
-### Post-v1.3.1 status: maintenance mode
-
-After v1.3.1, Praxis enters **maintenance mode**:
-
-- Bug fixes only. No new features by default.
-- Community contributions welcome via PRs.
-- Any major evolution (new format, new agent, v2.0 Corporate Reasoning
-  Engine) will be a deliberate future decision, not a natural next
-  step.
+The capability list with its evidence is [`docs/CLAIMS.md`](./docs/CLAIMS.md).
 
 ### The v2.0 hypothesis (not committed)
 
@@ -46,16 +38,11 @@ architecturally possible but is not on any near-term timeline. It
 would be a from-scratch conceptual extension, not an incremental v1.x
 continuation.
 
-### The disciplined shipping record
+## Release history (August 2026)
 
-14 public releases from v0.1 to v1.3.0 shipped between August 8 and
-August 20, 2026. Each release closed one well-defined brick. Zero
-release ever broke a test that passed in the previous release. The
-SemVer contract engaged in v0.8 and formalised in v1.0 was never
-broken.
-
-This project is a demonstration that disciplined shipping produces
-better outcomes than exhaustive feature accumulation.
+Each ✅ below means the release was tagged with its tests passing **on the
+mock provider**. It does not mean the feature worked against a real model:
+none did (see Project status). The per-release text is left as written.
 
 ---
 
@@ -307,8 +294,7 @@ new npm dep, no breaking change.
   ASCII pipeline diagram), and `docs/architecture.md § 7`
   (final v0.9 pipeline diagram with invariants).
 
-**Metrics**: 1100+ tests pass (+60 vs v0.8 baseline of 1042),
-0 fail, `bunx tsc --noEmit` clean, 0 new dependencies.
+**Metrics**: all tests pass, `bunx tsc --noEmit` clean, 0 new dependencies.
 
 ---
 
@@ -340,8 +326,7 @@ the resulting `RESULTS.md` diff).
   deterministic mock content), reproduction, budget ($5-7 per
   full pass), interpretation guide.
 
-**Metrics**: 1146 tests pass (+41 vs v0.9 baseline of 1105),
-0 fail, `bunx tsc --noEmit` clean, 0 new dependencies.
+**Metrics**: all tests pass, `bunx tsc --noEmit` clean, 0 new dependencies.
 
 ### v0.10.1 (chore) — empirical validation
 
@@ -370,7 +355,7 @@ contract.
   or changing an error class's inheritance requires v2.0.
   See `docs/SEMVER-CONTRACT.md` for the full contract text.
 - **Public release.** Repo becomes the reference implementation
-  of the multi-agent briefing pattern. External contributors
+  of the staged-pipeline briefing pattern. External contributors
   onboarded via `CONTRIBUTING.md`.
 - **Compatibility commitment (v1.x).** Additive changes only —
   new agents, formats, renderers, providers, optional fields,
@@ -463,11 +448,10 @@ push the seven-agent pipeline toward decision-first openings:
 Four opening mock synthesis fixtures were rewritten
 decision-first (source arrays preserved verbatim) and all
 eleven mock briefings were regenerated via `bun run bench:mock`.
-Zero API surface change; zero new npm dependency; 1221 tests
-pass (up from 1212). Empirical re-scoring is deferred to
-v1.3.1 — see below.
+Zero API surface change; zero new npm dependency; all tests
+pass. The planned mock re-scoring (v1.3.1) is abandoned.
 
-## v1.3.1 — Empirical validation of v1.3.0 prompt improvements (planned)
+## v1.3.1 — Empirical validation of v1.3.0 prompt improvements (abandoned, see `docs/v1.3.1-runbook.md`)
 
 Chore release. A maintainer with `ANTHROPIC_API_KEY` and
 ~$1 credit runs:

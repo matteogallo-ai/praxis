@@ -158,7 +158,7 @@ export function errorWithContext(ctx: ErrorContext): string {
   if (ctx.see !== undefined) {
     lines.push(`  ${c.dim("see:")}        ${ctx.see}`);
   }
-  return lines.join("\n") + "\n";
+  return `${lines.join("\n")}\n`;
 }
 
 // ---------------------------------------------------------------------------
@@ -238,7 +238,7 @@ export function renderScopingResult(result: ScopingResult): string {
   const parts: string[] = [];
   parts.push(`\n${c.bold(c.cyan("Scoping agent output"))}\n`);
   parts.push(`${c.dim("=".repeat(20))}\n`);
-  parts.push(JSON.stringify(result, null, 2) + "\n");
+  parts.push(`${JSON.stringify(result, null, 2)}\n`);
   return parts.join("");
 }
 
@@ -284,7 +284,7 @@ export function renderResearchResult(result: ResearchResult): string {
 }
 
 function truncateForDisplay(s: string, max: number): string {
-  return s.length <= max ? s : s.slice(0, max) + "…";
+  return s.length <= max ? s : `${s.slice(0, max)}…`;
 }
 
 // ---------------------------------------------------------------------------
@@ -324,7 +324,7 @@ export function renderStakeholders(result: StakeholderMapResult): string {
     ],
     rows
   );
-  parts.push(table + "\n\n");
+  parts.push(`${table}\n\n`);
 
   for (const [i, s] of result.stakeholders.entries()) {
     parts.push(`${c.bold(`[${i + 1}] ${s.name}`)}\n`);
@@ -404,7 +404,7 @@ export function renderRisks(result: RiskAnalysisResult): string {
     ],
     rows
   );
-  parts.push(table + "\n\n");
+  parts.push(`${table}\n\n`);
 
   parts.push(`${c.bold("Aggregated risk score")}\n`);
   parts.push(`  ${c.dim("Overall:")}   ${result.aggregated_risk_score.overall}\n`);
@@ -568,7 +568,7 @@ export function renderFullBrief(result: BriefResult): string {
 
   for (const section of result.synthesis.sections) {
     parts.push(`## ${escapeMarkdownHeading(section.title)}\n\n`);
-    parts.push(section.content_markdown.trim() + "\n\n");
+    parts.push(`${section.content_markdown.trim()}\n\n`);
     if (section.sources_cited.length > 0) {
       parts.push("**Sources:**\n\n");
       for (const s of section.sources_cited) {

@@ -12,7 +12,7 @@
 
 import type { FreshnessRule } from "./types.ts";
 
-export type FreshnessClass = "fresh" | "warn" | "stale";
+type FreshnessClass = "fresh" | "warn" | "stale";
 
 export interface FreshnessResult {
   classification: FreshnessClass;

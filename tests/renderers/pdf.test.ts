@@ -7,7 +7,7 @@
  * parser).
  */
 
-import { describe, expect, test } from "bun:test";
+import { describe, expect, setSystemTime, test } from "bun:test";
 
 import { pdfRenderer } from "../../src/renderers/pdf.ts";
 import type {
@@ -294,5 +294,22 @@ describe("pdfRenderer — always-present content", () => {
     const buf = await pdfRenderer.render(makeBrief(), { compress_pdf_streams: false });
     expect(pdfContainsText(buf, "OPT-A")).toBe(true);
     expect(pdfContainsText(buf, "recommended")).toBe(true);
+  });
+});
+
+describe("pdfRenderer — reproducible output", () => {
+  test("the same brief renders to identical bytes whatever the wall clock", async () => {
+    // The PDF creation date must come from the brief, not from the moment of
+    // rendering; otherwise `bun run bench:mock` rewrites every committed PDF.
+    const brief = makeBrief();
+    try {
+      setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      const first = await pdfRenderer.render(brief, {});
+      setSystemTime(new Date("2027-06-15T12:34:56Z"));
+      const second = await pdfRenderer.render(brief, {});
+      expect(Buffer.compare(first, second)).toBe(0);
+    } finally {
+      setSystemTime();
+    }
   });
 });

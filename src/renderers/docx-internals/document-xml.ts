@@ -337,7 +337,6 @@ function collectSources(brief: BriefResult | BriefWithCritiqueResult): Src[] {
 }
 
 /** Re-exported so tests can spot-check without going through the assembler. */
-export { collectSources };
 
 // Utility export so xml-builder's `elem` compiles even though not used directly here.
 void elem;

@@ -65,16 +65,13 @@ describe("parseScoreArgs", () => {
     expect(o.cacheTtlMs).toBe(24 * 60 * 60 * 1000);
   });
 
-  test("--mock-only, --live-only, --dry-run", () => {
-    expect(parseScoreArgs(["--mock-only"]).mockOnly).toBe(true);
+  test("--live-only, --dry-run", () => {
     expect(parseScoreArgs(["--live-only"]).liveOnly).toBe(true);
     expect(parseScoreArgs(["--dry-run"]).dryRun).toBe(true);
   });
 
-  test("--mock-only and --live-only are mutually exclusive", () => {
-    expect(() => parseScoreArgs(["--mock-only", "--live-only"])).toThrow(
-      /mutually exclusive/i
-    );
+  test("--mock-only is refused: a score on fixture output measures nothing", () => {
+    expect(() => parseScoreArgs(["--mock-only"])).toThrow(/mock briefings are not scored/);
   });
 
   test("--refresh <slug> and --refresh=<slug>", () => {
@@ -517,9 +514,22 @@ describe("scoreAll — --dry-run", () => {
     process.stderr.write = originalStderr;
   });
 
+  test("scoreAll refuses mock briefings even when called directly", async () => {
+    await expect(
+      scoreAll({
+        mockOnly: true,
+        liveOnly: false,
+        refresh: null,
+        dryRun: true,
+        root: ".",
+        cacheTtlMs: 60_000,
+      })
+    ).rejects.toThrow(/mock briefings are not scored/);
+  });
+
   test("dry-run enumerates without calling the API", async () => {
     const report = await scoreAll({
-      mockOnly: true,
+      mockOnly: false,
       liveOnly: false,
       refresh: null,
       dryRun: true,
@@ -540,7 +550,7 @@ describe("scoreAll — --dry-run", () => {
     delete process.env["ANTHROPIC_API_KEY"];
     try {
       const report = await scoreAll({
-        mockOnly: true,
+        mockOnly: false,
         liveOnly: false,
         refresh: null,
         dryRun: true,

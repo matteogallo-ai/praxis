@@ -45,9 +45,8 @@ level:
 | `affected-party` | Bears consequences without shaping the call. |
 | `external-observer` | Regulators, media, watchdogs — outside the decision but able to escalate cost. |
 
-The vocabulary is deliberately coarse. Sub-typing (regulator vs media
-vs union under `external-observer`) may land in a later release; the
-extension will be additive.
+The vocabulary is deliberately coarse: no sub-typing (regulator vs
+media vs union) under `external-observer`.
 
 ### Position — where they stand on the direction
 
@@ -172,7 +171,8 @@ years of trust to unwind.
   v0.6+.
 - **Automatic dedupe across agents.** If Research cites a source and
   Stakeholder Mapping cites the same URL as `position_evidence`, both
-  are printed. A later Sourcing Layer pass will dedupe.
+  are flagged by the sourcing layer when the format enables
+  `sourcing_rules.dedupe.cross_agent`; both entries stay in the output.
 - **Position change detection.** Positions can flip; v0.4 has no
   notion of history. If a stakeholder used to be supportive and is
   now resistant, that must be captured in `engagement_notes` today.

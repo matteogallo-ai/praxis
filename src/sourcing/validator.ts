@@ -26,7 +26,6 @@
  * builds its own local no-op instance in that case.
  */
 
-import type { Format } from "../registry/schema.ts";
 import type {
   ResearchResult,
   StakeholderMapResult,
@@ -167,14 +166,6 @@ export function validateRiskSourcing(
   }
 
   return finalize(policy, result.risks.length * 2, warnings, rules);
-}
-
-/**
- * Convenience helper — pull `sourcing_rules` (if any) out of a `Format`
- * so callers do not have to reach into the format directly.
- */
-export function rulesFromFormat(format: Format): SourcingRules | undefined {
-  return format.sourcing_rules;
 }
 
 // ---------------------------------------------------------------------------

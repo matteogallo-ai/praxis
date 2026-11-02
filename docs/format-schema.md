@@ -67,8 +67,9 @@ validation_rules:
   - "no_bullet_lists: true"
 ```
 
-They are declarative in v0.1 — future releases will interpret them
-during the style-guide enforcement pass (v0.8).
+Synthesis passes them to the model with the section; under
+`strict_editorial` a rule the model reports as unmet rejects the section
+and triggers a regeneration (`src/agents/synthesis.ts`).
 
 ## `style_guide`
 
@@ -76,7 +77,7 @@ during the style-guide enforcement pass (v0.8).
 | --- | --- | --- |
 | `voice` | string | e.g. "authoritative, third-person, no hedging" |
 | `sentence_structure` | string | e.g. "short declarative, active voice, max 20 words" |
-| `forbidden_terms` | sequence | list of non-empty strings; the linter (v0.8) will reject any briefing containing them |
+| `forbidden_terms` | sequence | list of non-empty strings; synthesis reports every hit, and `strict_editorial` regenerates the section |
 
 ## `output_targets`
 

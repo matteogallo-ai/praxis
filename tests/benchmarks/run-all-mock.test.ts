@@ -13,8 +13,17 @@
  * suite — a full mock run touches every renderer and takes
  * seconds).
  */
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { afterEach, beforeEach, describe, expect, setSystemTime, test } from "bun:test";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -178,5 +187,52 @@ describe("runAll — --dry-run", () => {
     });
     expect(summary.total).toBe(11);
     expect(summary.outcomes.every((o) => o.mode === "live")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// runAll — mock runs are reproducible (bench:mock leaves git status clean)
+// ---------------------------------------------------------------------------
+
+describe("runAll — mock reproducibility", () => {
+  test("two mock runs at different wall-clock times write identical files", async () => {
+    const repo = join(import.meta.dir, "..", "..");
+    const root = mkdtempSync(join(tmpdir(), "praxis-bench-repro-"));
+    mkdirSync(join(root, "benchmarks"));
+    mkdirSync(join(root, "tests", "fixtures"), { recursive: true });
+    copyFileSync(
+      join(repo, "benchmarks", "questions.yaml"),
+      join(root, "benchmarks", "questions.yaml")
+    );
+    symlinkSync(join(repo, "formats"), join(root, "formats"));
+    symlinkSync(
+      join(repo, "tests", "fixtures", "mock-llm"),
+      join(root, "tests", "fixtures", "mock-llm")
+    );
+    const outputs = join(root, "benchmarks", "outputs", "mock");
+    const snapshot = (): Map<string, Buffer> => {
+      const files = new Map<string, Buffer>();
+      for (const id of readdirSync(outputs).sort()) {
+        for (const name of readdirSync(join(outputs, id)).sort()) {
+          files.set(`${id}/${name}`, readFileSync(join(outputs, id, name)));
+        }
+      }
+      return files;
+    };
+    const opts = { mockOnly: true, liveOnly: false, dryRun: false, root };
+    try {
+      setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      expect((await runAll(opts)).failed).toBe(0);
+      const first = snapshot();
+      setSystemTime(new Date("2027-06-15T12:34:56Z"));
+      expect((await runAll(opts)).failed).toBe(0);
+      const second = snapshot();
+      expect([...second.keys()]).toEqual([...first.keys()]);
+      const changed = [...first].filter(([k, v]) => Buffer.compare(v, second.get(k)!) !== 0);
+      expect(changed.map(([k]) => k)).toEqual([]);
+    } finally {
+      setSystemTime();
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

@@ -7,8 +7,7 @@
     "governance"
   ],
   "mode": "mock",
-  "duration_ms": 18,
-  "generated_at": "2026-08-20T07:44:24.910Z",
+  "generated_at": "2026-08-20T00:00:00.000Z",
   "provider_name": "mock",
   "synthesis": {
     "total_word_count": 355,
@@ -41,7 +40,7 @@
   },
   "artefacts": {
     "brief.md": 17250,
-    "brief.pdf": 47609,
-    "brief.docx": 8120
+    "brief.pdf": 47604,
+    "brief.docx": 8115
   }
 }

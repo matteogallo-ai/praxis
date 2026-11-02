@@ -52,10 +52,7 @@ export function stripVerbosityFlags(argv: readonly string[]): string[] {
  */
 const DEFAULT_FORMATS_DIR = resolve(import.meta.dir, "..", "..", "formats");
 
-/**
- * Default fixtures directory for the v0.2 MockLLMProvider. Real
- * providers arrive in v0.3+ and will not need this path.
- */
+/** Fixtures the MockLLMProvider replays; the Anthropic provider ignores it. */
 const DEFAULT_MOCK_FIXTURES_DIR = resolve(
   import.meta.dir,
   "..",
