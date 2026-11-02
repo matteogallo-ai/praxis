@@ -30,6 +30,7 @@
  * upstream agents.
  */
 
+import { withRetry } from "./retry.ts";
 import { callModel, loadPrompt, renderPrompt, extractJsonText, untrusted, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
@@ -94,6 +95,11 @@ const OVER_LENGTH_TOLERANCE_PCT = 0.1;
 export interface ExecuteSynthesisOptions {
   /** Overrides the default `prompts/synthesis.prompt` location — used in tests. */
   promptPath?: string;
+  /**
+   * Attempts per section on recoverable errors. Retrying here rather than
+   * around the stage means one bad section does not rewrite the others.
+   */
+  attempts?: number;
 }
 
 export async function executeSynthesis(
@@ -188,7 +194,11 @@ export async function executeSynthesis(
       final_attempt_number: acceptedAttempt,
     };
   };
-  const sections = await Promise.all(ctx.format.sections.map(synthesizeSection));
+  const sections = await Promise.all(
+    ctx.format.sections.map((section) =>
+      withRetry(() => synthesizeSection(section), options.attempts ?? 1)
+    )
+  );
 
   const totalWordCount = sections.reduce((acc, s) => acc + s.word_count, 0);
   const conformance = buildFormatConformance(ctx, sections, totalWordCount);

@@ -12,7 +12,7 @@ import { join } from "node:path";
 
 import { Orchestrator } from "../../src/orchestrator/orchestrator.ts";
 import { CheckpointStore } from "../../src/orchestrator/checkpoint.ts";
-import { isRecoverable, withRetry } from "../../src/orchestrator/retry.ts";
+import { isRecoverable, withRetry } from "../../src/agents/retry.ts";
 import { OrchestrationError } from "../../src/orchestrator/errors.ts";
 import { MockLLMProvider } from "../../src/llm/mock-provider.ts";
 import {

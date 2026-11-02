@@ -57,7 +57,7 @@ import {
 import { OrchestrationError } from "./errors.ts";
 import { meter, type UsageLedger } from "./ledger.ts";
 import type { CheckpointStore } from "./checkpoint.ts";
-import { withRetry } from "./retry.ts";
+import { withRetry } from "../agents/retry.ts";
 
 export interface ScopeOptions {
   /** Overrides the scoping prompt file path — used in tests. */
@@ -501,8 +501,12 @@ export class Orchestrator {
       this.doGenerateOptions(scoping, research, stakeholders, risks, format, options)
     );
     run.options = optionsResult;
-    run.synthesis = await this.stage("synthesis", options, () =>
-      this.doSynthesize(scoping, research, stakeholders, risks, optionsResult, format, options)
+    // Synthesis retries per section (see doSynthesize), not as a whole.
+    run.synthesis = await this.stage(
+      "synthesis",
+      options,
+      () => this.doSynthesize(scoping, research, stakeholders, risks, optionsResult, format, options),
+      1
     );
     if (degraded) {
       run.synthesis = withInsufficientlySourcedSection(run.synthesis, run.sourcingReport(), run);
@@ -629,7 +633,8 @@ export class Orchestrator {
         format,
         options,
         revisionContext
-      )
+      ),
+      1
     );
 
     const rerunWithSection =
@@ -669,11 +674,16 @@ export class Orchestrator {
    * Runs one stage: reuses its checkpoint when there is one; otherwise runs
    * it with bounded retry, records its wall time, and checkpoints the output.
    */
-  private async stage<T>(name: string, options: ScopeOptions, run: () => Promise<T>): Promise<T> {
+  private async stage<T>(
+    name: string,
+    options: ScopeOptions,
+    run: () => Promise<T>,
+    attempts = options.stageAttempts ?? 2
+  ): Promise<T> {
     const saved = options.checkpoints?.load<T>(name);
     if (saved !== undefined) return saved;
     const started = Date.now();
-    const value = await withRetry(run, options.stageAttempts ?? 2);
+    const value = await withRetry(run, attempts);
     options.ledger?.recordDuration(name, Date.now() - started);
     options.checkpoints?.save(name, value);
     return value;
@@ -808,7 +818,9 @@ export class Orchestrator {
     if (revisionContext !== undefined) {
       ctx.revision_context = revisionContext;
     }
-    const execOpts: Parameters<typeof executeSynthesis>[2] = {};
+    const execOpts: Parameters<typeof executeSynthesis>[2] = {
+      attempts: options.stageAttempts ?? 2,
+    };
     if (options.synthesisPromptPath !== undefined) {
       execOpts.promptPath = options.synthesisPromptPath;
     }

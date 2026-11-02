@@ -48,3 +48,34 @@ describe("synthesis concurrency", () => {
     );
   });
 });
+
+describe("synthesis retry", () => {
+  test("one malformed section is retried alone; the others are written once", async () => {
+    const mock = new MockLLMProvider({ fixturesDir: "tests/fixtures/mock-llm" });
+    let synthesisCalls = 0;
+    let failed = false;
+    const llm: LLMProvider = {
+      name: "mock",
+      acceptsSystemPrompt: true,
+      complete: (p, o) => mock.complete(p, o),
+      completeWithTools: async (prompt, tools, options) => {
+        if ((options?.system ?? "").startsWith("You are a senior editor")) {
+          synthesisCalls += 1;
+          if (!failed) {
+            failed = true;
+            return { text: "not JSON", tool_calls: [], rounds: 1, stop_reason: "end_turn" };
+          }
+        }
+        return mock.completeWithTools(prompt, tools, options);
+      },
+    };
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const format = registry.get("executive-pre-read");
+    await new Orchestrator(registry, llm).brief("Should we enter the German market?", format.id, {
+      now: NOW,
+      onSourcingFailure: "degrade",
+    });
+    expect(synthesisCalls).toBe(format.sections.length + 1);
+  });
+});

@@ -8,7 +8,7 @@
  * cross-reference the model got wrong — fails at once,
  * because repeating the call repeats the cost and the outcome.
  */
-import { AgentExecutionError, InvalidAgentOutputError } from "../agents/errors.ts";
+import { AgentExecutionError, InvalidAgentOutputError } from "./errors.ts";
 import {
   AnthropicAPIError,
   AnthropicRateLimitError,
