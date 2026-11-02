@@ -19,6 +19,13 @@ export interface RunManifest {
   question: string;
   format_id: string;
   started_at: string;
+  /**
+   * What else the stage outputs depend on (provider, sourcing mode, prompt
+   * and format fingerprints). A resume must present the same values, so a
+   * mock run cannot be finished live, nor stale outputs reused after a
+   * prompt changed.
+   */
+  settings: Record<string, string>;
 }
 
 const RUN_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
@@ -39,7 +46,13 @@ export class CheckpointStore {
   }
 
   /** Starts a new run directory under `runsDir`. */
-  static create(runsDir: string, question: string, formatId: string, now: Date = new Date()): CheckpointStore {
+  static create(
+    runsDir: string,
+    question: string,
+    formatId: string,
+    now: Date = new Date(),
+    settings: Record<string, string> = {}
+  ): CheckpointStore {
     const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
     const runId = `${stamp}-${randomBytes(3).toString("hex")}`;
     const dir = join(runsDir, runId);
@@ -49,6 +62,7 @@ export class CheckpointStore {
       question,
       format_id: formatId,
       started_at: now.toISOString(),
+      settings,
     };
     writeAtomically(join(dir, "run.json"), manifest);
     return new CheckpointStore(dir, manifest);
@@ -81,7 +95,21 @@ export class CheckpointStore {
       question: raw.question,
       format_id: raw.format_id,
       started_at: raw.started_at,
+      settings: typeof raw.settings === "object" && raw.settings !== null ? raw.settings : {},
     });
+  }
+
+  /** Throws `OrchestrationError` naming every setting that differs from the run's. */
+  assertSameSettings(settings: Record<string, string>): void {
+    const recorded = this.manifest.settings;
+    const differ = Object.keys({ ...recorded, ...settings }).filter((k) => recorded[k] !== settings[k]);
+    if (differ.length > 0) {
+      throw new OrchestrationError(
+        `Run '${this.manifest.run_id}' cannot be resumed: ${differ
+          .map((k) => `${k} was '${recorded[k] ?? "(unset)"}', now '${settings[k] ?? "(unset)"}'`)
+          .join("; ")}. Start a new run instead.`
+      );
+    }
   }
 
   get startedAt(): Date {

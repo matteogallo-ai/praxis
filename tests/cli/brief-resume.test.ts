@@ -96,7 +96,12 @@ describe("praxis brief --resume (failure simulated at stage 5, options)", () => 
     const fixed = { formatsDir: "formats", fixturesDir: fixtures() };
     expect(await runBriefCli(["--resume", runId, "--runs-dir", runsDir], fixed)).toBe(0);
     const resumed = JSON.parse(readFileSync(join(dir, "metadata.json"), "utf-8"));
-    expect(Object.keys(resumed.usage.stages)).toEqual(["options", "synthesis"]);
+    // The report covers the whole briefing: the first attempt's stages and
+    // its two failed options calls, then the resumed options call and synthesis.
+    expect(Object.keys(resumed.usage.stages)).toEqual(["scoping", "research", "stakeholder", "risk", "options", "synthesis"]);
+    expect(resumed.usage.stages.scoping.calls).toBe(failed.usage.stages.scoping.calls);
+    expect(resumed.usage.stages.options.calls).toBe(3);
+    expect(resumed.usage.total.cost_usd).toBeGreaterThan(failed.usage.total.cost_usd);
     expect(out.join("")).toContain("#");
   });
 
@@ -108,6 +113,11 @@ describe("praxis brief --resume (failure simulated at stage 5, options)", () => 
     expect(await runBriefCli(["Another question?", "--resume", runId, "--runs-dir", runsDir], ctx)).toBe(1);
     expect(await runBriefCli(["--resume", runId, "--format", "family-office-memo", "--runs-dir", runsDir], ctx)).toBe(1);
     expect(await runBriefCli(["--resume", "missing-run", "--runs-dir", runsDir], ctx)).toBe(1);
+    // Outputs made under one sourcing mode (or provider, prompts, format) are not reused under another.
+    expect(
+      await runBriefCli(["--resume", runId, "--runs-dir", runsDir, "--on-sourcing-failure", "abort"], ctx)
+    ).toBe(1);
+    expect(err.join("")).toContain("on_sourcing_failure was 'degrade', now 'abort'");
     expect(err.join("")).toContain("No run 'missing-run'");
   });
 });

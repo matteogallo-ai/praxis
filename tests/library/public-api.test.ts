@@ -126,6 +126,7 @@ const EXPECTED_VALUE_EXPORTS = [
   "RenderError",
   "UnsupportedRenderTargetError",
   "UsageLedger",
+  "CheckpointStore",
   "DEFAULT_PRICE_TABLE",
   "loadPriceTable",
   "PriceTableError",

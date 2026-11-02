@@ -185,6 +185,8 @@ export { CRITIQUE_CATEGORIES, CRITIQUE_SEVERITIES } from "./agents/types.ts";
 export { Orchestrator } from "./orchestrator/orchestrator.ts";
 export { computeReSynthesisDeviations } from "./orchestrator/orchestrator.ts";
 export { UsageLedger } from "./orchestrator/ledger.ts";
+export { CheckpointStore } from "./orchestrator/checkpoint.ts";
+export type { RunManifest } from "./orchestrator/checkpoint.ts";
 export type { StageUsage, UsageSummary, UsageLedgerOptions } from "./orchestrator/ledger.ts";
 export type {
   // Options types for every method.

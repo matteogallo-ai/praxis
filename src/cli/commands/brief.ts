@@ -52,7 +52,10 @@
 import { FormatRegistry } from "../../registry/registry.ts";
 import { Orchestrator, type BriefWithCritiqueOptions } from "../../orchestrator/orchestrator.ts";
 import { CheckpointStore } from "../../orchestrator/checkpoint.ts";
-import { UsageLedger } from "../../orchestrator/ledger.ts";
+import { UsageLedger, type UsageSummary } from "../../orchestrator/ledger.ts";
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { loadPriceTable } from "../../llm/pricing.ts";
 import { extractRunArgs, resumeArgs, type RunArgs } from "../run-args.ts";
 import { MockLLMProvider } from "../../llm/mock-provider.ts";
@@ -425,15 +428,22 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   progress("loaded formats", `${AUTO_FORMAT_IDS.length} shipped, provider=${opts.provider}`);
 
   if (opts.full) {
-    const store =
-      opts.run.resume === null
-        ? CheckpointStore.create(opts.run.runsDir, opts.question, opts.formatId)
-        : CheckpointStore.open(opts.run.runsDir, opts.run.resume);
+    const settings = runSettings(opts, llm, registry);
+    let store: CheckpointStore;
+    if (opts.run.resume === null) {
+      store = CheckpointStore.create(opts.run.runsDir, opts.question, opts.formatId, new Date(), settings);
+    } else {
+      store = CheckpointStore.open(opts.run.runsDir, opts.run.resume);
+      store.assertSameSettings(settings);
+    }
     const ledger = new UsageLedger({
       simulated: llm.name === "mock",
       ...(opts.run.priceTable === null ? {} : { prices: loadPriceTable(opts.run.priceTable) }),
       ...(opts.run.maxCostUsd === null ? {} : { maxCostUsd: opts.run.maxCostUsd }),
     });
+    // Earlier attempts' spend counts toward this run's report and its cap.
+    const previous = store.load<{ usage?: UsageSummary }>("metadata")?.usage;
+    if (previous !== undefined) ledger.restore(previous);
     runOptions.checkpoints = store;
     runOptions.ledger = ledger;
     progress(
@@ -452,6 +462,29 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
     }
   }
   return stagedBrief(opts, orchestrator, runOptions);
+}
+
+/**
+ * The inputs besides question and format that stage outputs depend on,
+ * recorded in run.json and checked on resume.
+ */
+function runSettings(
+  opts: BriefCommandOptions,
+  llm: LLMProvider,
+  registry: FormatRegistry
+): Record<string, string> {
+  const sha = (text: string): string => createHash("sha256").update(text).digest("hex").slice(0, 16);
+  const prompts = readdirSync("prompts")
+    .filter((f) => f.endsWith(".prompt"))
+    .sort()
+    .map((f) => readFileSync(join("prompts", f), "utf-8"))
+    .join("\0");
+  return {
+    provider: llm.name,
+    on_sourcing_failure: opts.onSourcingFailure,
+    prompts_sha256: sha(prompts),
+    format_sha256: sha(JSON.stringify(registry.get(opts.formatId))),
+  };
 }
 
 async function fullBrief(

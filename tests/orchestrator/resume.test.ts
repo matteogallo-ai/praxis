@@ -120,7 +120,7 @@ describe("CheckpointStore", () => {
     const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
     const store = CheckpointStore.create(runsDir, QUESTION, FORMAT, NOW);
     const manifest = JSON.parse(readFileSync(join(store.dir, "run.json"), "utf-8"));
-    expect(manifest).toEqual({ run_id: store.manifest.run_id, question: QUESTION, format_id: FORMAT, started_at: NOW.toISOString() });
+    expect(manifest).toEqual({ run_id: store.manifest.run_id, question: QUESTION, format_id: FORMAT, started_at: NOW.toISOString(), settings: {} });
     expect(store.manifest.run_id).toMatch(/^20260820T000000Z-[0-9a-f]{6}$/);
   });
 
