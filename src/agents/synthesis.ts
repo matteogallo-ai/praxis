@@ -31,7 +31,15 @@
  */
 
 import { withRetry } from "./retry.ts";
-import { callModel, loadPrompt, renderPrompt, extractJsonText, untrusted, untrustedJson } from "./prompt-runtime.ts";
+import {
+  callModel,
+  extractJsonText,
+  loadPrompt,
+  outputReader,
+  renderPrompt,
+  untrusted,
+  untrustedJson,
+} from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
   EditorialAttempt,
@@ -50,6 +58,7 @@ import type {
 } from "../registry/schema.ts";
 import { DEFAULT_MAX_REGENERATION_ATTEMPTS } from "../registry/schema.ts";
 import type { SourceReference } from "../sourcing/types.ts";
+import { isSourceMissing } from "../sourcing/types.ts";
 import {
   EditorialFailureError,
   InvalidAgentOutputError,
@@ -211,6 +220,8 @@ export async function executeSynthesis(
 }
 
 
+const storedSources = outputReader(AGENT_ID);
+
 /**
  * A stored `SynthesisResult` (a checkpoint), checked before reuse: one
  * section per format section, in format order, each with the fields the
@@ -241,6 +252,12 @@ export function parseStoredSynthesis(stored: string, format: Format): SynthesisR
     }
     for (const key of ["sources_cited", "validation_issues", "editorial_attempts"]) {
       if (!Array.isArray(s[key])) fail(`sections[${i}].${key} must be an array`);
+    }
+    for (const [j, source] of (s["sources_cited"] as unknown[]).entries()) {
+      const path = `sections[${i}].sources_cited[${j}]`;
+      if (isSourceMissing(storedSources.parseSource(source, path, stored))) {
+        fail(`${path} must be a source reference, not SOURCE_MISSING`);
+      }
     }
   }
   if (typeof obj["total_word_count"] !== "number") fail("'total_word_count' must be a number");

@@ -322,3 +322,26 @@ describe("stageAttempts and synthesis", () => {
     expect(synthesisCalls).toBe(registry.get(FORMAT).sections.length);
   });
 });
+
+describe("synthesis checkpoint sources", () => {
+  test("a cited source that is not a SourceReference is refused", async () => {
+    const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
+    const store = CheckpointStore.create(runsDir, QUESTION, FORMAT, NOW);
+    await orchestrator(countingProvider({ failOptions: false }).llm).brief(QUESTION, FORMAT, {
+      checkpoints: store,
+      onSourcingFailure: "degrade",
+    });
+    const path = join(store.dir, "synthesis.json");
+    const synthesis = JSON.parse(readFileSync(path, "utf-8"));
+    synthesis.sections[0].sources_cited = [{}];
+    writeFileSync(path, JSON.stringify(synthesis));
+    const err = await orchestrator(countingProvider({ failOptions: false }).llm)
+      .brief(QUESTION, FORMAT, {
+        checkpoints: CheckpointStore.open(runsDir, store.manifest.run_id),
+        onSourcingFailure: "degrade",
+      })
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(OrchestrationError);
+    expect((err as Error).message).toContain("sections[0].sources_cited[0]");
+  });
+});
