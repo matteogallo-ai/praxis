@@ -32,7 +32,7 @@ export {
 export type { ValidationIssue } from "../registry/errors.ts";
 
 // Orchestrator.
-export { OrchestrationError, NotImplementedError } from "../orchestrator/errors.ts";
+export { OrchestrationError } from "../orchestrator/errors.ts";
 
 // LLM / provider layer.
 export {

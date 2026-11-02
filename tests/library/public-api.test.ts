@@ -92,7 +92,6 @@ const EXPECTED_VALUE_EXPORTS = [
   "DuplicateFormatError",
   "FormatNotFoundError",
   "OrchestrationError",
-  "NotImplementedError",
   "LLMError",
   "ProviderNotSupportedError",
   "MockFixtureNotFoundError",

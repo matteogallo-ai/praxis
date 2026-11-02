@@ -29,7 +29,6 @@ const PUBLIC_ERROR_NAMES = [
   "FormatNotFoundError",
   // Orchestrator.
   "OrchestrationError",
-  "NotImplementedError",
   // LLM.
   "LLMError",
   "ProviderNotSupportedError",
