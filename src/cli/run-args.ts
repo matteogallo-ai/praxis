@@ -1,7 +1,7 @@
 /**
  * The `brief` flags that control a run rather than what it produces:
  * `--resume <run-id>`, `--runs-dir <path>`, `--max-cost-usd <n>` and
- * `--price-table <path>`. They are taken out of the argument list before
+ * `--price-table <path>`, and the clock (`PRAXIS_NOW`). They are taken out of the argument list before
  * the briefing flags are parsed; `--resume` puts back the question and
  * format recorded in the run, and `--full`, so a resumed run cannot drift
  * from the one it continues.
@@ -13,12 +13,33 @@ export interface RunArgs {
   runsDir: string;
   maxCostUsd: number | null;
   priceTable: string | null;
+  /**
+   * The date freshness is judged against and the run id is stamped with:
+   * `PRAXIS_NOW` when set, else the wall clock. A frozen clock makes a
+   * briefing's sourcing verdicts reproducible; the test preload sets it.
+   */
+  now: Date;
 }
 
 /** `PRAXIS_RUNS_DIR` when set (the test preload points it at a temp dir), else `.praxis/runs`. */
 function defaultRunsDir(): string {
   const fromEnv = process.env["PRAXIS_RUNS_DIR"];
   return fromEnv !== undefined && fromEnv.length > 0 ? fromEnv : ".praxis/runs";
+}
+
+// UTC date and time only: a bare date or a local time would be read in the
+// machine's zone, and `Date` accepts looser forms and rolls 30 February over
+// into March, hence the round-trip check.
+const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
+
+function clock(): Date | { error: string } {
+  const fromEnv = process.env["PRAXIS_NOW"];
+  if (fromEnv === undefined || fromEnv.length === 0) return new Date();
+  const at = new Date(fromEnv);
+  if (!UTC_INSTANT.test(fromEnv) || Number.isNaN(at.getTime()) || at.toISOString().slice(0, 19) !== fromEnv.slice(0, 19)) {
+    return { error: `PRAXIS_NOW expects a UTC date and time, e.g. 2026-08-20T00:00:00Z; got "${fromEnv}"` };
+  }
+  return at;
 }
 
 const VALUE_FLAGS = ["--resume", "--runs-dir", "--max-cost-usd", "--price-table"] as const;
@@ -46,9 +67,12 @@ export function extractRunArgs(
       return { error: "--max-cost-usd expects a positive number of US dollars" };
     }
   }
+  const now = clock();
+  if (!(now instanceof Date)) return now;
   return {
     rest,
     run: {
+      now,
       resume: values["--resume"] ?? null,
       runsDir: values["--runs-dir"] ?? defaultRunsDir(),
       maxCostUsd,

@@ -423,7 +423,10 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   const registry = new FormatRegistry();
   registry.loadDirectory(opts.formatsDir);
   const orchestrator = new Orchestrator(registry, llm);
+  // A checkpointed run judges freshness at its recorded start, so a resume
+  // reaches the same verdicts; the shorter paths have no run and use the clock.
   const runOptions: BriefWithCritiqueOptions = { onSourcingFailure: opts.onSourcingFailure };
+  if (!opts.full) runOptions.now = opts.run.now;
 
   progress("loaded formats", `${AUTO_FORMAT_IDS.length} shipped, provider=${opts.provider}`);
 
@@ -431,7 +434,7 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
     const settings = runSettings(opts, llm, registry);
     let store: CheckpointStore;
     if (opts.run.resume === null) {
-      store = CheckpointStore.create(opts.run.runsDir, opts.question, opts.formatId, new Date(), settings);
+      store = CheckpointStore.create(opts.run.runsDir, opts.question, opts.formatId, opts.run.now, settings);
     } else {
       store = CheckpointStore.open(opts.run.runsDir, opts.run.resume);
       store.assertSameSettings(settings);
