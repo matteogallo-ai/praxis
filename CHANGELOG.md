@@ -202,6 +202,10 @@ will eventually be compared.
 
 ### Empirical results (mock, n=11)
 
+> **Withdrawn (2026-11-02).** These scores graded mock briefings whose text is
+> hand-written fixture output, so they measure the fixtures, not a model. See
+> Unreleased › Corrected and `benchmarks/RESULTS.md`.
+
 - **Total score:** 25.7 / 35 average (73 %), range 24 – 28.
 - **Strongest criterion across the set:** Adversarial usefulness
   — perfect 5.0 / 5 on every briefing. The critique regeneration

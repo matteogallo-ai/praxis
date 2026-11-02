@@ -1,12 +1,8 @@
-# Praxis — Roadmap to v1.0
+# Praxis — Roadmap
 
-Praxis targets v1.0 in ten releases. Each release ships something a real
-user can exercise — no waterfall, no big-bang. The unifying north star:
-**produce a consultant-grade briefing that a senior reader mistakes for
-the work of their own analysts.**
-
-The Format Registry (v0.1) is the pierre angulaire. Every subsequent
-release depends on it.
+The goal: a briefing that a senior reader would take for the work of their
+own analysts. The current status comes first; the release history after it
+is kept as written in August 2026.
 
 ---
 
@@ -42,16 +38,11 @@ architecturally possible but is not on any near-term timeline. It
 would be a from-scratch conceptual extension, not an incremental v1.x
 continuation.
 
-### The disciplined shipping record
+## Release history (August 2026)
 
-14 public releases from v0.1 to v1.3.0 shipped between August 8 and
-August 20, 2026. Each release closed one well-defined brick. Zero
-release ever broke a test that passed in the previous release. The
-SemVer contract engaged in v0.8 and formalised in v1.0 was never
-broken.
-
-This project is a demonstration that disciplined shipping produces
-better outcomes than exhaustive feature accumulation.
+Each ✅ below means the release was tagged with its tests passing **on the
+mock provider**. It does not mean the feature worked against a real model:
+none did (see Project status). The per-release text is left as written.
 
 ---
 
@@ -303,8 +294,7 @@ new npm dep, no breaking change.
   ASCII pipeline diagram), and `docs/architecture.md § 7`
   (final v0.9 pipeline diagram with invariants).
 
-**Metrics**: 1100+ tests pass (+60 vs v0.8 baseline of 1042),
-0 fail, `bunx tsc --noEmit` clean, 0 new dependencies.
+**Metrics**: all tests pass, `bunx tsc --noEmit` clean, 0 new dependencies.
 
 ---
 
@@ -336,8 +326,7 @@ the resulting `RESULTS.md` diff).
   deterministic mock content), reproduction, budget ($5-7 per
   full pass), interpretation guide.
 
-**Metrics**: 1146 tests pass (+41 vs v0.9 baseline of 1105),
-0 fail, `bunx tsc --noEmit` clean, 0 new dependencies.
+**Metrics**: all tests pass, `bunx tsc --noEmit` clean, 0 new dependencies.
 
 ### v0.10.1 (chore) — empirical validation
 
@@ -459,11 +448,10 @@ push the seven-agent pipeline toward decision-first openings:
 Four opening mock synthesis fixtures were rewritten
 decision-first (source arrays preserved verbatim) and all
 eleven mock briefings were regenerated via `bun run bench:mock`.
-Zero API surface change; zero new npm dependency; 1221 tests
-pass (up from 1212). Empirical re-scoring is deferred to
-v1.3.1 — see below.
+Zero API surface change; zero new npm dependency; all tests
+pass. The planned mock re-scoring (v1.3.1) is abandoned.
 
-## v1.3.1 — Empirical validation of v1.3.0 prompt improvements (planned)
+## v1.3.1 — Empirical validation of v1.3.0 prompt improvements (abandoned, see `docs/v1.3.1-runbook.md`)
 
 Chore release. A maintainer with `ANTHROPIC_API_KEY` and
 ~$1 credit runs:
