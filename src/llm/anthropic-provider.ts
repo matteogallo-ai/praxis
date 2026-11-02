@@ -6,7 +6,8 @@
  * shape we depend on is small and stable.
  *
  * Wire model:
- *   - Request body: { model, max_tokens, messages, tools? }
+ *   - Request body: { model, max_tokens, messages, tools? } — no sampling
+ *     parameters (API version 2026-10-21 rejects them).
  *   - Response body: { content: [text|tool_use blocks…], stop_reason, … }
  *
  * Server-side tool use (specifically `web_search_20250305`) means the
@@ -42,8 +43,11 @@ import {
 } from "./errors.ts";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_VERSION = "2023-06-01";
-const DEFAULT_MODEL = "claude-sonnet-4-5";
+// 2026-10-21 rejects temperature, top_p and top_k with a 400 on every model,
+// so the request builder never sends them.
+const ANTHROPIC_VERSION = "2026-10-21";
+// claude-sonnet-4-5 is deprecated (retires 2026-11-30).
+const DEFAULT_MODEL = "claude-sonnet-5-5";
 const DEFAULT_MAX_TOKENS = 4096;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_TOOL_ROUNDS = 5;
@@ -137,12 +141,10 @@ export class AnthropicLLMProvider implements LLMProvider {
 
   async complete(prompt: string, options: CompleteOptions = {}): Promise<string> {
     const messages: AnthropicMessage[] = [{ role: "user", content: prompt }];
-    const requestOpts: { max_tokens: number; temperature?: number; model: string } = {
+    const body = await this.request(messages, [], {
       max_tokens: options.max_tokens ?? DEFAULT_MAX_TOKENS,
       model: this.defaultModel,
-    };
-    if (options.temperature !== undefined) requestOpts.temperature = options.temperature;
-    const body = await this.request(messages, [], requestOpts);
+    });
     return extractText(body);
   }
 
@@ -163,12 +165,7 @@ export class AnthropicLLMProvider implements LLMProvider {
 
     for (let i = 0; i < maxRounds; i++) {
       rounds++;
-      const requestOpts: { max_tokens: number; temperature?: number; model: string } = {
-        max_tokens,
-        model,
-      };
-      if (options.temperature !== undefined) requestOpts.temperature = options.temperature;
-      const body = await this.request(messages, tools, requestOpts);
+      const body = await this.request(messages, tools, { max_tokens, model });
       const content = parseContentBlocks(body);
       collectedToolCalls.push(...extractToolCalls(content));
       finalText = extractTextFromBlocks(content);
@@ -191,16 +188,13 @@ export class AnthropicLLMProvider implements LLMProvider {
   private async request(
     messages: AnthropicMessage[],
     tools: Tool[],
-    opts: { max_tokens: number; temperature?: number; model: string }
+    opts: { max_tokens: number; model: string }
   ): Promise<AnthropicResponseBody> {
     const payload: Record<string, unknown> = {
       model: opts.model,
       max_tokens: opts.max_tokens,
       messages,
     };
-    if (opts.temperature !== undefined) {
-      payload["temperature"] = opts.temperature;
-    }
     if (tools.length > 0) {
       payload["tools"] = tools.map(mapToolToAnthropic);
     }

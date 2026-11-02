@@ -68,7 +68,8 @@ stages before it rather than sharing one implementation.
   key matches the stage and the format id. The question does not select the
   fixture, so every question with the same format gets the same text.
 - `AnthropicLLMProvider` calls `/v1/messages` with `fetch`: default model
-  `claude-sonnet-4-5` (or `ANTHROPIC_MODEL`), 4096 output tokens, a 60 s
+  `claude-sonnet-5-5` (or `ANTHROPIC_MODEL`), API version `2026-10-21` with no
+  sampling parameters, 4096 output tokens, a 60 s
   timeout per request, up to 3 attempts with backoff on 429 and 5xx, and up
   to 5 `pause_turn` rounds for the server-side `web_search` tool.
 

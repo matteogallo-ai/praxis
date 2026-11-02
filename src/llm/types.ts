@@ -51,6 +51,10 @@ export interface CompletionResult {
 
 export interface CompleteWithToolsOptions {
   max_tokens?: number;
+  /**
+   * @deprecated Ignored. Anthropic API version 2026-10-21 rejects sampling
+   * parameters; the field stays so 1.x callers that set it still compile.
+   */
   temperature?: number;
   /** Hard cap on tool-use rounds. Default: 5. */
   max_tool_rounds?: number;

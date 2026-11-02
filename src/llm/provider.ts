@@ -19,6 +19,10 @@ import type {
 
 export interface CompleteOptions {
   max_tokens?: number;
+  /**
+   * @deprecated Ignored. Anthropic API version 2026-10-21 rejects sampling
+   * parameters; the field stays so 1.x callers that set it still compile.
+   */
   temperature?: number;
 }
 
