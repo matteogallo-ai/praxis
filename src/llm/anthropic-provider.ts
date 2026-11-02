@@ -14,8 +14,8 @@
  * API executes the tool itself and inlines both the invocation and its
  * result into the same response — no client-side loop needed for the
  * common case. When `stop_reason === "pause_turn"` the model asks to
- * continue; the provider echoes the assistant message back and issues
- * another API call, up to `max_tool_rounds`.
+ * continue; the provider sends the paused content blocks back unchanged
+ * and issues another API call, up to `max_tool_rounds`.
  *
  * Reliability:
  *   - Timeout: 60s per HTTP request (configurable).
@@ -100,15 +100,11 @@ interface AnthropicContentBlock {
 
 interface AnthropicMessage {
   role: "user" | "assistant";
-  content:
-    | string
-    | Array<{
-        type: string;
-        text?: string;
-        id?: string;
-        name?: string;
-        input?: unknown;
-      }>;
+  /**
+   * A string for the user turn; for a resent assistant turn, the response's
+   * content blocks exactly as received (see `rawContentBlocks`).
+   */
+  content: string | readonly unknown[];
 }
 
 interface AnthropicResponseBody {
@@ -166,13 +162,18 @@ export class AnthropicLLMProvider implements LLMProvider {
     for (let i = 0; i < maxRounds; i++) {
       rounds++;
       const body = await this.request(messages, tools, { max_tokens, model });
-      const content = parseContentBlocks(body);
+      const raw = rawContentBlocks(body);
+      const content = parseContentBlocks(raw);
       collectedToolCalls.push(...extractToolCalls(content));
       finalText = extractTextFromBlocks(content);
       stopReason = typeof body.stop_reason === "string" ? body.stop_reason : "";
 
       if (stopReason === "pause_turn") {
-        messages.push({ role: "assistant", content });
+        // The API resumes only from the paused turn sent back unchanged:
+        // web_search_tool_result blocks carry tool_use_id and encrypted
+        // content, cited text carries encrypted_index, and a dropped or
+        // altered field is a 400.
+        messages.push({ role: "assistant", content: raw });
         continue;
       }
       break;
@@ -266,7 +267,7 @@ function mapToolToAnthropic(tool: Tool): Record<string, unknown> {
   return { type: anthropicType, name: tool.name };
 }
 
-function parseContentBlocks(body: AnthropicResponseBody): AnthropicContentBlock[] {
+function rawContentBlocks(body: AnthropicResponseBody): readonly unknown[] {
   const raw = body.content;
   if (!Array.isArray(raw)) {
     throw new AnthropicAPIError(
@@ -274,6 +275,11 @@ function parseContentBlocks(body: AnthropicResponseBody): AnthropicContentBlock[
       "Anthropic response is missing a 'content' array"
     );
   }
+  return raw;
+}
+
+/** A typed read-only view of the blocks, for text and tool-call extraction. */
+function parseContentBlocks(raw: readonly unknown[]): AnthropicContentBlock[] {
   const out: AnthropicContentBlock[] = [];
   for (const item of raw) {
     if (typeof item !== "object" || item === null || Array.isArray(item)) continue;
@@ -290,7 +296,7 @@ function parseContentBlocks(body: AnthropicResponseBody): AnthropicContentBlock[
 }
 
 function extractText(body: AnthropicResponseBody): string {
-  return extractTextFromBlocks(parseContentBlocks(body));
+  return extractTextFromBlocks(parseContentBlocks(rawContentBlocks(body)));
 }
 
 function extractTextFromBlocks(blocks: AnthropicContentBlock[]): string {
