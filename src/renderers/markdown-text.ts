@@ -11,11 +11,12 @@
 import type { SynthesizedSection } from "../agents/types.ts";
 
 /**
- * Model text made inert: `<` as `&lt;`, `-->` as `--&gt;`, `![` as `!\[`.
+ * Model text made inert: `<` as `&lt;`, `-->` and `--!>` (both end an HTML
+ * comment) with `&gt;`, `![` as `!\[`.
  * The cost: a literal `<` or `![` inside a code span shows escaped.
  */
 export function inert(v: string): string {
-  return v.replace(/</g, "&lt;").replace(/-->/g, "--&gt;").replace(/!\[/g, "!\\[");
+  return v.replace(/</g, "&lt;").replace(/--(!?)>/g, "--$1&gt;").replace(/!\[/g, "!\\[");
 }
 
 /** A URL as one Markdown link destination: `(`, `)`, `<`, `>` and whitespace would end it early. */
@@ -32,8 +33,9 @@ export function escapeMarkdownHeading(v: string): string {
   return v.replace(/[\r\n]+/g, " ");
 }
 
+/** Link text: brackets and backslashes escaped, or a trailing backslash would escape the closing `]`. */
 export function escapeMarkdownLinkText(v: string): string {
-  return v.replace(/\[/g, "\\[").replace(/\]/g, "\\]");
+  return v.replace(/[\\[\]]/g, (c) => `\\${c}`);
 }
 
 /** Each synthesis section: heading, prose, its sources, and its validation issues in a comment. */
