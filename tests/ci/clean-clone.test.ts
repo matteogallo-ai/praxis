@@ -12,6 +12,9 @@ const pkg = JSON.parse(readFileSync("package.json", "utf-8")) as { dependencies:
 const tsconfig = JSON.parse(readFileSync("tsconfig.json", "utf-8")) as { compilerOptions: Record<string, unknown> };
 const ci = readFileSync(".github/workflows/ci.yml", "utf-8");
 
+/** A static, side-effect or dynamic import of PromptLang by a bare or relative path. */
+const SIBLING_IMPORT = /(?:from\s+|import\s*\(?\s*)["'](?:promptlang(?:\/|["'])|(?:\.\.\/)+promptlang)/;
+
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name);
@@ -30,10 +33,24 @@ describe("PromptLang from npm", () => {
     expect(tsconfig.compilerOptions["baseUrl"]).toBeUndefined();
   });
 
+  test("the import pattern catches every form, and not the package", () => {
+    for (const bad of [
+      'import { parse } from "promptlang/parser";',
+      "import 'promptlang';",
+      'await import("promptlang/lexer")',
+      'import { x } from "../../promptlang/src/index.ts";',
+    ]) {
+      expect(SIBLING_IMPORT.test(bad)).toBe(true);
+    }
+    expect(SIBLING_IMPORT.test('import { parse } from "@promptlang/core";')).toBe(false);
+  });
+
   test("no source imports PromptLang by a bare or relative path", () => {
     const offenders = ["src", "benchmarks", "scripts", "tests"]
       .flatMap(sources)
-      .filter((f) => /from\s+["'](?:promptlang(?:\/|["'])|(?:\.\.\/)+promptlang)/.test(readFileSync(f, "utf-8")));
+      // This file holds the forbidden forms as samples.
+      .filter((f) => f !== join("tests", "ci", "clean-clone.test.ts"))
+      .filter((f) => SIBLING_IMPORT.test(readFileSync(f, "utf-8")));
     expect(offenders).toEqual([]);
   });
 

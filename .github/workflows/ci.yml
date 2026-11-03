@@ -92,7 +92,7 @@ jobs:
         working-directory: alone/praxis
       - run: bun test
         working-directory: alone/praxis
-      # No ANTHROPIC_API_KEY in CI: the brief runs on the mock provider.
+      # The CLI's default provider is the mock: no key, no network.
       - run: bun run cli brief "Should we enter the German market?" --format auto --full
         working-directory: alone/praxis
 
