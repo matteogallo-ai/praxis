@@ -38,6 +38,12 @@ describe("docs/live-proof-protocol.md", () => {
     for (const c of commands) expect(c).toMatch(/--max-cost-usd \d+/);
   });
 
+  test("the cap sits above every question's high estimate, so a costly healthy briefing completes", () => {
+    const caps = [...doc.matchAll(/bun run bench:live[^\n]*--max-cost-usd (\d+(?:\.\d+)?)/g)].map((m) => Number(m[1]));
+    const highest = Math.max(...estimateRun(".", selected()).rows.map((r) => r.high));
+    for (const cap of caps) expect(cap).toBeGreaterThan(highest);
+  });
+
   test("its cost table is what estimate:cost prints for those questions", () => {
     const { rows, totals } = estimateRun(".", selected());
     const usd = (n: number) => `$${n.toFixed(2)}`;
