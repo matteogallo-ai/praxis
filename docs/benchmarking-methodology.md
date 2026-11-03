@@ -23,7 +23,9 @@ scale. Three faults made those numbers meaningless as a measure of Praxis:
    them, in a v1.3.1 release, to show that `framing_clarity` improved. The
    measurement would have graded the hand edit; v1.3.1 was abandoned.
 3. **No check on the scorer.** The judge was the same model family as the
-   pipeline's default, and it was never compared with a human reading.
+   pipeline's default, and it was never compared with a human reading. The
+   judge is still a Claude model (no other provider is available), but one
+   no stage uses, and a human now reads two briefings blind; point 3 below.
 
 Those scores are withdrawn from [`benchmarks/RESULTS.md`](../benchmarks/RESULTS.md),
 and `benchmarks/score-all.ts` refuses mock briefings.
@@ -47,7 +49,10 @@ under this method is planned in [`live-proof-protocol.md`](live-proof-protocol.m
 3. **The judge is checked.** Either the judge is from another model family
    than the pipeline, or a human annotates at least two briefings on the same
    grid; judge–human agreement is computed and published next to the scores.
-   A judged score without that check is labelled *unvalidated*.
+   A judged score without that check is labelled *unvalidated*. Praxis takes
+   the second branch: its judge, Claude Fable 5.1, is a model no stage uses
+   but the same family, so the maintainer annotates two briefings
+   (`docs/live-proof-protocol.md`).
 4. **Every number states its `n`.** Scores in `RESULTS.md` come from a script
    that reads the artefacts, and CI runs it with `--check` so the page cannot
    drift from the data. Until that script exists, `RESULTS.md` publishes no

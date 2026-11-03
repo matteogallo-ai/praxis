@@ -74,7 +74,7 @@ bun run fuzz -- --seconds 600                 # JSON-extraction fuzzer, fresh se
 bun run estimate:cost -- --ids <id,…> --cap-usd <n> # free: estimated live cost (low/central/high) and ceiling
 bun run bench:live -- --max-cost-usd 8 --ids … # PAID — live run, capped per briefing; approval required
 PRAXIS_LIVE_TESTS=1 bun test tests/live/      # PAID — live tests; approval required
-bun run score:live                            # PAID — scores live briefings; approval required
+bun run score:live                            # PAID — refused until the judge is capped; then approval required
 ```
 
 ## Repo-specific rules

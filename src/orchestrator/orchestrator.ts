@@ -55,6 +55,7 @@ import {
   buildInsufficientlySourcedSection,
   type SourcedArtefacts,
 } from "../sourcing/insufficient.ts";
+import { BudgetExceededError } from "../llm/errors.ts";
 import { OrchestrationError } from "./errors.ts";
 import { meter, type UsageLedger } from "./ledger.ts";
 import type { CheckpointStore } from "./checkpoint.ts";
@@ -220,6 +221,12 @@ export interface BriefWithCritiqueAndRerunResult extends BriefWithCritiqueResult
   /** Pre-rerun synthesis when the rerun fired; else null. */
   original_synthesis: SynthesisResult | null;
   rerun_metadata: RerunMetadata | null;
+  /**
+   * Set when the adversarial review asked for a rerun that did not run
+   * because the cost cap was reached: the brief returned is the pre-rerun
+   * one, already paid for.
+   */
+  rerun_skipped?: string;
 }
 
 export interface RerunMetadata {
@@ -647,7 +654,9 @@ export class Orchestrator {
         "revise sections and align recommendation with the steelmanned alternative",
     };
 
-    const rerunSynthesis = await this.stage("synthesis-rerun", options, () =>
+    let rerunSynthesis: SynthesisResult;
+    try {
+      rerunSynthesis = await this.stage("synthesis-rerun", options, () =>
       this.doSynthesize(
         initial.scoping,
         initial.research,
@@ -661,6 +670,19 @@ export class Orchestrator {
       (stored) => parseStoredSynthesis(stored, format, initial),
       1
     );
+    } catch (err) {
+      // The rerun is an improvement on a complete, paid brief. A budget stop
+      // there keeps that brief instead of discarding it with the run.
+      if (!(err instanceof BudgetExceededError)) throw err;
+      return {
+        ...initial,
+        rerun_performed: false,
+        rerun_reason: null,
+        original_synthesis: null,
+        rerun_metadata: null,
+        rerun_skipped: `budget: ${err.message}`,
+      };
+    }
 
     const rerunWithSection =
       initial.sourcing_report.insufficiently_sourced === true

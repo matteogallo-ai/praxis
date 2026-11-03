@@ -9,8 +9,8 @@
  *      (the audit trail).
  *   2. Interpolates `benchmarks/scoring-prompt.txt` with the
  *      briefing content + metadata.
- *   3. Calls `AnthropicLLMProvider.complete()` on
- *      `claude-sonnet-5-5` and expects the calibrated 7-criterion
+ *   3. Calls `AnthropicLLMProvider.complete()` on `JUDGE_MODEL` and
+ *      expects the calibrated 7-criterion
  *      JSON payload back.
  *   4. Validates the payload structurally
  *      (`parseScoringPayload()`) — the score for every criterion is
@@ -53,6 +53,14 @@ import type { LLMProvider } from "../src/llm/provider.ts";
 // ---------------------------------------------------------------------------
 
 export type ScoringMode = "mock" | "live";
+
+/**
+ * The judge. Every pipeline stage runs on Claude Opus 5.5 or Sonnet 5.5, so
+ * the judge is a third Claude model: no stage's output is scored by the
+ * model that wrote it. It is still the same family, so a shared bias can go
+ * unseen; the human review in `docs/live-proof-protocol.md` measures it.
+ */
+export const JUDGE_MODEL = "claude-fable-5-1";
 
 /** The seven-criterion rubric used by the scoring prompt. */
 export const SCORING_CRITERIA = [
@@ -692,6 +700,19 @@ export interface ScoreAllReport {
   scorings: ScoringPayload[];
 }
 
+/**
+ * The judge sends `complete()` with no ledger, no output ceiling and the
+ * provider's default timeout, and on Claude Fable 5.1 every call thinks. A
+ * paid scoring run is refused until that is capped (docs/live-proof-protocol.md,
+ * "Not built yet"); `--dry-run` stays available. Declared `void`, not
+ * `never`, so the paid path after it stays type-checked for when it returns.
+ */
+function refuseUncappedJudge(): void {
+  throw new Error(
+    "judge scoring has no cost cap yet, so it does not run: see 'Not built yet' in docs/live-proof-protocol.md. Use --dry-run to list what would be scored."
+  );
+}
+
 export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
   const templatePath = join(opts.root, "benchmarks", "scoring-prompt.txt");
   if (!existsSync(templatePath)) {
@@ -712,7 +733,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
 
   if (opts.dryRun) {
     process.stderr.write(
-      `→ dry-run: would score ${refs.length} briefing(s) using claude-sonnet-5-5\n`
+      `→ dry-run: would score ${refs.length} briefing(s) using ${JUDGE_MODEL}\n`
     );
     for (const r of refs) {
       process.stderr.write(`  · [${r.mode}] ${r.slug} → ${r.brief_md_path}\n`);
@@ -729,6 +750,8 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     };
   }
 
+  refuseUncappedJudge();
+
   // Non-dry-run: require the key.
   if (
     typeof process.env["ANTHROPIC_API_KEY"] !== "string" ||
@@ -740,7 +763,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     throw new Error("ANTHROPIC_API_KEY missing");
   }
 
-  const llm: LLMProvider = new AnthropicLLMProvider({ model: "claude-sonnet-5-5" });
+  const llm: LLMProvider = new AnthropicLLMProvider({ model: JUDGE_MODEL });
   const scorings: ScoringPayload[] = [];
   let scored = 0;
   let fromCache = 0;

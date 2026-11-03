@@ -21,8 +21,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Part C preparation: `docs/live-proof-protocol.md` (five test-split
-  briefings, deterministic checks, a judge from another model family and how
-  it is checked, cost) and `bun run estimate:cost`. `bench:live` needs
+  briefings, deterministic checks, a judge on a Claude model no stage uses
+  with its same-family limitation, the maintainer's blind review of two
+  briefings (`bun run export:annotation`), cost; one briefing first, capped
+  at $8, under its own GO) and `bun run estimate:cost`. `bench:live` needs
   `--max-cost-usd` (per briefing), a key alone never makes `bun run bench` go
   live, `--ids` selects questions; live artefacts record the commit and each
   prompt's version, model and hash, are never overwritten, and a failure
@@ -68,6 +70,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- When the cost cap is reached during the synthesis rerun, the complete
+  pre-rerun brief is returned instead of being discarded with the run;
+  `rerun_skipped` (a new optional field of the result, and `rerun.skipped`
+  in benchmark metadata) says why. Paid scoring (`score-all.ts` without
+  `--dry-run`) is refused until the judge has a cost cap.
 - An answer the model stopped at `max_tokens` is refused with
   `TruncatedOutputError` (new public export, a subclass of
   `InvalidAgentOutputError`) before JSON extraction, which could return a

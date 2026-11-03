@@ -82,6 +82,13 @@ matter, and they are empty or failing.
   domain; it does not check that the page says what the claim says.
 - **No validated judge.** Quality would be scored by a model whose agreement
   with a human has not been measured (`docs/CLAIMS.md` C18).
+- **The judge is from the same model family.** It is Claude Fable 5.1, a
+  model no stage uses, so no stage's output is scored by the model that
+  wrote it; but judge and pipeline are all Claude models, and a bias they
+  share would not be seen. No judge from another provider is available. The
+  only check on that bias is the maintainer's blind review of two briefings
+  (`docs/live-proof-protocol.md`), too few to measure it, only to catch a
+  large one.
 - **Injection resistance is structural, not measured.** Code refuses
   references to things that do not exist and links to sources that were not
   returned; it cannot tell a slanted claim from a fair one.
