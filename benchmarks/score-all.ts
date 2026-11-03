@@ -700,6 +700,19 @@ export interface ScoreAllReport {
   scorings: ScoringPayload[];
 }
 
+/**
+ * The judge sends `complete()` with no ledger, no output ceiling and the
+ * provider's default timeout, and on Claude Fable 5.1 every call thinks. A
+ * paid scoring run is refused until that is capped (docs/live-proof-protocol.md,
+ * "Not built yet"); `--dry-run` stays available. Declared `void`, not
+ * `never`, so the paid path after it stays type-checked for when it returns.
+ */
+function refuseUncappedJudge(): void {
+  throw new Error(
+    "judge scoring has no cost cap yet, so it does not run: see 'Not built yet' in docs/live-proof-protocol.md. Use --dry-run to list what would be scored."
+  );
+}
+
 export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
   const templatePath = join(opts.root, "benchmarks", "scoring-prompt.txt");
   if (!existsSync(templatePath)) {
@@ -736,6 +749,8 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
       scorings: [],
     };
   }
+
+  refuseUncappedJudge();
 
   // Non-dry-run: require the key.
   if (

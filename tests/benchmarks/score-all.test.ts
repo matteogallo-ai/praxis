@@ -621,3 +621,33 @@ describe("the judge's model", () => {
     expect(DEFAULT_PRICE_TABLE.models[JUDGE_MODEL]).toBeDefined();
   });
 });
+
+describe("scoreAll — paid scoring is refused until the judge is capped", () => {
+  test("a non-dry run stops before any request, key or not", async () => {
+    const { mkdtempSync, mkdirSync, cpSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const root = mkdtempSync(join(tmpdir(), "praxis-score-"));
+    mkdirSync(join(root, "benchmarks", "outputs", "live", "x"), { recursive: true });
+    cpSync("benchmarks/scoring-prompt.txt", join(root, "benchmarks", "scoring-prompt.txt"));
+    writeFileSync(join(root, "benchmarks", "outputs", "live", "x", "brief.md"), "# x\n");
+    writeFileSync(join(root, "benchmarks", "outputs", "live", "x", "metadata.json"), "{}\n");
+    const saved = { key: process.env["ANTHROPIC_API_KEY"], fetch: globalThis.fetch };
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls++;
+      return new Response("{}", { status: 500 });
+    }) as unknown as typeof fetch;
+    process.env["ANTHROPIC_API_KEY"] = "sk-ant-test-not-a-real-key";
+    try {
+      await expect(
+        scoreAll({ mockOnly: false, liveOnly: true, dryRun: false, root, refresh: null } as never)
+      ).rejects.toThrow(/no cost cap/);
+      expect(calls).toBe(0);
+    } finally {
+      globalThis.fetch = saved.fetch;
+      if (saved.key === undefined) delete process.env["ANTHROPIC_API_KEY"];
+      else process.env["ANTHROPIC_API_KEY"] = saved.key;
+    }
+  });
+});
