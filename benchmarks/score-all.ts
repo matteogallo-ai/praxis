@@ -231,7 +231,7 @@ export function interpolateScoringPrompt(
     .replace("{format_id}", () => meta.format)
     .replace("{question}", () => meta.question)
     // A closing tag inside the briefing would end the delimited block early.
-    .replace("{briefing_markdown}", () => briefingMarkdown.replace(/<\/briefing>/gi, "<\\/briefing>"));
+    .replace("{briefing_markdown}", () => briefingMarkdown.replace(/<\/\s*briefing\s*>/gi, "<\\/briefing>"));
 }
 
 // ---------------------------------------------------------------------------
