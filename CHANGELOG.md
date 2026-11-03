@@ -76,7 +76,9 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   context each, its prompt at 3 characters per token. It is sent only if
   the spend, the reservations of requests in flight and its worst case fit
   in the cap. A request that fails or reports no usage, a timeout included,
-  stays charged at its worst case (`unreported_usd`). `estimate:cost
+  stays charged at its worst case (`unreported_usd`); an HTTP error answer
+  is not charged. When a synthesis section fails, the sections in flight
+  are awaited, so `metadata.json` records them. `estimate:cost
   --cap-usd` walks each question through the reservations instead of
   printing an overshoot ceiling. Opus 5 is in the price table.
 - When the cost cap is reached during the synthesis rerun, the complete
