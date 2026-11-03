@@ -92,7 +92,8 @@ export function resumeArgs(rest: readonly string[], store: CheckpointStore): str
   if (formatAt === -1) {
     out.push("--format", formatId);
   } else {
-    const given = out[formatAt]!.includes("=") ? out[formatAt]!.split("=")[1] : out[formatAt + 1];
+    const flag = out[formatAt] as string;
+    const given = flag.includes("=") ? flag.slice(flag.indexOf("=") + 1) : out[formatAt + 1];
     if (given !== formatId) {
       return { error: `--resume ${runId}: the run used --format ${formatId}, not ${given ?? "(none)"}` };
     }
