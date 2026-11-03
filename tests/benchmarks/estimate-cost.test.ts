@@ -2,8 +2,9 @@
  * The pre-run cost estimate (`benchmarks/estimate-cost.ts`).
  */
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 
-import { estimateBriefing, estimateRun, type MockMetadata, type Scenario, SCENARIOS } from "../../benchmarks/estimate-cost.ts";
+import { ceiling, estimateBriefing, estimateRun, type MockMetadata, type Scenario, SCENARIOS } from "../../benchmarks/estimate-cost.ts";
 import { DEFAULT_PRICE_TABLE } from "../../src/llm/pricing.ts";
 
 const scenario = (name: string) => SCENARIOS.find((s) => s.name === name) as Scenario;
@@ -74,5 +75,24 @@ describe("estimateRun", () => {
       expect(r.central).toBeLessThanOrEqual(r.high);
     }
     expect(totals.central).toBeCloseTo(rows.reduce((a, r) => a + r.central, 0), 10);
+  });
+});
+
+describe("ceiling", () => {
+  const ids = ["02-cfo-buyback-briefing", "11-family-office-co-investment"];
+
+  test("metered: each briefing at the cap plus its costliest request", () => {
+    const c = ceiling(".", ids, 14);
+    expect(c.maxRequest).toBeGreaterThan(0);
+    expect(c.metered).toBeCloseTo(2 * (14 + c.maxRequest), 10);
+  });
+
+  test("unmetered: every request of a question timing out on both attempts", () => {
+    const c = ceiling(".", ids, 14);
+    const id = "11-family-office-co-investment"; // strict_editorial: synthesis counted twice
+    const meta = JSON.parse(readFileSync(`benchmarks/outputs/mock/${id}/metadata.json`, "utf-8")) as MockMetadata;
+    const once = estimateBriefing(meta, true, { ...scenario("high"), stageRetries: 0 }).total;
+    expect(c.unmetered[id]).toBeCloseTo(2 * once, 10);
+    expect(c.worst).toBeCloseTo(c.metered + Object.values(c.unmetered).reduce((a, b) => a + b, 0), 10);
   });
 });

@@ -153,8 +153,7 @@ export function estimateRun(
 ): { rows: { id: string; low: number; central: number; high: number }[]; totals: Record<Scenario["name"], number> } {
   const strict = strictFormats(root);
   const rows = ids.map((id) => {
-    const path = join(root, "benchmarks", "outputs", "mock", id, "metadata.json");
-    const meta = JSON.parse(readFileSync(path, "utf-8")) as MockMetadata & { format: string };
+    const meta = readMock(root, id);
     const [low, central, high] = SCENARIOS.map((s) => estimateBriefing(meta, strict.has(meta.format), s).total);
     return { id, low: low ?? 0, central: central ?? 0, high: high ?? 0 };
   });
@@ -162,16 +161,73 @@ export function estimateRun(
   return { rows, totals: { low: sum("low"), central: sum("central"), high: sum("high") } };
 }
 
+export interface Ceiling {
+  /** Costliest single request of any question, high scenario: the overshoot past the cap. */
+  maxRequest: number;
+  /** Briefings × (cap + maxRequest). */
+  metered: number;
+  /** Per question: every request timing out on both attempts, unseen by the cap. */
+  unmetered: Record<string, number>;
+  /** metered + every question's unmetered. */
+  worst: number;
+}
+
+/**
+ * What a capped live run can cost beyond its estimate, high scenario. The
+ * cap stops the next request, so a briefing ends above it by at most the
+ * request in flight; a timed-out request reports no usage, so up to two per
+ * stage call (one per attempt) escape the cap.
+ */
+export function ceiling(root: string, ids: readonly string[], capUsd: number): Ceiling {
+  const high = SCENARIOS.find((s) => s.name === "high") as Scenario;
+  const once = { ...high, stageRetries: 0 };
+  const strict = strictFormats(root);
+  let maxRequest = 0;
+  const unmetered: Record<string, number> = {};
+  for (const id of ids) {
+    const meta = readMock(root, id);
+    const perRequest = {
+      ...meta,
+      usage: {
+        stages: Object.fromEntries(
+          Object.entries(meta.usage.stages).map(([k, v]) => [k, { ...v, calls: 1, input_tokens: v.input_tokens / v.calls }])
+        ),
+      },
+    };
+    maxRequest = Math.max(maxRequest, ...Object.values(estimateBriefing(perRequest, false, high).stages));
+    unmetered[id] = 2 * estimateBriefing(meta, strict.has(meta.format), once).total;
+  }
+  const metered = ids.length * (capUsd + maxRequest);
+  return { maxRequest, metered, unmetered, worst: metered + Object.values(unmetered).reduce((a, b) => a + b, 0) };
+}
+
+function readMock(root: string, id: string): MockMetadata & { format: string } {
+  const path = join(root, "benchmarks", "outputs", "mock", id, "metadata.json");
+  return JSON.parse(readFileSync(path, "utf-8")) as MockMetadata & { format: string };
+}
+
 if (import.meta.main) {
-  const at = process.argv.indexOf("--ids");
-  const list = at === -1 ? undefined : process.argv[at + 1];
-  if (list === undefined || list.length === 0) {
-    process.stderr.write("usage: bun run estimate:cost -- --ids <id,id,…>\n");
+  const arg = (name: string) => {
+    const at = process.argv.indexOf(name);
+    return at === -1 ? undefined : process.argv[at + 1];
+  };
+  const list = arg("--ids");
+  const cap = arg("--cap-usd") === undefined ? undefined : Number(arg("--cap-usd"));
+  if (list === undefined || list.length === 0 || (cap !== undefined && !(Number.isFinite(cap) && cap > 0))) {
+    process.stderr.write("usage: bun run estimate:cost -- --ids <id,id,…> [--cap-usd <positive number>]\n");
     process.exit(2);
   }
-  const { rows, totals } = estimateRun(resolve(import.meta.dir, ".."), list.split(","));
+  const root = resolve(import.meta.dir, "..");
+  const ids = list.split(",");
+  const { rows, totals } = estimateRun(root, ids);
   const usd = (n: number) => `$${n.toFixed(2)}`;
   process.stdout.write("| Question | Low | Central | High |\n| --- | ---: | ---: | ---: |\n");
   for (const r of rows) process.stdout.write(`| ${r.id} | ${usd(r.low)} | ${usd(r.central)} | ${usd(r.high)} |\n`);
   process.stdout.write(`| **Total** | ${usd(totals.low)} | ${usd(totals.central)} | ${usd(totals.high)} |\n`);
+  if (cap !== undefined) {
+    const c = ceiling(root, ids, cap);
+    process.stdout.write(`\ncostliest request ${usd(c.maxRequest)}; metered ceiling ${usd(c.metered)}\n`);
+    for (const [id, v] of Object.entries(c.unmetered)) process.stdout.write(`unmetered timeouts ${id} ${usd(v)}\n`);
+    process.stdout.write(`worst case ${usd(c.worst)}\n`);
+  }
 }
