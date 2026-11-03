@@ -14,3 +14,7 @@ benchmarks/.scoring-cache/
 
 # Run checkpoints and metadata written by `praxis brief --full`.
 .praxis/
+
+# Stryker (bunx stryker run): in-place backup and report
+.stryker-tmp/
+reports/
