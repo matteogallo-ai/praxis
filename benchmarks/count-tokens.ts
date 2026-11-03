@@ -14,7 +14,7 @@
 import { writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import type { FetchLike } from "../src/llm/anthropic-provider.ts";
+import { ANTHROPIC_VERSION, type FetchLike } from "../src/llm/anthropic-provider.ts";
 import { MockLLMProvider } from "../src/llm/mock-provider.ts";
 import type { LLMProvider } from "../src/llm/provider.ts";
 import { UsageLedger } from "../src/orchestrator/ledger.ts";
@@ -24,6 +24,9 @@ import { FIXTURE_CLOCK } from "../tests/fixtures/clock.ts";
 import { loadManifest } from "./manifest.ts";
 
 export const COUNT_TOKENS_URL = "https://api.anthropic.com/v1/messages/count_tokens";
+
+/** count_tokens generates nothing; an answer slower than this is a hung connection. */
+const COUNT_TIMEOUT_MS = 30_000;
 
 export interface CountedRequest {
   stage: string;
@@ -84,8 +87,9 @@ export async function countTokens(
     if (r.system.length > 0) body["system"] = r.system;
     const res = await fetchFn(COUNT_TOKENS_URL, {
       method: "POST",
-      headers: { "x-api-key": apiKey, "anthropic-version": "2026-10-21", "content-type": "application/json" },
+      headers: { "x-api-key": apiKey, "anthropic-version": ANTHROPIC_VERSION, "content-type": "application/json" },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(COUNT_TIMEOUT_MS),
     });
     const text = await res.text();
     if (!res.ok) throw new Error(`count_tokens answered ${res.status}: ${text.slice(0, 200)}`);

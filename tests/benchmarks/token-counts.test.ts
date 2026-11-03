@@ -4,7 +4,9 @@
  * characters into tokens.
  */
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import {
   estimateBriefing,
@@ -21,16 +23,19 @@ interface Measured {
 const measured = JSON.parse(
   readFileSync("benchmarks/token-counts/05-supply-chain-acquisition.json", "utf-8")
 ) as Measured;
+const all = readdirSync("benchmarks/token-counts")
+  .filter((f) => f.endsWith(".json"))
+  .flatMap((f) => (JSON.parse(readFileSync(`benchmarks/token-counts/${f}`, "utf-8")) as Measured).requests);
 
 describe("measured token counts", () => {
-  test("every request of the measured briefing is at least the cap's floor of characters per token", () => {
-    const lowest = Math.min(...measured.requests.map((r) => r.chars / r.tokens));
+  test("every measured request is at least the cap's floor of characters per token", () => {
+    const lowest = Math.min(...all.map((r) => r.chars / r.tokens));
     expect(lowest).toBeGreaterThanOrEqual(CHARS_PER_TOKEN_FLOOR);
   });
 
   test("the estimate's ratio is the measured characters over the measured tokens", () => {
-    const chars = measured.requests.reduce((a, r) => a + r.chars, 0);
-    const tokens = measured.requests.reduce((a, r) => a + r.tokens, 0);
+    const chars = all.reduce((a, r) => a + r.chars, 0);
+    const tokens = all.reduce((a, r) => a + r.tokens, 0);
     expect(measuredCharsPerToken(".")).toBeCloseTo(chars / tokens, 12);
   });
 
@@ -46,6 +51,31 @@ describe("measured token counts", () => {
       estimateBriefing(meta, false, rescaled, undefined, MOCK_CHARS_PER_TOKEN).total,
       10
     );
+  });
+});
+
+describe("measuredCharsPerToken refuses a measurement it cannot read", () => {
+  const withFile = (content: string | null, run: (root: string) => void) => {
+    const root = mkdtempSync(join(tmpdir(), "praxis-counts-"));
+    try {
+      if (content !== null) {
+        mkdirSync(join(root, "benchmarks", "token-counts"), { recursive: true });
+        writeFileSync(join(root, "benchmarks", "token-counts", "q.json"), content);
+      }
+      run(root);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  };
+  test.each([
+    ["no directory", null, /is missing/],
+    ["malformed JSON", "{", /not JSON/],
+    ["no requests array", "{}", /'requests'/],
+    ["zero tokens", '{"requests":[{"chars":10,"tokens":0}]}', /positive/],
+    ["a missing count", '{"requests":[{"tokens":4}]}', /positive/],
+    ["no request at all", '{"requests":[]}', /no measured token counts/],
+  ])("%s", (_name, content, error) => {
+    withFile(content, (root) => expect(() => measuredCharsPerToken(root)).toThrow(error));
   });
 });
 
