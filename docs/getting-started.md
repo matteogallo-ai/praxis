@@ -16,19 +16,14 @@ three steps.
 
 ## Step 1 — Clone and install
 
-Praxis imports PromptLang's lexer and parser from a sibling checkout,
-so clone both side by side:
-
 ```bash
-git clone https://github.com/matteogallo-ai/promptlang.git
-git -C promptlang checkout v1.2.0
 git clone https://github.com/matteogallo-ai/praxis.git
 cd praxis
-bun install
+bun install --frozen-lockfile
 ```
 
-`bun install` fetches two runtime dependencies from npm:
-`@promptlang/yaml-parser` and `pdfkit`.
+`bun install` fetches three runtime dependencies from npm:
+`@promptlang/core`, `@promptlang/yaml-parser` and `pdfkit`.
 Everything else is standard library or hand-rolled.
 
 ## Step 2 — Verify the install

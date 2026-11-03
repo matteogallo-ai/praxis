@@ -15,7 +15,7 @@ labels: bug
 ## Environment
 
 - Praxis commit:
-- PromptLang checkout tag:
+- `@promptlang/core` version (`bun pm ls | grep promptlang`):
 - Bun version (`bun --version`):
 - OS:
 

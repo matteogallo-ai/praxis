@@ -107,8 +107,9 @@ Tests:
   model is neither retired nor deprecated".
 - The CI jobs `OSV-Scanner (bun.lock) / osv-scan` and `CodeQL (…)`.
 
-Remaining: PromptLang's lexer and parser come from a sibling checkout at a
-fixed tag, outside the lockfile, until `@promptlang/core` is on npm (C19).
+PromptLang's lexer and parser come from `@promptlang/core`, pinned exactly,
+with its integrity hash in `bun.lock` and covered by OSV-Scanner like every
+other dependency; the CI job `clean-clone` proves no other copy is read.
 
 ## LLM04 — Data and model poisoning
 
