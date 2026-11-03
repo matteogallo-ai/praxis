@@ -95,8 +95,8 @@ export const TOKENS_PER_SEARCH_CEILING = 15_000;
 
 /**
  * Characters per token assumed when sizing input before it is sent. Below
- * every request measured with count_tokens (2.66 to 2.88 on the prompts of
- * `benchmarks/token-counts/`, whose JSON and Markdown tokenize densely), so
+ * every request measured with count_tokens (`benchmarks/token-counts/`,
+ * whose JSON and Markdown tokenize densely; a test checks each), so
  * those are over-counted; text that tokenizes below it (CJK, base64) is
  * under-counted.
  */
