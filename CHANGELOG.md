@@ -76,7 +76,9 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   context each, its prompt at 3 characters per token. It is sent only if
   the spend, the reservations of requests in flight and its worst case fit
   in the cap. A request that fails or reports no usage, a timeout included,
-  stays charged at its worst case (`unreported_usd`).
+  stays charged at its worst case (`unreported_usd`). `estimate:cost
+  --cap-usd` walks each question through the reservations instead of
+  printing an overshoot ceiling.
 - When the cost cap is reached during the synthesis rerun, the complete
   pre-rerun brief is returned instead of being discarded with the run;
   `rerun_skipped` (a new optional field of the result, and `rerun.skipped`

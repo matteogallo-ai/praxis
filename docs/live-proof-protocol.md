@@ -59,17 +59,28 @@ same to the cent but is the hard case, built to stress sourcing, not to represen
 Question 11 is $0.08 cheaper in the central case but atypical (synthesis
 regenerated under `strict_editorial`, $13.07 in the high case).
 
-What $8 lets through, by the estimator's stages (high scenario, cumulative):
-scoping $0.17, research $0.95, stakeholders $1.77, risks $2.68, options
-$4.68, synthesis $5.52, adversarial $7.83. The cap is checked before each
-request, and the six rerun sections start together at $7.83, so a healthy
-briefing completes in every case without a retry, the high one at about
-$8.68. A stage retry can bring the cap forward:
+$8 is a limit, not a fuse: before each request the ledger reserves that
+request's worst case and sends it only if what is spent, what requests in
+flight hold and that worst case fit in $8 ([§ Ceiling](#ceiling)). The
+estimator's stages, high scenario, cumulative: scoping $0.17, research
+$0.95, stakeholders $1.77, risks $2.68, options $4.68, synthesis $5.52,
+adversarial $7.83. Walked through the reservations
+(`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 8`):
 
-- reached during the synthesis rerun, the complete pre-rerun brief is kept
-  and written, with `rerun.skipped` in its `metadata.json`;
-- reached before, the run stops and `error-*.json` records what each stage
-  spent, which is the measurement step 1 is costed from.
+| Scenario | Under $8 |
+| --- | --- |
+| Low | completes at $1.13 |
+| Central | completes at $4.98 |
+| High | stops before adversarial at $5.52 |
+
+In the high scenario the adversarial request (Opus, 5 searches, 16 000
+`max_tokens`) reserves $2.60 on top of $5.52 spent, more than $8 allows.
+A run that stops leaves no brief: `error-*.json` records what each stage
+spent, which is the measurement step 1 is costed from. The high case would
+yield a brief from a cap of $8.12 (rerun skipped) and finish in full from
+$8.81, without a retry; with one stage retry, $10.43 and $11.11. A cap
+reached during the synthesis rerun keeps the complete pre-rerun brief,
+with `rerun.skipped` in its `metadata.json`.
 
 ### Step 1: the other four, capped at $14 each
 
@@ -80,15 +91,14 @@ bun run bench:live -- --max-cost-usd 14 --ids 02-cfo-buyback-briefing,08-ai-regu
 Only after step 0 completed, or stopped at its cap, without a timeout, and
 after `estimate:cost` has been re-costed from step 0's measured usage.
 
-- `--max-cost-usd 14` caps each briefing: the ledger refuses the next
-  request, `pause_turn` re-sends included, once $14 is spent. It sits above
-  the highest high estimate ($13.07, question 11) so a costly but healthy
-  briefing completes; it is a fuse, not a target.
-  `tests/benchmarks/live-protocol.test.ts` fails if it drops below.
+- `--max-cost-usd 14` caps each briefing the same way. Walked through the
+  reservations, every question's high case completes under it (question
+  11, the costliest, at $13.07); `tests/benchmarks/live-protocol.test.ts`
+  fails if one would not.
 - Stop after step 0 if it failed for a systematic cause (authentication,
   model id, request shape) or if any stage timed out: fix it, free, before
-  spending more. A timed-out request is the one cost the cap cannot see
-  ([§ Ceiling](#ceiling)).
+  spending more. A timed-out request is charged its worst case, so
+  timeouts eat the cap fast ([§ Ceiling](#ceiling)).
 - **One attempt per question.** The rule is procedural: `run-all.ts`
   refuses only a question that already has a `metadata.json`, so a question
   that failed can be run again by the same command. Do not: running a
@@ -242,11 +252,9 @@ No prompt caching is assumed.
 | --- | ---: | ---: | ---: |
 | Estimate | $1.13 | $4.98 | $10.98 |
 
-- Metered ceiling: **$10.30**, the $8 cap plus the costliest request ($2.30,
-  adversarial). In the high case the run stops at the cap rather than
+- Ceiling: **$8.00**, timeouts included, within the allowances below. In
+  the high case the run stops before adversarial at $5.52 rather than
   reaching $10.98.
-- Worst case with every request timing out twice, unseen by the cap:
-  **$27.66**.
 
 These are estimates from the mock run's prompt sizes, 4 characters per
 token, and assumed search sizes. Anthropic's token-counting endpoint is
@@ -256,43 +264,43 @@ search sizes stay assumptions. Step 0 itself is the measurement.
 
 ### Ceiling
 
-`bun run estimate:cost -- --ids <the five> --cap-usd 14` computes it
-(`ceiling` in `benchmarks/estimate-cost.ts`). These are high-scenario
-figures, not hard bounds: no code limits the size of one request (the
-tokens a search adds are not capped; the context window is the real limit).
+Each request reserves its worst case before it is sent (`meter` and
+`UsageLedger.reserve` in `src/orchestrator/ledger.ts`, `requestCostUsd` in
+`src/llm/pricing.ts`):
 
-The cap is checked before each request, so a briefing ends above it by at
-most the request in flight when it is reached. In the high scenario the
-costliest single request $2.45 is adversarial (Opus, 5 searches); the six
-concurrent synthesis requests together cost less (≈ $0.85).
+- its whole `max_tokens` of output, thinking included;
+- every search its `max_uses` allows, at $10 per 1000;
+- each search adding 15 000 tokens of context (`TOKENS_PER_SEARCH_CEILING`,
+  the high scenario's figure), the context re-read after each search;
+- its prompt at 3 characters per token (`CHARS_PER_TOKEN_FLOOR`);
+- a `pause_turn` re-send carrying back each earlier round's prompt,
+  searches and output.
 
-- **Metered ceiling, high scenario**: $82.27, five briefings at $14 +
-  $2.45 each.
-- **Not metered: timed-out requests.** A request cut off by its timeout
-  reports no usage, so the ledger does not count it, yet it may have been
-  billed. Each stage call has two attempts, so if every request of a
-  briefing timed out twice, this much would escape the cap:
+The request is sent only if what the briefing has spent, what its requests
+in flight hold and this worst case fit in the cap; the six synthesis
+sections start together, so they must fit together. A request that
+answers is charged what it reports. A request that fails or reports no
+usage (a timeout, a dropped connection, a body that cannot be read) may
+have been billed, so it stays charged at its worst case, recorded as
+`unreported_usd` in `metadata.json`. A request that cannot be sized (a
+model without a price, no `max_tokens`, a web search without `max_uses`)
+is not sent.
 
-  | Question | Unseen by the cap |
-  | --- | ---: |
-  | 02-cfo-buyback-briefing | $17.66 |
-  | 05-supply-chain-acquisition | $17.36 |
-  | 08-ai-regulation-position | $17.66 |
-  | 11-family-office-co-investment | $21.23 |
-  | 12-sodium-ion-plant-morocco | $17.36 |
+So a briefing spends at most its cap, timeouts included, **as long as the
+allowances hold**. They are assumptions, not bounds the API enforces:
 
-  Question 11 is higher because `strict_editorial` runs its synthesis twice.
-  Timeouts are set for a decode rate of 40 tokens/s
-  (`src/agents/stage-limits.ts`), so this needs a degraded API; the stop
-  rule after step 0 bounds it to one briefing unless the degradation starts
-  during step 1.
-- **Also not metered**, both narrow: a request whose answer arrives but
-  cannot be parsed (a 200 with a body that is not JSON, or content blocks
-  the parser rejects), and, when a synthesis section fails, the sibling
-  sections still in flight when `error-*.json` is written (they are
-  recorded, after it).
-- **Worst case**: $173.55, the metered ceiling plus every question's
-  timeouts.
+- No request parameter limits what a search returns. A search that adds
+  more than 15 000 tokens makes its request cost more than it reserved,
+  and the spend can pass the cap by that excess on the requests in flight;
+  the next request is then refused.
+- Text that tokenizes below 3 characters per token (code, base64, CJK) is
+  sized low the same way.
+- A 429 or 5xx is retried inside one reservation; such responses are not
+  billed.
+
+The worst cases are conservative, so a capped run can be refused before it
+would really have reached its cap: that is the price of the limit. For all
+five at $14 the ceiling is $70.00 within the allowances.
 
 ### Judge
 
@@ -315,11 +323,11 @@ limitation. The maintainer's call.
 ## What each GO authorizes
 
 1. **Step 0**: the one `bench:live` command for `05-supply-chain-acquisition`,
-   one attempt. Expected ≈ $5 (central), metered ceiling $10.30, worst
-   case with timeouts $27.66.
+   one attempt. Expected ≈ $5 (central); at most $8.00, timeouts included,
+   within the allowances of [§ Ceiling](#ceiling).
 2. **Step 1**, after step 0 and a re-costing from its measured usage: the
-   other four. Before that re-costing, the estimate above stands: metered
-   ceiling $82.27 for all five at $14, worst case $173.55.
+   other four. Before that re-costing: at most $14 each, $56.00 for the
+   four, within the same allowances.
 3. **Judge**, once its cap is built and the briefings are in: at most
    $8.40 per briefing judged, $84.00 for the five with the margin.
 

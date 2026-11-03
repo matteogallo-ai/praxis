@@ -6,7 +6,14 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { ceiling, estimateBriefing, estimateRun, type MockMetadata, type Scenario, SCENARIOS } from "../../benchmarks/estimate-cost.ts";
+import {
+  capWalk,
+  estimateBriefing,
+  estimateRun,
+  type MockMetadata,
+  type Scenario,
+  SCENARIOS,
+} from "../../benchmarks/estimate-cost.ts";
 import { loadManifest } from "../../benchmarks/manifest.ts";
 import { loadSplit, MANIFEST_PATH } from "../../benchmarks/split.ts";
 
@@ -33,6 +40,18 @@ const commands = [...doc.matchAll(/bun run bench:live -- --max-cost-usd (\d+(?:\
   ids: (m[2] ?? "").split(","),
 }));
 const usd = (n: number) => `$${n.toFixed(2)}`;
+const flat = doc.replace(/\s+/g, " ");
+const mock = (id: string) =>
+  JSON.parse(readFileSync(`benchmarks/outputs/mock/${id}/metadata.json`, "utf-8")) as MockMetadata;
+const scenario = (name: Scenario["name"]) => SCENARIOS.find((x) => x.name === name) as Scenario;
+const STRICT = new Set(["11-family-office-co-investment"]);
+/** The smallest cap, to the cent, under which `done` holds for the probe. */
+function smallestCap(sc: Scenario, done: (refusedAt: string | null) => boolean): number {
+  for (let cents = 100; cents < 3000; cents++) {
+    if (done(capWalk(mock(PROBE), false, sc, cents / 100).refusedAt)) return cents / 100;
+  }
+  return Number.NaN;
+}
 
 describe("docs/live-proof-protocol.md", () => {
   test("its bench:live commands run exactly the questions the rule selects", () => {
@@ -64,10 +83,11 @@ describe("docs/live-proof-protocol.md", () => {
     }
   });
 
-  test("later caps sit above every question's high estimate, so a costly healthy briefing completes", () => {
+  test("under later caps, every question's high case completes through the reservations", () => {
     for (const c of commands.slice(1)) {
-      const highest = Math.max(...estimateRun(".", c.ids).rows.map((r) => r.high));
-      expect(c.cap).toBeGreaterThan(highest);
+      for (const id of c.ids) {
+        expect(capWalk(mock(id), STRICT.has(id), scenario("high"), c.cap).refusedAt).toBeNull();
+      }
     }
   });
 
@@ -75,9 +95,25 @@ describe("docs/live-proof-protocol.md", () => {
     const step0 = commands[0] as { cap: number; ids: string[] };
     const [row] = estimateRun(".", step0.ids).rows;
     expect(doc).toContain(`| Estimate | ${usd(row?.low ?? 0)} | ${usd(row?.central ?? 0)} | ${usd(row?.high ?? 0)} |`);
-    const c = ceiling(".", step0.ids, step0.cap);
-    expect(doc).toContain(`Metered ceiling: **${usd(c.metered)}**`);
-    expect(doc).toContain(`unseen by the cap:\n  **${usd(c.worst)}**`);
+    expect(doc).toContain(`Ceiling: **${usd(step0.cap)}**`);
+    const names = { low: "Low", central: "Central", high: "High" } as const;
+    for (const sc of SCENARIOS) {
+      const w = capWalk(mock(PROBE), false, sc, step0.cap);
+      const outcome = w.refusedAt === null ? "completes" : `stops before ${w.refusedAt}`;
+      expect(doc).toContain(`| ${names[sc.name]} | ${outcome} at ${usd(w.spent)} |`);
+    }
+  });
+
+  test("step 0's high-case reservation and the caps that would let it finish are the walk's", () => {
+    const high = scenario("high");
+    const w = capWalk(mock(PROBE), false, high, commands[0]?.cap ?? Number.NaN);
+    expect(flat).toContain(`reserves ${usd(w.reservations["adversarial"] ?? 0)} on top of ${usd(w.spent)} spent`);
+    const once = { ...high, stageRetries: 0 };
+    const brief = (r: string | null) => r === null || r === "synthesis-rerun";
+    const full = (r: string | null) => r === null;
+    expect(flat).toContain(`from a cap of ${usd(smallestCap(once, brief))} (rerun skipped)`);
+    expect(flat).toContain(`finish in full from ${usd(smallestCap(once, full))}`);
+    expect(flat).toContain(`with one stage retry, ${usd(smallestCap(high, brief))} and ${usd(smallestCap(high, full))}`);
   });
 
   test("its cost table is what estimate:cost prints for those questions", () => {
@@ -88,13 +124,10 @@ describe("docs/live-proof-protocol.md", () => {
     expect(doc).toContain(`| **Total** | **${usd(totals.low)}** | **${usd(totals.central)}** | **${usd(totals.high)}** |`);
   });
 
-  test("its ceiling is what estimate:cost computes for those questions and that cap", () => {
-    const cap = commands[commands.length - 1]?.cap ?? Number.NaN;
-    const c = ceiling(".", selected(), cap);
-    expect(doc).toContain(`costliest single request ${usd(c.maxRequest)}`);
-    expect(doc).toContain(`Metered ceiling, high scenario**: ${usd(c.metered)}`);
-    for (const [id, v] of Object.entries(c.unmetered)) expect(doc).toContain(`| ${id} | ${usd(v)} |`);
-    expect(doc).toContain(`Worst case**: ${usd(c.worst)}`);
+  test("its ceilings are the caps times the briefings", () => {
+    const later = commands[commands.length - 1] as { cap: number; ids: string[] };
+    expect(flat).toContain(`For all five at ${usd(later.cap).replace(".00", "")} the ceiling is ${usd(5 * later.cap)}`);
+    expect(flat).toContain(`${usd(later.ids.length * later.cap)} for the four`);
   });
 
   test("its judge figures follow the price table: 16 000 in, 8 000 out, 15 calls per briefing", async () => {
@@ -118,7 +151,5 @@ describe("docs/live-proof-protocol.md", () => {
     const [q12] = estimateRun(".", ["12-sodium-ion-plant-morocco"]).rows;
     expect(doc.replace(/\s+/g, " ")).toContain(`Question 11 is ${usd((q05?.central ?? 0) - (q11?.central ?? 0))} cheaper`);
     for (const k of ["low", "central", "high"] as const) expect(usd(q12?.[k] ?? 0)).toBe(usd(q05?.[k] ?? 0));
-    const c = ceiling(".", [PROBE], commands[0]?.cap ?? Number.NaN);
-    expect(doc.replace(/\s+/g, " ")).toContain(`costliest request (${usd(c.maxRequest)}, adversarial)`);
   });
 });
