@@ -367,8 +367,8 @@ Then:
 
 ```bash
 bun run bench:mock         # mock provider — always green
-bun run bench:live         # live provider — needs ANTHROPIC_API_KEY
-bun run bench              # both if the key is set
+bun run bench:live -- --max-cost-usd 8   # PAID, live, each briefing capped at $8
+bun run bench              # mock; live too only with a key and --max-cost-usd
 ```
 
 **Notes.** Adding an entry changes the manifest, so the test suite
