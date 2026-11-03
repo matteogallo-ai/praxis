@@ -40,11 +40,30 @@ function checkNames(yaml: string): string[] {
 
 const declared = WORKFLOWS.flatMap(checkNames);
 const ruleset = JSON.parse(readFileSync(".github/settings/ruleset-main.json", "utf-8")) as {
-  rules: { type: string; parameters?: { required_status_checks?: { context: string }[] } }[];
+  rules: {
+    type: string;
+    parameters?: { required_status_checks?: { context: string; integration_id?: number }[] };
+  }[];
 };
-const required = ruleset.rules
-  .flatMap((r) => (r.type === "required_status_checks" ? (r.parameters?.required_status_checks ?? []) : []))
-  .map((c) => c.context);
+const requiredChecks = ruleset.rules.flatMap((r) =>
+  r.type === "required_status_checks" ? (r.parameters?.required_status_checks ?? []) : []
+);
+
+/**
+ * GitHub code scanning (app 57789) reports one result check per tool, which
+ * fails on a new alert while the job that uploaded the results still passes.
+ * Each is required only if a pull-request workflow runs that tool.
+ */
+const CODE_SCANNING_APP = 57789;
+const CODE_SCANNING_TOOLS: Record<string, RegExp> = {
+  CodeQL: /uses: github\/codeql-action\/analyze@/,
+  "osv-scanner": /uses: google\/osv-scanner-action\/\.github\/workflows\/osv-scanner-reusable\.yml@/,
+};
+const scanned = Object.keys(CODE_SCANNING_TOOLS).filter((tool) =>
+  WORKFLOWS.some((yaml) => CODE_SCANNING_TOOLS[tool]?.test(yaml))
+);
+const required = requiredChecks.filter((c) => c.integration_id !== CODE_SCANNING_APP).map((c) => c.context);
+const requiredScans = requiredChecks.filter((c) => c.integration_id === CODE_SCANNING_APP).map((c) => c.context);
 
 describe("required checks on main", () => {
   test("the pull-request workflows are read", () => {
@@ -62,5 +81,10 @@ describe("required checks on main", () => {
   test("every pull-request job is required", () => {
     const missing = declared.filter((n) => !required.some((c) => c === n || c.startsWith(`${n} / `)));
     expect(missing).toEqual([]);
+  });
+
+  test("the code-scanning result of every tool a pull request runs is required, and nothing else from that app", () => {
+    expect(scanned).toEqual(["CodeQL", "osv-scanner"]);
+    expect([...requiredScans].sort()).toEqual([...scanned].sort());
   });
 });

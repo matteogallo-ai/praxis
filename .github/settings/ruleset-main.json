@@ -88,6 +88,14 @@
           {
             "context": "OSV-Scanner (bun.lock) / osv-scan",
             "integration_id": 15368
+          },
+          {
+            "context": "CodeQL",
+            "integration_id": 57789
+          },
+          {
+            "context": "osv-scanner",
+            "integration_id": 57789
           }
         ]
       }
