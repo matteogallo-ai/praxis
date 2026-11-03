@@ -59,8 +59,14 @@ export function loadPrompt(agentId: string, path: string, promptName: string): L
   if (!declaration) {
     throw new PromptFileError(agentId, path, `missing prompt declaration '${promptName}'`);
   }
-  const modelMeta = program.metadata.find((m) => m.kind === "ModelMetadata");
-  return { path, declaration, model: modelMeta?.value };
+  return { path, declaration, model: promptMetadata(program).model };
+}
+
+/** A parsed prompt file's `@version` and `@model`, when it declares them. */
+export function promptMetadata(program: Program): { version: string | undefined; model: string | undefined } {
+  const find = (kind: string) =>
+    (program.metadata.find((m) => m.kind === kind) as { value: string } | undefined)?.value;
+  return { version: find("VersionMetadata"), model: find("ModelMetadata") };
 }
 
 /** Rendered `system:` and `user:` text of one prompt call. */

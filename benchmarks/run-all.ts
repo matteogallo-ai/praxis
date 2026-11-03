@@ -37,6 +37,7 @@ import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { type BenchmarkEntry, loadManifest } from "./manifest.ts";
+import { assertNoLiveRecord, provenance, recordLiveFailure } from "./provenance.ts";
 import { loadSplit } from "./split.ts";
 import { FormatRegistry } from "../src/registry/registry.ts";
 import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
@@ -192,6 +193,11 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
       continue;
     }
 
+    // A run of record names the commit it ran from, so it must be that commit.
+    const runProvenance = mode === "live" ? provenance(opts.root) : undefined;
+    if (runProvenance?.git_dirty) {
+      throw new Error("a live run needs a clean working tree: commit or stash tracked changes first");
+    }
     const llm = makeProvider(mode, opts.root);
     const registry = new FormatRegistry();
     registry.loadDirectory(join(opts.root, "formats"));
@@ -200,19 +206,21 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
     for (const b of manifest.benchmarks) {
       const outDir = join(opts.root, "benchmarks", "outputs", mode, b.id);
       const started = Date.now();
+      // Mock usage is simulated from text length, so it is flagged and its
+      // durations are left out to keep the artefacts byte-identical.
+      const ledger =
+        mode === "mock"
+          ? new UsageLedger({ simulated: true })
+          : liveLedger(opts.maxCostUsd as number);
+      let briefingStarted = false;
       try {
         // Validate format exists before spawning the orchestrator so
         // an unknown format surfaces as a clean per-benchmark failure
         // rather than a mid-pipeline throw.
         registry.get(b.format);
+        if (mode === "live") assertNoLiveRecord(outDir);
         mkdirSync(outDir, { recursive: true });
-
-        // Mock usage is simulated from text length, so it is flagged and its
-        // durations are left out to keep the artefacts byte-identical.
-        const ledger =
-          mode === "mock"
-            ? new UsageLedger({ simulated: true })
-            : liveLedger(opts.maxCostUsd as number);
+        briefingStarted = true;
         const result = await orchestrator.briefWithCritiqueAndRerun(
           b.question,
           b.format,
@@ -262,6 +270,7 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
           ),
           usage: ledger.summary(mode !== "mock"),
           artefacts,
+          ...(runProvenance === undefined ? {} : { provenance: runProvenance }),
         };
         const metadataPath = join(outDir, "metadata.json");
         writeFileSync(metadataPath, `${JSON.stringify(meta, null, 2)}\n`);
@@ -278,6 +287,17 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        if (mode === "live" && briefingStarted) {
+          recordLiveFailure(outDir, new Date(), {
+            id: b.id,
+            question: b.question,
+            format: b.format,
+            error: message,
+            error_type: err instanceof Error ? err.name : typeof err,
+            usage: ledger.summary(true),
+            provenance: runProvenance,
+          });
+        }
         outcomes.push({
           id: b.id,
           mode,
