@@ -81,4 +81,10 @@ export interface CompleteWithToolsOptions {
   output_schema?: Record<string, unknown>;
   /** Per-request timeout for this call, overriding the provider default. */
   timeout_ms?: number;
+  /**
+   * Called before each request the call sends (a `pause_turn` re-send is a
+   * request), with the usage of the requests already answered. Throwing
+   * stops the call before that request; the budget cap uses it.
+   */
+  before_request?: (answered: TokenUsage) => void;
 }

@@ -3,11 +3,11 @@
  *
  * The orchestrator gives each stage a provider wrapped by `meter()`, so
  * every call is recorded under its stage without the agents knowing. The
- * cap is checked before each call: once the briefing has spent `maxCostUsd`
- * no further call starts. A call's cost is known only after it returns, so
- * a briefing can end above the cap by the cost of the calls already in
- * flight when it was reached: one call, or one per section while synthesis
- * sections run concurrently. With a cap set, a call whose model has no
+ * cap is checked before each request, `pause_turn` re-sends included: once
+ * the briefing has spent `maxCostUsd` no further request is sent. A
+ * request's cost is known only after it returns, so a briefing can end above
+ * the cap by the cost of the requests in flight when it was reached: one
+ * request, or one per section while synthesis sections run concurrently. With a cap set, a call whose model has no
  * price stops the run, since the cap could no longer be enforced. A request
  * that times out is billed by the server but reports no usage, so it is not
  * counted.
@@ -133,7 +133,8 @@ export class UsageLedger {
   }
 
   /** Throws `BudgetExceededError` when the cap is already spent. */
-  assertWithinBudget(stage: string): void {
+  /** `pendingUsd`: spent by a call still running, not yet recorded. */
+  assertWithinBudget(stage: string, pendingUsd = 0): void {
     if (this.maxCostUsd === undefined) return;
     if (this.unpriced !== undefined) {
       throw new BudgetExceededError(
@@ -143,9 +144,14 @@ export class UsageLedger {
         `model '${this.unpriced}' has no price, so the cap cannot be enforced`
       );
     }
-    if (this.spent >= this.maxCostUsd) {
-      throw new BudgetExceededError(this.spent, this.maxCostUsd, stage);
+    if (this.spent + pendingUsd >= this.maxCostUsd) {
+      throw new BudgetExceededError(this.spent + pendingUsd, this.maxCostUsd, stage);
     }
+  }
+
+  /** USD for `usage` on `model` under this ledger's prices; 0 when unpriced. */
+  costOf(usage: TokenUsage, model: string): number {
+    return costOf(usage, model, this.prices) ?? 0;
   }
 
   record(stage: string, model: string, usage: TokenUsage | undefined): void {
@@ -232,8 +238,26 @@ export function meter(inner: LLMProvider, ledger: UsageLedger, stage: string): L
   if (withTools !== undefined) {
     wrapped.completeWithTools = async (prompt, tools, options): Promise<CompletionResult> => {
       ledger.assertWithinBudget(stage);
-      const result = await withTools(prompt, tools, options);
-      ledger.record(stage, result.model ?? options?.model ?? "unknown", result.usage);
+      const model = options?.model ?? "unknown";
+      let answered: TokenUsage | undefined;
+      let result: CompletionResult;
+      try {
+        result = await withTools(prompt, tools, {
+          ...options,
+          before_request: (soFar) => {
+            answered = soFar;
+            ledger.assertWithinBudget(stage, ledger.costOf(soFar, model));
+          },
+        });
+      } catch (err) {
+        // The requests answered before the failure were billed: record them,
+        // then let the error through unchanged.
+        if (answered !== undefined && answered.input_tokens + answered.output_tokens > 0) {
+          ledger.record(stage, model, answered);
+        }
+        throw err;
+      }
+      ledger.record(stage, result.model ?? model, result.usage);
       return result;
     };
   }
