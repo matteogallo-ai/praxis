@@ -176,6 +176,11 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
   }
 
   const modes: readonly ("mock" | "live")[] = decideModes(opts);
+  const maxCostUsd = opts.maxCostUsd;
+  if (modes.includes("live") && !opts.dryRun && maxCostUsd === undefined) {
+    // The parser refuses this too; runAll is also called directly.
+    throw new Error("a live run needs --max-cost-usd: no briefing is paid for without a cap");
+  }
   process.stderr.write(
     `→ benchmarks: ${manifest.benchmarks.length} entries × ${modes.length} mode(s) [${modes.join(", ")}]\n`
   );
@@ -211,7 +216,7 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
       const ledger =
         mode === "mock"
           ? new UsageLedger({ simulated: true })
-          : liveLedger(opts.maxCostUsd as number);
+          : liveLedger(maxCostUsd ?? 0);
       let briefingStarted = false;
       try {
         // Validate format exists before spawning the orchestrator so

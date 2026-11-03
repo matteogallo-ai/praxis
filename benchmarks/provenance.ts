@@ -22,7 +22,7 @@ export interface PromptProvenance {
 
 export interface Provenance {
   git_sha: string;
-  /** Tracked files modified at run time; a live run refuses to start then. */
+  /** Tracked files modified, or untracked prompts or formats, at run time; a live run refuses to start then. */
   git_dirty: boolean;
   prompts: Record<string, PromptProvenance>;
 }
@@ -49,7 +49,11 @@ export function provenance(root: string): Provenance {
   }
   return {
     git_sha: git(root, ["rev-parse", "HEAD"]),
-    git_dirty: git(root, ["status", "--porcelain", "--untracked-files=no"]).length > 0,
+    // Untracked files count only where the pipeline reads them: a new
+    // prompt or format changes the run without changing the commit.
+    git_dirty:
+      git(root, ["status", "--porcelain", "--untracked-files=no"]).length > 0 ||
+      git(root, ["status", "--porcelain", "--untracked-files=all", "--", "prompts", "formats"]).length > 0,
     prompts,
   };
 }
