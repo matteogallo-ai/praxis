@@ -14,8 +14,8 @@ first one briefing, then the other four, then the judge.
   interval; with n = 5, 5/5 completed reads "57%–100%".
 
 It cannot prove that one prompt or model is better than another: that needs
-the noise band of repeated runs (DoD B4), which this protocol measures on
-the judge only.
+the noise band of repeated runs (DoD B4), which this protocol does not
+measure, on the pipeline or on the judge ([§ Roadmap](#roadmap-not-run-by-this-protocol)).
 
 ## The five briefings
 
@@ -163,12 +163,13 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 - **Grid**: the seven criteria scored 1–5 in
   [`benchmarking-methodology.md`](benchmarking-methodology.md#the-rubric)
   (total /35).
-- **Noise band**: each briefing judged 3 times; the median per criterion is
-  the score, the spread is published next to it.
+- **One judgment per briefing**: that judgment is the score. Its noise is
+  not measured, so a one-point gap between two briefings is published as
+  is, never as a difference ([§ Roadmap](#roadmap-not-run-by-this-protocol)).
 
-**3. The judge is checked** (DoD B2). Its scores are called *indicative*
-only if both thresholds hold; otherwise they are published as
-*unvalidated*, with the numbers that failed.
+**3. The judge is checked** (DoD B2), against a human only. Its scores are
+called *indicative* only if that threshold holds; otherwise they are
+published as *unvalidated*, with the numbers that failed.
 
 - **Against a human**: the maintainer scores two briefings blind on the
   same grid: `05-supply-chain-acquisition` (step 0) and the first of 02, 08,
@@ -190,6 +191,17 @@ only if both thresholds hold; otherwise they are published as
   unstable when scores bunch at 3–4. Passing this check makes the judge's
   scores *indicative*, never *validated*, and CLAIMS C18 stays on the
   roadmap.
+**What the five consume.** Running and publishing these five test
+questions spends them: from then on they are dev data. A later held-out
+claim uses the three test questions left (03, 07, 10) or new ones.
+
+## Roadmap (not run by this protocol)
+
+The judge's own reliability ([`CLAIMS.md`](CLAIMS.md) C23). Neither is
+built; neither result exists, and no published score depends on them.
+
+- **Noise band**: each briefing judged 3 times; the median per criterion
+  would be the score, the spread published next to it.
 - **Against planted errors**: for each briefing, three copies with one fault
   each, all detectable from the text alone, each with the criterion it must
   lower, fixed before any judging:
@@ -207,21 +219,14 @@ only if both thresholds hold; otherwise they are published as
   happens with no fault. **Threshold: at least 12 of 15 faults detected and
   at most 1 of 15 neutral criterion readings (the same three criteria, five
   briefings) 1 or more below the unchanged median**, each published as k/15
-  with its Wilson interval.
-
-**What the five consume.** Running and publishing these five test
-questions spends them: from then on they are dev data. A later held-out
-claim uses the three test questions left (03, 07, 10) or new ones.
+  with its Wilson interval. It needs a perturbation generator.
 
 ## Not built yet (free, before the judge's GO)
 
-- The noise band and the planted errors. `score-all.ts` sends one
-  judgment per briefing; the three judgments per copy, the neutral copy and
-  the faulty copies are not generated.
 - Reading the maintainer's scores back from the annotation file, and the
   agreement computation.
 - The script that writes `RESULTS.md` from the artefacts and its `--check`
-  in CI (methodology point 4), and the perturbation generator.
+  in CI (methodology point 4).
 - For the hard case, a per-source check of whether each cited source is
   about sodium-ion cells (its `intent`). The judge cannot do it without
   reading the sources; it is a manual check on the sourcing report until it
@@ -341,9 +346,11 @@ Opus 5 through the Batch API, chosen 2026-11-03; the other rows are what
 it was chosen against. Each call reads ≈ 16 000
 input tokens (a mock brief is 4 200–4 800 tokens, a live one 2–3 times
 that, plus the grid) and writes up to 8 000 output tokens, thinking
-included. Per briefing, 3 judgments each of the unchanged briefing (noise
-band and control), the neutral copy and the three faulty copies: 15 calls,
-75 for the five. Prices from Anthropic's pricing page, read 2026-11-03
+included. The table sizes the full design: per briefing, 3 judgments each
+of the unchanged briefing, the neutral copy and the three faulty copies,
+15 calls, 75 for the five. This protocol sends one call per briefing
+(the noise band and the copies are roadmap): on Opus 5 through the Batch
+API, $0.14 per briefing, $0.70 for the five. Prices from Anthropic's pricing page, read 2026-11-03
 (`src/llm/pricing.ts`):
 
 | Variant | Per call | Per briefing | Five | Five, 2× margin |
@@ -378,9 +385,8 @@ band and control), the neutral copy and the three faulty copies: 15 calls,
    other four. Before that re-costing: at most $14 each, $56.00 for the
    four, within the same allowances.
 3. **Judge**, once the briefings are in:
-   `bun run score:live -- --max-cost-usd <n>`, with `<n>` the worst case
-   `bun run score:dry` prints, at most the Batch API row of
-   [§ Judge](#judge).
+   `bun run score:live -- --max-cost-usd <n>`, one judgment per
+   briefing, with `<n>` the worst case `bun run score:dry` prints.
 
 Anything else, a second attempt at a question included, needs a new
 estimate.

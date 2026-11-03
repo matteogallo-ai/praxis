@@ -78,6 +78,9 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   worst case does not fit is not sent; a spend past the cap fails the run. `refusal` and `max_tokens` answers fail their briefing. A
   submitted batch is resumed, never sent twice. `--dry-run` prints the
   worst case.
+- The live-proof protocol judges each briefing once. The judge's noise
+  band and planted-error detection are roadmap (CLAIMS C23), and the
+  judge's scores are checked against the human only.
 - The cost estimate reads prompt sizes at the 2.73 characters per token
   Anthropic's count_tokens endpoint measured on the prompts of questions
   02, 05, 08 and 11, one per format (`benchmarks/token-counts/`,
