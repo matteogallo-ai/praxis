@@ -42,8 +42,10 @@ gh attestation verify praxis-<version>.tar.gz --repo matteogallo-ai/praxis
 The JSON bodies are in `.github/settings/`. They are not read by any workflow.
 
 **Required checks on `main` (A1).** Replaces the `main` ruleset with the same
-rules plus the CI, CodeQL and OSV-Scanner checks, branches up to date before
-merge:
+rules plus the CI, CodeQL and OSV-Scanner jobs and the code-scanning results
+`CodeQL` and `osv-scanner` (app `github-advanced-security`, id 57789),
+branches up to date before merge. The jobs pass even when they find an alert;
+the result checks fail on a new one, as on pull request #5:
 
 ```bash
 gh api -X PUT repos/matteogallo-ai/praxis/rulesets/26384707 \
