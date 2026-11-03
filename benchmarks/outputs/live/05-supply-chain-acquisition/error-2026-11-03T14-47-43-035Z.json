@@ -1,0 +1,120 @@
+{
+  "failed_at": "2026-11-03T14:47:43.035Z",
+  "id": "05-supply-chain-acquisition",
+  "question": "Should we pursue the acquisition of a European supply-chain competitor?",
+  "format": "mckinsey-style-note",
+  "error": "Agent 'risk' failed: invalid output — the answer was cut at max_tokens (16000); the ceiling is set per stage in src/agents/stage-limits.ts",
+  "error_type": "TruncatedOutputError",
+  "usage": {
+    "stages": {
+      "scoping": {
+        "calls": 1,
+        "input_tokens": 1159,
+        "output_tokens": 1272,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.030076,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 17473
+      },
+      "research": {
+        "calls": 1,
+        "input_tokens": 50371,
+        "output_tokens": 4800,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.19874200000000003,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 35097
+      },
+      "stakeholder": {
+        "calls": 1,
+        "input_tokens": 54914,
+        "output_tokens": 8329,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.243118,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 62316
+      },
+      "risk": {
+        "calls": 1,
+        "input_tokens": 113989,
+        "output_tokens": 16545,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.443428,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      }
+    },
+    "total": {
+      "calls": 4,
+      "input_tokens": 220433,
+      "output_tokens": 30946,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 15,
+      "cost_usd": 0.9153640000000001,
+      "models": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "duration_ms": 114886
+    },
+    "simulated": false,
+    "max_cost_usd": 10
+  },
+  "provenance": {
+    "git_sha": "fe097104c48ee3f187bfea08470fbbb9b9672b58",
+    "git_dirty": false,
+    "prompts": {
+      "adversarial.prompt": {
+        "version": "2.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "1dc888c1b653a946b4d8be63c09831f28729d216367dd3ad2efd7de8f3a28ec2"
+      },
+      "options.prompt": {
+        "version": "2.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "c9ca58b6d6bc62bf78d96be8a4ebe402f8f4001fa97a0e1b428119055797a87e"
+      },
+      "research.prompt": {
+        "version": "2.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "b636fc407cb8f57cd8c7f2954809a83351004b74b377fc8ab9246b4d930fb654"
+      },
+      "risk.prompt": {
+        "version": "2.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "09d91fbe3654db2a38cabe26ac0037bf1db7e005e273be8f912cee0224ecd260"
+      },
+      "scoping.prompt": {
+        "version": "2.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "f327371f9f3c065a8ceac3f1e2e1ac7dda6f3fb96fb6c09fb2769cdea684f737"
+      },
+      "stakeholder.prompt": {
+        "version": "2.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "1f9a56db47c78f201a2ed727a4d8c1ff4b494440b87969679985cea217600d2d"
+      },
+      "synthesis.prompt": {
+        "version": "2.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "be7ac673a02f9d0b5f75544714edb3157f1deace536db8ae39c50c0246473f9f"
+      }
+    }
+  }
+}
