@@ -34,9 +34,9 @@ describe("run-all — cost cap", () => {
 
   test("--max-cost-usd must be a positive number", () => {
     for (const v of ["0", "-1", "x", "Infinity"]) {
-      expect(() => parseRunAllArgs(["--max-cost-usd", v])).toThrow(/positive number/);
+      expect(() => parseRunAllArgs(["--max-cost-usd", v])).toThrow(/positive decimal number/);
     }
-    expect(() => parseRunAllArgs(["--max-cost-usd"])).toThrow(/positive number/);
+    expect(() => parseRunAllArgs(["--max-cost-usd"])).toThrow(/positive decimal number/);
   });
 
   test("a key on disk without a cap runs mock only", async () => {

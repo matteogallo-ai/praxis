@@ -17,18 +17,15 @@ decides whether a stage's answer, a source or a briefing is accepted.
 
 - `src/orchestrator/orchestrator.ts`
 - `src/sourcing/validator.ts`, `freshness.ts`, `domain-trust.ts`
-- `src/agents/prompt-runtime.ts`, lines 292–457: control characters,
-  `extractJsonText`, the output reader and `parseSource`
+- `src/agents/prompt-runtime.ts`, lines 297–463: control characters,
+  `extractJsonText`, the output reader (its `parseSource`) and `isWebUrl`
 - `src/agents/synthesis.ts`, lines 692–776: `checkProse` and
   `parseCitedSource`
 
 Each mutant runs `bun test tests/orchestrator tests/sourcing tests/agents
 tests/property --bail` through Stryker's built-in `command` runner, which
-needs no third-party Bun plugin. Stryker runs `inPlace`: PromptLang resolves
-through `tsconfig.json` paths to `../promptlang`, which a sandbox copy one
-directory deeper would break. Stryker restores the files when it ends; a run
-killed midway leaves them mutated: `git checkout -- src` restores them, and
-`bun run mutation` will not start until `src/` is clean. Knip's Stryker
+needs no third-party Bun plugin. Stryker mutates a sandbox copy of the
+repository, so `src/` is never touched, even by a run killed midway. Knip's Stryker
 plugin infers `@stryker-mutator/command-runner` from `testRunner: "command"`;
 that runner ships inside `@stryker-mutator/core`, so `knip.json` ignores it.
 

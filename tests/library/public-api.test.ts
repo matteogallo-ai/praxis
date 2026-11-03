@@ -118,6 +118,7 @@ const EXPECTED_VALUE_EXPORTS = [
   "AdversarialCritiqueError",
   "InvalidCritiqueTargetError",
   "MissingAlternativeError",
+  "TruncatedOutputError",
   "EditorialFailureError",
   "SourcingValidationError",
   "StaleSourceError",

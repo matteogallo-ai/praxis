@@ -75,7 +75,15 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   `rerun_skipped` (a new optional field of the result, and `rerun.skipped`
   in benchmark metadata) says why. Paid scoring (`score-all.ts` without
   `--dry-run`) is refused until the judge has a cost cap.
-
+- An answer the model stopped at `max_tokens` is refused with
+  `TruncatedOutputError` (new public export, a subclass of
+  `InvalidAgentOutputError`) before JSON extraction, which could return a
+  complete first object of a cut answer. It is not retried: a second sample
+  bills the whole ceiling again. Providers that implement only `complete()`
+  report no stop reason and are not covered.
+- `--max-cost-usd` (`praxis brief`, `run-all.ts`) and `--cap-usd`
+  (`estimate:cost`) take plain decimal digits only; `0x10`, `1e3`, `+8`,
+  `.5` and padded values are refused instead of read by `Number()`.
 - Live tests run only with `PRAXIS_LIVE_TESTS=1`; a key in `.env` no longer
   makes `bun test` call the paid API.
 - `bun run bench:mock` is reproducible (fixed clock in mock runs, PDF creation

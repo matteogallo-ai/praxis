@@ -35,9 +35,8 @@ and passed to OSV-Scanner through an `osv-scanner.toml` `IgnoredVulns` entry.
 ### The release artefact
 
 The release is the tag's source archive (`git archive`). Praxis is not
-published to npm: until PromptLang's lexer and parser come from npm
-(`docs/CLAIMS.md` C19), the package does not install on its own, and a
-tarball that does not run would be a false promise. The attestation says the
+published to npm: it is a CLI and a library used from a clone, and
+publishing it is a separate decision. The attestation says the
 archive was produced by `release.yml` from that tag's commit; verify it with
 
 ```bash

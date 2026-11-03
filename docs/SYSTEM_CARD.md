@@ -94,5 +94,3 @@ matter, and they are empty or failing.
   returned; it cannot tell a slanted claim from a fair one.
 - **Freshness uses the retrieval time**, not the page's own date (C21).
 - **English only** in prompts, formats and tests.
-- **Installation needs a sibling PromptLang checkout** until
-  `@promptlang/core` is on npm (C19).

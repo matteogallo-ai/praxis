@@ -98,17 +98,18 @@ describe("extractRunArgs — properties", () => {
     );
   });
 
-  test("--max-cost-usd is accepted exactly when it is a finite positive number, in either spelling", () => {
+  test("--max-cost-usd is accepted exactly when it is a positive plain decimal, in either spelling", () => {
     const amount = fc.oneof(
       fc.double({ noNaN: false }).map(String),
       fc.string({ minLength: 1 }),
-      fc.constantFrom("0", "-1", "Infinity", "1e400", "0.01", "5")
+      fc.stringMatching(/^\d{1,4}(\.\d{1,3})?$/),
+      fc.constantFrom("0", "-1", "Infinity", "1e400", "0x10", "1e3", "0.01", "5")
     );
     fc.assert(
       fc.property(amount, fc.boolean(), (v, joined) => {
         const out = extractRunArgs(joined ? [`--max-cost-usd=${v}`] : ["--max-cost-usd", v]);
         const n = Number(v);
-        const valid = v.trim().length > 0 && Number.isFinite(n) && n > 0;
+        const valid = /^\d+(\.\d+)?$/.test(v) && Number.isFinite(n) && n > 0;
         expect("run" in out ? out.run.maxCostUsd : null).toBe(valid ? n : null);
       })
     );

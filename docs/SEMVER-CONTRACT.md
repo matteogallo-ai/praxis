@@ -89,6 +89,15 @@ release without notice.
   Anthropic SDKs and is kept; `stageAttempts: 1` in the method options
   restores the single-attempt behaviour. The error a caller finally
   receives is unchanged in type.
+- **Truncated answers (a bug fix).** A stage whose answer stopped at
+  `max_tokens` now fails with `TruncatedOutputError`, a new export and a
+  subclass of `InvalidAgentOutputError`, so existing handlers for either
+  class still catch it. Before, such an answer was passed on cut when its
+  first object happened to be complete, or failed as invalid output and was
+  retried once. It is no longer retried. There is no switch: passing a cut
+  answer on is the defect fixed. Only providers that implement
+  `completeWithTools` report a stop reason (both shipped providers do); a
+  `complete()`-only provider's answer is read as finished.
 
 ## What is acceptable in a PATCH bump
 

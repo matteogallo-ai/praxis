@@ -3,12 +3,14 @@
  *
  * Recoverable: a request timeout, a rate limit or a 5xx left after the
  * provider's own backoff, and an answer that was not the JSON the stage
- * asked for (a fresh sample often is). Everything else — authentication,
+ * asked for (a fresh sample often is). Not an answer cut at `max_tokens`:
+ * a second sample bills the whole ceiling again and is cut again unless its
+ * thinking happens to be shorter. Everything else — authentication,
  * a 4xx, a prompt file error, a budget stop, a sourcing failure, a
  * cross-reference the model got wrong — fails at once,
  * because repeating the call repeats the cost and the outcome.
  */
-import { AgentExecutionError, InvalidAgentOutputError } from "./errors.ts";
+import { AgentExecutionError, InvalidAgentOutputError, TruncatedOutputError } from "./errors.ts";
 import {
   AnthropicAPIError,
   AnthropicRateLimitError,
@@ -16,6 +18,7 @@ import {
 } from "../llm/errors.ts";
 
 export function isRecoverable(err: unknown): boolean {
+  if (err instanceof TruncatedOutputError) return false;
   if (err instanceof InvalidAgentOutputError) return true;
   const inner = err instanceof AgentExecutionError && err.cause !== undefined ? err.cause : err;
   if (inner instanceof AnthropicTimeoutError || inner instanceof AnthropicRateLimitError) return true;

@@ -16,10 +16,6 @@ concurrency:
 
 env:
   BUN_VERSION: "1.3.14"
-  # Praxis imports PromptLang's lexer and parser through tsconfig `paths` that point at
-  # ../promptlang. Until @promptlang/core is consumed from npm (docs/CLAIMS.md C19), CI
-  # checks that repository out next to this one at a fixed tag. Provisional.
-  PROMPTLANG_REF: v1.2.0
 
 jobs:
   test:
@@ -27,23 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: praxis
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: matteogallo-ai/promptlang
-          ref: ${{ env.PROMPTLANG_REF }}
-          path: promptlang
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun install --frozen-lockfile
-        working-directory: praxis
       - run: bunx tsc --noEmit
-        working-directory: praxis
       # No key and no PRAXIS_LIVE_TESTS here: the paid tests under tests/live/ skip.
       - run: bun test
-        working-directory: praxis
 
   # The suite pins the CLI clock (tests/helpers/preload.ts). This job runs it
   # with the in-process wall clock years ahead, and PRAXIS_NOW set to the same
@@ -59,20 +45,11 @@ jobs:
         at: ["2029-01-01T00:00:00Z", "2040-06-01T00:00:00Z"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: praxis
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: matteogallo-ai/promptlang
-          ref: ${{ env.PROMPTLANG_REF }}
-          path: promptlang
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun install --frozen-lockfile
-        working-directory: praxis
       - run: bun test
-        working-directory: praxis
         env:
           PRAXIS_TEST_SYSTEM_TIME: ${{ matrix.at }}
           PRAXIS_NOW: ${{ matrix.at }}
@@ -83,68 +60,65 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          path: praxis
           # The base commit must be present for semver-check to read the old prompts.
           fetch-depth: 0
-      # semver-check is not in the v1.2.0 tag the other jobs build against; this
-      # job pins the PromptLang main commit that ships it.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: matteogallo-ai/promptlang
-          ref: 28c92230b722b63881de598d43261f0bd49b9e6e
-          path: promptlang
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
+      - run: bun install --frozen-lockfile
       # A changed prompt body needs a version bump; a changed @model needs a major one.
+      # It runs the CLI of the pinned @promptlang/core, from the lockfile.
       # The base goes through env, never into the script text (A7).
-      - run: bun run ../promptlang/src/cli/cli.ts semver-check prompts/ --base "$BASE"
-        working-directory: praxis
+      - run: bun run promptlang semver-check prompts/ --base "$BASE"
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+
+  # DoD D5: the repository alone installs, passes its tests and produces a
+  # briefing. The clone sits in a directory of its own, so nothing next to it
+  # (a PromptLang checkout, a parent package.json) can satisfy an import.
+  clean-clone:
+    name: clean clone · install, test, brief (mock)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: alone/praxis
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - name: Nothing but the clone in its parent directory
+        run: test "$(ls -A alone)" = "praxis"
+      - run: bun install --frozen-lockfile
+        working-directory: alone/praxis
+      - run: bun test
+        working-directory: alone/praxis
+      # The CLI's default provider is the mock: no key, no network.
+      - run: bun run cli brief "Should we enter the German market?" --format auto --full
+        working-directory: alone/praxis
 
   lint:
     name: biome · knip
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: praxis
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: matteogallo-ai/promptlang
-          ref: ${{ env.PROMPTLANG_REF }}
-          path: promptlang
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun install --frozen-lockfile
-        working-directory: praxis
       - run: bun run lint
-        working-directory: praxis
       - run: bun run knip
-        working-directory: praxis
 
   claims:
     name: claims (rule 1)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: praxis
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: matteogallo-ai/promptlang
-          ref: ${{ env.PROMPTLANG_REF }}
-          path: promptlang
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun install --frozen-lockfile
-        working-directory: praxis
       - name: Every shipped claim's tests pass; README matches docs/CLAIMS.md
         run: bun run check:claims
-        working-directory: praxis
 
   stale-narrative:
     name: stale narrative (rule 2)
@@ -161,26 +135,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          path: praxis
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: matteogallo-ai/promptlang
-          ref: ${{ env.PROMPTLANG_REF }}
-          path: promptlang
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: ${{ env.BUN_VERSION }}
       - run: bun install --frozen-lockfile
-        working-directory: praxis
       - run: bun run bench:mock
-        working-directory: praxis
       - name: The committed mock artefacts are exactly what the run produces
         # porcelain also catches new untracked files, which `git diff` would miss.
         run: |
           git status --porcelain -- benchmarks/outputs
           test -z "$(git status --porcelain -- benchmarks/outputs)"
-        working-directory: praxis
 
   commits:
     name: conventional commits (rule 8)

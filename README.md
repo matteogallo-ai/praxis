@@ -60,19 +60,16 @@ under `strict` a missing, stale or untrusted source aborts the brief; under
 
 ## Quick start
 
-Requirements: [Bun](https://bun.sh) 1.3 or later, git, and the
-[PromptLang](https://github.com/matteogallo-ai/promptlang) repository checked
-out **next to** this one at tag `v1.2.0`. Praxis imports PromptLang's
-lexer and parser through `tsconfig` paths (`../promptlang/src`); without that
-sibling checkout the CLI fails with `Cannot find module 'promptlang/lexer'`.
+Requirements: [Bun](https://bun.sh) 1.3 or later and git. Everything else,
+[PromptLang](https://github.com/matteogallo-ai/promptlang) included
+(`@promptlang/core`), comes from npm through the lockfile.
 
 ```bash
-git clone https://github.com/matteogallo-ai/promptlang.git
-git -C promptlang checkout v1.2.0
-git clone https://github.com/matteogallo-ai/praxis.git
-cd praxis && bun install
-bun run cli brief "Should we enter the German market?" --format auto --full
+git clone https://github.com/matteogallo-ai/praxis.git && cd praxis && bun install --frozen-lockfile && bun run cli brief "Should we enter the German market?" --format auto --full
 ```
+
+The CI job `clean-clone` runs exactly these steps, plus `bun test`, in a
+directory with nothing else in it.
 
 That runs on the mock provider: no key, no network. Its text comes from
 fixtures chosen by format, so every question with the same format gets the
@@ -99,6 +96,7 @@ paid, and in its current state it is expected to fail (see Status).
 - `brief --full` checkpoints every stage and resumes a failed run with `--resume <run-id>`; bounded retry per stage; tokens and cost per stage in `metadata.json`; `--max-cost-usd` budget cap (C16).
 - Untrusted content (earlier stages' output, web page excerpts) delimited in every prompt; answers that obey an injected instruction are rejected; tested on a simulated poisoned search result, not against a live model (C17).
 - The API key never reaches stderr, run files or a printed provider; home paths and e-mail addresses in stderr are masked (C20).
+- Installs and runs from a clean clone, with PromptLang from npm (C19).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
 prove it; CI fails if one of them does not pass.
@@ -107,7 +105,6 @@ prove it; CI fails if one of them does not pass.
 
 - Live briefings that complete against Anthropic, with committed run artefacts (C14).
 - Live-output quality scored by a judge validated against human labels (C18).
-- Clean install without the sibling PromptLang checkout (C19).
 - Source freshness judged on each page's own age (`page_age`) (C21).
 - Web search with dynamic filtering (`web_search_20260209`), evaluated against the basic tool (C22).
 

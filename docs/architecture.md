@@ -128,9 +128,9 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
 - `pdfkit` for PDF output.
 - `@promptlang/yaml-parser` (npm) for format YAML.
-- PromptLang's lexer and parser, imported as `promptlang/*` through
-  `tsconfig.json` `paths` pointing at a sibling checkout (`../promptlang`).
-  CI checks that repository out at a pinned tag.
+- `@promptlang/core` (npm, pinned exactly) for PromptLang's lexer, parser
+  and AST types, read in process by `src/agents/prompt-runtime.ts`; its CLI
+  runs `semver-check` in CI.
 
 ## Errors
 
