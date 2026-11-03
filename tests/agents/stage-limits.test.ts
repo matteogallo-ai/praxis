@@ -19,7 +19,7 @@ describe("stage limits", () => {
     expect(cut).toBe(16_000);
   });
 
-  test("risk's ceiling is twice the one its live answer was cut at", () => {
+  test("risk's ceiling is at least twice the one its live answer was cut at", () => {
     // A cut answer gives only a lower bound on what it needed; doubling it is
     // the margin until a completed run measures the real size.
     expect(stageLimits("risk").maxTokens).toBeGreaterThanOrEqual(2 * cut);
