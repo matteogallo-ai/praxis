@@ -12,13 +12,14 @@ estimate, misses is published as **not met**; it is not moved to fit.
 | --- | --- | --- | --- |
 | Latency | p95 ≤ 10 minutes per briefing | Not measured | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
 | Error rate | ≤ 10% of started briefings end in an error | Not measured | exit code of each run |
-| Cost | p95 ≤ $2.50 per briefing | **Not met**, on the estimate: question 05, $5.75 central, $12.54 high | `usage.total.cost_usd` in `metadata.json` |
+| Cost | p95 ≤ $2.50 per briefing | **Not met**, on the estimate: question 05 (step 0), $1.33 low, $5.75 central, $12.54 high | `usage.total.cost_usd` in `metadata.json` |
 
 The cost status comes from `bun run estimate:cost` (prompt sizes measured
 with count_tokens, `docs/live-proof-protocol.md`), and
-`tests/docs/slo.test.ts` fails if the estimate moves without it. A p95 does
-not sit below the central case, so the target is missed before any live
-run; the first live measurements replace the estimate here.
+`tests/docs/slo.test.ts` fails if the estimate moves without it. Only the
+low case meets the target; the central and high cases miss it, and the five
+protocol questions range from $5.68 to $5.90 central. The first live
+measurements replace the estimate here.
 
 ## What counts
 
@@ -52,10 +53,10 @@ per briefing in the worst case.
 - **Web search**: five searches per request, so 20 with one round per
   search stage ($0.20) and 100 with five ($1.00).
 - **Input tokens** have no ceiling in code: search results enter the
-  context, and each continuation resends them, model output included. They
-  are what puts the estimate above the target: closing that gap means
-  fewer search rounds, shorter upstream outputs passed downstream, or
-  prompt caching, measured on live runs.
+  context, and each continuation resends them, model output included. The
+  estimate does not split its total into input and output, so which one
+  closes the gap to the target (fewer search rounds, shorter upstream
+  outputs passed downstream, prompt caching) is for live runs to measure.
 - **Worst case versus target**: the ceilings add up to more than the
   target, so the target cannot be proven from the limits alone. The hard
   stop is `--max-cost-usd` (below): each request reserves its worst case
