@@ -460,30 +460,23 @@ describe("readCache / writeCache", () => {
 // ---------------------------------------------------------------------------
 
 describe("enumerateBriefings", () => {
-  test("finds every mock briefing (all 11 including family-office-memo)", () => {
-    // v1.1.1 fixed the position-paper brief.md gap so the scoring
-    // framework sees every mock briefing regardless of the format's
-    // `output_targets[]` declaration. v1.2.0 adds the eleventh
-    // benchmark (11-family-office-co-investment) for the new
-    // family-office-memo format:
-    //   executive-pre-read       → 3 briefings (02-04)
-    //   mckinsey-style-note      → 4 briefings (01, 05-07)
-    //   position-paper-corporate → 3 briefings (08-10)
-    //   family-office-memo       → 1 briefing  (11)
-    // Total: 11.
+  test("finds every mock briefing, one per benchmark question", () => {
+    // run-all.ts emits brief.md whatever the format's output_targets, so the
+    // scoring framework sees every mock briefing, position papers included.
     const refs = enumerateBriefings(".", { mockOnly: true, liveOnly: false });
-    expect(refs.length).toBe(11);
+    expect(refs.length).toBe(12);
     expect(refs.every((r) => r.mode === "mock")).toBe(true);
     for (const r of refs) {
       expect(existsSync(r.brief_md_path)).toBe(true);
       expect(existsSync(r.metadata_path)).toBe(true);
     }
-    // Every position-paper briefing (08-10) is now included, plus 11.
+    // The position papers (08-10), the family-office memo and the hard case.
     const slugs = refs.map((r) => r.slug).join(",");
     expect(slugs).toContain("08-");
     expect(slugs).toContain("09-");
     expect(slugs).toContain("10-");
     expect(slugs).toContain("11-family-office");
+    expect(slugs).toContain("12-sodium-ion");
   });
 
   test("live-only with only the placeholder README returns zero refs", () => {

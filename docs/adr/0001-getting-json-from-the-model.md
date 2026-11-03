@@ -34,5 +34,11 @@ provider joined all of them, narration included.
 - The parsers still validate every field: the schema constrains decoding, it
   does not replace validation.
 - An answer truncated by `max_tokens` still fails, as it should.
+- A `{` that never closes, in prose before the answer ("the { character"),
+  hides the answer: the scan cannot tell it from a truncated object, so the
+  stage fails with a JSON error rather than reading a fragment. The fuzzer
+  (`tests/fuzz/`) found it; `tests/agents/json-extraction.test.ts` pins it.
+  Reading past such a brace safely needs `stop_reason: "max_tokens"` to be
+  refused before extraction, so that truncation no longer depends on the scan.
 - No live run has exercised either path yet. The tests use the recorded
   failure's shape and the response shape documented for web search.

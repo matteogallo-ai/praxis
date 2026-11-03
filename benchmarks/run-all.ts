@@ -18,6 +18,8 @@
  *   --live-only      — live only; error if ANTHROPIC_API_KEY missing.
  *   --dry-run        — parse+select without spawning the pipeline
  *                      (used by the test suite).
+ *   --split dev|test — only the questions of that half of the frozen
+ *                      split (`benchmarks/split.yaml`); refused if stale.
  *   --root <path>    — override the repo root (used by the test suite).
  *
  * Failure model: a single benchmark failing does not abort the run
@@ -25,11 +27,11 @@
  * code is 1 if any benchmark failed.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { parseYaml } from "@promptlang/yaml-parser";
-
+import { type BenchmarkEntry, loadManifest } from "./manifest.ts";
+import { loadSplit } from "./split.ts";
 import { FormatRegistry } from "../src/registry/registry.ts";
 import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
 import { UsageLedger } from "../src/orchestrator/ledger.ts";
@@ -53,6 +55,7 @@ export interface RunAllOptions {
   liveOnly: boolean;
   dryRun: boolean;
   root: string;
+  split?: "dev" | "test";
 }
 
 export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
@@ -60,12 +63,19 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
   let liveOnly = false;
   let dryRun = false;
   let root = resolve(import.meta.dir, "..");
+  let split: "dev" | "test" | undefined;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === "--mock-only") mockOnly = true;
     else if (a === "--live-only") liveOnly = true;
     else if (a === "--dry-run") dryRun = true;
-    else if (a === "--root") {
+    else if (a === "--split" || a.startsWith("--split=")) {
+      const value = a === "--split" ? argv[++i] : a.slice("--split=".length);
+      if (value !== "dev" && value !== "test") {
+        throw new Error("--split expects dev or test");
+      }
+      split = value;
+    } else if (a === "--root") {
       const next = argv[i + 1];
       if (next === undefined) throw new Error("--root expects a path");
       root = resolve(next);
@@ -79,88 +89,9 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
   if (mockOnly && liveOnly) {
     throw new Error("--mock-only and --live-only are mutually exclusive");
   }
-  return { mockOnly, liveOnly, dryRun, root };
-}
-
-// ---------------------------------------------------------------------------
-// Benchmark manifest
-// ---------------------------------------------------------------------------
-
-export interface BenchmarkEntry {
-  id: string;
-  question: string;
-  format: string;
-  tags: string[];
-  intent: string;
-}
-
-export interface BenchmarkManifest {
-  version: number;
-  benchmarks: BenchmarkEntry[];
-}
-
-export function loadManifest(path: string): BenchmarkManifest {
-  const raw = readFileSync(path, "utf-8");
-  const parsed = parseYaml(raw);
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(`benchmarks manifest at ${path} must be a mapping`);
-  }
-  const version = (parsed as { version: unknown }).version;
-  if (typeof version !== "number") {
-    throw new Error(`benchmarks manifest missing numeric 'version' field`);
-  }
-  const benchmarks = (parsed as { benchmarks: unknown }).benchmarks;
-  if (!Array.isArray(benchmarks)) {
-    throw new Error(`benchmarks manifest 'benchmarks' must be a list`);
-  }
-  const validated: BenchmarkEntry[] = [];
-  for (const [i, b] of benchmarks.entries()) {
-    if (b === null || typeof b !== "object" || Array.isArray(b)) {
-      throw new Error(`benchmarks[${i}] must be a mapping`);
-    }
-    const entry = b as Record<string, unknown>;
-    validated.push({
-      id: requireString(entry, "id", i),
-      question: requireString(entry, "question", i),
-      format: requireString(entry, "format", i),
-      tags: requireStringList(entry, "tags", i),
-      intent: requireString(entry, "intent", i),
-    });
-  }
-  return { version, benchmarks: validated };
-}
-
-function requireString(
-  o: Record<string, unknown>,
-  key: string,
-  index: number
-): string {
-  const v = o[key];
-  if (typeof v !== "string" || v.length === 0) {
-    throw new Error(
-      `benchmarks[${index}]: '${key}' must be a non-empty string`
-    );
-  }
-  return v;
-}
-
-function requireStringList(
-  o: Record<string, unknown>,
-  key: string,
-  index: number
-): string[] {
-  const v = o[key];
-  if (!Array.isArray(v)) {
-    throw new Error(`benchmarks[${index}]: '${key}' must be a list`);
-  }
-  for (const [j, e] of v.entries()) {
-    if (typeof e !== "string" || e.length === 0) {
-      throw new Error(
-        `benchmarks[${index}].${key}[${j}] must be a non-empty string`
-      );
-    }
-  }
-  return v as string[];
+  return split === undefined
+    ? { mockOnly, liveOnly, dryRun, root }
+    : { mockOnly, liveOnly, dryRun, root, split };
 }
 
 // ---------------------------------------------------------------------------
@@ -195,6 +126,10 @@ export interface RunSummary {
 export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
   const manifestPath = join(opts.root, "benchmarks", "questions.yaml");
   const manifest = loadManifest(manifestPath);
+  if (opts.split !== undefined) {
+    const ids = new Set(loadSplit(opts.root)[opts.split]);
+    manifest.benchmarks = manifest.benchmarks.filter((b) => ids.has(b.id));
+  }
 
   const modes: readonly ("mock" | "live")[] = decideModes(opts);
   process.stderr.write(

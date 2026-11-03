@@ -69,6 +69,7 @@ bun run check:commits main..HEAD              # Conventional Commits on the bran
 bun run cli brief "Should we enter the German market?" --format auto --full   # brief, mock provider
 bun run cli brief --resume <run-id>           # continue a failed --full run from its checkpoints
 bun run bench:mock                            # renderer smoke test; must leave git status clean
+bun run fuzz -- --seconds 600                 # JSON-extraction fuzzer, fresh seed (a short run is in bun test)
 bun run bench:live                            # PAID — live Anthropic run of every benchmark; approval required
 PRAXIS_LIVE_TESTS=1 bun test tests/live/      # PAID — live tests; approval required
 bun run score:live                            # PAID — scores live briefings; approval required

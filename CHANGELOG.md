@@ -18,6 +18,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- A hard case in the evaluation set (question 12, manifest version 2) and a
+  frozen dev/test split of it (`benchmarks/split.yaml`, 4 / 8, stratified by
+  format, fixed seed), checked by the test suite against the manifest's
+  SHA-256; `run-all.ts --split dev|test`. The rule that capped the set at ten
+  questions is retired.
 - Property-based tests (fast-check) of the tolerant JSON extraction, the
   source validators and `parseCitedSource`; mutation testing (Stryker,
   `bun run mutation`) of the orchestrator and the validators, scored and
