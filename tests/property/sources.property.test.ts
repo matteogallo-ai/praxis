@@ -73,7 +73,8 @@ describe("parseSource — properties", () => {
 
   test("an excerpt is accepted up to 500 characters and refused past them", () => {
     fc.assert(
-      fc.property(goodSource, fc.integer({ min: 480, max: 520 }), (source, length) => {
+      // Half the draws are 500 or 501: a uniform draw alone can miss the boundary.
+      fc.property(goodSource, fc.oneof(fc.constantFrom(500, 501), fc.integer({ min: 480, max: 520 })), (source, length) => {
         const parse = () => reader.parseSource({ ...source, excerpt: "x".repeat(length) }, "s", "raw");
         if (length <= 500) expect((parse() as { excerpt: string }).excerpt).toHaveLength(length);
         else expect(parse).toThrow("exceeds 500 characters");
