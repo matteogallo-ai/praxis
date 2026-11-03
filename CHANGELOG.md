@@ -70,6 +70,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- `docs/SLO.md` publishes each target's status. The cost target, set from
+  intended use, stays at p95 ≤ $2.50 per briefing and is **not met** on the
+  estimate (question 05: $5.75 central; only its low case meets it), pinned
+  by `tests/docs/slo.test.ts`.
+  The advice to run with `--max-cost-usd 5`, below that estimate, is gone.
 - The judge is Claude Opus 5 (`claude-opus-5`), sent as one Message Batch
   at half price (`benchmarks/judge-batch.ts`). A paid scoring run needs
   `--max-cost-usd`. The batch's worst case is reserved before it is
