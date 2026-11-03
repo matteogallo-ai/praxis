@@ -1,5 +1,7 @@
-# One grouped pull request per ecosystem per week. The prefixes keep the
-# subjects Conventional Commits, which the `commits` CI job requires.
+# One grouped pull request per ecosystem per week for minor and patch bumps; a
+# major bump gets its own pull request, so a breaking release cannot hold back
+# the safe updates grouped with it. The prefixes keep the subjects Conventional
+# Commits, which the `commits` CI job requires.
 version: 2
 updates:
   - package-ecosystem: bun
@@ -12,6 +14,7 @@ updates:
     groups:
       bun:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -22,3 +25,4 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]

@@ -10,7 +10,7 @@ maintainer applies.
 | --- | --- | --- |
 | Every action pinned to a commit SHA, version in a comment | `.github/workflows/*.yml` | A3 |
 | `bun.lock` committed, installed with `--frozen-lockfile` | `bun.lock`, CI | A3 |
-| Dependabot, weekly, one grouped pull request per ecosystem (bun, GitHub Actions) | `.github/dependabot.yml` | A2 |
+| Dependabot, weekly, one grouped pull request per ecosystem (bun, GitHub Actions) for minor and patch bumps, one pull request per major bump | `.github/dependabot.yml` | A2 |
 | Workflow tokens read-only; each widening is per job, with a comment | every workflow | A4 |
 | CodeQL (`security-extended`) on TypeScript and on the workflows, every pull request and weekly | `.github/workflows/security.yml` | A5, A7 |
 | OSV-Scanner on `bun.lock`, failing on a known vulnerability, every pull request and weekly | `.github/workflows/security.yml` | A6 |
