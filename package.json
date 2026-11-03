@@ -43,6 +43,7 @@
     "score": "bun run benchmarks/score-all.ts",
     "score:live": "bun run benchmarks/score-all.ts --live-only",
     "score:dry": "bun run benchmarks/score-all.ts --dry-run",
+    "fuzz": "bun run scripts/fuzz.ts",
     "mutation": "git diff --quiet -- src && stryker run"
   },
   "dependencies": {

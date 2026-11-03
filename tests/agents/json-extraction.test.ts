@@ -42,6 +42,11 @@ describe("extractJsonText", () => {
     expect(parsed(`Answer: ${tricky}`)).toEqual({ claim: 'he said "}" twice' });
   });
 
+  test("an unmatched brace before the answer fails loudly, never as a fragment (ADR 0001)", () => {
+    expect(() => parsed(`I used the { character.\n${OBJ}`)).toThrow(SyntaxError);
+    expect(() => parsed(`{{${OBJ}`)).toThrow(SyntaxError);
+  });
+
   test("of two objects, the larger one is the answer", () => {
     expect(parsed(`Example: {"a": 1}\nAnswer:\n${OBJ}`)).toEqual(JSON.parse(OBJ));
   });
