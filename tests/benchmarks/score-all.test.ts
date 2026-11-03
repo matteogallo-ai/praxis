@@ -607,3 +607,17 @@ describe("interpolateScoringPrompt — the briefing is untrusted input", () => {
     expect(out.slice(0, open)).toMatch(/untrusted/i);
   });
 });
+
+describe("the judge's model", () => {
+  test("is no stage's @model and has a price", async () => {
+    const { readdirSync, readFileSync } = await import("node:fs");
+    const { JUDGE_MODEL } = await import("../../benchmarks/score-all.ts");
+    const { DEFAULT_PRICE_TABLE } = await import("../../src/llm/pricing.ts");
+    const stageModels = readdirSync("prompts")
+      .filter((f) => f.endsWith(".prompt"))
+      .map((f) => readFileSync(`prompts/${f}`, "utf-8").match(/^@model\s+(\S+)/m)?.[1]);
+    expect(stageModels.length).toBe(7);
+    expect(stageModels).not.toContain(JUDGE_MODEL);
+    expect(DEFAULT_PRICE_TABLE.models[JUDGE_MODEL]).toBeDefined();
+  });
+});

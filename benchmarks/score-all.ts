@@ -9,8 +9,8 @@
  *      (the audit trail).
  *   2. Interpolates `benchmarks/scoring-prompt.txt` with the
  *      briefing content + metadata.
- *   3. Calls `AnthropicLLMProvider.complete()` on
- *      `claude-sonnet-5-5` and expects the calibrated 7-criterion
+ *   3. Calls `AnthropicLLMProvider.complete()` on `JUDGE_MODEL` and
+ *      expects the calibrated 7-criterion
  *      JSON payload back.
  *   4. Validates the payload structurally
  *      (`parseScoringPayload()`) — the score for every criterion is
@@ -53,6 +53,14 @@ import type { LLMProvider } from "../src/llm/provider.ts";
 // ---------------------------------------------------------------------------
 
 export type ScoringMode = "mock" | "live";
+
+/**
+ * The judge. Every pipeline stage runs on Claude Opus 5.5 or Sonnet 5.5, so
+ * the judge is a third Claude model: no stage's output is scored by the
+ * model that wrote it. It is still the same family, so a shared bias can go
+ * unseen; the human review in `docs/live-proof-protocol.md` measures it.
+ */
+export const JUDGE_MODEL = "claude-fable-5-1";
 
 /** The seven-criterion rubric used by the scoring prompt. */
 export const SCORING_CRITERIA = [
@@ -712,7 +720,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
 
   if (opts.dryRun) {
     process.stderr.write(
-      `→ dry-run: would score ${refs.length} briefing(s) using claude-sonnet-5-5\n`
+      `→ dry-run: would score ${refs.length} briefing(s) using ${JUDGE_MODEL}\n`
     );
     for (const r of refs) {
       process.stderr.write(`  · [${r.mode}] ${r.slug} → ${r.brief_md_path}\n`);
@@ -740,7 +748,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     throw new Error("ANTHROPIC_API_KEY missing");
   }
 
-  const llm: LLMProvider = new AnthropicLLMProvider({ model: "claude-sonnet-5-5" });
+  const llm: LLMProvider = new AnthropicLLMProvider({ model: JUDGE_MODEL });
   const scorings: ScoringPayload[] = [];
   let scored = 0;
   let fromCache = 0;
