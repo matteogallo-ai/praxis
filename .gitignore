@@ -16,5 +16,5 @@ benchmarks/.scoring-cache/
 .praxis/
 
 # Stryker (bunx stryker run): in-place backup and report
-.stryker-tmp/
-reports/
+/.stryker-tmp/
+/reports/

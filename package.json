@@ -42,7 +42,7 @@
     "score": "bun run benchmarks/score-all.ts",
     "score:live": "bun run benchmarks/score-all.ts --live-only",
     "score:dry": "bun run benchmarks/score-all.ts --dry-run",
-    "mutation": "stryker run"
+    "mutation": "git diff --quiet -- src && stryker run"
   },
   "dependencies": {
     "@promptlang/yaml-parser": "^1.0.0",
