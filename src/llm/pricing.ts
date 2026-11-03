@@ -92,6 +92,13 @@ export function loadPriceTable(path: string): PriceTable {
  */
 export const TOKENS_PER_SEARCH_CEILING = 15_000;
 
+/**
+ * Characters per token assumed when sizing input before it is sent. Lower
+ * than the 4 of English prose, so ordinary text is over-counted; text that
+ * tokenizes below it (CJK, base64, dense code) is under-counted.
+ */
+export const CHARS_PER_TOKEN_FLOOR = 3;
+
 /** One request as the estimate and the cap size it. */
 export interface RequestShape {
   /** Tokens of the prompt as sent (system, messages, a re-sent turn). */

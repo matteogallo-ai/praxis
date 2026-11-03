@@ -47,15 +47,15 @@ describe("UsageLedger through the orchestrator", () => {
     expect(summary.stages["research"]!.models).toEqual(["claude-sonnet-5-5"]);
   });
 
-  test("the budget cap stops the briefing before the next call", async () => {
+  test("a cap below the first request's worst case stops the briefing before anything is sent", async () => {
     const ledger = new UsageLedger({ maxCostUsd: 0.000001 });
     const err = await orchestrator()
       .brief(QUESTION, FORMAT, { now: NOW, ledger })
       .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(BudgetExceededError);
-    expect((err as Error).message).toContain("before stage 'research'");
-    // Only the scoping call ran.
-    expect(ledger.summary().total.calls).toBe(1);
+    expect((err as Error).message).toContain("before stage 'scoping'");
+    expect((err as Error).message).toContain("the next request may cost up to");
+    expect(ledger.summary().total.calls).toBe(0);
   });
 
   test("a provider without usage is recorded with zero tokens, not skipped", async () => {
