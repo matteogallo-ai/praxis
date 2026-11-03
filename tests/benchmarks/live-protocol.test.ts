@@ -6,7 +6,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { ceiling, estimateRun } from "../../benchmarks/estimate-cost.ts";
+import { ceiling, estimateBriefing, estimateRun, type MockMetadata, type Scenario, SCENARIOS } from "../../benchmarks/estimate-cost.ts";
 import { loadManifest } from "../../benchmarks/manifest.ts";
 import { loadSplit, MANIFEST_PATH } from "../../benchmarks/split.ts";
 
@@ -26,6 +26,14 @@ function selected(): string[] {
   return [...firstPerFormat.values(), ...hard].sort();
 }
 
+/** Step 0's single briefing and its cap, as the doc's first command runs them. */
+const PROBE = "05-supply-chain-acquisition";
+const commands = [...doc.matchAll(/bun run bench:live -- --max-cost-usd (\d+(?:\.\d+)?) --ids (\S+)/g)].map((m) => ({
+  cap: Number(m[1]),
+  ids: (m[2] ?? "").split(","),
+}));
+const usd = (n: number) => `$${n.toFixed(2)}`;
+
 describe("docs/live-proof-protocol.md", () => {
   test("its bench:live commands run exactly the questions the rule selects", () => {
     const ids = [...doc.matchAll(/bun run bench:live -- [^\n]*--ids (\S+)/g)].flatMap((m) => (m[1] ?? "").split(","));
@@ -38,15 +46,42 @@ describe("docs/live-proof-protocol.md", () => {
     for (const c of commands) expect(c).toMatch(/--max-cost-usd \d+/);
   });
 
-  test("the cap sits above every question's high estimate, so a costly healthy briefing completes", () => {
-    const caps = [...doc.matchAll(/bun run bench:live[^\n]*--max-cost-usd (\d+(?:\.\d+)?)/g)].map((m) => Number(m[1]));
-    const highest = Math.max(...estimateRun(".", selected()).rows.map((r) => r.high));
-    for (const cap of caps) expect(cap).toBeGreaterThan(highest);
+  test("step 0 runs the probe alone, first, under a cap above its central estimate", () => {
+    expect(commands[0]?.ids).toEqual([PROBE]);
+    const [row] = estimateRun(".", [PROBE]).rows;
+    expect(commands[0]?.cap).toBeGreaterThan(row?.central ?? Number.POSITIVE_INFINITY);
+  });
+
+  test("step 0's cumulative stage costs are the estimator's, high scenario", () => {
+    const meta = JSON.parse(readFileSync(`benchmarks/outputs/mock/${PROBE}/metadata.json`, "utf-8")) as MockMetadata;
+    const high = SCENARIOS.find((x) => x.name === "high") as Scenario;
+    const { stages } = estimateBriefing(meta, false, high);
+    const names: Record<string, string> = { stakeholder: "stakeholders", risk: "risks" };
+    let total = 0;
+    for (const stage of ["scoping", "research", "stakeholder", "risk", "options", "synthesis", "adversarial"]) {
+      total += stages[stage] ?? 0;
+      expect(doc.replace(/\s+/g, " ")).toContain(`${names[stage] ?? stage} ${usd(total)}`);
+    }
+  });
+
+  test("later caps sit above every question's high estimate, so a costly healthy briefing completes", () => {
+    for (const c of commands.slice(1)) {
+      const highest = Math.max(...estimateRun(".", c.ids).rows.map((r) => r.high));
+      expect(c.cap).toBeGreaterThan(highest);
+    }
+  });
+
+  test("step 0's estimate and ceiling are what estimate:cost computes", () => {
+    const step0 = commands[0] as { cap: number; ids: string[] };
+    const [row] = estimateRun(".", step0.ids).rows;
+    expect(doc).toContain(`| Estimate | ${usd(row?.low ?? 0)} | ${usd(row?.central ?? 0)} | ${usd(row?.high ?? 0)} |`);
+    const c = ceiling(".", step0.ids, step0.cap);
+    expect(doc).toContain(`Metered ceiling: **${usd(c.metered)}**`);
+    expect(doc).toContain(`unseen by the cap:\n  **${usd(c.worst)}**`);
   });
 
   test("its cost table is what estimate:cost prints for those questions", () => {
     const { rows, totals } = estimateRun(".", selected());
-    const usd = (n: number) => `$${n.toFixed(2)}`;
     for (const r of rows) {
       expect(doc).toContain(`| ${r.id} | ${usd(r.low)} | ${usd(r.central)} | ${usd(r.high)} |`);
     }
@@ -54,9 +89,8 @@ describe("docs/live-proof-protocol.md", () => {
   });
 
   test("its ceiling is what estimate:cost computes for those questions and that cap", () => {
-    const cap = Number(doc.match(/--max-cost-usd (\d+(?:\.\d+)?)/)?.[1]);
+    const cap = commands[commands.length - 1]?.cap ?? Number.NaN;
     const c = ceiling(".", selected(), cap);
-    const usd = (n: number) => `$${n.toFixed(2)}`;
     expect(doc).toContain(`costliest single request ${usd(c.maxRequest)}`);
     expect(doc).toContain(`Metered ceiling, high scenario**: ${usd(c.metered)}`);
     for (const [id, v] of Object.entries(c.unmetered)) expect(doc).toContain(`| ${id} | ${usd(v)} |`);
