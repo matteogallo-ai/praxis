@@ -32,7 +32,7 @@ fixtures and not a model.
 ## Withdrawn
 
 The "AI-assisted qualitative scoring" published here on 2026-08-20 scored the
-11 mock briefings above with a Claude model. For the reason just given it
+11 mock briefings of that date with a Claude model. For the reason just given it
 measured the fixtures, and it is withdrawn; `benchmarks/score-all.ts` now
 refuses mock briefings. The scoring method for live briefings is described in
 [`docs/benchmarking-methodology.md`](../docs/benchmarking-methodology.md).

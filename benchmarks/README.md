@@ -1,4 +1,4 @@
-# Praxis benchmarks (v0.9+)
+# Praxis benchmarks
 
 A frozen set of twelve briefing questions that stress the four
 shipped formats end to end, one of them a hard case. The benchmarks live here to give
@@ -80,9 +80,11 @@ Each benchmark writes four files under `outputs/<mode>/<id>/`:
 
 ## Design notes
 
-- **Ten benchmarks, no more.** The set is closed at v0.9. Adding
-  an eleventh requires a v-plus-one release. The point is to have
-  a stable reference, not to grow it.
+- **A frozen set.** The point is a stable reference, not a growing
+  one. The rule that closed the set at ten (v0.9) was retired when
+  the family-office question (v1.2.0) and the hard case (version 2
+  of the manifest) were added. A change to the set bumps the
+  manifest's `version` and redraws `split.yaml`, before any tuning.
 - **Formats are canonical.** The `format` field on each entry is
   what `--format auto` should pick from the question alone. If
   the auto-router disagrees, that is a bug — either in the
