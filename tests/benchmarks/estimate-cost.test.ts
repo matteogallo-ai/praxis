@@ -23,8 +23,9 @@ const meta: MockMetadata = {
 describe("estimateBriefing", () => {
   test("prices a web-searching call as its context re-read after each search", () => {
     const low = scenario("low"); // 2 searches of 3 000 tokens, 25% of 16 000 output, growth 1
-    const input = 3 * 1000 + (3000 * 2 * 3) / 2; // 12 000
     const output = 16_000 * 0.25; // 4 000
+    // The output, spread over the 3 rounds, is re-read by the later ones: output·s/2.
+    const input = 3 * 1000 + (3000 * 2 * 3) / 2 + (output * 2) / 2; // 16 000
     const expected = (input * 2 + output * 10) / 1e6 + (2 * 10) / 1000;
     expect(estimateBriefing(meta, false, low).stages["research"]).toBeCloseTo(expected, 10);
   });
@@ -34,6 +35,17 @@ describe("estimateBriefing", () => {
     const high = estimateBriefing(meta, false, scenario("high")).stages["synthesis-rerun"] ?? 0;
     const perCall = (1000 * 3 * 2 + 8_000 * 10) / 1e6; // no searches, synthesis's 8 000 ceiling
     expect(high).toBeCloseTo(perCall * 6, 10);
+  });
+
+  test("the high scenario counts a rerun even when the mock run had none", () => {
+    const noRerun: MockMetadata = {
+      id: "t",
+      rerun: { performed: false },
+      usage: { stages: { synthesis: { calls: 6, input_tokens: 6000, models: ["claude-sonnet-5-5"] } } },
+    };
+    const stages = estimateBriefing(noRerun, true, scenario("high")).stages;
+    expect(stages["synthesis-rerun"]).toBeCloseTo(stages["synthesis"] ?? 0, 10);
+    expect(estimateBriefing(noRerun, true, scenario("central")).stages).not.toHaveProperty("synthesis-rerun");
   });
 
   test("scales with the price table", () => {

@@ -13,11 +13,12 @@
  *     ceiling and web-search cap (`src/agents/stage-limits.ts`);
  *   - the price table (`src/llm/pricing.ts`).
  * A web-searching call re-reads its context after each search, so with
- * `s` searches of `r` tokens each its input is (s+1)·P + r·s(s+1)/2.
+ * `s` searches of `r` tokens each and output `O` spread over the `s+1`
+ * rounds, its input is (s+1)·P + r·s(s+1)/2 + O·s/2.
  *
  *   bun run estimate:cost -- --ids 02-cfo-buyback-briefing,12-sodium-ion-plant-morocco
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { stageLimits } from "../src/agents/stage-limits.ts";
@@ -105,7 +106,14 @@ export function estimateBriefing(
   prices: PriceTable = DEFAULT_PRICE_TABLE
 ): { stages: Record<string, number>; total: number } {
   const stages: Record<string, number> = {};
-  for (const [stage, mock] of Object.entries(meta.usage.stages)) {
+  const measured = { ...meta.usage.stages };
+  // The mock may not have rerun; a scenario that counts a rerun prices it as
+  // a second synthesis pass.
+  const synthesis = measured["synthesis"];
+  if (scenario.rerun === true && measured["synthesis-rerun"] === undefined && synthesis !== undefined) {
+    measured["synthesis-rerun"] = synthesis;
+  }
+  for (const [stage, mock] of Object.entries(measured)) {
     if (stage === "synthesis-rerun") {
       const counted = scenario.rerun === "as-mock" ? meta.rerun.performed : scenario.rerun;
       if (!counted) continue;
@@ -117,7 +125,7 @@ export function estimateBriefing(
     const prompt = (mock.input_tokens / mock.calls) * scenario.upstreamGrowth;
     const output = limits.maxTokens * scenario.outputShare;
     const s = Math.min(scenario.searches, limits.maxSearches);
-    const input = (s + 1) * prompt + (scenario.tokensPerSearch * s * (s + 1)) / 2;
+    const input = (s + 1) * prompt + (scenario.tokensPerSearch * s * (s + 1)) / 2 + (output * s) / 2;
     const passes = stage.startsWith("synthesis") && strictEditorial ? scenario.strictEditorialPasses : 1;
     const perCall = costOf(usage(input, output, s), model, prices);
     if (perCall === null) throw new Error(`${meta.id}: no price for model '${model}'`);
@@ -131,9 +139,10 @@ export function estimateBriefing(
 /** Formats whose synthesis regenerates a section that breaks the editorial rules. */
 function strictFormats(root: string): Set<string> {
   const strict = new Set<string>();
-  for (const id of ["executive-pre-read", "family-office-memo", "mckinsey-style-note", "position-paper-corporate"]) {
-    const text = readFileSync(join(root, "formats", `${id}.yaml`), "utf-8");
-    if (/^\s*strict_editorial:\s*true\s*$/m.test(text)) strict.add(id);
+  const dir = join(root, "formats");
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".yaml"))) {
+    const text = readFileSync(join(dir, file), "utf-8");
+    if (/^\s*strict_editorial:\s*true\s*$/m.test(text)) strict.add(file.slice(0, -".yaml".length));
   }
   return strict;
 }
