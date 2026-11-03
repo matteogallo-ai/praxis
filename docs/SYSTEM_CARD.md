@@ -7,9 +7,10 @@ a pipeline that calls models rather than trains one.
 
 Praxis turns a business question into a written briefing in a declared
 format (executive pre-read, McKinsey-style note, corporate position paper,
-family-office memo). Seven calls to Anthropic models scope the question,
-research it on the web, map stakeholders, assess risks, generate options,
-write each section and critique the result. Output: Markdown, PDF, DOCX.
+family-office memo). Seven stages, each calling an Anthropic model, scope
+the question, research it on the web, map stakeholders, assess risks,
+generate options, write each section (one call per section) and critique the
+result. Output: Markdown, PDF, DOCX.
 
 **Status: no briefing has completed against a real model.** Every recorded
 live run failed (5 of 5, CHANGELOG 1.2.1); the causes have since been

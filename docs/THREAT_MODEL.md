@@ -1,7 +1,7 @@
 # Threat model
 
-Praxis turns a business question into a briefing through seven model calls,
-five of which search the web. This page walks the OWASP Top 10 for LLM
+Praxis turns a business question into a briefing through seven stages, five
+of which search the web; synthesis makes one call per format section. This page walks the OWASP Top 10 for LLM
 Applications 2025 item by item: whether it applies, what Praxis does about
 it, the test that proves the mitigation, and what remains. A mitigation
 without a test is listed under "remaining", not under "mitigation".
@@ -129,42 +129,62 @@ host) passes the trust check.
 
 ## LLM05 — Improper output handling
 
-**Applies.** Model text ends up in files a person opens: a Markdown viewer
-renders HTML and fetches images; a link is clicked.
+**Applies.** Model text ends up in files a person opens and in the terminal
+the CLI prints to: a Markdown viewer renders HTML and fetches images; a link
+is clicked; a terminal obeys escape sequences.
 
 Mitigation:
 
 1. Every model answer is parsed and validated into a typed result before
    use; nothing the model writes is executed or used as a file path.
-2. A cited URL must be an absolute `http(s)` URL: `javascript:`, `data:` and
+2. Control characters in an answer, raw or as JSON `\u` escapes (C0 other
+   than tab, LF and CR; DEL; C1), become U+FFFD before parsing
+   (`src/agents/prompt-runtime.ts`, `callModel`).
+3. A cited URL must be an absolute `http(s)` URL: `javascript:`, `data:` and
    `file:` are refused (`src/agents/prompt-runtime.ts`, `parseSource`).
-3. A synthesis section's prose may hold no image, and no link, reference,
-   autolink or URL other than an upstream source's, on fresh answers and on
-   stored checkpoints (`src/agents/synthesis.ts`, `checkProse`).
-4. The Markdown renderer writes model text inert: `<` becomes `&lt;`, `-->`
-   cannot close the validation comment, and link targets are encoded so a
-   URL stays one target (`src/renderers/markdown-enhanced.ts`).
-5. DOCX text is XML-escaped; PDF text is drawn as text, with no link
+4. A synthesis section's prose may hold no image, and no link, reference,
+   autolink, `www.` address or URL other than an upstream source's, on fresh
+   answers and on stored checkpoints (`src/agents/synthesis.ts`,
+   `checkProse`).
+5. Both Markdown outputs, the `--full` default and `--render md-enhanced`,
+   write model text through one module (`src/renderers/markdown-text.ts`):
+   `<` becomes `&lt;`, `![` cannot open an image, `-->` cannot close the
+   validation comment, and link targets are encoded so a URL stays one
+   target.
+6. DOCX text is XML-escaped; PDF text is drawn as text, with no link
    annotation.
 
 Tests:
 
+- `tests/agents/prompt-runtime.test.ts`, "terminal control characters in an
+  answer (OWASP LLM05)": ESC, CSI, BEL, backspace and DEL escapes parse to
+  U+FFFD; tab, newline and ordinary escapes are kept.
 - `tests/agents/prompt-runtime.test.ts`, "source URLs (OWASP LLM05)": five
   refusals and two accepted URLs.
-- `tests/agents/synthesis.test.ts`, "links and images in the prose": an
-  image, an image to a known source, a link to an unknown site, a bare
-  unknown URL, a reference-style link; a link to an upstream source is kept.
+- `tests/agents/synthesis.test.ts`, "links and images in the prose": ten
+  refused forms (images, unknown links and URLs, a known URL with data or a
+  path appended, a `www.` address, protocol-relative tags); "a link to an
+  upstream source is kept", with four legitimate forms.
 - `tests/orchestrator/resume.test.ts`: "a URL no upstream stage returned is
-  refused" (stored synthesis).
+  refused", "an image in the stored prose is refused, as in a fresh answer"
+  (stored synthesis).
 - `tests/renderers/markdown-enhanced.test.ts`, "model text cannot become
-  markup": raw HTML in a section, claim or title; a validation issue with
-  `-->`; a URL with parentheses and spaces.
+  markup": "raw HTML in a section, a claim or a title is written inert", "an
+  image in a claim or a critique is not an image", "a validation issue
+  cannot close the comment it is written in", "a URL with parentheses or
+  spaces stays one link target".
+- `tests/cli/output.test.ts`, "renderFullBrief — model text cannot become
+  markup": "raw HTML and images in a section are written inert", "a
+  validation issue cannot close its comment, and a URL stays one link
+  target".
+- `tests/renderers/pdf.test.ts`: "source URLs are drawn as text: the PDF has
+  no link annotation".
 - `tests/renderers/docx.test.ts`: "XML escaping — angle brackets and
   ampersands survive".
 
 Remaining: a bare URL inside another stage's text (a claim, a critique) is
 kept as text, and a viewer that auto-links URLs makes it clickable. It is
-not fetched on open.
+not fetched on open. Front matter values are YAML-quoted, not made inert.
 
 ## LLM06 — Excessive agency
 
@@ -231,7 +251,8 @@ briefing quality is unmeasured: no validated judge (C18), no live run (C14).
 
 ## LLM10 — Unbounded consumption
 
-**Applies.** Seven calls per briefing, five with web search, and retries.
+**Applies.** Seven stages, five with web search; one synthesis call per
+section; up to five rounds per search request (`pause_turn`); and retries.
 
 Mitigation: per-stage `max_tokens`, timeout and `max_uses`
 (`src/agents/stage-limits.ts`); bounded retries; usage priced per call and a
@@ -249,4 +270,5 @@ Tests:
   recoverable; auth, 4xx and budget are not".
 
 Remaining: a briefing ends above the cap by the calls in flight when it is
-reached (one, or one per section during synthesis).
+reached: one, which for a search stage includes all its rounds, or one per
+section during synthesis (`docs/SLO.md`).

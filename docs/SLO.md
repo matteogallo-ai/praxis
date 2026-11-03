@@ -29,20 +29,35 @@ target, not a fact about Praxis.
 Computed from the per-stage limits in `src/agents/stage-limits.ts` and the
 `@model` of each prompt, for a six-section format:
 
-- **Output tokens** cannot cost more than $1.44 per briefing when no stage
-  is retried (a retried stage or section pays its ceiling again): 8 000 tokens
-  on Opus for scoping ($0.16), 16 000 on Sonnet for each of research,
-  stakeholders and risks ($0.48), 16 000 on Opus for options ($0.32), 8 000
-  on Sonnet for each of six sections ($0.48).
-- **Web search** is at most 20 searches, $0.20.
+Each limit applies per request, and a web-searching stage (research,
+stakeholders, risks, options) may continue a paused turn up to five times,
+each continuation a new request with its own limits
+(`DEFAULT_MAX_TOOL_ROUNDS`). The ceilings below are therefore per round, and
+per briefing in the worst case.
+
+- **Output tokens**: one round per stage costs at most $1.44 (8 000 tokens
+  on Opus for scoping, $0.16; 16 000 on Sonnet for each of research,
+  stakeholders and risks, $0.48; 16 000 on Opus for options, $0.32; 8 000 on
+  Sonnet for each of six sections, $0.48). With every search stage using its
+  five rounds, the ceiling is $4.64; a retried stage or section pays its
+  ceiling again.
+- **Web search**: five searches per request, so 20 with one round per
+  search stage ($0.20) and 100 with five ($1.00).
 - **Input tokens** have no ceiling in code: search results enter the
-  context. The $2.50 target leaves about $0.85 for them; a briefing above it
-  is the signal to look at `input_tokens` per stage.
-- **Latency**: the stage timeouts add up to 40 minutes, the worst case
-  before a stage gives up; they are sized for every stage using its whole
-  output ceiling at a slow 40 tokens per second. Ten minutes is what a
-  reader waiting for a briefing tolerates, and assumes stages use a fraction
-  of their ceilings, which only a live measurement can confirm.
+  context, and each continuation resends them. The $2.50 target assumes one
+  or two rounds per search stage; a briefing above it is the signal to look
+  at `input_tokens` and the rounds per stage.
+- **Worst case versus target**: the ceilings add up to more than the
+  target, so the target cannot be proven from the limits alone. The hard
+  stop is `--max-cost-usd` (below): no call starts once the recorded cost
+  reaches it, and a run can end above it by the calls already in flight,
+  which for a search stage include all its rounds (`src/orchestrator/ledger.ts`).
+- **Latency**: the request timeouts add up to 40 minutes with one round
+  per stage, 168 minutes with five rounds per search stage; they are sized
+  for a request using its whole output ceiling at a slow 40 tokens per
+  second. Ten minutes is what a reader waiting for a briefing tolerates, and
+  assumes stages use a fraction of their ceilings and rounds, which only a
+  live measurement can confirm.
 - **Error rate**: one failed briefing in ten is tolerable for a CLI that
   resumes from its checkpoints without paying again for finished stages.
 
