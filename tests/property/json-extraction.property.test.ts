@@ -44,6 +44,23 @@ describe("extractJsonText — properties", () => {
     );
   });
 
+  test("a quote in the prose before the object does not open a string", () => {
+    fc.assert(
+      fc.property(prose, answer, (before, value) => {
+        const text = extractJsonText(`He said "${before} ${JSON.stringify(value)}`);
+        expect(JSON.parse(text)).toEqual(asJson(value));
+      })
+    );
+  });
+
+  test("a stray closing brace in the prose before the object does not hide it", () => {
+    fc.assert(
+      fc.property(prose, answer, (before, value) => {
+        expect(JSON.parse(extractJsonText(`${before} } ${JSON.stringify(value)}`))).toEqual(asJson(value));
+      })
+    );
+  });
+
   test("of two objects in the answer, the larger one is returned", () => {
     fc.assert(
       fc.property(answer, answer, prose, (a, b, between) => {

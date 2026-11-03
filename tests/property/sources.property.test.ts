@@ -103,7 +103,7 @@ describe("parseSource — properties", () => {
         const marker = { status: "SOURCE_MISSING" as const, searched_for: searchedFor };
         const ok = typeof searchedFor === "string" && searchedFor.length > 0;
         if (ok) expect(reader.parseSource(marker, "s", "raw") as unknown).toEqual(marker);
-        else expect(() => reader.parseSource(marker, "s", "raw")).toThrow(InvalidAgentOutputError);
+        else expect(() => reader.parseSource(marker, "s", "raw")).toThrow("s: SOURCE_MISSING requires a non-empty 'searched_for'");
       })
     );
   });
@@ -149,6 +149,24 @@ describe("parseCitedSource — properties", () => {
         }
       )
     );
+  });
+
+  test("a citation that is not an object is refused as such", () => {
+    const notObject = fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null), fc.array(fc.webUrl()));
+    fc.assert(
+      fc.property(notObject, (citation) => {
+        expect(() => parseCitedSource(citation, "c", known([]), "raw")).toThrow("c must be an object");
+      })
+    );
+  });
+
+  test("a citation with one required field empty is malformed, not invented", () => {
+    const valid = { url: "https://x.example/a", title: "t", accessed_at: "2026-08-17T00:00:00Z", excerpt: "" };
+    for (const field of ["url", "title", "accessed_at"] as const) {
+      expect(() => parseCitedSource({ ...valid, [field]: "" }, "c", known([valid.url]), "raw")).toThrow(
+        "c must have url/title/accessed_at/excerpt (all strings)"
+      );
+    }
   });
 
   test("extra fields never reach the result", () => {

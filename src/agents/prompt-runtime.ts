@@ -328,11 +328,12 @@ export function extractJsonText(raw: string): string {
   return best ?? trimmed;
 }
 
+/** Text that starts with `{` and parses can only be an object. */
 function isJsonObject(text: string): boolean {
   if (!text.startsWith("{")) return false;
   try {
-    const v: unknown = JSON.parse(text);
-    return typeof v === "object" && v !== null && !Array.isArray(v);
+    JSON.parse(text);
+    return true;
   } catch {
     // Not JSON is an expected answer here, not an error: the caller tries the
     // next candidate, and reports the parse failure itself if none fits.
