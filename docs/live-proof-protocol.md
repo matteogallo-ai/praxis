@@ -41,15 +41,15 @@ the command below names other questions.
 3. `ANTHROPIC_API_KEY` set; `PRAXIS_NOW` unset (live freshness uses the real
    date); `ANTHROPIC_MODEL` unset, so each stage runs on its `@model` as
    estimated.
-4. `bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 9`
+4. `bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`
    re-run on that commit, in case prompts or prices changed since this page.
 
 ## Run (paid, one GO per step)
 
-### Step 0: one briefing, capped at $9
+### Step 0: one briefing, capped at $10
 
 ```bash
-bun run bench:live -- --max-cost-usd 9 --ids 05-supply-chain-acquisition
+bun run bench:live -- --max-cost-usd 10 --ids 05-supply-chain-acquisition
 ```
 
 `05-supply-chain-acquisition` is the cheapest representative of the five:
@@ -59,22 +59,24 @@ within a cent of it but is the hard case, built to stress sourcing, not to repre
 Question 11 is $0.07 cheaper in the central case but atypical (synthesis
 regenerated under `strict_editorial`, $15.16 in the high case).
 
-$9 is a limit, not a fuse: before each request the ledger reserves that
+$10 is a limit, not a fuse: before each request the ledger reserves that
 request's worst case and sends it only if what is spent, what requests in
-flight hold and that worst case fit in $9 ([§ Ceiling](#ceiling)). The
+flight hold and that worst case fit in $10 ([§ Ceiling](#ceiling)). The
 estimator's stages, high scenario, cumulative: scoping $0.17, research
 $0.97, stakeholders $1.83, risks $2.82, options $5.09, synthesis $6.10,
 adversarial $8.81. Walked through the reservations
-(`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 9`):
+(`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`):
 
-| Scenario | Under $9 |
+| Scenario | Under $10 |
 | --- | --- |
 | Low | completes at $1.33 |
 | Central | completes at $5.75 |
-| High | stops before adversarial at $6.10 |
+| High | stops before adversarial at $8.81 |
 
-In the high scenario the adversarial request (Opus, 5 searches, 16 000
-`max_tokens`) reserves $2.99 on top of $6.10 spent, more than $9 allows.
+The high scenario retries its costliest stage once, and that stage is
+adversarial (Opus, 5 searches, 16 000 `max_tokens`): the first attempt
+runs, then the retry reserves $2.99 on top of $8.81 spent, more than $10
+allows. Without that retry the high case completes under $10.
 A run that stops leaves no brief: `error-*.json` records what each stage
 spent, which is the measurement step 1 is costed from. The high case would
 yield a brief from a cap of $9.09 (rerun skipped) and finish in full from
@@ -268,14 +270,14 @@ No prompt caching is assumed.
 
 ### Step 0 alone
 
-`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 9`:
+`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`:
 
 | | Low | Central | High |
 | --- | ---: | ---: | ---: |
 | Estimate | $1.33 | $5.75 | $12.54 |
 
-- Ceiling: **$9.00**, timeouts included, within the allowances below. In
-  the high case the run stops before adversarial at $6.10 rather than
+- Ceiling: **$10.00**, timeouts included, within the allowances below. In
+  the high case the run stops before adversarial's retry at $8.81 rather than
   reaching $12.54.
 
 The prompt sizes are measured; the search sizes, output shares and the
@@ -379,7 +381,7 @@ API, $0.14 per briefing, $0.70 for the five. Prices from Anthropic's pricing pag
 ## What each GO authorizes
 
 1. **Step 0**: the one `bench:live` command for `05-supply-chain-acquisition`,
-   one attempt. Expected ≈ $5.75 (central); at most $9.00, timeouts included,
+   one attempt. Expected ≈ $5.75 (central); at most $10.00, timeouts included,
    within the allowances of [§ Ceiling](#ceiling).
 2. **Step 1**, after step 0 and a re-costing from its measured usage: the
    other four. Before that re-costing: at most $14 each, $56.00 for the
