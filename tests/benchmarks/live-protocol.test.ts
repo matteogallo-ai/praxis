@@ -130,19 +130,23 @@ describe("docs/live-proof-protocol.md", () => {
     expect(flat).toContain(`${usd(later.ids.length * later.cap)} for the four`);
   });
 
-  test("its judge figures follow the price table: 16 000 in, 8 000 out, 15 calls per briefing", async () => {
-    const { JUDGE_MODEL } = await import("../../benchmarks/score-all.ts");
+  test("its judge variants follow the price table: 16 000 in, 8 000 out, 15 calls per briefing", async () => {
     const { DEFAULT_PRICE_TABLE } = await import("../../src/llm/pricing.ts");
-    const judge = DEFAULT_PRICE_TABLE.models[JUDGE_MODEL] as { input: number; output: number };
-    const opus = DEFAULT_PRICE_TABLE.models["claude-opus-5-5"] as { input: number; output: number };
-    const perCall = (p: { input: number; output: number }) => (16_000 * p.input + 8_000 * p.output) / 1e6;
-    const flat = doc.replace(/\s+/g, " ");
-    expect(flat).toContain(`$${judge.input} / $${judge.output} per million tokens`);
-    expect(flat).toContain(`${usd(perCall(judge))} per call`);
-    expect(flat).toContain(`**${usd(perCall(judge) * 15)} per briefing**`);
-    expect(flat).toContain(`${usd(perCall(judge) * 75)} for the five`);
-    expect(flat).toContain(`**${usd(perCall(judge) * 150)}** with a 2× margin`);
-    expect(flat).toContain(`Opus 5.5 (${usd(perCall(opus))} per call, ${usd(perCall(opus) * 75)} for the five)`);
+    const p = (m: string) => DEFAULT_PRICE_TABLE.models[m] as { input: number; output: number; cache_write: number; cache_read: number };
+    const perCall = (m: string) => (16_000 * p(m).input + 8_000 * p(m).output) / 1e6;
+    const row = (label: string, call: string, briefing: number) =>
+      `| ${label} | ${call} | ${usd(briefing)} | ${usd(5 * briefing)} | ${usd(10 * briefing)} |`;
+    for (const [label, m] of [["Fable 5.1, $10 / $50", "claude-fable-5-1"], ["Opus 5, $5 / $25", "claude-opus-5"]] as const) {
+      expect(doc).toContain(row(label, usd(perCall(m)), 15 * perCall(m)));
+    }
+    // Per copy: one cache write and two reads of the input; every call's output.
+    const o5 = p("claude-opus-5");
+    const cachedInput = (16_000 * (o5.cache_write + 2 * o5.cache_read)) / 1e6;
+    const cached = 5 * cachedInput + (15 * 8_000 * o5.output) / 1e6;
+    expect(doc).toContain(row("Opus 5, input cached", "—", cached));
+    expect(flat).toContain(`falls from ${usd((3 * 16_000 * o5.input) / 1e6)} to $${cachedInput.toFixed(3)}`);
+    expect(doc).toContain(row("Opus 5, Batch API", usd(perCall("claude-opus-5") / 2), (15 * perCall("claude-opus-5")) / 2));
+    expect(flat).toContain(`Rejected: Opus 5.5 (${usd(perCall("claude-opus-5-5"))} per call)`);
   });
 
   test("its step 0 comparisons are the estimator's", () => {

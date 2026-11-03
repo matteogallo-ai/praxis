@@ -78,7 +78,7 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   in the cap. A request that fails or reports no usage, a timeout included,
   stays charged at its worst case (`unreported_usd`). `estimate:cost
   --cap-usd` walks each question through the reservations instead of
-  printing an overshoot ceiling.
+  printing an overshoot ceiling. Opus 5 is in the price table.
 - When the cost cap is reached during the synthesis rerun, the complete
   pre-rerun brief is returned instead of being discarded with the run;
   `rerun_skipped` (a new optional field of the result, and `rerun.skipped`

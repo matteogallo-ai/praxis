@@ -2,7 +2,7 @@
  * What a call costs, from its token usage and a price table.
  *
  * The default table is Anthropic's list price on 2026-11-02 (models overview
- * and pricing pages; Fable 5.1 read on 2026-11-03): USD per million tokens,
+ * and pricing pages; Fable 5.1 and Opus 5 read on 2026-11-03): USD per million tokens,
  * and per 1000 web searches.
  * Prices change; `loadPriceTable` reads an override file so a run can be
  * costed without a code change. A model missing from the table has no cost
@@ -38,6 +38,7 @@ function price(input: number, output: number): ModelPrice {
 export const DEFAULT_PRICE_TABLE: PriceTable = {
   models: {
     "claude-fable-5-1": price(10, 50),
+    "claude-opus-5": price(5, 25),
     "claude-opus-5-5": price(4, 20),
     "claude-sonnet-5-5": price(2, 10),
     "claude-haiku-5-5": price(0.1, 0.5),

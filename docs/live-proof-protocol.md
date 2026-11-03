@@ -127,12 +127,14 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 **2. Judge**, on completed briefings only, under its own GO
 ([§ Judge](#judge)).
 
-- **Model**: `claude-fable-5-1` (`JUDGE_MODEL` in `benchmarks/score-all.ts`).
-  Every stage runs on Claude Opus 5.5 or Sonnet 5.5, so no stage's output is
-  scored by the model that wrote it; a test fails if `JUDGE_MODEL` becomes
-  any stage's `@model`. $10 / $50 per million tokens, thinking always on.
-  It is a Covered Model: 30-day retention, and an organisation under zero
-  data retention gets a 400 from it.
+- **Model**: chosen after step 0 from its measured cost ([§ Judge](#judge)):
+  Fable 5.1 (`claude-fable-5-1`, `JUDGE_MODEL` in
+  `benchmarks/score-all.ts` today) or Opus 5 (`claude-opus-5`). Every
+  stage runs on Claude Opus 5.5 or Sonnet 5.5, so neither scores the model
+  that wrote the brief; a test fails if `JUDGE_MODEL` becomes any stage's
+  `@model`. Both run thinking by default and can stop with `refusal`.
+  Fable 5.1 is a Covered Model: 30-day retention, and an organisation
+  under zero data retention gets a 400 from it.
 - **Limitation, same family.** Judge and pipeline are all Claude models,
   trained by the same company on overlapping data. A bias they share (a
   phrasing they all reward, a claim they all accept) is not seen by the
@@ -304,21 +306,36 @@ five at $14 the ceiling is $70.00 within the allowances.
 
 ### Judge
 
-On `claude-fable-5-1`, ≈ 16 000 input tokens per call (a mock brief is
-4 200–4 800 tokens, a live one 2–3 times that, plus the grid) and up to
-8 000 output tokens, thinking included: $0.56 per call. Per briefing, 3
-judgments each of the unchanged briefing (noise band and control), the
-neutral copy and the three faulty copies: 15 calls, **$8.40 per briefing**,
-$42.00 for the five; **$84.00** with a 2× margin.
+Chosen after step 0, from its measured cost. Each call reads ≈ 16 000
+input tokens (a mock brief is 4 200–4 800 tokens, a live one 2–3 times
+that, plus the grid) and writes up to 8 000 output tokens, thinking
+included. Per briefing, 3 judgments each of the unchanged briefing (noise
+band and control), the neutral copy and the three faulty copies: 15 calls,
+75 for the five. Prices from Anthropic's pricing page, read 2026-11-03
+(`src/llm/pricing.ts`):
 
-Rejected: Opus 5.5 ($0.22 per call, $16.80 for the five). It wrote the
-scoping, the options and the adversarial critique the judged brief rests
-on, so it would score its own work.
+| Variant | Per call | Per briefing | Five | Five, 2× margin |
+| --- | ---: | ---: | ---: | ---: |
+| Fable 5.1, $10 / $50 | $0.56 | $8.40 | $42.00 | $84.00 |
+| Opus 5, $5 / $25 | $0.28 | $4.20 | $21.00 | $42.00 |
+| Opus 5, input cached | — | $3.58 | $17.90 | $35.80 |
+| Opus 5, Batch API | $0.14 | $2.10 | $10.50 | $21.00 |
 
-Open: Opus 5 ($5 / $25, ≈ $0.28 per call, $21.00 for the five) is also a
-model no stage uses, at half Fable 5.1's price. Fable 5.1 is chosen as the
-strongest reader; Opus 5 is the cheaper choice with the same same-family
-limitation. The maintainer's call.
+- **Opus 5** (`claude-opus-5`): no stage uses it, at half Fable 5.1's
+  price, with the same same-family limitation. Cache reads $0.50, writes
+  $6.25 per million tokens.
+- **Input cached**: the grid and the briefing are the same text in the 3
+  judgments of each copy, so the first call writes them to the prompt
+  cache (1.25× input) and the next two read them (0.1×), sent one after
+  the other. Input per copy falls from $0.24 to $0.116. It saves little,
+  because output is most of the bill: 15 × 8 000 tokens at $25 is $3.00 of
+  the $4.20.
+- **Batch API**: the same calls through Message Batches, 50% off input and
+  output, answers within 24 hours. Nobody waits on the judge, so it costs
+  only latency; it needs a batch submit-and-poll path in `score-all.ts`.
+- Rejected: Opus 5.5 ($0.22 per call). It wrote the scoping, the options
+  and the adversarial critique the judged brief rests on, so it would
+  score its own work.
 
 ## What each GO authorizes
 
@@ -328,8 +345,8 @@ limitation. The maintainer's call.
 2. **Step 1**, after step 0 and a re-costing from its measured usage: the
    other four. Before that re-costing: at most $14 each, $56.00 for the
    four, within the same allowances.
-3. **Judge**, once its cap is built and the briefings are in: at most
-   $8.40 per briefing judged, $84.00 for the five with the margin.
+3. **Judge**, once its cap is built, its variant chosen and the briefings
+   are in: the figure of the chosen row of [§ Judge](#judge).
 
 Anything else, a second attempt at a question included, needs a new
 estimate.
