@@ -70,6 +70,14 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The judge is Claude Opus 5 (`claude-opus-5`), sent as one Message Batch
+  at half price (`benchmarks/judge-batch.ts`). A paid scoring run needs
+  `--max-cost-usd`. The batch's worst case is reserved before it is
+  submitted: each prompt at 2.5 characters per token plus 8 000
+  `max_tokens`, effort `medium`. A batch whose worst case does not fit is
+  not sent. `refusal` and `max_tokens` answers fail their briefing. A
+  submitted batch is resumed, never sent twice. `--dry-run` prints the
+  worst case.
 - The cost estimate reads prompt sizes at the 2.73 characters per token
   Anthropic's count_tokens endpoint measured on the prompts of questions
   02, 05, 08 and 11, one per format (`benchmarks/token-counts/`,
@@ -90,8 +98,7 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - When the cost cap is reached during the synthesis rerun, the complete
   pre-rerun brief is returned instead of being discarded with the run;
   `rerun_skipped` (a new optional field of the result, and `rerun.skipped`
-  in benchmark metadata) says why. Paid scoring (`score-all.ts` without
-  `--dry-run`) is refused until the judge has a cost cap.
+  in benchmark metadata) says why.
 - An answer the model stopped at `max_tokens` is refused with
   `TruncatedOutputError` (new public export, a subclass of
   `InvalidAgentOutputError`) before JSON extraction, which could return a

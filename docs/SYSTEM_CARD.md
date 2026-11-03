@@ -82,7 +82,7 @@ matter, and they are empty or failing.
   domain; it does not check that the page says what the claim says.
 - **No validated judge.** Quality would be scored by a model whose agreement
   with a human has not been measured (`docs/CLAIMS.md` C18).
-- **The judge is from the same model family.** It is Claude Fable 5.1, a
+- **The judge is from the same model family.** It is Claude Opus 5, a
   model no stage uses, so no stage's output is scored by the model that
   wrote it; but judge and pipeline are all Claude models, and a bias they
   share would not be seen. No judge from another provider is available. The
