@@ -1,0 +1,163 @@
+{
+  "id": "12-sodium-ion-plant-morocco",
+  "question": "Should we build a sodium-ion battery cell plant in Morocco to supply European carmakers?",
+  "format": "mckinsey-style-note",
+  "tags": [
+    "hard",
+    "manufacturing",
+    "thin-sources"
+  ],
+  "mode": "mock",
+  "generated_at": "2026-08-20T00:00:00.000Z",
+  "provider_name": "mock",
+  "synthesis": {
+    "total_word_count": 372,
+    "target_words": 1200,
+    "deviation_pct": -69,
+    "sections_over_length": 0,
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 1,
+    "material_count": 2,
+    "minor_count": 2,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 3,
+    "re_synthesis_deviations": []
+  },
+  "sourcing": {
+    "total_items": 32,
+    "counts": {
+      "ok": 28,
+      "stale": 0,
+      "untrusted": 0,
+      "duplicated": 2,
+      "missing": 2
+    },
+    "edited_after_critique": true,
+    "insufficiently_sourced": false
+  },
+  "usage": {
+    "stages": {
+      "scoping": {
+        "calls": 1,
+        "input_tokens": 589,
+        "output_tokens": 300,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.008356,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      },
+      "research": {
+        "calls": 1,
+        "input_tokens": 1090,
+        "output_tokens": 719,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 3,
+        "cost_usd": 0.03937,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      },
+      "stakeholder": {
+        "calls": 1,
+        "input_tokens": 2363,
+        "output_tokens": 1704,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 3,
+        "cost_usd": 0.051766,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      },
+      "risk": {
+        "calls": 1,
+        "input_tokens": 4660,
+        "output_tokens": 3196,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 2,
+        "cost_usd": 0.06128,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      },
+      "options": {
+        "calls": 1,
+        "input_tokens": 7974,
+        "output_tokens": 2321,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 1,
+        "cost_usd": 0.08831599999999999,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      },
+      "synthesis": {
+        "calls": 6,
+        "input_tokens": 59913,
+        "output_tokens": 1182,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.13164599999999999,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      },
+      "adversarial": {
+        "calls": 1,
+        "input_tokens": 12156,
+        "output_tokens": 1531,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 1,
+        "cost_usd": 0.08924399999999999,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      },
+      "synthesis-rerun": {
+        "calls": 6,
+        "input_tokens": 61854,
+        "output_tokens": 1182,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.135528,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      }
+    },
+    "total": {
+      "calls": 18,
+      "input_tokens": 150599,
+      "output_tokens": 12135,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 10,
+      "cost_usd": 0.605506,
+      "models": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ]
+    },
+    "simulated": true,
+    "max_cost_usd": null
+  },
+  "artefacts": {
+    "brief.md": 16866,
+    "brief.pdf": 47470,
+    "brief.docx": 7806
+  }
+}
