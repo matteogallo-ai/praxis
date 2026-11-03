@@ -9,7 +9,7 @@ tests miss a behaviour, or the edit changes nothing observable (an
 ## Scope and command
 
 ```bash
-bun run mutation        # stryker run, about 6 minutes on 8 workers
+bun run mutation        # refuses uncommitted changes in src/, then stryker run (4–6 minutes, 8 workers)
 ```
 
 `stryker.config.json` mutates the orchestrator and the validators: what
@@ -27,21 +27,26 @@ tests/property --bail` through Stryker's built-in `command` runner, which
 needs no third-party Bun plugin. Stryker runs `inPlace`: PromptLang resolves
 through `tsconfig.json` paths to `../promptlang`, which a sandbox copy one
 directory deeper would break. Stryker restores the files when it ends; a run
-killed midway leaves them mutated, and `git status` shows it.
+killed midway leaves them mutated: `git checkout -- src` restores them, and
+`bun run mutation` will not start until `src/` is clean. Knip's Stryker
+plugin infers `@stryker-mutator/command-runner` from `testRunner: "command"`;
+that runner ships inside `@stryker-mutator/core`, so `knip.json` ignores it.
 
 ## Score
 
-Measured on 2026-11-03 on the branch that adds this document, 1016 mutants:
+Measured at commit `ba50928`, 1016 mutants. `docs/mutation-score.json` holds
+the counts per file and every survivor's line and mutator, from that run's
+report; the full report (`reports/`) is not committed.
 
 | File | First run | Now | Killed | Timeout | Survived |
 | --- | --- | --- | --- | --- | --- |
 | `orchestrator.ts` | 66.67% | 92.17% | 317 | 1 | 27 |
-| `prompt-runtime.ts` (lines above) | 83.84% | 95.89% | 206 | 4 | 9 |
+| `prompt-runtime.ts` (lines above) | 83.84% | 97.26% | 211 | 2 | 6 |
 | `synthesis.ts` (lines above) | 63.50% | 100.00% | 136 | 1 | 0 |
-| `domain-trust.ts` | 77.92% | 96.10% | 148 | 0 | 6 |
+| `domain-trust.ts` | 77.92% | 96.75% | 149 | 0 | 5 |
 | `freshness.ts` | 96.55% | 96.55% | 28 | 0 | 1 |
 | `validator.ts` | 84.85% | 97.73% | 129 | 0 | 3 |
-| **All** | **74.63%** | **95.47%** | 964 | 6 | 46 |
+| **All** | **74.63%** | **95.87%** | 970 | 4 | 42 |
 
 The first run had 1068 mutants: the orchestrator's private Levenshtein (42
 mutants) was replaced by the shared one in `src/sourcing/dedupe.ts`, and
@@ -73,18 +78,17 @@ Tests added because a mutant survived, each a behaviour no test checked:
 
 ## Surviving mutants
 
-**Equivalent: 40.** The edit changes no output.
+**Equivalent: 36.** The edit changes no output.
 
-- `prompt-runtime.ts` (9): the fast path that returns an answer already a
-  JSON object (the scan would return the same span); `>=` for `>` on equal
-  lengths (the rule is "the larger", ties are unspecified); `isJsonObject`'s
-  `{` check and its catch body (a non-object answer falls back to the same
-  trimmed text); `start = +1` (always set before use); `i <= length` (reads
-  `undefined`, a no-op); yielding at inner `}` (an unbalanced span never
-  parses); `requireEnum`'s type check (`includes` refuses a non-string).
-- `domain-trust.ts` (6): the blank-pattern guard and the no-wildcard branch
-  (the generic branch then compares the same way); the `?? []` defaults
-  (Stryker's sentinel string is never a host).
+- `prompt-runtime.ts` (6): the fast path that returns an answer already a
+  JSON object (the scan would return the same span); `isJsonObject`'s catch
+  body (`undefined` is as falsy as `false`); `start = +1` (always set before
+  use); `i <= length` (reads `undefined`, a no-op); yielding at inner `}`
+  (an unbalanced span never parses); `requireEnum`'s type check (`includes`
+  refuses a non-string).
+- `domain-trust.ts` (5): the no-wildcard branch (the generic branch then
+  compares the same way, 3); the `?? []` defaults (Stryker's sentinel string
+  is never a host, 2).
 - `validator.ts` (3): recording into the no-op accumulator; the freshness
   guard on a stale warning, which exists only when freshness rules do.
 - `freshness.ts` (1): `<` for `<=` at an age of exactly 0 (both give 0).
@@ -103,6 +107,11 @@ Tests added because a mutant survived, each a behaviour no test checked:
 - The usage-ledger label of scoping when a custom scoping prompt is set (1).
 - The rerun reason when only material critiques trigger it (2): every mock
   fixture with a rerun has a critical critique.
+
+Three mutants first listed here as equivalent were not: the review of this
+document showed that `isJsonObject`'s `{` check, the tie-break between two
+objects of equal length, and the blank-pattern guard of domain trust each
+change an output. Each now has a test.
 
 ## Limits
 

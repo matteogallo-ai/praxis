@@ -1,0 +1,266 @@
+{
+  "measured_at_commit": "ba50928",
+  "stryker": "10.1.1",
+  "command": "bun run mutation",
+  "files": {
+    "src/agents/prompt-runtime.ts": {
+      "counts": {
+        "Killed": 211,
+        "Survived": 6,
+        "Timeout": 2
+      },
+      "survived": [
+        {
+          "line": 321,
+          "mutator": "ConditionalExpression",
+          "replacement": "false"
+        },
+        {
+          "line": 337,
+          "mutator": "BlockStatement",
+          "replacement": "{}"
+        },
+        {
+          "line": 347,
+          "mutator": "UnaryOperator",
+          "replacement": "+1"
+        },
+        {
+          "line": 350,
+          "mutator": "EqualityOperator",
+          "replacement": "i <= text.length"
+        },
+        {
+          "line": 364,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 405,
+          "mutator": "ConditionalExpression",
+          "replacement": "false"
+        }
+      ]
+    },
+    "src/agents/synthesis.ts": {
+      "counts": {
+        "Killed": 136,
+        "Timeout": 1
+      },
+      "survived": []
+    },
+    "src/orchestrator/orchestrator.ts": {
+      "counts": {
+        "Killed": 317,
+        "Survived": 27,
+        "Timeout": 1
+      },
+      "survived": [
+        {
+          "line": 261,
+          "mutator": "ConditionalExpression",
+          "replacement": "false"
+        },
+        {
+          "line": 261,
+          "mutator": "BlockStatement",
+          "replacement": "{}"
+        },
+        {
+          "line": 262,
+          "mutator": "StringLiteral",
+          "replacement": "\"\""
+        },
+        {
+          "line": 444,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 444,
+          "mutator": "OptionalChaining",
+          "replacement": "rules?.dedupe.cross_agent"
+        },
+        {
+          "line": 444,
+          "mutator": "OptionalChaining",
+          "replacement": "rules.dedupe"
+        },
+        {
+          "line": 448,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 626,
+          "mutator": "LogicalOperator",
+          "replacement": "!needed && alt === null"
+        },
+        {
+          "line": 626,
+          "mutator": "ConditionalExpression",
+          "replacement": "false"
+        },
+        {
+          "line": 747,
+          "mutator": "ConditionalExpression",
+          "replacement": "false"
+        },
+        {
+          "line": 749,
+          "mutator": "StringLiteral",
+          "replacement": "\"\""
+        },
+        {
+          "line": 764,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 767,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 781,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 784,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 799,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 802,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 818,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 821,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 845,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 851,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 864,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 867,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 997,
+          "mutator": "ConditionalExpression",
+          "replacement": "false"
+        },
+        {
+          "line": 1010,
+          "mutator": "ConditionalExpression",
+          "replacement": "false"
+        },
+        {
+          "line": 1020,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 1022,
+          "mutator": "StringLiteral",
+          "replacement": "``"
+        }
+      ]
+    },
+    "src/sourcing/domain-trust.ts": {
+      "counts": {
+        "Killed": 149,
+        "Survived": 5
+      },
+      "survived": [
+        {
+          "line": 58,
+          "mutator": "StringLiteral",
+          "replacement": "\"\""
+        },
+        {
+          "line": 58,
+          "mutator": "ConditionalExpression",
+          "replacement": "false"
+        },
+        {
+          "line": 58,
+          "mutator": "BlockStatement",
+          "replacement": "{}"
+        },
+        {
+          "line": 103,
+          "mutator": "ArrayDeclaration",
+          "replacement": "[\"Stryker was here\"]"
+        },
+        {
+          "line": 115,
+          "mutator": "ArrayDeclaration",
+          "replacement": "[\"Stryker was here\"]"
+        }
+      ]
+    },
+    "src/sourcing/freshness.ts": {
+      "counts": {
+        "Killed": 28,
+        "Survived": 1
+      },
+      "survived": [
+        {
+          "line": 32,
+          "mutator": "EqualityOperator",
+          "replacement": "diffMs <= 0"
+        }
+      ]
+    },
+    "src/sourcing/validator.ts": {
+      "counts": {
+        "Killed": 129,
+        "Survived": 3
+      },
+      "survived": [
+        {
+          "line": 256,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 310,
+          "mutator": "ConditionalExpression",
+          "replacement": "true"
+        },
+        {
+          "line": 310,
+          "mutator": "OptionalChaining",
+          "replacement": "rules.freshness"
+        }
+      ]
+    }
+  }
+}
