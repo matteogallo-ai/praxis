@@ -156,3 +156,19 @@ describe("CheckpointStore.save / load — properties", () => {
     );
   });
 });
+
+describe("CheckpointStore — unreadable files", () => {
+  test("a stage file that cannot be read is refused with OrchestrationError, not a raw fs error", () => {
+    const store = CheckpointStore.create(join(root, "unreadable"), "q", "f", new Date(0));
+    mkdirSync(join(store.dir, "stage.json"));
+    expect(() => store.load("stage", (t) => t)).toThrow(OrchestrationError);
+    expect(() => store.load("stage", (t) => t)).toThrow(/cannot be read/);
+  });
+
+  test("a run.json that cannot be read says so, rather than calling it malformed", () => {
+    const runsDir = join(root, `runs-${dirCount++}`);
+    mkdirSync(join(runsDir, "r", "run.json"), { recursive: true });
+    expect(() => CheckpointStore.open(runsDir, "r")).toThrow(OrchestrationError);
+    expect(() => CheckpointStore.open(runsDir, "r")).toThrow(/cannot be read/);
+  });
+});

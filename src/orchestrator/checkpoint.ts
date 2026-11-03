@@ -36,6 +36,18 @@ function writeAtomically(path: string, value: unknown): void {
   renameSync(tmp, path);
 }
 
+/** The file's text, or `OrchestrationError` naming `what` when it cannot be read. */
+function readOrRefuse(path: string, what: string): string {
+  try {
+    return readFileSync(path, "utf-8");
+  } catch (err) {
+    // A directory in the file's place or a permission error: the run's
+    // files are not usable, which the caller reports the same way.
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new OrchestrationError(`${what} cannot be read: ${reason}.`, { cause: err });
+  }
+}
+
 export class CheckpointStore {
   readonly dir: string;
   readonly manifest: RunManifest;
@@ -83,9 +95,10 @@ export class CheckpointStore {
     }
     const malformed = (cause?: unknown) =>
       new OrchestrationError(`Run '${runId}' has a malformed run.json.`, { cause });
+    const text = readOrRefuse(manifestPath, `Run '${runId}'`);
     let parsed: unknown;
     try {
-      parsed = JSON.parse(readFileSync(manifestPath, "utf-8"));
+      parsed = JSON.parse(text);
     } catch (err) {
       // A truncated or hand-edited file is the case this message exists for.
       throw malformed(err);
@@ -98,7 +111,6 @@ export class CheckpointStore {
       typeof raw.started_at !== "string" ||
       Number.isNaN(Date.parse(raw.started_at)) ||
       typeof settings !== "object" ||
-      settings === null ||
       Array.isArray(settings) ||
       !Object.values(settings).every((v) => typeof v === "string")
     ) {
@@ -140,7 +152,7 @@ export class CheckpointStore {
   load<T>(stage: string, validate: (stored: string) => T): T | undefined {
     const path = join(this.dir, `${stage}.json`);
     if (!existsSync(path)) return undefined;
-    const text = readFileSync(path, "utf-8");
+    const text = readOrRefuse(path, `Checkpoint '${stage}' of run '${this.manifest.run_id}'`);
     try {
       return validate(text);
     } catch (err) {
