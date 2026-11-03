@@ -56,8 +56,9 @@ provider sends no sampling parameter.
 - **Stored**: each run's checkpoints and `metadata.json` (tokens, searches,
   cost and duration per stage) under `.praxis/runs/`, on the operator's
   disk, git-ignored. No telemetry; nothing is sent anywhere but Anthropic.
-- **Evaluation data**: `benchmarks/questions.yaml`, eleven business
-  questions across the four formats; no dev/test split, no human labels.
+- **Evaluation data**: `benchmarks/questions.yaml`, twelve business
+  questions across the four formats plus a hard case, with a frozen
+  dev/test split (4 / 8) in `benchmarks/split.yaml`; no human labels.
 
 ## Measured performance
 

@@ -18,6 +18,8 @@
  *   --live-only      — live only; error if ANTHROPIC_API_KEY missing.
  *   --dry-run        — parse+select without spawning the pipeline
  *                      (used by the test suite).
+ *   --split dev|test — only the questions of that half of the frozen
+ *                      split (`benchmarks/split.yaml`); refused if stale.
  *   --root <path>    — override the repo root (used by the test suite).
  *
  * Failure model: a single benchmark failing does not abort the run
@@ -29,6 +31,7 @@ import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { type BenchmarkEntry, loadManifest } from "./manifest.ts";
+import { loadSplit } from "./split.ts";
 import { FormatRegistry } from "../src/registry/registry.ts";
 import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
 import { UsageLedger } from "../src/orchestrator/ledger.ts";
@@ -52,6 +55,7 @@ export interface RunAllOptions {
   liveOnly: boolean;
   dryRun: boolean;
   root: string;
+  split?: "dev" | "test";
 }
 
 export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
@@ -59,12 +63,19 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
   let liveOnly = false;
   let dryRun = false;
   let root = resolve(import.meta.dir, "..");
+  let split: "dev" | "test" | undefined;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === "--mock-only") mockOnly = true;
     else if (a === "--live-only") liveOnly = true;
     else if (a === "--dry-run") dryRun = true;
-    else if (a === "--root") {
+    else if (a === "--split" || a.startsWith("--split=")) {
+      const value = a === "--split" ? argv[++i] : a.slice("--split=".length);
+      if (value !== "dev" && value !== "test") {
+        throw new Error("--split expects dev or test");
+      }
+      split = value;
+    } else if (a === "--root") {
       const next = argv[i + 1];
       if (next === undefined) throw new Error("--root expects a path");
       root = resolve(next);
@@ -78,7 +89,9 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
   if (mockOnly && liveOnly) {
     throw new Error("--mock-only and --live-only are mutually exclusive");
   }
-  return { mockOnly, liveOnly, dryRun, root };
+  return split === undefined
+    ? { mockOnly, liveOnly, dryRun, root }
+    : { mockOnly, liveOnly, dryRun, root, split };
 }
 
 // ---------------------------------------------------------------------------
@@ -113,6 +126,10 @@ export interface RunSummary {
 export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
   const manifestPath = join(opts.root, "benchmarks", "questions.yaml");
   const manifest = loadManifest(manifestPath);
+  if (opts.split !== undefined) {
+    const ids = new Set(loadSplit(opts.root)[opts.split]);
+    manifest.benchmarks = manifest.benchmarks.filter((b) => ids.has(b.id));
+  }
 
   const modes: readonly ("mock" | "live")[] = decideModes(opts);
   process.stderr.write(

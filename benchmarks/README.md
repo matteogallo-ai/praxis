@@ -9,6 +9,13 @@ reference set they can regenerate at any commit.
 
 - `questions.yaml` — the twelve questions and their target
   formats. This is the manifest; every other file is derived.
+- `split.yaml` — the frozen dev/test split of the manifest, drawn by
+  `split.ts` (stratified by format, the hard case as its own stratum,
+  fixed seed). Tune on dev; publish live results on test. It records
+  the manifest's version and SHA-256, so any edit to `questions.yaml`
+  fails the test suite until `bun run bench:split` redraws it. Adding
+  questions redraws the split: do it before tuning, never after.
+  `run-all.ts --split dev|test` runs one half.
 - `run-all.ts` — the Bun script that generates artefacts. Modes:
   `--mock-only`, `--live-only`, or default (mock + live if
   `ANTHROPIC_API_KEY` is set).
