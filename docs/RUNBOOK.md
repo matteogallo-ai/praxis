@@ -59,7 +59,9 @@ directory.
 - **Symptom**: `AnthropicTimeoutError` (`Anthropic API request timed out
   after <ms>ms`, the stage's own timeout), `AnthropicRateLimitError` or `AnthropicAPIError` with a 5xx.
 - **Detection**: the error class; `metadata.json` shows the stages that
-  finished and their durations. A timed-out request reports no usage.
+  finished and their durations. A timed-out request reports no usage; under
+  a cap it is charged its worst case (`unreported_usd` in the stage's usage),
+  so a run with timeouts can stop at its cap before the work is done.
 - **Response**: the provider already retried 429 and 5xx with backoff, and
   the stage retried once. Wait, check https://status.anthropic.com, then
   `--resume <run-id>`. Repeated timeouts on one stage with a healthy API mean

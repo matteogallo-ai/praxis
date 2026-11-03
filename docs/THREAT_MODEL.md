@@ -259,19 +259,27 @@ section; up to five rounds per search request (`pause_turn`); and retries.
 
 Mitigation: per-stage `max_tokens`, timeout and `max_uses`
 (`src/agents/stage-limits.ts`); bounded retries; usage priced per call and a
-budget cap (`--max-cost-usd`) that stops the run before the next call; a
-model without a price stops a capped run.
+budget cap (`--max-cost-usd`) for which each request reserves its worst case
+before it is sent, a request that fails or reports no usage, a timeout
+included, staying charged at it; a request whose cost cannot be bounded (no
+price, no `max_tokens`, a search without `max_uses`) is not sent.
 
 Tests:
 
-- `tests/orchestrator/ledger.test.ts`: "the budget cap stops the briefing
-  before the next call", "with a cap, a call that cannot be priced stops the
-  run", "a resumed ledger starts from what earlier attempts spent".
+- `tests/orchestrator/ledger.test.ts`: "a cap below the first request's
+  worst case stops the briefing before anything is sent", "with a cap, a
+  call that cannot be priced stops the run", "a resumed ledger starts from
+  what earlier attempts spent".
+- `tests/orchestrator/ledger-reserve.test.ts`: "concurrent requests cannot
+  all pass the check together", "a timed-out request counts against the cap
+  at its worst case", "a web search without max_uses cannot be capped, so
+  it is not sent".
 - `tests/llm/anthropic-usage-timeout.test.ts`: "timeout_ms overrides the
   provider default and names itself in the error".
 - `tests/orchestrator/resume.test.ts`: "malformed model output and a 5xx are
   recoverable; auth, 4xx and budget are not".
 
-Remaining: a briefing ends above the cap by the calls in flight when it is
-reached: one, which for a search stage includes all its rounds, or one per
-section during synthesis (`docs/SLO.md`).
+Remaining: no request parameter bounds what a search returns, so a request
+whose searches add more than 15 000 tokens each costs more than it
+reserved, and the spend can pass the cap by that excess on the requests in
+flight (`docs/live-proof-protocol.md`, Ceiling).

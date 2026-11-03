@@ -103,11 +103,16 @@ stage gets the provider wrapped so each call's `usage` (input, output and
 cache tokens, web searches) is recorded under its stage and priced from a
 table (`src/llm/pricing.ts`: list prices by default, a JSON file through
 `loadPriceTable`). A model missing from the table is costed `null`, not
-guessed. With `maxCostUsd` set, no call starts once the briefing has spent
-the cap, so a briefing ends above it by the calls in flight at that moment
-(one, or one per section during synthesis). With a cap, a call whose model
-has no price stops the run; a dated model id is priced as its alias. A
-timed-out request reports no usage and is not counted.
+guessed; a dated model id is priced as its alias. With `maxCostUsd` set,
+each request reserves its worst case before it is sent (whole `max_tokens`,
+every search `max_uses` allows, 15 000 tokens of context per search, the
+prompt at 3 characters per token) and is sent only if spent, held and that
+worst case fit in the cap. An answered request is charged what it reports;
+one that fails or reports no usage, a timeout included, stays charged at
+its worst case (`unreported_usd`). A request that cannot be sized (no
+price, no `max_tokens`, a search without `max_uses`) is not sent. The
+spend passes the cap only when a request costs more than its worst case:
+searches above the allowance, or text below 3 characters per token.
 `benchmarks/run-all.ts` writes the summary to `metadata.json` under `usage`.
 The mock provider simulates usage from text length (`simulated: true`).
 

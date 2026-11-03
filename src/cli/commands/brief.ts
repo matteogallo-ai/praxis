@@ -37,8 +37,8 @@
  *   --runs-dir <path>     Where each run's checkpoints and metadata.json
  *                         go (default $PRAXIS_RUNS_DIR, else .praxis/runs).
  *   --resume <run-id>     Continues a run from its first unfinished stage.
- *   --max-cost-usd <n>    Stops before the next model call once the run
- *                         has spent n USD.
+ *   --max-cost-usd <n>    Caps the run at n USD: a request is sent only if
+ *                         its worst case fits in what is left.
  *   --price-table <path>  JSON prices replacing the built-in list prices.
  *
  * Providers:
