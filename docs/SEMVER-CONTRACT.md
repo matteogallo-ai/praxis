@@ -98,6 +98,19 @@ release without notice.
   answer on is the defect fixed. Only providers that implement
   `completeWithTools` report a stop reason (both shipped providers do); a
   `complete()`-only provider's answer is read as finished.
+- **Budget cap as a limit (a bug fix).** With `maxCostUsd` set, each
+  request now reserves its worst case before it is sent, and a request
+  that fails or reports no usage stays charged at it (`unreported_usd`, a
+  new optional field of `StageUsage`). Before, the cap was checked against
+  the recorded spend only, so a briefing could end above it by the requests
+  in flight, and a timed-out request was not counted at all. A capped run
+  can therefore be refused earlier than before, and a request without
+  `max_tokens`, or with a web search without `max_uses`, is refused under a
+  cap. There is no switch: spending past the cap is the defect fixed.
+  A capped call whose model is not named in its options is refused too,
+  since its worst case cannot be priced before it is sent. Without a cap
+  nothing changes. `UsageLedger` gains `capped`,
+  `worstCaseUsd`, `reserve`, `release`, `refusal` and `chargeUnreported`.
 
 ## What is acceptable in a PATCH bump
 

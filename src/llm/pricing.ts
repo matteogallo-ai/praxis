@@ -2,7 +2,7 @@
  * What a call costs, from its token usage and a price table.
  *
  * The default table is Anthropic's list price on 2026-11-02 (models overview
- * and pricing pages; Fable 5.1 read on 2026-11-03): USD per million tokens,
+ * and pricing pages; Fable 5.1 and Opus 5 read on 2026-11-03): USD per million tokens,
  * and per 1000 web searches.
  * Prices change; `loadPriceTable` reads an override file so a run can be
  * costed without a code change. A model missing from the table has no cost
@@ -38,6 +38,7 @@ function price(input: number, output: number): ModelPrice {
 export const DEFAULT_PRICE_TABLE: PriceTable = {
   models: {
     "claude-fable-5-1": price(10, 50),
+    "claude-opus-5": price(5, 25),
     "claude-opus-5-5": price(4, 20),
     "claude-sonnet-5-5": price(2, 10),
     "claude-haiku-5-5": price(0.1, 0.5),
@@ -83,6 +84,60 @@ export function loadPriceTable(path: string): PriceTable {
     models[model] = base;
   }
   return { models, web_search_per_1000: obj["web_search_per_1000"] };
+}
+
+/**
+ * Context tokens one web search is assumed to add, at most. No API parameter
+ * bounds what a search returns, so this is an allowance, not a guarantee: the
+ * cost estimate's high scenario and the budget cap's worst case both use it.
+ */
+export const TOKENS_PER_SEARCH_CEILING = 15_000;
+
+/**
+ * Characters per token assumed when sizing input before it is sent. Lower
+ * than the 4 of English prose, so ordinary text is over-counted; text that
+ * tokenizes below it (CJK, base64, dense code) is under-counted.
+ */
+export const CHARS_PER_TOKEN_FLOOR = 3;
+
+/** One request as the estimate and the cap size it. */
+export interface RequestShape {
+  /** Tokens of the prompt as sent (system, messages, a re-sent turn). */
+  promptTokens: number;
+  /** Output tokens, thinking included. */
+  outputTokens: number;
+  /** Web searches the request runs. */
+  searches: number;
+  /** Context tokens each search adds. */
+  tokensPerSearch: number;
+  /**
+   * Share of the output each later round re-reads: 0.5 when the output is
+   * spread evenly over the rounds (an estimate), 1 when all of it, thinking
+   * included, comes before the first search (the worst case).
+   */
+  outputRereadShare: number;
+}
+
+/**
+ * USD for one request, or `null` when `model` is not in the table. A
+ * web-searching request re-reads its context after each search, so with `s`
+ * searches of `r` tokens, prompt `P`, output `O` and a share `k` of it
+ * re-read by each later round, its input is (s+1)·P + r·s(s+1)/2 + k·O·s.
+ */
+export function requestCostUsd(shape: RequestShape, model: string, table: PriceTable): number | null {
+  const { promptTokens: p, outputTokens: o, searches: s, tokensPerSearch: r, outputRereadShare: k } = shape;
+  const input = (s + 1) * p + (r * s * (s + 1)) / 2 + k * o * s;
+  return costOf(
+    {
+      input_tokens: Math.round(input),
+      output_tokens: Math.round(o),
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+      web_search_requests: s,
+    },
+    model,
+    table
+  );
 }
 
 /** USD for one call, or `null` when `model` is not in the table. */

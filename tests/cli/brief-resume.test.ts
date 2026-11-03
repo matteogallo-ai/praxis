@@ -123,16 +123,16 @@ describe("praxis brief --resume (failure simulated at stage 5, options)", () => 
 });
 
 describe("praxis brief --max-cost-usd", () => {
-  test("a cap smaller than the first call stops the run before stage 2", async () => {
+  test("a cap below the first request's worst case stops the run before anything is sent", async () => {
     const runsDir = mkdtempSync(join(tmpdir(), "praxis-runs-"));
     const code = await runBriefCli(
       [QUESTION, "--format", FORMAT, "--full", "--runs-dir", runsDir, "--max-cost-usd", "0.000001"],
       { formatsDir: "formats", fixturesDir: "tests/fixtures/mock-llm" }
     );
     expect(code).toBe(1);
-    expect(err.join("")).toContain("Budget cap reached before stage 'research'");
+    expect(err.join("")).toContain("Budget cap stops the run before stage 'scoping'");
     const meta = JSON.parse(readFileSync(join(runsDir, onlyRun(runsDir), "metadata.json"), "utf-8"));
-    expect(meta.usage.total.calls).toBe(1);
+    expect(meta.usage.total.calls).toBe(0);
     expect(meta.usage.max_cost_usd).toBe(0.000001);
   });
 

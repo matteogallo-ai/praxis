@@ -33,7 +33,9 @@ function provider(
   return { p, sent: () => n };
 }
 
-const SEARCH = [{ type: "web_search" as const, name: "web_search" }];
+// Bounded, so the cap can size each request's worst case (about $0.05 here).
+const SEARCH = [{ type: "web_search" as const, name: "web_search", max_uses: 1 }];
+const OPTS = { model: "claude-sonnet-5-5", max_tokens: 1000 };
 
 describe("meter — cap checked before every request of a call", () => {
   test("a pause_turn re-send is not sent once the rounds already answered reach the cap", async () => {
@@ -41,7 +43,7 @@ describe("meter — cap checked before every request of a call", () => {
     const ledger = new UsageLedger({ maxCostUsd: 1 });
     const metered = meter(p, ledger, "research");
     await expect(
-      metered.completeWithTools?.("q", SEARCH, { model: "claude-sonnet-5-5" })
+      metered.completeWithTools?.("q", SEARCH, OPTS)
     ).rejects.toBeInstanceOf(BudgetExceededError);
     expect(sent()).toBe(1);
     const s = ledger.summary(false);
@@ -53,7 +55,7 @@ describe("meter — cap checked before every request of a call", () => {
     const { p } = provider([{ status: 200, body: PAUSED }, { status: 400, body: { error: "bad" } }]);
     const ledger = new UsageLedger({ maxCostUsd: 100 });
     const metered = meter(p, ledger, "research");
-    await expect(metered.completeWithTools?.("q", SEARCH, { model: "claude-sonnet-5-5" })).rejects.toThrow();
+    await expect(metered.completeWithTools?.("q", SEARCH, OPTS)).rejects.toThrow();
     expect(ledger.summary(false).stages["research"]?.input_tokens).toBe(1_000_000);
   });
 
@@ -62,7 +64,7 @@ describe("meter — cap checked before every request of a call", () => {
     const { p, sent } = provider([{ status: 200, body: PAUSED }, { status: 400, body: { error: "bad" } }], "claude-opus-5-5");
     const ledger = new UsageLedger({ maxCostUsd: 3 });
     await expect(
-      meter(p, ledger, "research").completeWithTools?.("q", SEARCH, { model: "claude-sonnet-5-5" })
+      meter(p, ledger, "research").completeWithTools?.("q", SEARCH, OPTS)
     ).rejects.toBeInstanceOf(BudgetExceededError);
     expect(sent()).toBe(1);
     expect(ledger.summary(false).total.cost_usd).toBeCloseTo(4, 6);
@@ -71,7 +73,7 @@ describe("meter — cap checked before every request of a call", () => {
   test("under the cap, the call completes and is recorded once, in full", async () => {
     const { p, sent } = provider([{ status: 200, body: PAUSED }, { status: 200, body: DONE }]);
     const ledger = new UsageLedger({ maxCostUsd: 100 });
-    const out = await meter(p, ledger, "research").completeWithTools?.("q", SEARCH, { model: "claude-sonnet-5-5" });
+    const out = await meter(p, ledger, "research").completeWithTools?.("q", SEARCH, OPTS);
     expect(out?.rounds).toBe(2);
     expect(sent()).toBe(2);
     const stage = ledger.summary(false).stages["research"];

@@ -12,9 +12,8 @@
  *   - each stage's model (`@model`, recorded in the mock metadata), output
  *     ceiling and web-search cap (`src/agents/stage-limits.ts`);
  *   - the price table (`src/llm/pricing.ts`).
- * A web-searching call re-reads its context after each search, so with
- * `s` searches of `r` tokens each and output `O` spread over the `s+1`
- * rounds, its input is (s+1)·P + r·s(s+1)/2 + O·s/2.
+ * Each call is priced by `requestCostUsd` (`src/llm/pricing.ts`), the
+ * formula the budget cap reserves with.
  *
  *   bun run estimate:cost -- --ids 02-cfo-buyback-briefing,12-sodium-ion-plant-morocco
  */
@@ -23,8 +22,13 @@ import { join, resolve } from "node:path";
 
 import { parseUsd } from "../src/cli/run-args.ts";
 import { stageLimits } from "../src/agents/stage-limits.ts";
-import { costOf, DEFAULT_PRICE_TABLE, type PriceTable } from "../src/llm/pricing.ts";
-import type { TokenUsage } from "../src/llm/types.ts";
+import {
+  DEFAULT_PRICE_TABLE,
+  type PriceTable,
+  CHARS_PER_TOKEN_FLOOR,
+  requestCostUsd,
+  TOKENS_PER_SEARCH_CEILING,
+} from "../src/llm/pricing.ts";
 
 export interface Scenario {
   name: "low" | "central" | "high";
@@ -69,7 +73,7 @@ export const SCENARIOS: readonly Scenario[] = [
     name: "high",
     upstreamGrowth: 3,
     searches: 5,
-    tokensPerSearch: 15_000,
+    tokensPerSearch: TOKENS_PER_SEARCH_CEILING,
     outputShare: 1,
     strictEditorialPasses: 2,
     rerun: true,
@@ -87,16 +91,6 @@ export interface MockMetadata {
   id: string;
   rerun: { performed: boolean };
   usage: { stages: Record<string, MockStage> };
-}
-
-function usage(input: number, output: number, searches: number): TokenUsage {
-  return {
-    input_tokens: Math.round(input),
-    output_tokens: Math.round(output),
-    cache_creation_input_tokens: 0,
-    cache_read_input_tokens: 0,
-    web_search_requests: searches,
-  };
 }
 
 /** USD per stage and in total for one briefing under `scenario`. */
@@ -123,12 +117,18 @@ export function estimateBriefing(
     const limits = stageLimits(stage === "synthesis-rerun" ? "synthesis" : stage);
     const model = mock.models[0];
     if (model === undefined) throw new Error(`${meta.id}: stage '${stage}' records no model`);
-    const prompt = (mock.input_tokens / mock.calls) * scenario.upstreamGrowth;
-    const output = limits.maxTokens * scenario.outputShare;
-    const s = Math.min(scenario.searches, limits.maxSearches);
-    const input = (s + 1) * prompt + (scenario.tokensPerSearch * s * (s + 1)) / 2 + (output * s) / 2;
     const passes = stage.startsWith("synthesis") && strictEditorial ? scenario.strictEditorialPasses : 1;
-    const perCall = costOf(usage(input, output, s), model, prices);
+    const perCall = requestCostUsd(
+      {
+        promptTokens: (mock.input_tokens / mock.calls) * scenario.upstreamGrowth,
+        outputTokens: limits.maxTokens * scenario.outputShare,
+        searches: Math.min(scenario.searches, limits.maxSearches),
+        tokensPerSearch: scenario.tokensPerSearch,
+        outputRereadShare: 0.5,
+      },
+      model,
+      prices
+    );
     if (perCall === null) throw new Error(`${meta.id}: no price for model '${model}'`);
     stages[stage] = perCall * mock.calls * passes;
   }
@@ -162,44 +162,67 @@ export function estimateRun(
   return { rows, totals: { low: sum("low"), central: sum("central"), high: sum("high") } };
 }
 
-export interface Ceiling {
-  /** Costliest single request of any question, high scenario: the overshoot past the cap. */
-  maxRequest: number;
-  /** Briefings × (cap + maxRequest). */
-  metered: number;
-  /** Per question: every request timing out on both attempts, unseen by the cap. */
-  unmetered: Record<string, number>;
-  /** metered + every question's unmetered. */
-  worst: number;
+export interface CapWalk {
+  /** USD spent when the briefing completes or the cap refuses a request. */
+  spent: number;
+  /** The stage whose request the cap refuses, or `null` when the briefing completes. */
+  refusedAt: string | null;
+  /** The worst case one request of each stage reserves. */
+  reservations: Record<string, number>;
 }
 
 /**
- * What a capped live run can cost beyond its estimate, high scenario. The
- * cap stops the next request, so a briefing ends above it by at most the
- * request in flight; a timed-out request reports no usage, so up to two per
- * stage call (one per attempt) escape the cap.
+ * Walks one briefing through a capped ledger under `scenario`: before each
+ * request the cap reserves its worst case (`requestCostUsd` at the stage's
+ * `max_tokens` and `max_uses`, `TOKENS_PER_SEARCH_CEILING` per search, the
+ * prompt at `CHARS_PER_TOKEN_FLOOR` characters per token), then the request
+ * costs what the scenario says. Synthesis sections start together, so all of
+ * a pass's sections must fit at once. The scenario's stage retry repeats the
+ * costliest stage right after it. A refused `synthesis-rerun` leaves the
+ * brief complete, with the rerun skipped.
  */
-export function ceiling(root: string, ids: readonly string[], capUsd: number): Ceiling {
-  const high = SCENARIOS.find((s) => s.name === "high") as Scenario;
-  const once = { ...high, stageRetries: 0 };
-  const strict = strictFormats(root);
-  let maxRequest = 0;
-  const unmetered: Record<string, number> = {};
-  for (const id of ids) {
-    const meta = readMock(root, id);
-    const perRequest = {
-      ...meta,
-      usage: {
-        stages: Object.fromEntries(
-          Object.entries(meta.usage.stages).map(([k, v]) => [k, { ...v, calls: 1, input_tokens: v.input_tokens / v.calls }])
-        ),
+export function capWalk(
+  meta: MockMetadata,
+  strictEditorial: boolean,
+  scenario: Scenario,
+  capUsd: number,
+  prices: PriceTable = DEFAULT_PRICE_TABLE
+): CapWalk {
+  const { stages } = estimateBriefing(meta, strictEditorial, scenario, prices);
+  const costliest = Object.entries(stages).reduce((a, b) => (b[1] > a[1] ? b : a))[0];
+  const reservations: Record<string, number> = {};
+  let spent = 0;
+  for (const stage of Object.keys(stages)) {
+    const mock = meta.usage.stages[stage] ?? meta.usage.stages["synthesis"];
+    if (mock === undefined) throw new Error(`${meta.id}: no mock record for stage '${stage}'`);
+    const limits = stageLimits(stage === "synthesis-rerun" ? "synthesis" : stage);
+    const model = mock.models[0] as string;
+    // The mock counts 4 characters per token; the cap sizes them at the floor.
+    const chars = (mock.input_tokens / mock.calls) * 4 * scenario.upstreamGrowth;
+    const worst = requestCostUsd(
+      {
+        promptTokens: Math.ceil(chars / CHARS_PER_TOKEN_FLOOR),
+        outputTokens: limits.maxTokens,
+        searches: limits.maxSearches,
+        tokensPerSearch: TOKENS_PER_SEARCH_CEILING,
+        outputRereadShare: 1,
       },
-    };
-    maxRequest = Math.max(maxRequest, ...Object.values(estimateBriefing(perRequest, false, high).stages));
-    unmetered[id] = 2 * estimateBriefing(meta, strict.has(meta.format), once).total;
+      model,
+      prices
+    );
+    if (worst === null) throw new Error(`${meta.id}: no price for model '${model}'`);
+    reservations[stage] = worst;
+    const concurrent = stage.startsWith("synthesis") ? mock.calls : 1;
+    const passes = stage.startsWith("synthesis") && strictEditorial ? scenario.strictEditorialPasses : 1;
+    const batches = (mock.calls / concurrent) * Math.ceil(passes);
+    const perBatch = (stages[stage] ?? 0) / batches;
+    const runs = stage === costliest ? 1 + scenario.stageRetries : 1;
+    for (let k = 0; k < batches * runs; k++) {
+      if (spent + concurrent * worst > capUsd + 1e-12) return { spent, refusedAt: stage, reservations };
+      spent += perBatch;
+    }
   }
-  const metered = ids.length * (capUsd + maxRequest);
-  return { maxRequest, metered, unmetered, worst: metered + Object.values(unmetered).reduce((a, b) => a + b, 0) };
+  return { spent, refusedAt: null, reservations };
 }
 
 function readMock(root: string, id: string): MockMetadata & { format: string } {
@@ -227,9 +250,21 @@ if (import.meta.main) {
   for (const r of rows) process.stdout.write(`| ${r.id} | ${usd(r.low)} | ${usd(r.central)} | ${usd(r.high)} |\n`);
   process.stdout.write(`| **Total** | ${usd(totals.low)} | ${usd(totals.central)} | ${usd(totals.high)} |\n`);
   if (cap !== undefined) {
-    const c = ceiling(root, ids, cap);
-    process.stdout.write(`\ncostliest request ${usd(c.maxRequest)}; metered ceiling ${usd(c.metered)}\n`);
-    for (const [id, v] of Object.entries(c.unmetered)) process.stdout.write(`unmetered timeouts ${id} ${usd(v)}\n`);
-    process.stdout.write(`worst case ${usd(c.worst)}\n`);
+    const strict = strictFormats(root);
+    process.stdout.write(`\nUnder a $${cap} cap, each request reserving its worst case:\n`);
+    for (const id of ids) {
+      const meta = readMock(root, id);
+      for (const scenario of SCENARIOS) {
+        const w = capWalk(meta, strict.has(meta.format), scenario, cap);
+        const outcome =
+          w.refusedAt === null
+            ? "completes"
+            : w.refusedAt === "synthesis-rerun"
+              ? "completes, rerun skipped"
+              : `stops before ${w.refusedAt}`;
+        process.stdout.write(`${id} ${scenario.name}: ${outcome} at ${usd(w.spent)}\n`);
+      }
+    }
   }
+
 }

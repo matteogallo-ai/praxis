@@ -8,6 +8,7 @@ import { Orchestrator } from "../../src/orchestrator/orchestrator.ts";
 import { MockLLMProvider } from "../../src/llm/mock-provider.ts";
 import { FormatRegistry } from "../../src/registry/registry.ts";
 import type { LLMProvider } from "../../src/llm/provider.ts";
+import { AnthropicAuthenticationError } from "../../src/llm/errors.ts";
 
 const NOW = new Date("2026-08-20T00:00:00.000Z");
 
@@ -77,5 +78,37 @@ describe("synthesis retry", () => {
       onSourcingFailure: "degrade",
     });
     expect(synthesisCalls).toBe(format.sections.length + 1);
+  });
+});
+
+describe("a failed synthesis section", () => {
+  test("waits for its sibling sections, so every request sent is recorded before the error surfaces", async () => {
+    const mock = new MockLLMProvider({ fixturesDir: "tests/fixtures/mock-llm" });
+    let n = 0;
+    let finished = 0;
+    const llm: LLMProvider = {
+      name: "mock",
+      acceptsSystemPrompt: true,
+      complete: (p, o) => mock.complete(p, o),
+      completeWithTools: async (prompt, tools, options) => {
+        if (!(options?.system ?? "").startsWith("You are a senior editor")) {
+          return mock.completeWithTools(prompt, tools, options);
+        }
+        // The first section fails at once (not retried: an auth error);
+        // the others are still in flight.
+        if (n++ === 0) throw new AnthropicAuthenticationError();
+        await new Promise((r) => setTimeout(r, 20));
+        finished += 1;
+        return mock.completeWithTools(prompt, tools, options);
+      },
+    };
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const format = registry.get("executive-pre-read");
+    const err = await new Orchestrator(registry, llm)
+      .brief("Should we enter the German market?", format.id, { now: NOW, onSourcingFailure: "degrade" })
+      .catch((e: unknown) => e);
+    expect((err as Error).cause).toBeInstanceOf(AnthropicAuthenticationError);
+    expect(finished).toBe(format.sections.length - 1);
   });
 });
