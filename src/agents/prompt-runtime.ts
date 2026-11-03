@@ -23,6 +23,7 @@ import {
   InvalidAgentOutputError,
   MaxToolRoundsExceededError,
   PromptFileError,
+  TruncatedOutputError,
 } from "./errors.ts";
 
 /** A parsed `.prompt` file reduced to the one declaration a stage runs. */
@@ -278,6 +279,9 @@ export async function callModel(
     });
   }
 
+  if (completion.stop_reason === "max_tokens") {
+    throw new TruncatedOutputError(agentId, limits.maxTokens);
+  }
   if (leaksSystemPrompt(completion.text, rendered.system)) {
     throw new InvalidAgentOutputError(
       agentId,

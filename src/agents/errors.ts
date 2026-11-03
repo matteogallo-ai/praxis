@@ -342,3 +342,19 @@ export class MissingAlternativeError extends AdversarialCritiqueError {
     this.name = "MissingAlternativeError";
   }
 }
+
+/**
+ * The model stopped at the stage's `max_tokens`: the answer is cut. It is
+ * refused before JSON extraction, which could otherwise return a complete
+ * object that is not the whole answer, and it is not retried, since the same
+ * ceiling would cut it again at the same price.
+ */
+export class TruncatedOutputError extends AgentExecutionError {
+  readonly maxTokens: number;
+
+  constructor(agentId: string, maxTokens: number) {
+    super(agentId, `the answer was cut at max_tokens (${maxTokens}); raise the stage's ceiling or shorten what it is asked to write`);
+    this.name = "TruncatedOutputError";
+    this.maxTokens = maxTokens;
+  }
+}

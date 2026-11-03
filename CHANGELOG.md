@@ -68,6 +68,13 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- An answer the model stopped at `max_tokens` is refused with
+  `TruncatedOutputError` (new public export, an `AgentExecutionError`) before
+  JSON extraction, which could return a complete first object of a cut
+  answer. It is not retried: the same ceiling would cut it again.
+- `--max-cost-usd` (`praxis brief`, `run-all.ts`) and `--cap-usd`
+  (`estimate:cost`) take plain decimal digits only; `0x10`, `1e3`, `+8`,
+  `.5` and padded values are refused instead of read by `Number()`.
 - Live tests run only with `PRAXIS_LIVE_TESTS=1`; a key in `.env` no longer
   makes `bun test` call the paid API.
 - `bun run bench:mock` is reproducible (fixed clock in mock runs, PDF creation

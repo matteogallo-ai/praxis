@@ -89,6 +89,11 @@ release without notice.
   Anthropic SDKs and is kept; `stageAttempts: 1` in the method options
   restores the single-attempt behaviour. The error a caller finally
   receives is unchanged in type.
+- **Truncated answers.** A stage whose answer stopped at `max_tokens` now
+  fails with `TruncatedOutputError`, a new export and a subclass of
+  `AgentExecutionError`, so an existing `catch` on that class still holds.
+  Before, such an answer was parsed when its first object happened to be
+  complete, and passed on cut.
 
 ## What is acceptable in a PATCH bump
 

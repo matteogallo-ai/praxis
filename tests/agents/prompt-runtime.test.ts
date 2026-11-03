@@ -12,7 +12,8 @@ import {
   stampRetrievalTime,
   UNTRUSTED_CONTENT_RULE,
 } from "../../src/agents/prompt-runtime.ts";
-import { AgentExecutionError, MaxToolRoundsExceededError } from "../../src/agents/errors.ts";
+import { AgentExecutionError, MaxToolRoundsExceededError, TruncatedOutputError } from "../../src/agents/errors.ts";
+import { isRecoverable } from "../../src/agents/retry.ts";
 import type { CompleteOptions, LLMProvider } from "../../src/llm/provider.ts";
 import type { CompleteWithToolsOptions, Tool } from "../../src/llm/types.ts";
 import { AnthropicTimeoutError } from "../../src/llm/errors.ts";
@@ -109,6 +110,24 @@ describe("callModel", () => {
 
   const loaded = () => loadPrompt("demo", writePrompt(PROMPT), "demo");
   const rendered = { system: "SYS", user: "USER" };
+
+  test("an answer cut at max_tokens is refused before any JSON extraction, and not retried", async () => {
+    const llm: LLMProvider = {
+      name: "cut",
+      acceptsSystemPrompt: true,
+      async complete() {
+        throw new Error("unused");
+      },
+      async completeWithTools() {
+        // Parses as JSON once the extractor finds the first object: only stop_reason says it is cut.
+        return { text: '{"risks": []} and then the second obj', tool_calls: [], rounds: 1, stop_reason: "max_tokens" };
+      },
+    };
+    const err = await callModel("risk", llm, loaded(), rendered, { tools: [] }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(TruncatedOutputError);
+    expect((err as Error).message).toMatch(/max_tokens \(16000\)/);
+    expect(isRecoverable(err)).toBe(false);
+  });
 
   test("sends system and user separately, with the prompt's @model", async () => {
     const { llm, seen } = recordingProvider(true);
