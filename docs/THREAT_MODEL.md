@@ -148,9 +148,9 @@ Mitigation:
    `checkProse`).
 5. Both Markdown outputs, the `--full` default and `--render md-enhanced`,
    write model text through one module (`src/renderers/markdown-text.ts`):
-   `<` becomes `&lt;`, `![` cannot open an image, `-->` cannot close the
-   validation comment, and link targets are encoded so a URL stays one
-   target.
+   `<` becomes `&lt;`, `![` cannot open an image, neither `-->` nor `--!>`
+   can close the validation comment, a backslash cannot escape a link's
+   closing bracket, and link targets are encoded so a URL stays one target.
 6. DOCX text is XML-escaped; PDF text is drawn as text, with no link
    annotation.
 
@@ -171,8 +171,10 @@ Tests:
 - `tests/renderers/markdown-enhanced.test.ts`, "model text cannot become
   markup": "raw HTML in a section, a claim or a title is written inert", "an
   image in a claim or a critique is not an image", "a validation issue
-  cannot close the comment it is written in", "a URL with parentheses or
-  spaces stays one link target".
+  cannot close the comment it is written in", "a validation issue cannot
+  close its comment with --!> either", "a source title ending in a backslash
+  cannot escape its closing bracket", "a URL with parentheses or spaces stays
+  one link target".
 - `tests/cli/output.test.ts`, "renderFullBrief — model text cannot become
   markup": "raw HTML and images in a section are written inert", "a
   validation issue cannot close its comment, and a URL stays one link

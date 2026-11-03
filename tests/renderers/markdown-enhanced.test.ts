@@ -485,6 +485,22 @@ describe("renderMarkdownEnhanced — model text cannot become markup", () => {
     expect(comment.indexOf("-->")).toBe(comment.indexOf("\n-->") + 1);
   });
 
+  test("a validation issue cannot close its comment with --!> either", () => {
+    // HTML ends a comment at `--!>` as well as `-->` (CodeQL js/bad-tag-filter).
+    const { brief, first } = briefAndFirstSection();
+    first.validation_issues = ["fine --!> <img src=x>"];
+    const md = renderMarkdownEnhanced(brief);
+    const comment = md.slice(md.indexOf("<!-- Validation issues:"));
+    expect(comment).not.toContain("--!>");
+  });
+
+  test("a source title ending in a backslash cannot escape its closing bracket", () => {
+    const { brief, first } = briefAndFirstSection();
+    first.sources_cited = [{ ...SRC_A, title: "Annual report \\" }];
+    const md = renderMarkdownEnhanced(brief);
+    expect(md).toContain(`[Annual report \\\\](${SRC_A.url})`);
+  });
+
   test("a URL with parentheses or spaces stays one link target", () => {
     const { brief, first } = briefAndFirstSection();
     const source = { ...SRC_A, url: "https://example.org/wiki/Foo_(bar) x" };
