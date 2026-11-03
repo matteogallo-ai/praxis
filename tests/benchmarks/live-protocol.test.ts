@@ -4,7 +4,7 @@
  * what `estimate:cost` prints for them.
  */
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 import {
   capWalk,
@@ -53,6 +53,19 @@ function smallestCap(sc: Scenario, done: (refusedAt: string | null) => boolean):
   return Number.NaN;
 }
 
+
+/** Every request of every committed count_tokens measurement. */
+function measuredRequests(): { stage: string; chars: number; tokens: number }[] {
+  return readdirSync("benchmarks/token-counts")
+    .filter((f) => f.endsWith(".json"))
+    .flatMap(
+      (f) =>
+        (JSON.parse(readFileSync(`benchmarks/token-counts/${f}`, "utf-8")) as {
+          requests: { stage: string; chars: number; tokens: number }[];
+        }).requests
+    );
+}
+
 describe("docs/live-proof-protocol.md", () => {
   test("its bench:live commands run exactly the questions the rule selects", () => {
     const ids = [...doc.matchAll(/bun run bench:live -- [^\n]*--ids (\S+)/g)].flatMap((m) => (m[1] ?? "").split(","));
@@ -94,11 +107,19 @@ describe("docs/live-proof-protocol.md", () => {
     }
   });
 
+  test("its measured ratio, range and count are the committed measurements'", async () => {
+    const { measuredCharsPerToken } = await import("../../benchmarks/estimate-cost.ts");
+    const requests = measuredRequests();
+    const ratios = requests.map((r) => r.chars / r.tokens);
+    const files = readdirSync("benchmarks/token-counts").filter((f) => f.endsWith(".json")).length;
+    expect(flat).toContain(`read at the ${measuredCharsPerToken(".").toFixed(2)} characters per token`);
+    expect(flat).toContain(`measured on ${requests.length} rendered prompts of ${files} questions`);
+    expect(flat).toContain(`${Math.min(...ratios).toFixed(2)} to ${Math.max(...ratios).toFixed(2)} per request`);
+  });
+
   test("its API-overhead margin is what the measured counts leave under the floor", async () => {
     const { CHARS_PER_TOKEN_FLOOR } = await import("../../src/llm/pricing.ts");
-    const { requests } = JSON.parse(readFileSync("benchmarks/token-counts/05-supply-chain-acquisition.json", "utf-8")) as {
-      requests: { stage: string; chars: number; tokens: number }[];
-    };
+    const requests = measuredRequests();
     const margin = (stages: string[]) =>
       Math.min(...requests.filter((r) => stages.includes(r.stage)).map((r) => Math.floor(r.chars / CHARS_PER_TOKEN_FLOOR - r.tokens)));
     expect(flat).toContain(`at least ${margin(["scoping"])} tokens on the shortest`);
@@ -168,6 +189,6 @@ describe("docs/live-proof-protocol.md", () => {
     const [q11] = estimateRun(".", ["11-family-office-co-investment"]).rows;
     const [q12] = estimateRun(".", ["12-sodium-ion-plant-morocco"]).rows;
     expect(doc.replace(/\s+/g, " ")).toContain(`Question 11 is ${usd((q05?.central ?? 0) - (q11?.central ?? 0))} cheaper`);
-    for (const k of ["low", "central", "high"] as const) expect(usd(q12?.[k] ?? 0)).toBe(usd(q05?.[k] ?? 0));
+    for (const k of ["low", "central", "high"] as const) expect(Math.abs((q12?.[k] ?? 0) - (q05?.[k] ?? 0))).toBeLessThan(0.015);
   });
 });

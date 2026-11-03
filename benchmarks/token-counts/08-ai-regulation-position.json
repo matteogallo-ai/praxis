@@ -1,0 +1,116 @@
+{
+  "question": "08-ai-regulation-position",
+  "measured_at": "2026-11-03",
+  "endpoint": "POST /v1/messages/count_tokens (free; system and user text, no tools)",
+  "source": "the mock run's rendered prompts (bun run benchmarks/count-tokens.ts)",
+  "requests": [
+    {
+      "stage": "scoping",
+      "model": "claude-opus-5-5",
+      "chars": 2335,
+      "tokens": 808
+    },
+    {
+      "stage": "research",
+      "model": "claude-sonnet-5-5",
+      "chars": 4383,
+      "tokens": 1512
+    },
+    {
+      "stage": "stakeholder",
+      "model": "claude-sonnet-5-5",
+      "chars": 9530,
+      "tokens": 3526
+    },
+    {
+      "stage": "risk",
+      "model": "claude-sonnet-5-5",
+      "chars": 19635,
+      "tokens": 7433
+    },
+    {
+      "stage": "options",
+      "model": "claude-opus-5-5",
+      "chars": 32989,
+      "tokens": 12553
+    },
+    {
+      "stage": "synthesis",
+      "model": "claude-sonnet-5-5",
+      "chars": 41783,
+      "tokens": 15573
+    },
+    {
+      "stage": "synthesis",
+      "model": "claude-sonnet-5-5",
+      "chars": 41336,
+      "tokens": 15418
+    },
+    {
+      "stage": "synthesis",
+      "model": "claude-sonnet-5-5",
+      "chars": 41251,
+      "tokens": 15385
+    },
+    {
+      "stage": "synthesis",
+      "model": "claude-sonnet-5-5",
+      "chars": 41262,
+      "tokens": 15389
+    },
+    {
+      "stage": "synthesis",
+      "model": "claude-sonnet-5-5",
+      "chars": 41314,
+      "tokens": 15423
+    },
+    {
+      "stage": "synthesis",
+      "model": "claude-sonnet-5-5",
+      "chars": 41182,
+      "tokens": 15361
+    },
+    {
+      "stage": "adversarial",
+      "model": "claude-opus-5-5",
+      "chars": 53390,
+      "tokens": 19526
+    },
+    {
+      "stage": "synthesis-rerun",
+      "model": "claude-sonnet-5-5",
+      "chars": 43938,
+      "tokens": 16330
+    },
+    {
+      "stage": "synthesis-rerun",
+      "model": "claude-sonnet-5-5",
+      "chars": 44222,
+      "tokens": 16419
+    },
+    {
+      "stage": "synthesis-rerun",
+      "model": "claude-sonnet-5-5",
+      "chars": 44169,
+      "tokens": 16377
+    },
+    {
+      "stage": "synthesis-rerun",
+      "model": "claude-sonnet-5-5",
+      "chars": 43417,
+      "tokens": 16146
+    },
+    {
+      "stage": "synthesis-rerun",
+      "model": "claude-sonnet-5-5",
+      "chars": 43469,
+      "tokens": 16180
+    },
+    {
+      "stage": "synthesis-rerun",
+      "model": "claude-sonnet-5-5",
+      "chars": 43337,
+      "tokens": 16118
+    }
+  ]
+}

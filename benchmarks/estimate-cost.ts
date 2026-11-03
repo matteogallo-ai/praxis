@@ -19,7 +19,7 @@
  *
  *   bun run estimate:cost -- --ids 02-cfo-buyback-briefing,12-sodium-ion-plant-morocco
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { parseUsd } from "../src/cli/run-args.ts";
@@ -38,26 +38,39 @@ export const MOCK_CHARS_PER_TOKEN = 4;
 /**
  * Characters per token of the briefings measured with Anthropic's
  * count_tokens endpoint (`benchmarks/token-counts/*.json`): all their
- * characters over all their tokens.
+ * characters over all their tokens. A record that is not a positive count
+ * stops the estimate rather than turning it into NaN.
  */
 export function measuredCharsPerToken(root: string): number {
   const dir = join(root, "benchmarks", "token-counts");
+  if (!existsSync(dir)) throw new Error(`no measured token counts: ${dir} is missing`);
   let chars = 0;
   let tokens = 0;
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
-    const { requests } = JSON.parse(readFileSync(join(dir, file), "utf-8")) as {
-      requests: { chars: number; tokens: number }[];
-    };
-    for (const r of requests) {
+    let requests: unknown;
+    try {
+      requests = (JSON.parse(readFileSync(join(dir, file), "utf-8")) as { requests?: unknown }).requests;
+    } catch (err) {
+      throw new Error(`${file}: not JSON (${err instanceof Error ? err.message : String(err)})`);
+    }
+    if (!Array.isArray(requests)) throw new Error(`${file}: no 'requests' array`);
+    for (const r of requests as { chars?: unknown; tokens?: unknown }[]) {
+      const ok = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v > 0;
+      if (!ok(r.chars) || !ok(r.tokens)) throw new Error(`${file}: a request without positive 'chars' and 'tokens'`);
       chars += r.chars;
       tokens += r.tokens;
     }
   }
-  if (!(tokens > 0)) throw new Error(`no measured token counts under ${dir}`);
+  if (tokens === 0) throw new Error(`no measured token counts under ${dir}`);
   return chars / tokens;
 }
 
-const MEASURED_CHARS_PER_TOKEN = measuredCharsPerToken(resolve(import.meta.dir, ".."));
+let measuredRatio: number | undefined;
+/** Read on first use, so importing this module reads no file. */
+function defaultCharsPerToken(): number {
+  measuredRatio ??= measuredCharsPerToken(resolve(import.meta.dir, ".."));
+  return measuredRatio;
+}
 
 export interface Scenario {
   name: "low" | "central" | "high";
@@ -128,7 +141,7 @@ export function estimateBriefing(
   strictEditorial: boolean,
   scenario: Scenario,
   prices: PriceTable = DEFAULT_PRICE_TABLE,
-  charsPerToken: number = MEASURED_CHARS_PER_TOKEN
+  charsPerToken: number = defaultCharsPerToken()
 ): { stages: Record<string, number>; total: number } {
   const stages: Record<string, number> = {};
   const measured = { ...meta.usage.stages };

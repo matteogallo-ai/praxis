@@ -46,7 +46,7 @@ import {
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 // 2026-10-21 rejects temperature, top_p and top_k with a 400 on every model,
 // so the request builder never sends them.
-const ANTHROPIC_VERSION = "2026-10-21";
+export const ANTHROPIC_VERSION = "2026-10-21";
 // claude-sonnet-4-5 is deprecated (retires 2026-11-30).
 const DEFAULT_MODEL = "claude-sonnet-5-5";
 const DEFAULT_MAX_TOKENS = 4096;
