@@ -50,7 +50,7 @@ under this method is planned in [`live-proof-protocol.md`](live-proof-protocol.m
    than the pipeline, or a human annotates at least two briefings on the same
    grid; judge–human agreement is computed and published next to the scores.
    A judged score without that check is labelled *unvalidated*. Praxis takes
-   the second branch: its judge, Claude Fable 5.1, is a model no stage uses
+   the second branch: its judge, Claude Opus 5, is a model no stage uses
    but the same family, so the maintainer annotates two briefings
    (`docs/live-proof-protocol.md`).
 4. **Every number states its `n`.** Scores in `RESULTS.md` come from a script

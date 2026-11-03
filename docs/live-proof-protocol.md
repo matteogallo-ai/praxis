@@ -14,8 +14,8 @@ first one briefing, then the other four, then the judge.
   interval; with n = 5, 5/5 completed reads "57%–100%".
 
 It cannot prove that one prompt or model is better than another: that needs
-the noise band of repeated runs (DoD B4), which this protocol measures on
-the judge only.
+the noise band of repeated runs (DoD B4), which this protocol does not
+measure, on the pipeline or on the judge ([§ Roadmap](#roadmap-not-run-by-this-protocol)).
 
 ## The five briefings
 
@@ -130,14 +130,28 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 **2. Judge**, on completed briefings only, under its own GO
 ([§ Judge](#judge)).
 
-- **Model**: chosen after step 0 from its measured cost ([§ Judge](#judge)):
-  Fable 5.1 (`claude-fable-5-1`, `JUDGE_MODEL` in
-  `benchmarks/score-all.ts` today) or Opus 5 (`claude-opus-5`). Every
-  stage runs on Claude Opus 5.5 or Sonnet 5.5, so neither scores the model
+- **Model**: Opus 5 (`claude-opus-5`, `JUDGE_MODEL` in
+  `benchmarks/score-all.ts`) through the Message Batches API, chosen by the
+  maintainer on 2026-11-03 from the variants of [§ Judge](#judge). Every
+  stage runs on Claude Opus 5.5 or Sonnet 5.5, so none scores the model
   that wrote the brief; a test fails if `JUDGE_MODEL` becomes any stage's
-  `@model`. Both run thinking by default and can stop with `refusal`.
-  Fable 5.1 is a Covered Model: 30-day retention, and an organisation
-  under zero data retention gets a 400 from it.
+  `@model`. It thinks by default, within the same `max_tokens` as its
+  answer, and can stop with `refusal`.
+- **Cost cap**: `score-all.ts` refuses a paid run without
+  `--max-cost-usd`. Before submitting, it reserves the batch's worst case:
+  each prompt at 2.5 characters per token plus all 8 000 `max_tokens`, at
+  batch prices (half the standard price). A batch whose worst case passes
+  the cap is not sent; `--dry-run` prints that worst case. The 2.5 is an
+  allowance, as for the pipeline ([§ Ceiling](#ceiling)): a briefing that
+  tokenizes below it costs more than it reserved, and a spend past the cap
+  makes the run exit non-zero. Effort is `medium`. A `refusal` or
+  `max_tokens` answer fails its briefing and is charged; errored, canceled
+  and expired requests are not billed. A file under
+  `benchmarks/.scoring-cache/` records the submitted batch, so a rerun
+  polls it instead of paying for a second one; the raw results are kept
+  there as `batch-<id>.jsonl`. A rerun whose briefings differ from the
+  pending batch's (a cache entry past its 24 hours, say) is refused until
+  that file is deleted.
 - **Limitation, same family.** Judge and pipeline are all Claude models,
   trained by the same company on overlapping data. A bias they share (a
   phrasing they all reward, a claim they all accept) is not seen by the
@@ -151,12 +165,13 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 - **Grid**: the seven criteria scored 1–5 in
   [`benchmarking-methodology.md`](benchmarking-methodology.md#the-rubric)
   (total /35).
-- **Noise band**: each briefing judged 3 times; the median per criterion is
-  the score, the spread is published next to it.
+- **One judgment per briefing**: that judgment is the score. Its noise is
+  not measured, so a one-point gap between two briefings is published as
+  is, never as a difference ([§ Roadmap](#roadmap-not-run-by-this-protocol)).
 
-**3. The judge is checked** (DoD B2). Its scores are called *indicative*
-only if both thresholds hold; otherwise they are published as
-*unvalidated*, with the numbers that failed.
+**3. The judge is checked** (DoD B2), against a human only. Its scores are
+called *indicative* only if that threshold holds; otherwise they are
+published as *unvalidated*, with the numbers that failed.
 
 - **Against a human**: the maintainer scores two briefings blind on the
   same grid: `05-supply-chain-acquisition` (step 0) and the first of 02, 08,
@@ -178,6 +193,18 @@ only if both thresholds hold; otherwise they are published as
   unstable when scores bunch at 3–4. Passing this check makes the judge's
   scores *indicative*, never *validated*, and CLAIMS C18 stays on the
   roadmap.
+
+**What the five consume.** Running and publishing these five test
+questions spends them: from then on they are dev data. A later held-out
+claim uses the three test questions left (03, 07, 10) or new ones.
+
+## Roadmap (not run by this protocol)
+
+The judge's own reliability ([`CLAIMS.md`](CLAIMS.md) C23). Neither is
+built; neither result exists, and no published score depends on them.
+
+- **Noise band**: each briefing judged 3 times; the median per criterion
+  would be the score, the spread published next to it.
 - **Against planted errors**: for each briefing, three copies with one fault
   each, all detectable from the text alone, each with the criterion it must
   lower, fixed before any judging:
@@ -189,31 +216,20 @@ only if both thresholds hold; otherwise they are published as
   | The recommendation reversed against its own analysis | 3 Decisive recommendation |
 
   Two controls: the unchanged briefing, and a neutral copy (three sentences
-  reworded, meaning kept). Each copy and each control is judged 3 times. A
+  reworded, meaning kept). Each copy and each control would be judged 3 times. A
   fault is detected when the median on its criterion is at least 1 below the
   unchanged briefing's median; the neutral copy measures how often that
   happens with no fault. **Threshold: at least 12 of 15 faults detected and
   at most 1 of 15 neutral criterion readings (the same three criteria, five
   briefings) 1 or more below the unchanged median**, each published as k/15
-  with its Wilson interval.
-
-**What the five consume.** Running and publishing these five test
-questions spends them: from then on they are dev data. A later held-out
-claim uses the three test questions left (03, 07, 10) or new ones.
+  with its Wilson interval. It needs a perturbation generator.
 
 ## Not built yet (free, before the judge's GO)
 
-- A cost cap on the judge. Until it exists `score-all.ts` refuses any run
-  but `--dry-run`. Today the judge calls `complete()` with no ledger, the
-  provider's default `max_tokens` (4 096, which Fable 5.1's thinking can
-  use up) and default timeout (60 s, short for a thinking model: a request
-  that times out is billed and not counted), without reading `stop_reason`
-  (a `refusal` or `max_tokens` answer becomes a JSON error) and without an
-  `effort`. All five are set and tested before the judge's GO.
 - Reading the maintainer's scores back from the annotation file, and the
   agreement computation.
 - The script that writes `RESULTS.md` from the artefacts and its `--check`
-  in CI (methodology point 4), and the perturbation generator.
+  in CI (methodology point 4).
 - For the hard case, a per-source check of whether each cited source is
   about sodium-ion cells (its `intent`). The judge cannot do it without
   reading the sources; it is a manual check on the sourcing report until it
@@ -329,13 +345,17 @@ five at $14 the ceiling is $70.00 within the allowances.
 
 ### Judge
 
-Chosen after step 0, from its measured cost. Each call reads ≈ 16 000
+Opus 5 through the Batch API, chosen 2026-11-03; the other rows are what
+it was chosen against. Each call reads ≈ 16 000
 input tokens (a mock brief is 4 200–4 800 tokens, a live one 2–3 times
 that, plus the grid) and writes up to 8 000 output tokens, thinking
-included. Per briefing, 3 judgments each of the unchanged briefing (noise
-band and control), the neutral copy and the three faulty copies: 15 calls,
-75 for the five. Prices from Anthropic's pricing page, read 2026-11-03
-(`src/llm/pricing.ts`):
+included. The table sizes the full design: per briefing, 3 judgments each
+of the unchanged briefing, the neutral copy and the three faulty copies,
+15 calls, 75 for the five. This protocol sends one call per briefing
+(the noise band and the copies are roadmap): on Opus 5 through the Batch
+API, $0.14 per briefing, $0.70 for the five. Prices from Anthropic's pricing page, read 2026-11-03
+(`src/llm/pricing.ts`). The table is the full design (roadmap), not this
+protocol's cost:
 
 | Variant | Per call | Per briefing | Five | Five, 2× margin |
 | --- | ---: | ---: | ---: | ---: |
@@ -355,7 +375,7 @@ band and control), the neutral copy and the three faulty copies: 15 calls,
   the $4.20.
 - **Batch API**: the same calls through Message Batches, 50% off input and
   output, answers within 24 hours. Nobody waits on the judge, so it costs
-  only latency; it needs a batch submit-and-poll path in `score-all.ts`.
+  only latency. This is the path `score-all.ts` takes.
 - Rejected: Opus 5.5 ($0.22 per call). It wrote the scoping, the options
   and the adversarial critique the judged brief rests on, so it would
   score its own work.
@@ -368,8 +388,10 @@ band and control), the neutral copy and the three faulty copies: 15 calls,
 2. **Step 1**, after step 0 and a re-costing from its measured usage: the
    other four. Before that re-costing: at most $14 each, $56.00 for the
    four, within the same allowances.
-3. **Judge**, once its cap is built, its variant chosen and the briefings
-   are in: the figure of the chosen row of [§ Judge](#judge).
+3. **Judge**, once the briefings are in:
+   `bun run score:live -- --max-cost-usd <n>`, one judgment per
+   briefing, with `<n>` the worst case `bun run score:dry` prints.
+   Expected ≈ $0.70 for the five; `<n>` at most $1.40 (2× margin).
 
 Anything else, a second attempt at a question included, needs a new
 estimate.
