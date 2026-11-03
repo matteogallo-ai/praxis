@@ -85,6 +85,47 @@ export function loadPriceTable(path: string): PriceTable {
   return { models, web_search_per_1000: obj["web_search_per_1000"] };
 }
 
+/**
+ * Context tokens one web search is assumed to add, at most. No API parameter
+ * bounds what a search returns, so this is an allowance, not a guarantee: the
+ * cost estimate's high scenario and the budget cap's worst case both use it.
+ */
+export const TOKENS_PER_SEARCH_CEILING = 15_000;
+
+/** One request as the estimate and the cap size it. */
+export interface RequestShape {
+  /** Tokens of the prompt as sent (system, messages, a re-sent turn). */
+  promptTokens: number;
+  /** Output tokens, thinking included. */
+  outputTokens: number;
+  /** Web searches the request runs. */
+  searches: number;
+  /** Context tokens each search adds. */
+  tokensPerSearch: number;
+}
+
+/**
+ * USD for one request, or `null` when `model` is not in the table. A
+ * web-searching request re-reads its context after each search, so with `s`
+ * searches of `r` tokens, prompt `P` and output `O` spread over the `s+1`
+ * rounds, its input is (s+1)·P + r·s(s+1)/2 + O·s/2.
+ */
+export function requestCostUsd(shape: RequestShape, model: string, table: PriceTable): number | null {
+  const { promptTokens: p, outputTokens: o, searches: s, tokensPerSearch: r } = shape;
+  const input = (s + 1) * p + (r * s * (s + 1)) / 2 + (o * s) / 2;
+  return costOf(
+    {
+      input_tokens: Math.round(input),
+      output_tokens: Math.round(o),
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+      web_search_requests: s,
+    },
+    model,
+    table
+  );
+}
+
 /** USD for one call, or `null` when `model` is not in the table. */
 export function costOf(usage: TokenUsage, model: string, table: PriceTable): number | null {
   // The API may answer with a dated id (`claude-opus-5-5-20261001`) for an alias.
