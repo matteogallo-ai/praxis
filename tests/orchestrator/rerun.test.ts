@@ -308,3 +308,86 @@ describe("computeReSynthesisDeviations", () => {
     expect(computeReSynthesisDeviations(a, b)).toEqual(["body"]);
   });
 });
+
+describe("Orchestrator.briefWithCritiqueAndRerun() — what the rerun addresses", () => {
+  test("it addresses exactly the critical and material critiques, and its reason names them", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const out = await new Orchestrator(registry, makeMockProvider()).briefWithCritiqueAndRerun(
+      "Should we enter the German market?",
+      "executive-pre-read",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    const blocking = out.adversarial.critiques.filter((c) => c.severity === "critical" || c.severity === "material");
+    expect(out.adversarial.critiques.length).toBeGreaterThan(blocking.length);
+    expect(out.rerun_metadata?.critiques_addressed).toEqual(blocking.map((c) => c.id));
+    const trigger =
+      out.adversarial.critical_count >= 1
+        ? `${out.adversarial.critical_count} critical critique(s)`
+        : `${out.adversarial.material_count} material critique(s)`;
+    expect(out.rerun_reason).toBe(
+      `${trigger} triggered a Synthesis rerun in REVISION MODE addressing critique IDs: ${blocking.map((c) => c.id).join(", ")}.`
+    );
+  });
+
+  test("a critique without counter-evidence is reported as a missing source after the brief's own items", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, noRevisionProvider(makeMockProvider()));
+    const now = new Date("2026-08-18T00:00:00Z");
+    const brief = await orch.brief("Should we enter the German market?", "executive-pre-read", { now });
+    const out = await orch.briefWithCritique("Should we enter the German market?", "executive-pre-read", { now });
+    const added = out.sourcing_report.warnings.slice(brief.sourcing_report.warnings.length);
+    expect(added).toEqual([1, 2, 3].map((n) => ({
+      kind: "missing_source",
+      finding_index: brief.sourcing_report.total_items + n - 1,
+      searched_for: `[CRIT-00${n}] n/a #${n}`,
+    })));
+  });
+});
+
+describe("Orchestrator.briefWithCritique() — sourced critiques", () => {
+  test("only critiques without counter-evidence add a missing-source warning", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const orch = new Orchestrator(registry, makeMockProvider());
+    const now = new Date("2026-08-18T00:00:00Z");
+    const brief = await orch.brief("Should we enter the German market?", "executive-pre-read", { now });
+    const out = await orch.briefWithCritique("Should we enter the German market?", "executive-pre-read", { now });
+    const unsourced = out.adversarial.critiques.filter((c) => "status" in c.counter_evidence);
+    expect(unsourced.length).toBeLessThan(out.adversarial.critiques.length);
+    expect(out.sourcing_report.warnings.length - brief.sourcing_report.warnings.length).toBe(unsourced.length);
+  });
+});
+
+describe("Orchestrator.briefWithCritiqueAndRerun() — the rerun prompt", () => {
+  test("only the rerun's synthesis prompts carry REVISION MODE and the revision instruction", async () => {
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const mock = makeMockProvider();
+    const synthesisPrompts: string[] = [];
+    const recording: LLMProvider = {
+      name: mock.name,
+      async complete(prompt: string): Promise<string> {
+        if (prompt.includes("Synthesize section")) synthesisPrompts.push(prompt);
+        return mock.complete(prompt);
+      },
+      async completeWithTools(prompt: string, tools: Tool[]): Promise<CompletionResult> {
+        if (prompt.includes("Synthesize section")) synthesisPrompts.push(prompt);
+        return mock.completeWithTools(prompt, tools);
+      },
+    };
+    const out = await new Orchestrator(registry, recording).briefWithCritiqueAndRerun(
+      "Should we enter the German market?",
+      "executive-pre-read",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    const sections = out.synthesis.sections.length;
+    expect(synthesisPrompts).toHaveLength(2 * sections);
+    const revised = synthesisPrompts.filter((p) => p.includes("REVISION MODE"));
+    expect(revised).toEqual(synthesisPrompts.slice(sections));
+    for (const p of revised) {
+      expect(p).toContain("revise sections and align recommendation with the steelmanned alternative");
+    }
+  });
+});
