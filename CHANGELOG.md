@@ -73,9 +73,9 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - The judge is Claude Opus 5 (`claude-opus-5`), sent as one Message Batch
   at half price (`benchmarks/judge-batch.ts`). A paid scoring run needs
   `--max-cost-usd`. The batch's worst case is reserved before it is
-  submitted: each prompt at 2.5 characters per token plus 8 000
-  `max_tokens`, effort `medium`. A batch whose worst case does not fit is
-  not sent. `refusal` and `max_tokens` answers fail their briefing. A
+  submitted: each prompt at 2.5 characters per token (an allowance, as for
+  the pipeline) plus 8 000 `max_tokens`, effort `medium`. A batch whose
+  worst case does not fit is not sent; a spend past the cap fails the run. `refusal` and `max_tokens` answers fail their briefing. A
   submitted batch is resumed, never sent twice. `--dry-run` prints the
   worst case.
 - The cost estimate reads prompt sizes at the 2.73 characters per token

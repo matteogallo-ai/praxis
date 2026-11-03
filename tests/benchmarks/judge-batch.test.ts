@@ -61,7 +61,15 @@ function succeeded(id: string, usage: unknown, stop = "end_turn", text = SCORE_T
 }
 
 /** A fake Batches API: create, then `pollsBeforeEnd` in_progress answers, then ended. */
-function fakeApi(opts: { results: string[]; pollsBeforeEnd?: number; createStatus?: number; resultsUrl?: string }) {
+function fakeApi(opts: {
+  results: string[];
+  pollsBeforeEnd?: number;
+  createStatus?: number;
+  resultsUrl?: string;
+  pollStatus?: number;
+  resultsStatus?: number;
+  midStatus?: string;
+}) {
   const calls: Call[] = [];
   let polls = 0;
   const batch = (status: string) => ({
@@ -85,9 +93,11 @@ function fakeApi(opts: { results: string[]; pollsBeforeEnd?: number; createStatu
     }
     if (url === `${BATCHES_URL}/msgbatch_test`) {
       polls++;
-      return new Response(JSON.stringify(batch(polls > (opts.pollsBeforeEnd ?? 0) ? "ended" : "in_progress")));
+      if (opts.pollStatus !== undefined) return new Response("{}", { status: opts.pollStatus });
+      const mid = opts.midStatus ?? "in_progress";
+      return new Response(JSON.stringify(batch(polls > (opts.pollsBeforeEnd ?? 0) ? "ended" : mid)));
     }
-    if (url.endsWith("/results")) return new Response(`${opts.results.join("\n")}\n`);
+    if (url.endsWith("/results")) return new Response(`${opts.results.join("\n")}\n`, { status: opts.resultsStatus ?? 200 });
     return new Response("unexpected", { status: 599 });
   };
   return { calls, fetchFn };
@@ -195,16 +205,21 @@ describe("runJudgeBatch — results", () => {
     expect(run.spent_usd).toBe(0);
     clearPendingBatch(statePath);
 
+    const [, b] = REQUESTS as [JudgeRequest, JudgeRequest];
     const expired = JSON.stringify({ custom_id: a.custom_id, result: { type: "expired" } });
-    const api2 = fakeApi({ results: [expired] });
-    const run2 = await runJudgeBatch([a], { ...base(), capUsd: WORST, fetchFn: api2.fetchFn });
-    expect(run2.outcomes.map((o) => o.error)).toEqual(["expired"]);
+    const canceled = JSON.stringify({ custom_id: b.custom_id, result: { type: "canceled" } });
+    const api2 = fakeApi({ results: [expired, canceled] });
+    const run2 = await runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: api2.fetchFn });
+    expect(run2.outcomes.map((o) => o.error)).toEqual(["expired", "canceled"]);
+    expect(run2.spent_usd).toBe(0);
   });
 
   test("a results line that is not JSON, or names an unknown request, stops the run and keeps the batch to resume", async () => {
     for (const bad of ["not json", succeeded("live-unknown", { input_tokens: 1, output_tokens: 1 })]) {
       const api = fakeApi({ results: [bad] });
-      await expect(runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: api.fetchFn })).rejects.toThrow(/results/);
+      await expect(runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: api.fetchFn })).rejects.toThrow(
+        /results.*Console.*delete/s
+      );
       expect(JSON.parse(readFileSync(statePath, "utf-8")).batch_id).toBe("msgbatch_test");
       rmSync(statePath);
     }
@@ -214,6 +229,15 @@ describe("runJudgeBatch — results", () => {
     const api = fakeApi({ results: [], resultsUrl: "https://elsewhere.example/results" });
     await expect(runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: api.fetchFn })).rejects.toThrow(/results_url/);
     expect(api.calls.some((c) => c.url.includes("elsewhere"))).toBe(false);
+  });
+});
+
+describe("runJudgeBatch — what was paid for is kept", () => {
+  test("the raw results are written next to the pending file before they are read", async () => {
+    const lines = REQUESTS.map((r) => succeeded(r.custom_id, { input_tokens: 1, output_tokens: 1 }, "end_turn", "not a score"));
+    const api = fakeApi({ results: lines });
+    await runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: api.fetchFn });
+    expect(readFileSync(join(dir, "batch-msgbatch_test.jsonl"), "utf-8")).toBe(`${lines.join("\n")}\n`);
   });
 });
 
@@ -249,6 +273,43 @@ describe("runJudgeBatch — restart", () => {
       /may have reached the API/
     );
     expect(api.calls).toEqual([]);
+  });
+
+  test("a 5xx answer to the submission does not prove no batch was made: reruns stay blocked", async () => {
+    const api = fakeApi({ results: [], createStatus: 529 });
+    await expect(runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: api.fetchFn })).rejects.toThrow(/529/);
+    const again = fakeApi({ results: [] });
+    await expect(runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: again.fetchFn })).rejects.toThrow(
+      /may have reached the API/
+    );
+    expect(again.calls).toEqual([]);
+  });
+
+  test("a failed poll or results download keeps the batch to resume", async () => {
+    for (const fail of [{ pollStatus: 500 }, { resultsStatus: 500 }]) {
+      const api = fakeApi({ results: [], ...fail });
+      await expect(runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: api.fetchFn })).rejects.toThrow(/500/);
+      expect(JSON.parse(readFileSync(statePath, "utf-8")).batch_id).toBe("msgbatch_test");
+      rmSync(statePath);
+    }
+  });
+
+  test("a resumed batch must be on the model asked for", async () => {
+    const first = fakeApi({ results: [], pollsBeforeEnd: 99 });
+    await expect(runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: first.fetchFn })).rejects.toThrow(/still processing/);
+    const api = fakeApi({ results: [] });
+    await expect(
+      runJudgeBatch(REQUESTS, { ...base(), model: "claude-fable-5-1", capUsd: 100, fetchFn: api.fetchFn })
+    ).rejects.toThrow(/claude-opus-5/);
+    expect(api.calls).toEqual([]);
+  });
+
+  test("polling gives up after maxPolls without a last sleep, and waits through canceling", async () => {
+    sleeps.length = 0;
+    const api = fakeApi({ results: [], pollsBeforeEnd: 99, midStatus: "canceling" });
+    await expect(runJudgeBatch(REQUESTS, { ...base(), capUsd: WORST, fetchFn: api.fetchFn })).rejects.toThrow(/still processing/);
+    expect(api.calls.filter((c) => c.method === "GET").length).toBe(5);
+    expect(sleeps.length).toBe(4);
   });
 
   test("a submission the API refused is not billed and leaves nothing pending", async () => {

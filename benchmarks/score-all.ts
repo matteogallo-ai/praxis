@@ -777,7 +777,9 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
       JUDGE_MODEL,
       DEFAULT_PRICE_TABLE
     );
-    process.stderr.write(`  batch worst case: $${worst.toFixed(4)} (--max-cost-usd must be at least this)\n`);
+    process.stderr.write(
+      `  batch worst case: $${worst.toFixed(4)}, cached briefings included (a --max-cost-usd at least this is never refused)\n`
+    );
     process.stderr.write(
       `(no API call issued; --dry-run does not require ANTHROPIC_API_KEY)\n`
     );
@@ -871,6 +873,8 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
       `  batch ${run.batch_id}: $${spentUsd.toFixed(4)} spent, $${reservedUsd.toFixed(4)} reserved, cap $${capUsd.toFixed(2)}\n`
     );
     if (spentUsd > capUsd) {
+      // The run's exit status must show it, not only a line on stderr.
+      errors += 1;
       process.stderr.write("  ✗ spend passed the cap: a prompt tokenized below the floor's characters per token\n");
     }
   }

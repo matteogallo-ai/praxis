@@ -139,11 +139,17 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
   `--max-cost-usd`. Before submitting, it reserves the batch's worst case:
   each prompt at 2.5 characters per token plus all 8 000 `max_tokens`, at
   batch prices (half the standard price). A batch whose worst case passes
-  the cap is not sent; `--dry-run` prints that worst case. Effort is
-  `medium`. A `refusal` or `max_tokens` answer fails its briefing and is
-  charged; errored and expired requests are not billed. A file under
+  the cap is not sent; `--dry-run` prints that worst case. The 2.5 is an
+  allowance, as for the pipeline ([§ Ceiling](#ceiling)): a briefing that
+  tokenizes below it costs more than it reserved, and a spend past the cap
+  makes the run exit non-zero. Effort is `medium`. A `refusal` or
+  `max_tokens` answer fails its briefing and is charged; errored, canceled
+  and expired requests are not billed. A file under
   `benchmarks/.scoring-cache/` records the submitted batch, so a rerun
-  polls it instead of paying for a second one.
+  polls it instead of paying for a second one; the raw results are kept
+  there as `batch-<id>.jsonl`. A rerun whose briefings differ from the
+  pending batch's (a cache entry past its 24 hours, say) is refused until
+  that file is deleted.
 - **Limitation, same family.** Judge and pipeline are all Claude models,
   trained by the same company on overlapping data. A bias they share (a
   phrasing they all reward, a claim they all accept) is not seen by the

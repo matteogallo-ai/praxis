@@ -4,7 +4,8 @@
  * The whole batch's worst case is reserved before it is submitted, as the
  * pipeline's ledger does per request: each prompt at the cap's floor of
  * characters per token, plus all of `max_tokens` (thinking included), at
- * batch prices. A batch whose worst case exceeds the cap is never sent.
+ * batch prices. A batch whose worst case exceeds the cap is never sent. The
+ * floor is an allowance: text that tokenizes below it costs more.
  *
  * A pending-batch file is written before the submission and kept until the
  * caller has stored the results, so a rerun polls the batch it already paid
@@ -16,6 +17,7 @@
  * standard price; errored, canceled and expired requests are not billed.
  */
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import { ANTHROPIC_VERSION, type FetchLike } from "../src/llm/anthropic-provider.ts";
 import { AnthropicAPIError, BudgetExceededError } from "../src/llm/errors.ts";
@@ -33,6 +35,8 @@ export const JUDGE_MAX_TOKENS = 8_000;
 /** `medium`: in Anthropic's knowledge-work runs it matched `high` for less. */
 export const JUDGE_EFFORT = "medium";
 const CUSTOM_ID = /^[a-zA-Z0-9_-]{1,64}$/;
+/** Each call reads or sends a small JSON body; longer is a hung connection. */
+const CALL_TIMEOUT_MS = 120_000;
 
 export interface JudgeRequest {
   custom_id: string;
@@ -124,6 +128,7 @@ async function call(opts: JudgeBatchOptions, url: string, init: { method: string
       "content-type": "application/json",
     },
     ...(init.body === undefined ? {} : { body: init.body }),
+    signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
   });
 }
 
@@ -162,8 +167,9 @@ async function submit(requests: readonly JudgeRequest[], opts: JudgeBatchOptions
     }),
   });
   if (!res.ok) {
-    // The API refused the batch: nothing was created, nothing is billed.
-    clearPendingBatch(opts.statePath);
+    // A 4xx refuses the batch: nothing was created, nothing is billed. A 5xx
+    // does not prove that, so the file stays without a batch id.
+    if (res.status < 500) clearPendingBatch(opts.statePath);
     throw new AnthropicAPIError(res.status, await res.text());
   }
   const id = (await json(res))["id"];
@@ -184,7 +190,7 @@ async function resultsUrl(batchId: string, opts: JudgeBatchOptions): Promise<str
       }
       return url;
     }
-    await opts.sleepFn(opts.pollMs);
+    if (i < opts.maxPolls - 1) await opts.sleepFn(opts.pollMs);
   }
   throw new Error(`batch ${batchId} is still processing after ${opts.maxPolls} polls; rerun to resume it`);
 }
@@ -246,6 +252,11 @@ export async function runJudgeBatch(requests: readonly JudgeRequest[], opts: Jud
       `an earlier batch submission may have reached the API without its answer: find it in the Console (or GET ${BATCHES_URL}), then delete ${opts.statePath}`
     );
   }
+  if (prior !== null && prior.model !== opts.model) {
+    throw new Error(
+      `the pending batch (${prior.batch_id}) runs on ${prior.model}, not ${opts.model}: rerun on ${prior.model}, or delete ${opts.statePath} after checking it in the Console`
+    );
+  }
   if (prior !== null && prior.custom_ids.join("\n") !== requests.map((r) => r.custom_id).join("\n")) {
     throw new Error(
       `a pending batch (${prior.batch_id}) covers other requests: rerun with the same briefings, or delete ${opts.statePath} after checking it in the Console`
@@ -257,6 +268,9 @@ export async function runJudgeBatch(requests: readonly JudgeRequest[], opts: Jud
   const res = await call(opts, url, { method: "GET" });
   const body = await res.text();
   if (!res.ok) throw new AnthropicAPIError(res.status, body);
+  // Billed answers survive a parse failure here or in the caller.
+  writeFileSync(join(dirname(opts.statePath), `batch-${batchId}.jsonl`), body);
+  const stuck = `; the batch stays pending: check it in the Console, then delete ${opts.statePath}`;
 
   const byId = new Map(requests.map((r) => [r.custom_id, r]));
   const found = new Map<string, JudgeOutcome>();
@@ -266,10 +280,12 @@ export async function runJudgeBatch(requests: readonly JudgeRequest[], opts: Jud
     try {
       line = JSON.parse(raw) as ResultLine;
     } catch {
-      throw new Error(`batch ${batchId} results: a line is not JSON: ${raw.slice(0, 120)}`);
+      throw new Error(`batch ${batchId} results: a line is not JSON: ${raw.slice(0, 120)}${stuck}`);
     }
     const request = byId.get(String(line.custom_id));
-    if (request === undefined) throw new Error(`batch ${batchId} results: unknown custom_id ${String(line.custom_id)}`);
+    if (request === undefined) {
+      throw new Error(`batch ${batchId} results: unknown custom_id ${String(line.custom_id)}${stuck}`);
+    }
     found.set(request.custom_id, outcomeOf(line, request, opts));
   }
   const outcomes = requests.map(

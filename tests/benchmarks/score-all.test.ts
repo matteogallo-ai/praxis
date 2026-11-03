@@ -660,7 +660,7 @@ describe("scoreAll — the judge runs as one capped batch", () => {
   });
 
   /** A fake Batches API whose one result is the fixture scoring. */
-  function fakeBatches() {
+  function fakeBatches(usage = { input_tokens: 2_000, output_tokens: 1_000 }) {
     const bodies: unknown[] = [];
     const fetchFn = async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
@@ -682,7 +682,7 @@ describe("scoreAll — the judge runs as one capped batch", () => {
             message: {
               stop_reason: "end_turn",
               content: [{ type: "text", text: VALID }],
-              usage: { input_tokens: 2_000, output_tokens: 1_000 },
+              usage,
             },
           },
         })}\n`
@@ -720,6 +720,14 @@ describe("scoreAll — the judge runs as one capped batch", () => {
     expect(readCache(root, "05-x", "live", 60_000)?.total).toBe(report.scorings[0]?.total as number);
     expect(readFileSync(join(root, "benchmarks", "RESULTS.md"), "utf-8")).toContain("AI-Assisted Qualitative Scoring");
     expect(existsSync(join(root, "benchmarks", ".scoring-cache", "batch-pending.json"))).toBe(false);
+  });
+
+  test("a spend past the cap (text below the floor's characters per token) counts as an error", async () => {
+    const api = fakeBatches({ input_tokens: 1_000_000, output_tokens: 0 });
+    const report = await scoreAll(opts({ maxCostUsd: 1, fetchFn: api.fetchFn, sleepFn: async () => {} }));
+    expect(report.spent_usd).toBeGreaterThan(1);
+    expect(report.scored).toBe(1);
+    expect(report.errors).toBe(1);
   });
 
   test("a cached briefing is not sent again", async () => {
