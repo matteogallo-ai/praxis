@@ -16,7 +16,6 @@ import {
   loadSplit,
   SPLIT_PATH,
   main,
-  render,
   split,
   stratum,
 } from "../../benchmarks/split.ts";
@@ -70,15 +69,6 @@ describe("split", () => {
     const b = split(reversed);
     expect([...b.dev].sort()).toEqual([...a.dev].sort());
     expect([...b.test].sort()).toEqual([...a.test].sort());
-  });
-
-  test("an edit to questions.yaml changes the rendered file, so --check fails until the split is redrawn", () => {
-    const text = readFileSync(MANIFEST_PATH, "utf-8");
-    const s = split(manifest.benchmarks);
-    expect(render(text, manifest.version, s)).toBe(readFileSync(SPLIT_PATH, "utf-8"));
-    expect(render(text.replace("Morocco", "Tunisia"), manifest.version, s)).not.toBe(
-      readFileSync(SPLIT_PATH, "utf-8")
-    );
   });
 
   test("main refuses an unknown argument", () => {

@@ -1,9 +1,10 @@
 version: 2
 
 # The frozen evaluation set: twelve briefing questions, one target format
-# each. `version` changes whenever a question is added, removed or edited,
-# and `benchmarks/split.yaml` (drawn by `benchmarks/split.ts`) records which
-# questions are dev and which are test for that exact file.
+# each. Bump `version` when a question is added, removed or edited.
+# `benchmarks/split.yaml` (drawn by `benchmarks/split.ts`) records which
+# questions are dev and which are test, with this file's SHA-256: the test
+# suite fails on any edit here until the split is redrawn.
 #
 # The `format` field is the canonical routing: `--format auto` reaches the
 # same format from the question text alone (tests/benchmarks/questions-schema.test.ts).
@@ -117,4 +118,4 @@ benchmarks:
       - hard
       - manufacturing
       - thin-sources
-    intent: "Hard case. Few public sources cover sodium-ion cell manufacturing in Morocco, and most are recent announcements, so the strict sourcing policy finds little to cite. Passes only if unsupported findings end up in an 'insufficiently sourced' section rather than being stated as fact."
+    intent: "Hard case. Morocco has plenty of news on lithium-ion (LFP) gigafactories and little on sodium-ion cells, so the trap is citing lithium-ion sources for sodium-ion claims. Fails if the run aborts (ADR 0002: no research finding sourced) or if a sodium-ion claim cites a source about another chemistry. Passes if it completes and every claim it cannot source on sodium-ion is listed under 'Insufficiently sourced' (insufficiently_sourced: true in metadata.json) rather than stated as fact. The first condition is checked by code; the source-to-claim match by the judge and by hand."

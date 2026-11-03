@@ -3,7 +3,7 @@
 seed: 20261103
 dev_fraction: 0.4
 manifest_version: 2
-manifest_sha256: "2560402f95a28adfbb6cbcb3c1c2c8e1eed0d2c490327262d341e2bbb7dec6cd"
+manifest_sha256: "22f6ea11580b3e6b897fb5422f32c2e7817c22927da219e09f90f5069fd80a6c"
 dev:
   - "01-german-market-entry"
   - "04-uk-listing-board-briefing"

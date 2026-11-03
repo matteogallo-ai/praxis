@@ -6,8 +6,8 @@
  * are measured on test. The split is stratified by format, with the hard
  * case (tag `hard`) as a stratum of its own: within each stratum the ids are
  * sorted, shuffled with a PRNG seeded by `SEED`, and the first
- * `round(n × DEV_FRACTION)` go to dev. A stratum of one therefore lands in
- * test, so every format is measured.
+ * `round(n × DEV_FRACTION)` go to dev. While `DEV_FRACTION` is under 0.5, a
+ * stratum of one therefore lands in test, so every format is measured.
  *
  * `split.yaml` also records the manifest's version and SHA-256, so an edit to
  * `questions.yaml` fails `--check` (run by the test suite) until the split is
@@ -86,7 +86,7 @@ export function split(entries: readonly BenchmarkEntry[]): Split {
   };
 }
 
-export function render(manifestText: string, version: number, s: Split): string {
+function render(manifestText: string, version: number, s: Split): string {
   const sha = createHash("sha256").update(manifestText).digest("hex");
   const list = (ids: string[]) => ids.map((id) => `  - "${id}"\n`).join("");
   return (
