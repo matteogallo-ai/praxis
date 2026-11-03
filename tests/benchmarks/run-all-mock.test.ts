@@ -14,6 +14,7 @@
  * seconds).
  */
 import { afterEach, beforeEach, describe, expect, setSystemTime, test } from "bun:test";
+import { restoreSystemTime } from "../helpers/clock.ts";
 import {
   copyFileSync,
   mkdirSync,
@@ -231,7 +232,7 @@ describe("runAll — mock reproducibility", () => {
       const changed = [...first].filter(([k, v]) => Buffer.compare(v, second.get(k)!) !== 0);
       expect(changed.map(([k]) => k)).toEqual([]);
     } finally {
-      setSystemTime();
+      restoreSystemTime();
       rmSync(root, { recursive: true, force: true });
     }
   });

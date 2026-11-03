@@ -119,6 +119,16 @@ Malformed `accessed_at` timestamps are treated as `stale`. The
 `warn_after_days <= max_source_age_days` invariant is validated at
 format load time.
 
+The pipeline's `now` is the library option `now`, else the run's start.
+On the CLI it is the wall clock, or `PRAXIS_NOW` when that holds a UTC
+date and time (`2026-08-20T00:00:00Z`): the same briefing then reaches the
+same freshness verdicts whatever day it runs; the test suite runs with it
+set (`bench:mock` passes the same date as the library option). A resumed
+run keeps the date its first attempt started at. `PRAXIS_NOW` also stamps
+the run id. It does not date retrieval: a source the model returns without
+`accessed_at` is stamped with the real time it was read, so it is fresh by
+construction whatever the clock.
+
 ### Domain trust
 
 `DomainTrustRule` supports three modes:

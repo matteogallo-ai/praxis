@@ -12,6 +12,10 @@ import { MockLLMProvider } from "../../src/llm/mock-provider.ts";
 import { FormatRegistry } from "../../src/registry/registry.ts";
 import { SourcingValidationError } from "../../src/sourcing/errors.ts";
 import { INSUFFICIENTLY_SOURCED_SECTION_ID } from "../../src/sourcing/insufficient.ts";
+import { FIXTURE_CLOCK } from "../fixtures/clock.ts";
+
+/** The fixtures' sources are fresh at this date, whatever the real one. */
+const FIXTURE_NOW = new Date(FIXTURE_CLOCK);
 
 const QUESTION = "Should we enter the German market?";
 const FORMAT = "executive-pre-read";
@@ -50,7 +54,7 @@ describe("strict sourcing failure", () => {
 
   test("degrade: the briefing completes with an Insufficiently sourced section", async () => {
     const orch = orchestrator(fixturesWithMissingSources((i) => i === 0));
-    const result = await orch.brief(QUESTION, FORMAT, { onSourcingFailure: "degrade" });
+    const result = await orch.brief(QUESTION, FORMAT, { onSourcingFailure: "degrade", now: FIXTURE_NOW });
 
     expect(result.sourcing_report.insufficiently_sourced).toBe(true);
     const last = result.synthesis.sections.at(-1);
@@ -65,6 +69,7 @@ describe("strict sourcing failure", () => {
     const orch = orchestrator(fixturesWithMissingSources((i) => i === 0));
     const result = await orch.briefWithCritiqueAndRerun(QUESTION, FORMAT, {
       onSourcingFailure: "degrade",
+      now: FIXTURE_NOW,
     });
     expect(result.sourcing_report.insufficiently_sourced).toBe(true);
     expect(result.synthesis.sections.at(-1)?.section_id).toBe(INSUFFICIENTLY_SOURCED_SECTION_ID);
@@ -73,7 +78,7 @@ describe("strict sourcing failure", () => {
   test("degrade: no sourced finding at all still aborts", async () => {
     const orch = orchestrator(fixturesWithMissingSources(() => true));
     const err = await orch
-      .brief(QUESTION, FORMAT, { onSourcingFailure: "degrade" })
+      .brief(QUESTION, FORMAT, { onSourcingFailure: "degrade", now: FIXTURE_NOW })
       .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(SourcingValidationError);
     expect((err as Error).message).toContain("no research finding has a source");
@@ -81,7 +86,7 @@ describe("strict sourcing failure", () => {
 
   test("a fully sourced run is not flagged", async () => {
     const orch = orchestrator("tests/fixtures/mock-llm");
-    const result = await orch.brief(QUESTION, FORMAT, { onSourcingFailure: "degrade" });
+    const result = await orch.brief(QUESTION, FORMAT, { onSourcingFailure: "degrade", now: FIXTURE_NOW });
     expect(result.sourcing_report.insufficiently_sourced).toBeUndefined();
     expect(result.synthesis.sections.map((s) => s.section_id)).not.toContain(
       INSUFFICIENTLY_SOURCED_SECTION_ID

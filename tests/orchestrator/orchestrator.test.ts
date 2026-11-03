@@ -8,6 +8,10 @@ import { FormatNotFoundError } from "../../src/registry/errors.ts";
 import { SourcingValidationError } from "../../src/sourcing/errors.ts";
 import type { Format } from "../../src/registry/schema.ts";
 import { isSourceMissing } from "../../src/sourcing/types.ts";
+import { FIXTURE_CLOCK } from "../fixtures/clock.ts";
+
+/** The fixtures' sources are fresh at this date, whatever the real one. */
+const FIXTURE_NOW = new Date(FIXTURE_CLOCK);
 
 function baseFormat(
   id: string,
@@ -883,7 +887,8 @@ describe("Orchestrator.brief() — end-to-end", () => {
     const orch = new Orchestrator(registry, makeMockProvider());
     const out = await orch.brief(
       "Should we enter the German market?",
-      "executive-pre-read"
+      "executive-pre-read",
+      { now: FIXTURE_NOW }
     );
     expect(out.provider_name).toBe("mock");
   });
@@ -895,7 +900,7 @@ describe("Orchestrator.brief() — end-to-end", () => {
     const out = await orch.brief(
       "Should we enter the German market?",
       "executive-pre-read",
-      { providerName: "explicit-name" }
+      { providerName: "explicit-name", now: FIXTURE_NOW }
     );
     expect(out.provider_name).toBe("explicit-name");
   });
@@ -975,7 +980,8 @@ describe("Orchestrator.briefWithCritique() — end-to-end", () => {
     // are exercised directly in adversarial.test.ts and integration.
     const out = await orch.briefWithCritique(
       "Should we enter the German market?",
-      "executive-pre-read"
+      "executive-pre-read",
+      { now: FIXTURE_NOW }
     );
     expect(out.adversarial).toBeDefined();
   });
@@ -1002,7 +1008,8 @@ describe("Orchestrator.briefWithCritique() — end-to-end", () => {
     const orch = new Orchestrator(registry, makeMockProvider());
     const out = await orch.brief(
       "Should we enter the German market?",
-      "executive-pre-read"
+      "executive-pre-read",
+      { now: FIXTURE_NOW }
     );
     // The plain brief must not carry adversarial output.
     expect((out as unknown as { adversarial?: unknown }).adversarial).toBeUndefined();
@@ -1015,7 +1022,7 @@ describe("Orchestrator.briefWithCritique() — end-to-end", () => {
     const out = await orch.briefWithCritique(
       "Should we enter the German market?",
       "executive-pre-read",
-      { adversarialMaxToolRounds: 3 }
+      { adversarialMaxToolRounds: 3, now: FIXTURE_NOW }
     );
     expect(out.adversarial).toBeDefined();
   });
