@@ -237,7 +237,8 @@ Grouped for orientation:
   `InvalidOptionStakeholderReference`,
   `InvalidOptionRiskReference`, `SynthesisError`,
   `SynthesisValidationError`, `AdversarialCritiqueError`,
-  `InvalidCritiqueTargetError`, `MissingAlternativeError`.
+  `InvalidCritiqueTargetError`, `MissingAlternativeError`,
+  `TruncatedOutputError` (a subclass of `InvalidAgentOutputError`).
 - **v0.8** — **`EditorialFailureError`** (extends
   `SynthesisError`). Raised when a section under
   `strict_editorial: true` exhausts its

@@ -22,6 +22,7 @@ import {
   InvalidAgentOutputError,
   MaxToolRoundsExceededError,
   PromptFileError,
+  TruncatedOutputError,
 } from "./errors.ts";
 
 /** A parsed `.prompt` file reduced to the one declaration a stage runs. */
@@ -277,6 +278,12 @@ export async function callModel(
     });
   }
 
+  // Only completeWithTools reports a stop reason; a complete()-only
+  // provider's answer is read as finished.
+  if (completion.stop_reason === "max_tokens") {
+    const where = options.errorContext === undefined ? "" : ` ${options.errorContext}`;
+    throw new TruncatedOutputError(agentId, limits.maxTokens, completion.text, where);
+  }
   if (leaksSystemPrompt(completion.text, rendered.system)) {
     throw new InvalidAgentOutputError(
       agentId,

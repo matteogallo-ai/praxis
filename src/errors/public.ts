@@ -69,6 +69,7 @@ export {
   MissingAlternativeError,
   // v0.8 addition.
   EditorialFailureError,
+  TruncatedOutputError,
 } from "../agents/errors.ts";
 
 // Sourcing layer (hardened validation).

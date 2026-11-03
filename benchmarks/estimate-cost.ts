@@ -21,6 +21,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
+import { parseUsd } from "../src/cli/run-args.ts";
 import { stageLimits } from "../src/agents/stage-limits.ts";
 import { costOf, DEFAULT_PRICE_TABLE, type PriceTable } from "../src/llm/pricing.ts";
 import type { TokenUsage } from "../src/llm/types.ts";
@@ -212,9 +213,10 @@ if (import.meta.main) {
     return at === -1 ? undefined : process.argv[at + 1];
   };
   const list = arg("--ids");
-  const cap = arg("--cap-usd") === undefined ? undefined : Number(arg("--cap-usd"));
-  if (list === undefined || list.length === 0 || (cap !== undefined && !(Number.isFinite(cap) && cap > 0))) {
-    process.stderr.write("usage: bun run estimate:cost -- --ids <id,id,…> [--cap-usd <positive number>]\n");
+  const capGiven = process.argv.includes("--cap-usd");
+  const cap = capGiven ? parseUsd(arg("--cap-usd")) : undefined;
+  if (list === undefined || list.length === 0 || (capGiven && cap === undefined)) {
+    process.stderr.write("usage: bun run estimate:cost -- --ids <id,id,…> [--cap-usd <positive decimal number>]\n");
     process.exit(2);
   }
   const root = resolve(import.meta.dir, "..");
