@@ -69,6 +69,10 @@ per briefing in the worst case.
   second. Ten minutes is what a reader waiting for a briefing tolerates, and
   assumes stages use a fraction of their ceilings and rounds, which only a
   live measurement can confirm.
+- **Cost**: a briefing must cost less than 10 minutes of the time of the
+  analyst it replaces (the maintainer's rule). $2.50 for 10 minutes is $15.00
+  an hour of analyst time; a dearer analyst raises the bound, and the target
+  stays the maintainer's choice, not a figure derived from the pipeline.
 - **Error rate**: one failed briefing in ten is tolerable for a CLI that
   resumes from its checkpoints without paying again for finished stages.
 

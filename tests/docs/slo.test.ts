@@ -34,6 +34,11 @@ describe("docs/SLO.md", () => {
     );
   });
 
+  test("grounds the cost target in the analyst time a briefing replaces", () => {
+    expect(flat).toContain("must cost less than 10 minutes of the time of the analyst it replaces");
+    expect(flat).toContain(`${usd(COST_TARGET_USD)} for 10 minutes is ${usd(COST_TARGET_USD * 6)} an hour`);
+  });
+
   test("states the central range of the five protocol questions", () => {
     const c = five.map((r) => r.central);
     expect(flat).toContain(`the five protocol questions range from ${usd(Math.min(...c))} to ${usd(Math.max(...c))} central`);
