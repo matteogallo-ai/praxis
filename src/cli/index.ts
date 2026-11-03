@@ -21,6 +21,7 @@ import { listCommand, parseOrgStyleFlag } from "./commands/list.ts";
 import { inspectCommand } from "./commands/inspect.ts";
 import { validateCommand } from "./commands/validate.ts";
 import { runBriefCli } from "./commands/brief.ts";
+import { withRedactedStderr } from "./redact.ts";
 import { c, setVerbosity, type Verbosity } from "./output.ts";
 import { PRAXIS_VERSION } from "./version-constant.ts";
 import { PraxisError } from "../registry/errors.ts";
@@ -62,7 +63,11 @@ const DEFAULT_MOCK_FIXTURES_DIR = resolve(
   "mock-llm"
 );
 
-export async function run(argv: readonly string[]): Promise<number> {
+export function run(argv: readonly string[]): Promise<number> {
+  return withRedactedStderr(() => dispatch(argv));
+}
+
+async function dispatch(argv: readonly string[]): Promise<number> {
   // Global flags (--verbose, --quiet) can appear anywhere on the
   // command line. Strip them first so downstream parsers stay simple.
   const args = stripVerbosityFlags(argv);

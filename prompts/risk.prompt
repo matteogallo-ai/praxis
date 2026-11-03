@@ -18,8 +18,8 @@
 // struct fields. The full RiskAnalysisResult schema is enforced
 // Praxis-side in src/agents/risk.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-sonnet-5-5
 @description "Praxis risk analysis agent — identifies sourced risks with stakeholder links and mitigations."
 
 prompt risk(
@@ -50,13 +50,16 @@ prompt risk(
     For every risk you list, BOTH `likelihood_evidence` AND
     `impact_evidence` must be EITHER:
 
-      (a) A real, verifiable source with all four fields:
+      (a) A real, verifiable source with these three fields:
           {
             "url": "https://…",
             "title": "…",
-            "accessed_at": "<ISO 8601 UTC datetime>",
             "excerpt": "<the passage that supports the assessment, ≤500 chars>"
           }
+
+      Do not write `accessed_at`: Praxis records when the search ran.
+      Cite only a URL that web_search returned to you; copy its title
+      and quote the excerpt from that result.
 
       OR
 
@@ -65,6 +68,9 @@ prompt risk(
             "status": "SOURCE_MISSING",
             "searched_for": "<what you tried to find, in your own words>"
           }
+
+    Use SOURCE_MISSING only when no search result supports the item,
+    never because a field is awkward to fill.
 
     NEVER fabricate a URL, title, or excerpt. If you cannot find a
     source for your assessment of likelihood or impact, mark that
@@ -180,19 +186,13 @@ prompt risk(
     Risk analysis task for briefing '{{format_id}}' under {{sourcing_policy}} sourcing.
 
     Scoping output (JSON):
-    ---
     {{scoping_json}}
-    ---
 
     Research output (JSON):
-    ---
     {{research_json}}
-    ---
 
     Stakeholder mapping output (JSON):
-    ---
     {{stakeholders_json}}
-    ---
 
     Produce the RiskAnalysis JSON now. Search the web as needed for
     precedent, benchmarks, and regulatory guidance. Remember: real

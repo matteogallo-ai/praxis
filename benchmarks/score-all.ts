@@ -10,7 +10,7 @@
  *   2. Interpolates `benchmarks/scoring-prompt.txt` with the
  *      briefing content + metadata.
  *   3. Calls `AnthropicLLMProvider.complete()` on
- *      `claude-sonnet-4-5` and expects the calibrated 7-criterion
+ *      `claude-sonnet-5-5` and expects the calibrated 7-criterion
  *      JSON payload back.
  *   4. Validates the payload structurally
  *      (`parseScoringPayload()`) — the score for every criterion is
@@ -709,7 +709,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
 
   if (opts.dryRun) {
     process.stderr.write(
-      `→ dry-run: would score ${refs.length} briefing(s) using claude-sonnet-4-5\n`
+      `→ dry-run: would score ${refs.length} briefing(s) using claude-sonnet-5-5\n`
     );
     for (const r of refs) {
       process.stderr.write(`  · [${r.mode}] ${r.slug} → ${r.brief_md_path}\n`);
@@ -737,7 +737,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     throw new Error("ANTHROPIC_API_KEY missing");
   }
 
-  const llm: LLMProvider = new AnthropicLLMProvider({ model: "claude-sonnet-4-5" });
+  const llm: LLMProvider = new AnthropicLLMProvider({ model: "claude-sonnet-5-5" });
   const scorings: ScoringPayload[] = [];
   let scored = 0;
   let fromCache = 0;

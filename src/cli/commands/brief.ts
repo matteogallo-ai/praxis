@@ -28,6 +28,18 @@
  *                           (for audit / downstream tooling).
  *     --with-sourcing-report  Appends the detailed sourcing report
  *                             beneath the briefing.
+ *   --on-sourcing-failure abort|degrade
+ *                         What a strict sourcing failure does (default
+ *                         degrade: keep going and add an "Insufficiently
+ *                         sourced" section; ADR 0002).
+ *
+ * Run control (with --full; see ../run-args.ts):
+ *   --runs-dir <path>     Where each run's checkpoints and metadata.json
+ *                         go (default $PRAXIS_RUNS_DIR, else .praxis/runs).
+ *   --resume <run-id>     Continues a run from its first unfinished stage.
+ *   --max-cost-usd <n>    Stops before the next model call once the run
+ *                         has spent n USD.
+ *   --price-table <path>  JSON prices replacing the built-in list prices.
  *
  * Providers:
  *   --provider mock       (default) reads pre-scripted fixtures under
@@ -38,7 +50,14 @@
  */
 
 import { FormatRegistry } from "../../registry/registry.ts";
-import { Orchestrator } from "../../orchestrator/orchestrator.ts";
+import { Orchestrator, type BriefWithCritiqueOptions } from "../../orchestrator/orchestrator.ts";
+import { CheckpointStore } from "../../orchestrator/checkpoint.ts";
+import { parseUsageSummary, UsageLedger } from "../../orchestrator/ledger.ts";
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { loadPriceTable } from "../../llm/pricing.ts";
+import { extractRunArgs, resumeArgs, type RunArgs } from "../run-args.ts";
 import { MockLLMProvider } from "../../llm/mock-provider.ts";
 import { AnthropicLLMProvider } from "../../llm/anthropic-provider.ts";
 import {
@@ -95,8 +114,10 @@ interface BriefCommandOptions {
   theme: string | null;
   includeToc: boolean;
   includeAppendices: boolean;
+  onSourcingFailure: "abort" | "degrade";
   formatsDir: string;
   fixturesDir: string;
+  run: RunArgs;
 }
 
 export interface ParsedBriefArgs {
@@ -116,6 +137,8 @@ export interface ParsedBriefArgs {
   theme: string | null;
   includeToc: boolean;
   includeAppendices: boolean;
+  /** Absent on parse errors; `"degrade"` unless `--on-sourcing-failure abort`. */
+  onSourcingFailure?: "abort" | "degrade";
   error?: string;
 }
 
@@ -141,6 +164,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   let theme: string | null = null;
   let includeToc = false;
   let includeAppendices = false;
+  let onSourcingFailure: "abort" | "degrade" = "degrade";
 
   const errorReturn = (error: string): ParsedBriefArgs => ({
     question: "",
@@ -242,6 +266,12 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
       includeToc = true;
     } else if (a === "--include-appendices") {
       includeAppendices = true;
+    } else if (a === "--on-sourcing-failure" || a.startsWith("--on-sourcing-failure=")) {
+      const value = a.includes("=") ? a.slice(a.indexOf("=") + 1) : args[++i];
+      if (value !== "abort" && value !== "degrade") {
+        return errorReturn("--on-sourcing-failure expects 'abort' or 'degrade'");
+      }
+      onSourcingFailure = value;
     } else {
       positional.push(a);
     }
@@ -384,6 +414,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     theme,
     includeToc,
     includeAppendices,
+    onSourcingFailure,
   };
 }
 
@@ -392,99 +423,173 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
   const registry = new FormatRegistry();
   registry.loadDirectory(opts.formatsDir);
   const orchestrator = new Orchestrator(registry, llm);
+  const runOptions: BriefWithCritiqueOptions = { onSourcingFailure: opts.onSourcingFailure };
 
   progress("loaded formats", `${AUTO_FORMAT_IDS.length} shipped, provider=${opts.provider}`);
 
   if (opts.full) {
-    // Run brief() OR briefWithCritique() OR briefWithCritiqueAndRerun().
-    // --with-rerun implies --critique (parser enforces).
+    const settings = runSettings(opts, llm, registry);
+    let store: CheckpointStore;
+    if (opts.run.resume === null) {
+      store = CheckpointStore.create(opts.run.runsDir, opts.question, opts.formatId, new Date(), settings);
+    } else {
+      store = CheckpointStore.open(opts.run.runsDir, opts.run.resume);
+      store.assertSameSettings(settings);
+    }
+    const ledger = new UsageLedger({
+      simulated: llm.name === "mock",
+      ...(opts.run.priceTable === null ? {} : { prices: loadPriceTable(opts.run.priceTable) }),
+      ...(opts.run.maxCostUsd === null ? {} : { maxCostUsd: opts.run.maxCostUsd }),
+    });
+    // Earlier attempts' spend counts toward this run's report and its cap.
+    const previous = store.load("metadata", (text) => {
+      const meta = JSON.parse(text) as { usage?: unknown };
+      return meta.usage === undefined ? undefined : parseUsageSummary(meta.usage);
+    });
+    if (previous !== undefined) ledger.restore(previous);
+    runOptions.checkpoints = store;
+    runOptions.ledger = ledger;
     progress(
-      opts.withRerun
-        ? "running full pipeline with critique + rerun"
-        : opts.critique
-          ? "running full pipeline with critique"
-          : "running full pipeline",
-      `format=${opts.formatId}`
+      opts.run.resume === null ? "run" : "resuming run",
+      `${store.manifest.run_id} in ${store.dir}; resume with --resume ${store.manifest.run_id}`
     );
-    const result = opts.withRerun
-      ? await orchestrator.briefWithCritiqueAndRerun(opts.question, opts.formatId)
+    try {
+      return await fullBrief(opts, registry, orchestrator, runOptions);
+    } finally {
+      // Written on failure too: what a failed run spent is worth knowing.
+      store.write("metadata.json", {
+        ...store.manifest,
+        provider: llm.name,
+        usage: ledger.summary(),
+      });
+    }
+  }
+  return stagedBrief(opts, orchestrator, runOptions);
+}
+
+/**
+ * The inputs besides question and format that stage outputs depend on,
+ * recorded in run.json and checked on resume.
+ */
+function runSettings(
+  opts: BriefCommandOptions,
+  llm: LLMProvider,
+  registry: FormatRegistry
+): Record<string, string> {
+  const sha = (text: string): string => createHash("sha256").update(text).digest("hex").slice(0, 16);
+  const prompts = readdirSync("prompts")
+    .filter((f) => f.endsWith(".prompt"))
+    .sort()
+    .map((f) => readFileSync(join("prompts", f), "utf-8"))
+    .join("\0");
+  return {
+    provider: llm.name,
+    on_sourcing_failure: opts.onSourcingFailure,
+    prompts_sha256: sha(prompts),
+    format_sha256: sha(JSON.stringify(registry.get(opts.formatId))),
+  };
+}
+
+async function fullBrief(
+  opts: BriefCommandOptions,
+  registry: FormatRegistry,
+  orchestrator: Orchestrator,
+  runOptions: BriefWithCritiqueOptions
+): Promise<number> {
+  // Run brief() OR briefWithCritique() OR briefWithCritiqueAndRerun().
+  // --with-rerun implies --critique (parser enforces).
+  progress(
+    opts.withRerun
+      ? "running full pipeline with critique + rerun"
       : opts.critique
-        ? await orchestrator.briefWithCritique(opts.question, opts.formatId)
-        : await orchestrator.brief(opts.question, opts.formatId);
-    progress("pipeline complete", `${result.synthesis.total_word_count} words`);
+        ? "running full pipeline with critique"
+        : "running full pipeline",
+    `format=${opts.formatId}`
+  );
+  const result = opts.withRerun
+    ? await orchestrator.briefWithCritiqueAndRerun(opts.question, opts.formatId, runOptions)
+    : opts.critique
+      ? await orchestrator.briefWithCritique(opts.question, opts.formatId, runOptions)
+      : await orchestrator.brief(opts.question, opts.formatId, runOptions);
+  progress("pipeline complete", `${result.synthesis.total_word_count} words`);
 
-    // Surface a one-line rerun note to stderr so operators know the
-    // editorial re-run loop fired without having to inspect the JSON.
-    if (opts.withRerun && hasRerunMetadata(result) && result.rerun_performed) {
-      const meta = result.rerun_metadata;
-      const changed = meta.re_synthesis_deviations.length;
-      const critIds = meta.critiques_addressed.join(", ");
-      process.stderr.write(
-        `${c.dim("rerun:")} synthesis rewritten to address ${critIds} — ` +
-          `${changed} section(s) changed substantially.\n`
-      );
-    } else if (opts.withRerun && hasRerunMetadata(result) && !result.rerun_performed) {
-      process.stderr.write(
-        `${c.dim("rerun:")} adversarial critique did not require a rerun.\n`
-      );
-    }
+  // Surface a one-line rerun note to stderr so operators know the
+  // editorial re-run loop fired without having to inspect the JSON.
+  if (opts.withRerun && hasRerunMetadata(result) && result.rerun_performed) {
+    const meta = result.rerun_metadata;
+    const changed = meta.re_synthesis_deviations.length;
+    const critIds = meta.critiques_addressed.join(", ");
+    process.stderr.write(
+      `${c.dim("rerun:")} synthesis rewritten to address ${critIds} — ` +
+        `${changed} section(s) changed substantially.\n`
+    );
+  } else if (opts.withRerun && hasRerunMetadata(result) && !result.rerun_performed) {
+    process.stderr.write(
+      `${c.dim("rerun:")} adversarial critique did not require a rerun.\n`
+    );
+  }
 
-    // --render <target> — dispatch to the renderer, write binary/text
-    // to --output.
-    if (opts.renderTarget !== null) {
-      const format = registry.get(opts.formatId);
-      const renderOpts: RenderOptions = {
-        include_sourcing_report: opts.sourcingReport,
-        include_critique: opts.critique,
-        include_toc: opts.includeToc,
-        include_appendices: opts.includeAppendices,
-      };
-      const themeArg = opts.theme;
-      if (themeArg !== null) {
-        if (!(RENDER_THEMES as readonly string[]).includes(themeArg)) {
-          throw new PraxisError(
-            `--theme '${themeArg}' is not one of: ${RENDER_THEMES.join(", ")}`
-          );
-        }
-        renderOpts.theme = themeArg as RenderTheme;
+  // --render <target> — dispatch to the renderer, write binary/text
+  // to --output.
+  if (opts.renderTarget !== null) {
+    const format = registry.get(opts.formatId);
+    const renderOpts: RenderOptions = {
+      include_sourcing_report: opts.sourcingReport,
+      include_critique: opts.critique,
+      include_toc: opts.includeToc,
+      include_appendices: opts.includeAppendices,
+    };
+    const themeArg = opts.theme;
+    if (themeArg !== null) {
+      if (!(RENDER_THEMES as readonly string[]).includes(themeArg)) {
+        throw new PraxisError(
+          `--theme '${themeArg}' is not one of: ${RENDER_THEMES.join(", ")}`
+        );
       }
-      const buf = await dispatchRender(result, opts.renderTarget, format, renderOpts);
-      // opts.outputPath is guaranteed non-null (parser enforces it).
-      writeFileSync(opts.outputPath!, buf);
-      process.stderr.write(
-        `${c.dim("wrote")} ${opts.outputPath} ${c.dim(`(${buf.length} bytes, ${opts.renderTarget})`)}\n`
-      );
-      return 0;
+      renderOpts.theme = themeArg as RenderTheme;
     }
-
-    // No --render: plain Markdown / JSON stdout output (v0.6 behaviour).
-    if (opts.json) {
-      const payload = `${JSON.stringify(result, null, 2)}\n`;
-      writeOrEmit(payload, opts.outputPath);
-      return 0;
-    }
-    let out = renderFullBrief(result);
-    if (opts.sourcingReport) {
-      out += "\n---\n\n";
-      out += "# Sourcing Report\n\n";
-      out += renderSourcingReportMarkdown(result.sourcing_report);
-    }
-    writeOrEmit(out, opts.outputPath);
-    // Additionally print the inline critique: to stdout if writing
-    // the brief to a file (stdout is free); to stdout at the end of
-    // the Markdown when brief goes to stdout (colour is fine — the
-    // reader is a human at that point, not a pipeline).
-    if (opts.critique && hasCritiqueField(result)) {
-      const critiqueText = renderCritiqueInline(result.adversarial);
-      if (opts.outputPath !== null) {
-        process.stderr.write(critiqueText);
-      } else {
-        process.stdout.write(critiqueText);
-      }
-    }
+    const buf = await dispatchRender(result, opts.renderTarget, format, renderOpts);
+    // opts.outputPath is guaranteed non-null (parser enforces it).
+    writeFileSync(opts.outputPath!, buf);
+    process.stderr.write(
+      `${c.dim("wrote")} ${opts.outputPath} ${c.dim(`(${buf.length} bytes, ${opts.renderTarget})`)}\n`
+    );
     return 0;
   }
 
+  // No --render: plain Markdown / JSON stdout output (v0.6 behaviour).
+  if (opts.json) {
+    const payload = `${JSON.stringify(result, null, 2)}\n`;
+    writeOrEmit(payload, opts.outputPath);
+    return 0;
+  }
+  let out = renderFullBrief(result);
+  if (opts.sourcingReport) {
+    out += "\n---\n\n";
+    out += "# Sourcing Report\n\n";
+    out += renderSourcingReportMarkdown(result.sourcing_report);
+  }
+  writeOrEmit(out, opts.outputPath);
+  // Additionally print the inline critique: to stdout if writing
+  // the brief to a file (stdout is free); to stdout at the end of
+  // the Markdown when brief goes to stdout (colour is fine — the
+  // reader is a human at that point, not a pipeline).
+  if (opts.critique && hasCritiqueField(result)) {
+    const critiqueText = renderCritiqueInline(result.adversarial);
+    if (opts.outputPath !== null) {
+      process.stderr.write(critiqueText);
+    } else {
+      process.stdout.write(critiqueText);
+    }
+  }
+  return 0;
+}
+
+async function stagedBrief(
+  opts: BriefCommandOptions,
+  orchestrator: Orchestrator,
+  runOptions: BriefWithCritiqueOptions
+): Promise<number> {
   // --sourcing-report (alone, without --full) implies --with-risks
   // (the full pipeline is what produces the aggregated report).
   const wantsRisks = opts.withRisks || opts.sourcingReport;
@@ -495,10 +600,7 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
         `${c.dim("note:")} --with-risks implies --with-stakeholders (and --with-research); running the full pipeline.\n`
       );
     }
-    const result = await orchestrator.assessRisksAfterStakeholders(
-      opts.question,
-      opts.formatId
-    );
+    const result = await orchestrator.assessRisksAfterStakeholders(opts.question, opts.formatId, runOptions);
     if (opts.sourcingReport && !opts.withRisks && !opts.json) {
       process.stdout.write(
         `${c.dim("note:")} --sourcing-report implies --with-risks; running the full pipeline.\n`
@@ -527,19 +629,13 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
         `${c.dim("note:")} --with-stakeholders implies --with-research; running the full pipeline.\n`
       );
     }
-    const result = await orchestrator.mapStakeholdersAfterResearch(
-      opts.question,
-      opts.formatId
-    );
+    const result = await orchestrator.mapStakeholdersAfterResearch(opts.question, opts.formatId, runOptions);
     printFullPipeline(result.scoping, result.research, result.stakeholders, opts.json);
     return 0;
   }
 
   if (opts.withResearch) {
-    const result = await orchestrator.researchAfterScoping(
-      opts.question,
-      opts.formatId
-    );
+    const result = await orchestrator.researchAfterScoping(opts.question, opts.formatId, runOptions);
     printScopingPlusResearch(result.scoping, result.research, opts.json);
     return 0;
   }
@@ -723,7 +819,27 @@ export async function runBriefCli(
   args: readonly string[],
   ctx: { formatsDir: string; fixturesDir: string }
 ): Promise<number> {
-  const parsed = parseBriefArgs(args);
+  const extracted = extractRunArgs(args);
+  if ("error" in extracted) {
+    process.stderr.write(`${c.red("✗")} ${extracted.error}\n`);
+    return 1;
+  }
+  let briefArgs = extracted.rest;
+  if (extracted.run.resume !== null) {
+    let resumed: string[] | { error: string };
+    try {
+      resumed = resumeArgs(briefArgs, CheckpointStore.open(extracted.run.runsDir, extracted.run.resume));
+    } catch (err) {
+      if (!(err instanceof PraxisError)) throw err;
+      resumed = { error: err.message };
+    }
+    if (!Array.isArray(resumed)) {
+      process.stderr.write(`${c.red("✗")} ${resumed.error}\n`);
+      return 1;
+    }
+    briefArgs = resumed;
+  }
+  const parsed = parseBriefArgs(briefArgs);
   if (parsed.error !== undefined) {
     process.stderr.write(`${c.red("✗")} ${parsed.error}\n`);
     return 1;
@@ -785,8 +901,10 @@ export async function runBriefCli(
       theme: parsed.theme,
       includeToc: parsed.includeToc,
       includeAppendices: parsed.includeAppendices,
+      onSourcingFailure: parsed.onSourcingFailure ?? "degrade",
       formatsDir: ctx.formatsDir,
       fixturesDir: ctx.fixturesDir,
+      run: extracted.run,
     });
   } catch (err) {
     // v0.9: rich context for the most common actionable failures.

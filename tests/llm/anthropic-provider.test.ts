@@ -117,7 +117,7 @@ describe("AnthropicLLMProvider.complete — happy path", () => {
     await p.complete("hi");
     const headers = calls[0]!.init!.headers as Record<string, string>;
     expect(headers["x-api-key"]).toBe("sk-secret");
-    expect(headers["anthropic-version"]).toBe("2023-06-01");
+    expect(headers["anthropic-version"]).toBe("2026-10-21");
     expect(headers["content-type"]).toBe("application/json");
   });
 
@@ -143,7 +143,7 @@ describe("AnthropicLLMProvider.complete — happy path", () => {
     const p = new AnthropicLLMProvider({ apiKey: "sk-test", fetchFn: fn });
     await p.complete("hi");
     const payload = calls[0]!.payload as { model: string };
-    expect(payload.model).toBe("claude-sonnet-4-5");
+    expect(payload.model).toBe("claude-sonnet-5-5");
   });
 
   test("respects the model constructor override", async () => {
@@ -158,12 +158,11 @@ describe("AnthropicLLMProvider.complete — happy path", () => {
     expect(payload.model).toBe("claude-opus-4-7");
   });
 
-  test("forwards temperature when supplied", async () => {
+  test("forwards max_tokens when supplied", async () => {
     const { fn, calls } = scriptedFetch([() => jsonResponse(200, SIMPLE)]);
     const p = new AnthropicLLMProvider({ apiKey: "sk-test", fetchFn: fn });
-    await p.complete("hi", { temperature: 0.2, max_tokens: 500 });
-    const payload = calls[0]!.payload as { temperature: number; max_tokens: number };
-    expect(payload.temperature).toBe(0.2);
+    await p.complete("hi", { max_tokens: 500 });
+    const payload = calls[0]!.payload as { max_tokens: number };
     expect(payload.max_tokens).toBe(500);
   });
 });

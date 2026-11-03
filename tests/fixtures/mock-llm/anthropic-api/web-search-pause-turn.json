@@ -1,0 +1,58 @@
+{
+  "id": "msg_01PauseTurnWebSearch",
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-5-5",
+  "content": [
+    {
+      "type": "text",
+      "text": "I'll search for the German market size first."
+    },
+    {
+      "type": "server_tool_use",
+      "id": "srvtoolu_01WYG3ziw53XMcoyKL4XcZmE",
+      "name": "web_search",
+      "input": { "query": "German B2B SaaS market size 2026" }
+    },
+    {
+      "type": "web_search_tool_result",
+      "tool_use_id": "srvtoolu_01WYG3ziw53XMcoyKL4XcZmE",
+      "content": [
+        {
+          "type": "web_search_result",
+          "url": "https://www.destatis.de/EN/Themes/Economy/_node.html",
+          "title": "Economy - Federal Statistical Office",
+          "encrypted_content": "EqgfCioIARgBIiQ3YTAwMjY1Mi1mZjM5LTQ1NGUtODgxNC1kNjNjNTk1ZWI3Y",
+          "page_age": "October 12, 2026"
+        },
+        {
+          "type": "web_search_result",
+          "url": "https://www.bitkom.org/EN/Market-Data",
+          "title": "Market data - Bitkom",
+          "encrypted_content": "Eo8BCioIAhgBIiQyYjQ0OWJmZi1lNmFjLTRhZjQtYTQ2Ny05N2ZlNTRmYjcx",
+          "page_age": null
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "According to Bitkom, ",
+      "citations": [
+        {
+          "type": "web_search_result_location",
+          "url": "https://www.bitkom.org/EN/Market-Data",
+          "title": "Market data - Bitkom",
+          "encrypted_index": "Eo8BCioIAhgBIiQyYjQ0OWJmZi1lNm..",
+          "cited_text": "The German software market grew by 9.4 percent in 2026..."
+        }
+      ]
+    }
+  ],
+  "stop_reason": "pause_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 6039,
+    "output_tokens": 231,
+    "server_tool_use": { "web_search_requests": 1 }
+  }
+}

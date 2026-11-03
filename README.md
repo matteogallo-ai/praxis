@@ -36,7 +36,7 @@ flowchart LR
     V3 --> S4[4 Risks<br/>web_search]
     S4 --> V4{{sourcing check}}
     V4 --> S5[5 Options<br/>web_search]
-    S5 --> S6[6 Synthesis<br/>one call per section]
+    S5 --> S6[6 Synthesis<br/>one call per section,<br/>sections in parallel]
     S6 --> S7[7 Adversarial review<br/>web_search]
     S7 -- revised recommendation needed --> S6b[Synthesis rerun<br/>at most once]
     S7 --> R([Renderers<br/>md · pdf · docx])
@@ -94,6 +94,10 @@ paid, and in its current state it is expected to fail (see Status).
 - Anthropic provider with the server-side `web_search` tool loop and bounded retries, tested against hand-written API-shaped fixtures, not the live API (C11).
 - Reproducible mock benchmark: `bun run bench:mock` twice leaves `git status` clean (C12).
 - Paid live tests run only on explicit opt-in (C13).
+- Handling of the three observed live failures: prose around the JSON, a degraded briefing instead of an abort under `strict` sourcing, per-stage timeouts; tested on fixtures, not live (C15).
+- `brief --full` checkpoints every stage and resumes a failed run with `--resume <run-id>`; bounded retry per stage; tokens and cost per stage in `metadata.json`; `--max-cost-usd` budget cap (C16).
+- Untrusted content (earlier stages' output, web page excerpts) delimited in every prompt; answers that obey an injected instruction are rejected; tested on a simulated poisoned search result, not against a live model (C17).
+- The API key never reaches stderr, run files or a printed provider; home paths and e-mail addresses in stderr are masked (C20).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
 prove it; CI fails if one of them does not pass.
@@ -101,11 +105,10 @@ prove it; CI fails if one of them does not pass.
 ## Roadmap
 
 - Live briefings that complete against Anthropic, with committed run artefacts (C14).
-- Tolerant handling of the three observed live failures (C15).
-- Per-stage checkpoints and resume (C16).
-- Prompt-injection defence for web results and inter-stage content (C17).
 - Live-output quality scored by a judge validated against human labels (C18).
 - Clean install without the sibling PromptLang checkout (C19).
+- Source freshness judged on each page's own age (`page_age`) (C21).
+- Web search with dynamic filtering (`web_search_20260209`), evaluated against the basic tool (C22).
 
 ## Formats
 

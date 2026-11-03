@@ -2,6 +2,7 @@
 
 Read this first. `docs/ENGINEERING_STANDARDS.md` is the full standard;
 `docs/CLAIMS.md` lists what the README promises and the tests behind it.
+`docs/DEFINITION_OF_DONE.md` is the checklist a repo must pass before it is called done.
 
 ## What Praxis is
 
@@ -13,7 +14,10 @@ Read this first. `docs/ENGINEERING_STANDARDS.md` is the full standard;
 
 ## Pipeline
 
-Stages run one after another; each reads the typed output of the earlier ones.
+Stages run one after another; each reads the typed output of the earlier ones
+(risks cite stakeholder names, options cite risk ids). Only the synthesis
+sections are independent of each other, so they run concurrently. Each stage is
+checkpointed and retried once on a recoverable error.
 
 ```
 1 scoping      ← question, format
@@ -21,7 +25,7 @@ Stages run one after another; each reads the typed output of the earlier ones.
 3 stakeholder  ← 1, 2             (web_search)  → sourcing check
 4 risk         ← 1, 2, 3          (web_search)  → sourcing check
 5 options      ← 1–4              (web_search)
-6 synthesis    ← 1–5, one call per format section
+6 synthesis    ← 1–5, one call per format section, sections in parallel
 7 adversarial  ← assembled brief  (web_search)  → may trigger one synthesis rerun
 ```
 
@@ -63,6 +67,7 @@ bun run check:claims -- --no-run              # same, without running the tests
 bun run check:stale-narrative                 # no future tense, sprint ids or bare TODOs in shipped text
 bun run check:commits main..HEAD              # Conventional Commits on the branch
 bun run cli brief "Should we enter the German market?" --format auto --full   # brief, mock provider
+bun run cli brief --resume <run-id>           # continue a failed --full run from its checkpoints
 bun run bench:mock                            # renderer smoke test; must leave git status clean
 bun run bench:live                            # PAID — live Anthropic run of every benchmark; approval required
 PRAXIS_LIVE_TESTS=1 bun test tests/live/      # PAID — live tests; approval required
@@ -122,7 +127,8 @@ generate.
   (e.g. pydantic `SecretStr`).
 - Any paid model call without a cost estimate and explicit approval.
 - Commits over ~400 changed lines (lockfiles and generated artefacts excluded).
-- Pushing, tagging or publishing: the human does that.
+- Pushing to main, force-pushing, tagging or publishing: the human does that. Pushing a work
+  branch and opening a PR is allowed; GitHub rulesets protect main and release tags.
 
 ### Report format (end of every work unit, in French for Matteo)
 1. What changed, point by point. 2. Evidence: commands + outputs. 3. Audit findings disproved,

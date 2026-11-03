@@ -22,6 +22,18 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   `bench:mock` drift check, Conventional Commits.
 - `docs/CLAIMS.md` and `scripts/check-claims.ts`; `CLAUDE.md`; `SECURITY.md`;
   pull request and issue templates; `docs/ENGINEERING_STANDARDS.md`.
+- Per-stage checkpoints and `praxis brief --resume <run-id>`; `--runs-dir`
+  (default `$PRAXIS_RUNS_DIR`, else `.praxis/runs`) (C16).
+- `UsageLedger`: tokens, web searches and cost per stage and per briefing,
+  written to `metadata.json`; `DEFAULT_PRICE_TABLE`, `loadPriceTable`,
+  `--price-table`; budget cap `maxCostUsd` / `--max-cost-usd`, raising
+  `BudgetExceededError` (C16).
+- `onSourcingFailure: "degrade"` and `--on-sourcing-failure`: a strict
+  sourcing failure adds an "Insufficiently sourced" section instead of
+  aborting (ADR 0002, C15).
+- Per-stage `max_tokens`, request timeout and web-search cap
+  (`src/agents/stage-limits.ts`); `timeout_ms` on provider calls (C15).
+- CI job `prompt-semver` running `promptlang semver-check`.
 
 ### Changed
 
@@ -30,6 +42,34 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - `bun run bench:mock` is reproducible (fixed clock in mock runs, PDF creation
   date taken from the brief); `duration_ms` is omitted from mock metadata.
 - `benchmarks/score-all.ts` refuses mock briefings; `score:mock` is removed.
+- Anthropic API version `2026-10-21`: no `temperature` is sent (a 400 on that
+  version); the default model is `claude-sonnet-5-5` (`claude-sonnet-4-5` is
+  deprecated). `temperature` in the call options is ignored.
+- System text goes in the `system` field and each stage's `@model` is sent;
+  stage models are chosen per stage (`prompts/README.md`). Prompts are 2.0.0.
+- A `pause_turn` continuation resends the paused assistant content unchanged
+  (it dropped `tool_use_id`, the search results and the citations).
+- The JSON answer is read past prose, fences and citation splits; Praxis
+  stamps `accessed_at` instead of asking the model for it.
+- The orchestrator's four staged entry points share one implementation, and
+  the seven agents share one prompt runtime.
+- Each stage is retried once on a timeout, rate limit, 5xx or malformed JSON
+  (synthesis per section), so a failing stage can cost two calls; minor
+  behaviour change under `docs/SEMVER-CONTRACT.md`, turned off with
+  `stageAttempts: 1`.
+- A checkpoint is validated on load by its stage's own output parser; a
+  corrupt one (or a corrupt `metadata.json` on resume) raises
+  `OrchestrationError` naming the file. `CheckpointStore.load(stage,
+  validate)` takes the validator. A resume under another provider, sourcing
+  mode, prompts or format is refused.
+- `callModel` prefers `completeWithTools` (with no tools for scoping and
+  synthesis) because only it returns usage; a custom provider implementing
+  both now receives tool-less calls there.
+- Synthesis sections are written concurrently.
+- Earlier stages' output enters prompts inside `<untrusted_data>` blocks, every
+  system text carries an untrusted-content rule, and an answer repeating the
+  system text is rejected (C17).
+- The API key is held in a private field and CLI stderr is redacted (C20).
 
 ### Deprecated
 

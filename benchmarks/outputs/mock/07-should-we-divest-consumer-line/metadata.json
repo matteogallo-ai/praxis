@@ -36,7 +36,123 @@
       "duplicated": 2,
       "missing": 2
     },
-    "edited_after_critique": true
+    "edited_after_critique": true,
+    "insufficiently_sourced": false
+  },
+  "usage": {
+    "stages": {
+      "scoping": {
+        "calls": 1,
+        "input_tokens": 582,
+        "output_tokens": 300,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.008328,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      },
+      "research": {
+        "calls": 1,
+        "input_tokens": 1090,
+        "output_tokens": 719,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 3,
+        "cost_usd": 0.03937,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      },
+      "stakeholder": {
+        "calls": 1,
+        "input_tokens": 2363,
+        "output_tokens": 1704,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 3,
+        "cost_usd": 0.051766,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      },
+      "risk": {
+        "calls": 1,
+        "input_tokens": 4660,
+        "output_tokens": 3196,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 2,
+        "cost_usd": 0.06128,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      },
+      "options": {
+        "calls": 1,
+        "input_tokens": 7974,
+        "output_tokens": 2321,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 1,
+        "cost_usd": 0.08831599999999999,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      },
+      "synthesis": {
+        "calls": 6,
+        "input_tokens": 59567,
+        "output_tokens": 1182,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.13095400000000001,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      },
+      "adversarial": {
+        "calls": 1,
+        "input_tokens": 12141,
+        "output_tokens": 1531,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 1,
+        "cost_usd": 0.089184,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      },
+      "synthesis-rerun": {
+        "calls": 6,
+        "input_tokens": 61508,
+        "output_tokens": 1182,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.13483599999999998,
+        "models": [
+          "claude-sonnet-5-5"
+        ]
+      }
+    },
+    "total": {
+      "calls": 18,
+      "input_tokens": 149885,
+      "output_tokens": 12135,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 10,
+      "cost_usd": 0.604034,
+      "models": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ]
+    },
+    "simulated": true,
+    "max_cost_usd": null
   },
   "artefacts": {
     "brief.md": 16808,

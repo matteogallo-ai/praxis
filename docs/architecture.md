@@ -42,12 +42,16 @@ passes each stage the typed results of the earlier ones.
 | 3 | Stakeholders | `agents/stakeholder.ts` | `web_search` | scoping, research | `validateStakeholderSourcing` |
 | 4 | Risks | `agents/risk.ts` | `web_search` | scoping, research, stakeholders | `validateRiskSourcing` |
 | 5 | Options | `agents/options.ts` | `web_search` | stages 1–4 | — |
-| 6 | Synthesis | `agents/synthesis.ts` | — | stages 1–5, one call per format section | format conformance (length, forbidden terms) |
+| 6 | Synthesis | `agents/synthesis.ts` | — | stages 1–5, one call per format section, all sections concurrently | format conformance (length, forbidden terms) |
 | 7 | Adversarial review | `agents/adversarial.ts` | `web_search` | the assembled brief | if it asks for a revised recommendation, stage 6 runs once more |
 
 Every stage awaits the previous one, and each reads the one before it: risks
 reference stakeholder names, options reference risk IDs. In the current data
 flow no two stages can run concurrently without changing what a stage reads.
+Within stage 6, each section's call reads stages 1–5 and its own format entry,
+never another section, so the sections are written concurrently and
+reassembled in format order; editorial regeneration stays sequential within
+a section.
 
 The sourcing checks follow the format's `sourcing_policy`. Under `strict`, a
 finding, position or risk without a valid source throws and the whole brief
@@ -68,30 +72,57 @@ stages before it rather than sharing one implementation.
   key matches the stage and the format id. The question does not select the
   fixture, so every question with the same format gets the same text.
 - `AnthropicLLMProvider` calls `/v1/messages` with `fetch`: default model
-  `claude-sonnet-4-5` (or `ANTHROPIC_MODEL`), 4096 output tokens, a 60 s
-  timeout per request, up to 3 attempts with backoff on 429 and 5xx, and up
-  to 5 `pause_turn` rounds for the server-side `web_search` tool.
+  `claude-sonnet-5-5` (or `ANTHROPIC_MODEL`), API version `2026-10-21` with no
+  sampling parameters, up to 3 attempts with backoff on 429 and 5xx, and up
+  to 5 `pause_turn` rounds for the server-side `web_search` tool. Each stage
+  sends its own `max_tokens`, request timeout and web-search cap
+  (`max_uses`) from `src/agents/stage-limits.ts`; the provider's own 4096
+  tokens and 60 s apply only to callers that set neither.
+
+## Checkpoints, retry and resume
+
+Every stage runs through `Orchestrator.stage()`: with a `CheckpointStore`
+in the options it first looks for `<runs>/<run-id>/<stage>.json` and reuses
+it; otherwise it runs the stage, retrying once on a recoverable error
+(`src/agents/retry.ts`), and writes the output. `praxis brief --full`
+creates a run under `--runs-dir` (default `$PRAXIS_RUNS_DIR`, else
+`.praxis/runs`), prints its id, and writes `metadata.json` there even when
+the run fails; `--resume <run-id>` reruns from the first stage without a
+checkpoint, with the question and format the run recorded. `run.json` also
+records the provider, the sourcing mode and fingerprints of the prompts and
+the format; a resume with any of them changed is refused, so a mock run
+cannot be finished live and outputs are not reused under changed prompts.
+A resumed run starts its ledger from the earlier attempts' `metadata.json`,
+so the report and the cap cover the whole briefing. Synthesis retries per
+section, so one bad section does not rewrite the others.
+
+## Usage and cost
+
+When a caller passes a `UsageLedger` (`src/orchestrator/ledger.ts`), every
+stage gets the provider wrapped so each call's `usage` (input, output and
+cache tokens, web searches) is recorded under its stage and priced from a
+table (`src/llm/pricing.ts`: list prices by default, a JSON file through
+`loadPriceTable`). A model missing from the table is costed `null`, not
+guessed. With `maxCostUsd` set, no call starts once the briefing has spent
+the cap, so a briefing ends above it by the calls in flight at that moment
+(one, or one per section during synthesis). With a cap, a call whose model
+has no price stops the run; a dated model id is priced as its alias. A
+timed-out request reports no usage and is not counted.
+`benchmarks/run-all.ts` writes the summary to `metadata.json` under `usage`.
+The mock provider simulates usage from text length (`simulated: true`).
 
 ## Known weaknesses
 
 These are confirmed in the code and are why live runs fail or cannot be
 trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
-- Each agent renders its `.prompt` file's `system` and `user` sections and
-  joins them into one string (`system`, `---`, `user`) sent as a single user
-  message; the API's `system` field is never used.
-- The `@model` declared in each `.prompt` file is never passed to the
-  provider; every stage runs on the provider's default model.
-- Model output is parsed with `JSON.parse` after stripping a code fence;
-  prose before the JSON fails the stage.
-- One timeout (60 s) applies to every stage, including the web-search ones.
-- A failure at any stage loses the stages before it: there is no checkpoint.
-- Web search results and earlier stages' output enter the next prompt
-  between `---` lines with a label, but with no instruction to treat them as
-  data, and `---` also separates the system text from the user text.
-- Token usage and cost are not recorded.
-- `loadPromptDeclaration`, `validateParameterCoverage`, `renderSection` and
-  `stripJsonFences` are copied in all seven agent modules.
+- The per-stage timeouts are derived from each stage's token and search
+  ceilings, not from measured durations; no live stage duration exists yet.
+- Freshness is checked on `accessed_at`, which Praxis sets to the retrieval
+  time; the page's own age (`page_age`) is not used.
+- Web search results arrive inside the model's own turn, so Praxis cannot
+  wrap them; they are covered by the system rule alone. Whether a live model
+  resists an injected instruction has not been measured.
 
 ## Dependencies
 

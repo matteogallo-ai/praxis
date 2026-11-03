@@ -25,14 +25,15 @@ model reads there, and what it writes back into its JSON answer (claims,
 excerpts, stakeholder positions), is untrusted: a page can contain
 instructions aimed at the model.
 
-That answer is then inserted into the next stages' prompts. Today it is
-placed between `---` lines with a label such as "Research output (JSON)", but
-with **no instruction to treat it as data and ignore instructions inside it**,
-and the same `---` line also separates the system text from the user text, so
-injected content can imitate that boundary. There is no prompt-injection test.
-A hostile page could therefore steer later stages, for instance towards a
-given option in the recommendation. Defending against this is roadmap item
-C17 in [`docs/CLAIMS.md`](docs/CLAIMS.md).
+That answer is then inserted into the next stages' prompts inside an
+`<untrusted_data>` block whose content cannot close it (every `<` is
+escaped), and every stage's system text says such blocks and web search
+results are data, never instructions. Code checks the answer: one that
+repeats twelve consecutive words of the system text is rejected, and every
+option, risk or stakeholder a stage references must exist
+(`tests/agents/prompt-injection.test.ts`, claim C17). Web search results
+arrive in the model's own turn and cannot be wrapped; only the system rule
+covers them. Whether a live model resists injection has not been measured.
 
 What limits the damage today: the output is a document for a human reader,
 not an action; Praxis executes no tool other than web search and writes only
@@ -45,10 +46,13 @@ adversarial stages, and the synthesis text, are not checked.
 
 One briefing makes at least 7 model calls, plus one synthesis call per format
 section, up to 5 `pause_turn` rounds per web-search call, up to 3 attempts on
-429/5xx responses, bounded `strict_editorial` regeneration attempts and at
-most one synthesis rerun. Praxis sets no cap on the number of web searches per
-call (the tool's `max_uses` is not sent), records no token usage and enforces
-no budget per briefing. `bun run bench:live` runs every benchmark question.
+429/5xx responses, one stage retry on a recoverable error, bounded
+`strict_editorial` regeneration attempts and at most one synthesis rerun.
+Each stage sends its own `max_tokens`, timeout and web-search cap
+(`max_uses`, `src/agents/stage-limits.ts`). Every call's usage is recorded
+and priced per stage in the run's `metadata.json`, and `--max-cost-usd`
+(`maxCostUsd` in the library) stops a briefing before the next call once it
+has spent the cap. `bun run bench:live` runs every benchmark question.
 
 Controls in place:
 
@@ -56,18 +60,34 @@ Controls in place:
   with a key in `.env` (Bun loads `.env` automatically).
 - CI holds no API key.
 - `.claude/settings.json` denies Claude Code the paid entry points
-  (`bun run bench`, `bench:live`, `score*`, `PRAXIS_LIVE_TESTS=1 …`).
+  (`bun run bench`, `bench:live`, `score*`, `PRAXIS_LIVE_TESTS=1 …`,
+  `env PRAXIS_LIVE_TESTS=1 …`) and tag creation and publication
+  (`git tag *`, `git push --tags`).
 - Project rule: no paid run without a cost estimate and the maintainer's
   approval (`CLAUDE.md`).
 
-Per-stage usage and cost reporting is part of roadmap item C14.
+These deny rules match command prefixes. They are a safety net, not a
+guarantee: the same effect is reachable through another spelling (a
+subshell, a script, `git push origin v1.2.3`, `--follow-tags`). The
+protections that hold:
+
+- The GitHub ruleset on `main` (pull request required, no force-push, no
+  deletion, no bypass actor) refuses a direct push whatever the client.
+- The ruleset on `v*` tags restricts creating, moving and deleting them, but
+  lets repository admins bypass it. A tool running with the maintainer's
+  admin credentials can therefore still push a tag; for tags the deny rules
+  and the project rule are the only guard.
+- `--max-cost-usd` bounds what a briefing can spend whatever starts it.
 
 ### 3. The API key
 
 The Anthropic key is read from the `apiKey` constructor option or the
-`ANTHROPIC_API_KEY` environment variable, kept in memory, and sent only in the
-`x-api-key` header to `api.anthropic.com`. It is never written to output
-files. `.env` is git-ignored; never commit it. If a key may have leaked,
+`ANTHROPIC_API_KEY` environment variable, kept in memory in an ECMAScript
+private field (so printing the provider cannot show it), and sent only in the
+`x-api-key` header to `api.anthropic.com`. It is never written to output or
+run files, and the CLI masks it, other `sk-ant-` keys, auth headers, e-mail
+addresses and the home directory in everything it writes to stderr
+(`tests/cli/no-secrets-in-logs.test.ts`, claim C20). `.env` is git-ignored; never commit it. If a key may have leaked,
 revoke it in the Anthropic console first.
 
 ## Out of scope

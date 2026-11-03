@@ -65,11 +65,18 @@ using Bun's native `fetch`. Zero external HTTP libraries.
 Wire-level features:
 
 - **Endpoint:** `https://api.anthropic.com/v1/messages`.
-- **Headers:** `x-api-key`, `anthropic-version: 2023-06-01`,
-  `content-type: application/json`.
-- **Model:** defaults to `claude-sonnet-4-5`; overridable via the
+- **Headers:** `x-api-key`, `anthropic-version: 2026-10-21`,
+  `content-type: application/json`. That API version rejects `temperature`,
+  `top_p` and `top_k` with HTTP 400, so the provider never sends them; the
+  deprecated `temperature` option is accepted and ignored.
+- **Model:** defaults to `claude-sonnet-5-5`; overridable via the
   `ANTHROPIC_MODEL` env var or the constructor `model` option.
-- **Timeout:** 60s per request, enforced via `AbortController`.
+- **API key:** held in an ECMAScript private field (`#apiKey`), so printing
+  or serialising the provider cannot show it; the CLI also routes stderr
+  through `redactSecrets` (`src/cli/redact.ts`).
+- **Timeout:** 60s per request by default, enforced via `AbortController`;
+  `timeout_ms` on a call overrides it, and every Praxis stage sets its own
+  (`src/agents/stage-limits.ts`).
 - **Retries:** up to 3 attempts total on `429` and `5xx`, with
   exponential backoff `1s → 2s → 4s`. Never retries on `4xx`.
 - **Tool use:** maps the Praxis-side tool identifier `web_search` to
@@ -88,7 +95,7 @@ cp .env.example .env
 | Variable | Purpose | Default |
 | --- | --- | --- |
 | `ANTHROPIC_API_KEY` | Sent as the `x-api-key` header. **Required.** | — |
-| `ANTHROPIC_MODEL`   | Overrides the default model name. | `claude-sonnet-4-5` |
+| `ANTHROPIC_MODEL`   | Overrides the default model name. | `claude-sonnet-5-5` |
 
 `.env` is git-ignored. The provider reads these at construction and
 throws `AnthropicAuthenticationError` if the key is missing or empty.
@@ -146,9 +153,8 @@ per invocation of `researchAfterScoping`:
 - Research: 1–3 requests (tool-use loop), ~5k input tokens including
   server-side `web_search` results, ~1k output tokens.
 
-A single end-to-end run typically stays well under the "few cents"
-mark on `claude-sonnet-4-5`. Live tests are designed to stay under
-that budget too.
+No end-to-end live briefing has completed, so there is no measured cost
+per briefing; the figures above are estimates.
 
 Rate limits and retries: `429` responses are retried up to twice with
 the built-in backoff. If your account has aggressive limits, raise

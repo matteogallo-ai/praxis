@@ -21,8 +21,8 @@
 // in struct fields. The full OptionsGenerationResult schema is
 // enforced Praxis-side in src/agents/options.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-opus-5-5
 @description "Praxis options generation agent — enumerates decision options with tradeoffs and cross-artefact links."
 
 prompt options(
@@ -57,13 +57,16 @@ prompt options(
 
     For every option's `supporting_evidence` field, use EITHER:
 
-      (a) A real, verifiable source with all four fields:
+      (a) A real, verifiable source with these three fields:
           {
             "url": "https://…",
             "title": "…",
-            "accessed_at": "<ISO 8601 UTC datetime>",
             "excerpt": "<the passage that supports the option, ≤500 chars>"
           }
+
+      Do not write `accessed_at`: Praxis records when the search ran.
+      Cite only a URL that web_search returned to you; copy its title
+      and quote the excerpt from that result.
 
       OR
 
@@ -72,6 +75,9 @@ prompt options(
             "status": "SOURCE_MISSING",
             "searched_for": "<what you tried to find, in your own words>"
           }
+
+    Use SOURCE_MISSING only when no search result supports the item,
+    never because a field is awkward to fill.
 
     NEVER fabricate a URL, title, or excerpt.
 
@@ -196,24 +202,16 @@ prompt options(
     Options generation task for briefing '{{format_id}}' under {{sourcing_policy}} sourcing.
 
     Scoping output (JSON):
-    ---
     {{scoping_json}}
-    ---
 
     Research output (JSON):
-    ---
     {{research_json}}
-    ---
 
     Stakeholder mapping output (JSON):
-    ---
     {{stakeholders_json}}
-    ---
 
     Risk analysis output (JSON):
-    ---
     {{risks_json}}
-    ---
 
     Produce the OptionsGeneration JSON now. Search the web as needed
     for precedent. Remember: real source or SOURCE_MISSING — never

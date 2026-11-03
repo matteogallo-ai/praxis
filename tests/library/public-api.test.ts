@@ -125,6 +125,12 @@ const EXPECTED_VALUE_EXPORTS = [
   "DuplicateSourceError",
   "RenderError",
   "UnsupportedRenderTargetError",
+  "UsageLedger",
+  "CheckpointStore",
+  "DEFAULT_PRICE_TABLE",
+  "loadPriceTable",
+  "PriceTableError",
+  "BudgetExceededError",
 ] as const;
 
 describe("Public API — v0.8 value exports", () => {

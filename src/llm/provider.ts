@@ -19,11 +19,36 @@ import type {
 
 export interface CompleteOptions {
   max_tokens?: number;
+  /**
+   * System prompt, sent in the provider's system field. Only honoured by
+   * providers that set `acceptsSystemPrompt`; agents fold it into the
+   * prompt text for the others.
+   */
+  system?: string;
+  /** Model for this call (a stage's `@model`), when the provider supports it. */
+  model?: string;
+  /**
+   * JSON Schema the answer must follow. Providers with constrained decoding
+   * enforce it; the others may ignore it, so callers still validate.
+   */
+  output_schema?: Record<string, unknown>;
+  /** Per-request timeout for this call, overriding the provider default. */
+  timeout_ms?: number;
+  /**
+   * @deprecated Ignored. Anthropic API version 2026-10-21 rejects sampling
+   * parameters; the field stays so 1.x callers that set it still compile.
+   */
   temperature?: number;
 }
 
 export interface LLMProvider {
   readonly name: string;
+  /**
+   * True when `options.system` reaches the model as a system prompt. A
+   * provider written before that option existed would drop it silently,
+   * so agents send it separately only when this is true.
+   */
+  readonly acceptsSystemPrompt?: boolean;
   complete(prompt: string, options?: CompleteOptions): Promise<string>;
   completeWithTools?(
     prompt: string,

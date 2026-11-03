@@ -15,8 +15,8 @@
 // fields. The full ResearchResult schema is enforced Praxis-side in
 // src/agents/research.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-sonnet-5-5
 @description "Praxis research agent — gathers evidence with rigorous sourcing."
 
 prompt research(
@@ -41,13 +41,16 @@ prompt research(
 
     For every finding you produce, the `source` field must be EITHER:
 
-      (a) A real, verifiable source with all four fields:
+      (a) A real, verifiable source with these three fields:
           {
             "url": "https://…",
             "title": "…",
-            "accessed_at": "<ISO 8601 UTC datetime>",
             "excerpt": "<the passage that supports the claim, ≤500 chars>"
           }
+
+      Do not write `accessed_at`: Praxis records when the search ran.
+      Cite only a URL that web_search returned to you; copy its title
+      and quote the excerpt from that result.
 
       OR
 
@@ -56,6 +59,9 @@ prompt research(
             "status": "SOURCE_MISSING",
             "searched_for": "<what you tried to find, in your own words>"
           }
+
+    Use SOURCE_MISSING only when no search result supports the item,
+    never because a field is awkward to fill.
 
     NEVER fabricate a URL, title, or excerpt. If web_search returns no
     usable result for a claim, mark the finding SOURCE_MISSING and
@@ -88,9 +94,7 @@ prompt research(
     Target briefing length: about {{target_words}} words.
 
     Scoping output (JSON):
-    ---
     {{scoping_json}}
-    ---
 
     Produce the Research JSON now. Search the web as needed. Remember:
     real source or SOURCE_MISSING — never invent.

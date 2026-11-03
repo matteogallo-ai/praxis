@@ -76,6 +76,19 @@ release without notice.
 - New methods on public classes.
 - New agents, formats, renderers, providers — all additive.
 - New error subclasses under existing public parents.
+- A behaviour change that is documented in the CHANGELOG and can be
+  turned off through a public option, restoring the earlier behaviour.
+
+### Recorded minor behaviour changes
+
+- **Stage retry.** The `Orchestrator` methods retry a stage once (two
+  attempts) on a recoverable error: a request timeout, a rate limit or a
+  5xx left after the provider's own backoff, or malformed JSON
+  (`src/agents/retry.ts`). Synthesis retries per section. A failing stage
+  can therefore cost two calls. This is the default of the official
+  Anthropic SDKs and is kept; `stageAttempts: 1` in the method options
+  restores the single-attempt behaviour. The error a caller finally
+  receives is unchanged in type.
 
 ## What is acceptable in a PATCH bump
 

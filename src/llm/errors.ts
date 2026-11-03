@@ -131,3 +131,27 @@ export class AnthropicTimeoutError extends LLMError {
 function truncate(s: string, max: number): string {
   return s.length <= max ? s : `${s.slice(0, max)}…`;
 }
+
+/** A price table file that cannot be read or has a malformed price. */
+export class PriceTableError extends LLMError {
+  constructor(path: string, reason: string) {
+    super(`Price table '${path}' is invalid: ${reason}`);
+    this.name = "PriceTableError";
+  }
+}
+
+/** Raised before a model call once a briefing has spent its budget cap. */
+export class BudgetExceededError extends LLMError {
+  readonly spentUsd: number;
+  readonly capUsd: number;
+  constructor(spentUsd: number, capUsd: number, stage: string, reason?: string) {
+    super(
+      reason === undefined
+        ? `Budget cap reached before stage '${stage}': $${spentUsd.toFixed(4)} spent of a $${capUsd.toFixed(4)} cap.`
+        : `Budget cap stops the run before stage '${stage}': ${reason} ($${spentUsd.toFixed(4)} spent of a $${capUsd.toFixed(4)} cap).`
+    );
+    this.name = "BudgetExceededError";
+    this.spentUsd = spentUsd;
+    this.capUsd = capUsd;
+  }
+}

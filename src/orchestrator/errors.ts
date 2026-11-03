@@ -26,8 +26,8 @@ export class NotImplementedError extends PraxisError {
 
 /** Raised when the orchestrator's inputs are inconsistent with the format. */
 export class OrchestrationError extends PraxisError {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = "OrchestrationError";
   }
 }

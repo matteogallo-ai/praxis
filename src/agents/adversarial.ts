@@ -28,14 +28,9 @@
  *          must be a non-empty string
  */
 
-import { readFileSync, existsSync } from "node:fs";
-
-import { tokenize } from "promptlang/lexer";
-import { parse } from "promptlang/parser";
-import type { Program, PromptDeclaration, MessageSection } from "promptlang/ast";
-
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
-import type { CompletionResult, Tool } from "../llm/types.ts";
+import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
 import type {
   AdversarialContext,
@@ -46,20 +41,17 @@ import type {
   CritiqueTarget,
 } from "./types.ts";
 import { CRITIQUE_CATEGORIES, CRITIQUE_SEVERITIES } from "./types.ts";
-import type { SourceStatus } from "../sourcing/types.ts";
 import {
   AdversarialCritiqueError,
-  AgentExecutionError,
   InvalidAgentOutputError,
   InvalidCritiqueTargetError,
-  MaxToolRoundsExceededError,
   MissingAlternativeError,
-  PromptFileError,
 } from "./errors.ts";
 
 const AGENT_ID = "adversarial";
 const PROMPT_NAME = "adversarial";
 const DEFAULT_PROMPT_PATH = "prompts/adversarial.prompt";
+const { requireNonEmptyString, requireEnum, parseSource } = outputReader(AGENT_ID);
 const DEFAULT_MAX_TOOL_ROUNDS = 5;
 
 /** Minimum critiques a run should produce. */
@@ -102,123 +94,21 @@ export async function executeAdversarialCritique(
 
   const promptPath = options.promptPath ?? DEFAULT_PROMPT_PATH;
   const maxToolRounds = options.maxToolRounds ?? DEFAULT_MAX_TOOL_ROUNDS;
-  const declaration = loadPromptDeclaration(promptPath);
+  const loaded = loadPrompt(AGENT_ID, promptPath, PROMPT_NAME);
 
   const inputs: Record<string, string> = {
-    brief_json: JSON.stringify(ctx.brief_result, null, 2),
+    brief_json: untrustedJson("brief", ctx.brief_result),
     format_id: ctx.format.id,
     question: ctx.brief_result.question,
   };
 
-  validateParameterCoverage(declaration, inputs, promptPath);
-
-  const systemText = renderSection(declaration, "system", inputs, promptPath);
-  const userText = renderSection(declaration, "user", inputs, promptPath);
-  const prompt = `${systemText.trim()}\n\n---\n\n${userText.trim()}`;
-
-  let completion: CompletionResult;
-  try {
-    completion = await llm.completeWithTools(prompt, [WEB_SEARCH_TOOL], {
-      max_tool_rounds: maxToolRounds,
-    });
-  } catch (err) {
-    if (err instanceof AgentExecutionError) throw err;
-    const message = err instanceof Error ? err.message : String(err);
-    throw new AgentExecutionError(AGENT_ID, `LLM provider error — ${message}`);
-  }
-
-  if (completion.stop_reason === "pause_turn" && completion.rounds >= maxToolRounds) {
-    throw new MaxToolRoundsExceededError(maxToolRounds);
-  }
-
-  return parseAdversarialCritiqueResult(completion.text, ctx);
-}
-
-function loadPromptDeclaration(path: string): PromptDeclaration {
-  if (!existsSync(path)) {
-    throw new PromptFileError(AGENT_ID, path, "file not found");
-  }
-  let source: string;
-  try {
-    source = readFileSync(path, "utf-8");
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new PromptFileError(AGENT_ID, path, `read failed — ${message}`);
-  }
-
-  let program: Program;
-  try {
-    program = parse(tokenize(source));
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new PromptFileError(AGENT_ID, path, `parse failed — ${message}`);
-  }
-
-  const decl = program.declarations.find(
-    (d): d is PromptDeclaration =>
-      d.kind === "PromptDeclaration" && d.name === PROMPT_NAME
-  );
-  if (!decl) {
-    throw new PromptFileError(
-      AGENT_ID,
-      path,
-      `missing prompt declaration '${PROMPT_NAME}'`
-    );
-  }
-  return decl;
-}
-
-function validateParameterCoverage(
-  decl: PromptDeclaration,
-  inputs: Record<string, string>,
-  path: string
-): void {
-  const declared = new Set(decl.parameters.map((p) => p.name));
-  for (const name of Object.keys(inputs)) {
-    if (!declared.has(name)) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `runtime passed input '${name}' but the prompt does not declare it as a parameter`
-      );
-    }
-  }
-  for (const name of declared) {
-    if (!(name in inputs)) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `prompt declares parameter '${name}' but the runtime did not provide it`
-      );
-    }
-  }
-}
-
-function renderSection(
-  decl: PromptDeclaration,
-  role: "system" | "user",
-  inputs: Record<string, string>,
-  path: string
-): string {
-  const section = decl.sections.find(
-    (s): s is MessageSection => s.kind === "MessageSection" && s.role === role
-  );
-  if (!section) {
-    throw new PromptFileError(AGENT_ID, path, `missing '${role}:' section`);
-  }
-  const raw = section.content.value;
-  const rendered = raw.replace(/\{\{(\w+)\}\}/g, (_, varName: string) => {
-    const value = inputs[varName];
-    if (value === undefined) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `'${role}:' references unknown parameter '{{${varName}}}'`
-      );
-    }
-    return value;
+  const rendered = renderPrompt(AGENT_ID, loaded, inputs);
+  const completion = await callModel(AGENT_ID, llm, loaded, rendered, {
+    tools: [WEB_SEARCH_TOOL],
+    maxToolRounds,
   });
-  return rendered;
+
+  return stampRetrievalTime(parseAdversarialCritiqueResult(completion.text, ctx), new Date());
 }
 
 // ---------------------------------------------------------------------------
@@ -251,7 +141,7 @@ export function parseAdversarialCritiqueResult(
   raw: string,
   ctx: AdversarialContext
 ): AdversarialCritiqueResult {
-  const stripped = stripJsonFences(raw).trim();
+  const stripped = extractJsonText(raw);
   if (stripped.length === 0) {
     throw new InvalidAgentOutputError(AGENT_ID, "empty response", raw);
   }
@@ -477,7 +367,7 @@ function parseCritique(
     raw
   );
 
-  const counterEvidence = parseSource(obj["counter_evidence"], i, raw);
+  const counterEvidence = parseSource(obj["counter_evidence"], `critiques[${i}].counter_evidence`, raw);
   const target = parseCritiqueTarget(obj["target"], i, id, raw, index);
 
   return {
@@ -609,109 +499,7 @@ function parseCritiqueTarget(
   return out;
 }
 
-function parseSource(value: unknown, i: number, raw: string): SourceStatus {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `critiques[${i}].counter_evidence must be an object`,
-      raw
-    );
-  }
-  const obj = value as Record<string, unknown>;
-  if (obj["status"] === "SOURCE_MISSING") {
-    const searchedFor = obj["searched_for"];
-    if (typeof searchedFor !== "string" || searchedFor.length === 0) {
-      throw new InvalidAgentOutputError(
-        AGENT_ID,
-        `critiques[${i}].counter_evidence: SOURCE_MISSING requires a non-empty 'searched_for'`,
-        raw
-      );
-    }
-    return { status: "SOURCE_MISSING", searched_for: searchedFor };
-  }
-  const url = obj["url"];
-  const title = obj["title"];
-  const accessedAt = obj["accessed_at"];
-  const excerpt = obj["excerpt"];
-  if (typeof url !== "string" || url.length === 0) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `critiques[${i}].counter_evidence.url must be a non-empty string (or use SOURCE_MISSING)`,
-      raw
-    );
-  }
-  if (typeof title !== "string" || title.length === 0) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `critiques[${i}].counter_evidence.title must be a non-empty string`,
-      raw
-    );
-  }
-  if (typeof accessedAt !== "string" || accessedAt.length === 0) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `critiques[${i}].counter_evidence.accessed_at must be a non-empty ISO 8601 string`,
-      raw
-    );
-  }
-  if (typeof excerpt !== "string") {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `critiques[${i}].counter_evidence.excerpt must be a string`,
-      raw
-    );
-  }
-  if (excerpt.length > 500) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `critiques[${i}].counter_evidence.excerpt exceeds 500 characters`,
-      raw
-    );
-  }
-  return { url, title, accessed_at: accessedAt, excerpt };
-}
-
 // ---------------------------------------------------------------------------
 // Low-level helpers (mirror the pattern from risk.ts / options.ts).
 // ---------------------------------------------------------------------------
 
-function requireNonEmptyString(
-  obj: Record<string, unknown>,
-  field: string,
-  displayPath: string,
-  raw: string
-): string {
-  const v = obj[field];
-  if (typeof v !== "string" || v.length === 0) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `${displayPath} must be a non-empty string`,
-      raw
-    );
-  }
-  return v;
-}
-
-function requireEnum(
-  obj: Record<string, unknown>,
-  field: string,
-  allowed: readonly string[],
-  displayPath: string,
-  raw: string
-): string {
-  const v = obj[field];
-  if (typeof v !== "string" || !allowed.includes(v)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `${displayPath} must be one of ${allowed.join("|")}`,
-      raw
-    );
-  }
-  return v;
-}
-
-function stripJsonFences(raw: string): string {
-  const fenced = raw.match(/^```(?:json)?\n([\s\S]*?)\n```\s*$/);
-  if (fenced && fenced[1] !== undefined) return fenced[1];
-  return raw;
-}

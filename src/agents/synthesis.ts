@@ -30,12 +30,15 @@
  * upstream agents.
  */
 
-import { readFileSync, existsSync } from "node:fs";
-
-import { tokenize } from "promptlang/lexer";
-import { parse } from "promptlang/parser";
-import type { Program, PromptDeclaration, MessageSection } from "promptlang/ast";
-
+import { withRetry } from "./retry.ts";
+import {
+  callModel,
+  extractJsonText,
+  loadPrompt,
+  renderPrompt,
+  untrusted,
+  untrustedJson,
+} from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type {
   EditorialAttempt,
@@ -55,14 +58,41 @@ import type {
 import { DEFAULT_MAX_REGENERATION_ATTEMPTS } from "../registry/schema.ts";
 import type { SourceReference } from "../sourcing/types.ts";
 import {
-  AgentExecutionError,
   EditorialFailureError,
   InvalidAgentOutputError,
-  PromptFileError,
   SynthesisError,
 } from "./errors.ts";
 
 const AGENT_ID = "synthesis";
+
+/**
+ * Constrains decoding to the shape `parseSectionResponse` validates. Length
+ * limits (excerpt ≤ 500 characters) are not expressible in a structured
+ * output schema and stay in the parser.
+ */
+const SECTION_SCHEMA = {
+  type: "object",
+  properties: {
+    content_markdown: { type: "string" },
+    sources_cited: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          url: { type: "string" },
+          title: { type: "string" },
+          accessed_at: { type: "string" },
+          excerpt: { type: "string" },
+        },
+        required: ["url", "title", "accessed_at", "excerpt"],
+        additionalProperties: false,
+      },
+    },
+    validation_issues: { type: "array", items: { type: "string" } },
+  },
+  required: ["content_markdown", "sources_cited", "validation_issues"],
+  additionalProperties: false,
+};
 const PROMPT_NAME = "synthesis";
 const DEFAULT_PROMPT_PATH = "prompts/synthesis.prompt";
 
@@ -72,6 +102,11 @@ const OVER_LENGTH_TOLERANCE_PCT = 0.1;
 export interface ExecuteSynthesisOptions {
   /** Overrides the default `prompts/synthesis.prompt` location — used in tests. */
   promptPath?: string;
+  /**
+   * Attempts per section on recoverable errors. Retrying here rather than
+   * around the stage means one bad section does not rewrite the others.
+   */
+  attempts?: number;
 }
 
 export async function executeSynthesis(
@@ -80,14 +115,16 @@ export async function executeSynthesis(
   options: ExecuteSynthesisOptions = {}
 ): Promise<SynthesisResult> {
   const promptPath = options.promptPath ?? DEFAULT_PROMPT_PATH;
-  const declaration = loadPromptDeclaration(promptPath);
+  const loaded = loadPrompt(AGENT_ID, promptPath, PROMPT_NAME);
 
-  const sections: SynthesizedSection[] = [];
   const sourcesByAgent = collectUpstreamSources(ctx);
   const editorial = buildEditorialConfig(ctx.format);
   const revisionBlockGlobal = buildRevisionInstruction(ctx.revision_context);
 
-  for (const section of ctx.format.sections) {
+  // Each section's prompt reads the upstream stages and its own format
+  // entry, never another section's text, so sections are written
+  // concurrently; editorial regeneration stays sequential within a section.
+  const synthesizeSection = async (section: FormatSection): Promise<SynthesizedSection> => {
     const attempts: EditorialAttempt[] = [];
     let lastReason: EditorialReason | undefined;
     let lastDetails: string | undefined;
@@ -115,25 +152,13 @@ export async function executeSynthesis(
         revisionBlockForSection,
         retryBlock
       );
-      validateParameterCoverage(declaration, inputs, promptPath);
-
-      const systemText = renderSection(declaration, "system", inputs, promptPath);
-      const userText = renderSection(declaration, "user", inputs, promptPath);
-      const prompt = `${systemText.trim()}\n\n---\n\n${userText.trim()}`;
-
-      let text: string;
-      try {
-        text = await callLLM(llm, prompt);
-      } catch (err) {
-        if (err instanceof AgentExecutionError) throw err;
-        const message = err instanceof Error ? err.message : String(err);
-        throw new AgentExecutionError(
-          AGENT_ID,
-          `LLM provider error while synthesising '${section.id}' — ${message}`
-        );
-      }
-
-      const parsed = parseSectionResponse(text, section, sourcesByAgent);
+      const rendered = renderPrompt(AGENT_ID, loaded, inputs);
+      const completion = await callModel(AGENT_ID, llm, loaded, rendered, {
+        tools: [],
+        outputSchema: SECTION_SCHEMA,
+        errorContext: `while synthesising '${section.id}'`,
+      });
+      const parsed = parseSectionResponse(completion.text, section, sourcesByAgent);
 
       if (editorial.strict) {
         const check = checkEditorialConformance(parsed, section, ctx, editorial);
@@ -170,12 +195,17 @@ export async function executeSynthesis(
     }
 
     const post = postValidate(acceptedParsed, section, ctx);
-    sections.push({
+    return {
       ...post,
       editorial_attempts: attempts,
       final_attempt_number: acceptedAttempt,
-    });
-  }
+    };
+  };
+  const sections = await Promise.all(
+    ctx.format.sections.map((section) =>
+      withRetry(() => synthesizeSection(section), options.attempts ?? 1)
+    )
+  );
 
   const totalWordCount = sections.reduce((acc, s) => acc + s.word_count, 0);
   const conformance = buildFormatConformance(ctx, sections, totalWordCount);
@@ -187,107 +217,51 @@ export async function executeSynthesis(
   };
 }
 
-async function callLLM(llm: LLMProvider, prompt: string): Promise<string> {
-  // Synthesis does not use tools — call `complete` directly. Some
-  // providers may only implement `completeWithTools`; fall back to it
-  // with an empty tool list.
-  if (typeof llm.complete === "function") {
-    return llm.complete(prompt);
-  }
-  if (typeof llm.completeWithTools === "function") {
-    const r = await llm.completeWithTools(prompt, []);
-    return r.text;
-  }
-  throw new AgentExecutionError(
-    AGENT_ID,
-    `LLM provider '${llm.name}' implements neither complete() nor completeWithTools()`
-  );
-}
 
-function loadPromptDeclaration(path: string): PromptDeclaration {
-  if (!existsSync(path)) {
-    throw new PromptFileError(AGENT_ID, path, "file not found");
+/**
+ * A stored `SynthesisResult` (a checkpoint), checked before reuse: one
+ * section per format section, in format order, each with the fields the
+ * renderers read. Synthesis has no single parser for its whole output (it
+ * is assembled from per-section answers), so this checks the assembled shape.
+ */
+export function parseStoredSynthesis(
+  stored: string,
+  format: Format,
+  upstream: Omit<SynthesisContext, "format" | "revision_context">
+): SynthesisResult {
+  const knownSources = collectUpstreamSources({ ...upstream, format });
+  const fail = (what: string): never => {
+    throw new InvalidAgentOutputError(AGENT_ID, what, stored);
+  };
+  const value: unknown = JSON.parse(stored);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) fail("expected an object");
+  const obj = value as Record<string, unknown>;
+  const sections = obj["sections"];
+  if (!Array.isArray(sections)) return fail("'sections' must be an array");
+  const expected = format.sections.map((s) => s.id);
+  const ids = sections.map((s) => (s as Record<string, unknown> | null)?.["section_id"]);
+  if (JSON.stringify(ids) !== JSON.stringify(expected)) {
+    fail(`'sections' must be the format's sections in order (${expected.join(", ")})`);
   }
-  let source: string;
-  try {
-    source = readFileSync(path, "utf-8");
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new PromptFileError(AGENT_ID, path, `read failed — ${message}`);
-  }
-
-  let program: Program;
-  try {
-    program = parse(tokenize(source));
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new PromptFileError(AGENT_ID, path, `parse failed — ${message}`);
-  }
-
-  const decl = program.declarations.find(
-    (d): d is PromptDeclaration =>
-      d.kind === "PromptDeclaration" && d.name === PROMPT_NAME
-  );
-  if (!decl) {
-    throw new PromptFileError(
-      AGENT_ID,
-      path,
-      `missing prompt declaration '${PROMPT_NAME}'`
-    );
-  }
-  return decl;
-}
-
-function validateParameterCoverage(
-  decl: PromptDeclaration,
-  inputs: Record<string, string>,
-  path: string
-): void {
-  const declared = new Set(decl.parameters.map((p) => p.name));
-  for (const name of Object.keys(inputs)) {
-    if (!declared.has(name)) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `runtime passed input '${name}' but the prompt does not declare it as a parameter`
-      );
+  for (const [i, raw] of sections.entries()) {
+    const s = raw as Record<string, unknown>;
+    for (const key of ["title", "content_markdown"]) {
+      if (typeof s[key] !== "string") fail(`sections[${i}].${key} must be a string`);
+    }
+    for (const key of ["word_count", "final_attempt_number"]) {
+      if (typeof s[key] !== "number") fail(`sections[${i}].${key} must be a number`);
+    }
+    for (const key of ["sources_cited", "validation_issues", "editorial_attempts"]) {
+      if (!Array.isArray(s[key])) fail(`sections[${i}].${key} must be an array`);
+    }
+    for (const [j, source] of (s["sources_cited"] as unknown[]).entries()) {
+      parseCitedSource(source, `sections[${i}].sources_cited[${j}]`, knownSources, stored);
     }
   }
-  for (const name of declared) {
-    if (!(name in inputs)) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `prompt declares parameter '${name}' but the runtime did not provide it`
-      );
-    }
-  }
-}
-
-function renderSection(
-  decl: PromptDeclaration,
-  role: "system" | "user",
-  inputs: Record<string, string>,
-  path: string
-): string {
-  const section = decl.sections.find(
-    (s): s is MessageSection => s.kind === "MessageSection" && s.role === role
-  );
-  if (!section) {
-    throw new PromptFileError(AGENT_ID, path, `missing '${role}:' section`);
-  }
-  const raw = section.content.value;
-  return raw.replace(/\{\{(\w+)\}\}/g, (_, varName: string) => {
-    const value = inputs[varName];
-    if (value === undefined) {
-      throw new PromptFileError(
-        AGENT_ID,
-        path,
-        `'${role}:' references unknown parameter '{{${varName}}}'`
-      );
-    }
-    return value;
-  });
+  if (typeof obj["total_word_count"] !== "number") fail("'total_word_count' must be a number");
+  const conformance = obj["format_conformance"];
+  if (typeof conformance !== "object" || conformance === null) fail("'format_conformance' must be an object");
+  return value as SynthesisResult;
 }
 
 function buildSectionInputs(
@@ -297,11 +271,11 @@ function buildSectionInputs(
   retryBlock: string
 ): Record<string, string> {
   return {
-    scoping_json: JSON.stringify(ctx.scoping, null, 2),
-    research_json: JSON.stringify(ctx.research, null, 2),
-    stakeholders_json: JSON.stringify(ctx.stakeholders, null, 2),
-    risks_json: JSON.stringify(ctx.risks, null, 2),
-    options_json: JSON.stringify(ctx.options, null, 2),
+    scoping_json: untrustedJson("scoping", ctx.scoping),
+    research_json: untrustedJson("research", ctx.research),
+    stakeholders_json: untrustedJson("stakeholders", ctx.stakeholders),
+    risks_json: untrustedJson("risks", ctx.risks),
+    options_json: untrustedJson("options", ctx.options),
     format_id: ctx.format.id,
     section_id: section.id,
     section_title: section.title,
@@ -454,19 +428,22 @@ function buildSectionRevisionInstruction(
   const critiquesText =
     relevant.length === 0
       ? "(no critiques targeted at this section — align recommendation and prose with the steelmanned alternative)"
-      : relevant
-          .map(
-            (c) =>
-              `- ${c.id} [${c.severity}, ${c.category}]: ${c.steelmanned_position}\n    implication_if_true: ${c.implication_if_true}\n    suggested_revision: ${c.suggested_revision}`
-          )
-          .join("\n");
+      : untrusted(
+          "adversarial critiques",
+          relevant
+            .map(
+              (c) =>
+                `- ${c.id} [${c.severity}, ${c.category}]: ${c.steelmanned_position}\n    implication_if_true: ${c.implication_if_true}\n    suggested_revision: ${c.suggested_revision}`
+            )
+            .join("\n")
+        );
   return [
     `${global.header} — the initial synthesis attracted adversarial critiques that this pass MUST address.`,
     "",
     "Critiques to address:",
     critiquesText,
     "",
-    `Steelmanned alternative recommendation:\n${global.alt}`,
+    `Steelmanned alternative recommendation:\n${untrusted("steelmanned alternative", global.alt)}`,
     "",
     `Instruction: ${global.instruction}`,
     "",
@@ -503,7 +480,7 @@ function parseSectionResponse(
   section: FormatSection,
   knownSources: KnownSourcesIndex
 ): ParsedSectionResponse {
-  const stripped = stripJsonFences(raw).trim();
+  const stripped = extractJsonText(raw);
   if (stripped.length === 0) {
     throw new InvalidAgentOutputError(
       AGENT_ID,
@@ -548,44 +525,9 @@ function parseSectionResponse(
       raw
     );
   }
-  const sources: SourceReference[] = [];
-  for (const [i, s] of rawSources.entries()) {
-    if (typeof s !== "object" || s === null || Array.isArray(s)) {
-      throw new InvalidAgentOutputError(
-        AGENT_ID,
-        `section '${section.id}': sources_cited[${i}] must be an object`,
-        raw
-      );
-    }
-    const so = s as Record<string, unknown>;
-    const url = so["url"];
-    const title = so["title"];
-    const accessedAt = so["accessed_at"];
-    const excerpt = so["excerpt"];
-    if (
-      typeof url !== "string" ||
-      url.length === 0 ||
-      typeof title !== "string" ||
-      title.length === 0 ||
-      typeof accessedAt !== "string" ||
-      accessedAt.length === 0 ||
-      typeof excerpt !== "string"
-    ) {
-      throw new InvalidAgentOutputError(
-        AGENT_ID,
-        `section '${section.id}': sources_cited[${i}] must have url/title/accessed_at/excerpt (all strings)`,
-        raw
-      );
-    }
-    // Non-invention guard: the cited URL must exist somewhere in the
-    // upstream artefacts. Fabricated URLs are structurally forbidden.
-    if (!knownSources.hasUrl(url)) {
-      throw new SynthesisError(
-        `section '${section.id}': cited source url '${url}' is not present in any upstream artefact. Synthesis must not invent sources.`
-      );
-    }
-    sources.push({ url, title, accessed_at: accessedAt, excerpt });
-  }
+  const sources = rawSources.map((s, i) =>
+    parseCitedSource(s, `section '${section.id}': sources_cited[${i}]`, knownSources, raw)
+  );
 
   const issuesRaw = obj["validation_issues"];
   if (!Array.isArray(issuesRaw)) {
@@ -742,6 +684,50 @@ interface KnownSourcesIndex {
   hasUrl(url: string): boolean;
 }
 
+
+
+/**
+ * One entry of a section's `sources_cited`, for a fresh answer and for a
+ * stored synthesis alike: the four fields as non-empty strings (excerpt may
+ * be empty), and a URL that some upstream stage returned. Fabricated URLs
+ * are structurally forbidden.
+ */
+function parseCitedSource(
+  s: unknown,
+  where: string,
+  knownSources: KnownSourcesIndex,
+  raw: string
+): SourceReference {
+  if (typeof s !== "object" || s === null || Array.isArray(s)) {
+    throw new InvalidAgentOutputError(AGENT_ID, `${where} must be an object`, raw);
+  }
+  const so = s as Record<string, unknown>;
+  const url = so["url"];
+  const title = so["title"];
+  const accessedAt = so["accessed_at"];
+  const excerpt = so["excerpt"];
+  if (
+    typeof url !== "string" ||
+    url.length === 0 ||
+    typeof title !== "string" ||
+    title.length === 0 ||
+    typeof accessedAt !== "string" ||
+    accessedAt.length === 0 ||
+    typeof excerpt !== "string"
+  ) {
+    throw new InvalidAgentOutputError(
+      AGENT_ID,
+      `${where} must have url/title/accessed_at/excerpt (all strings)`,
+      raw
+    );
+  }
+  if (!knownSources.hasUrl(url)) {
+    throw new SynthesisError(
+      `${where}: cited source url '${url}' is not present in any upstream artefact. Synthesis must not invent sources.`
+    );
+  }
+  return { url, title, accessed_at: accessedAt, excerpt };
+}
 function collectUpstreamSources(ctx: SynthesisContext): KnownSourcesIndex {
   const urls = new Set<string>();
   for (const f of ctx.research.findings) {
@@ -792,8 +778,3 @@ function countOccurrences(haystack: string, needle: string): number {
   return count;
 }
 
-function stripJsonFences(raw: string): string {
-  const fenced = raw.match(/^```(?:json)?\n([\s\S]*?)\n```\s*$/);
-  if (fenced && fenced[1] !== undefined) return fenced[1];
-  return raw;
-}

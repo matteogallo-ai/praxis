@@ -6,15 +6,16 @@
  * shape we depend on is small and stable.
  *
  * Wire model:
- *   - Request body: { model, max_tokens, messages, tools? }
+ *   - Request body: { model, max_tokens, messages, tools? } — no sampling
+ *     parameters (API version 2026-10-21 rejects them).
  *   - Response body: { content: [text|tool_use blocks…], stop_reason, … }
  *
  * Server-side tool use (specifically `web_search_20250305`) means the
  * API executes the tool itself and inlines both the invocation and its
  * result into the same response — no client-side loop needed for the
  * common case. When `stop_reason === "pause_turn"` the model asks to
- * continue; the provider echoes the assistant message back and issues
- * another API call, up to `max_tool_rounds`.
+ * continue; the provider sends the paused content blocks back unchanged
+ * and issues another API call, up to `max_tool_rounds`.
  *
  * Reliability:
  *   - Timeout: 60s per HTTP request (configurable).
@@ -33,6 +34,7 @@ import type {
   ToolCall,
   CompletionResult,
   CompleteWithToolsOptions,
+  TokenUsage,
 } from "./types.ts";
 import {
   AnthropicAuthenticationError,
@@ -42,8 +44,11 @@ import {
 } from "./errors.ts";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_VERSION = "2023-06-01";
-const DEFAULT_MODEL = "claude-sonnet-4-5";
+// 2026-10-21 rejects temperature, top_p and top_k with a 400 on every model,
+// so the request builder never sends them.
+const ANTHROPIC_VERSION = "2026-10-21";
+// claude-sonnet-4-5 is deprecated (retires 2026-11-30).
+const DEFAULT_MODEL = "claude-sonnet-5-5";
 const DEFAULT_MAX_TOKENS = 4096;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_TOOL_ROUNDS = 5;
@@ -65,7 +70,10 @@ export type FetchLike = (
 export interface AnthropicLLMProviderOptions {
   /** Overrides the ANTHROPIC_API_KEY env var. Primarily for tests. */
   apiKey?: string;
-  /** Overrides the ANTHROPIC_MODEL env var and the built-in default. */
+  /**
+   * Pins one model for every call, overriding each stage's `@model`. The
+   * ANTHROPIC_MODEL env var does the same when this option is absent.
+   */
   model?: string;
   /** Per-request timeout in ms. Default 60_000. */
   timeoutMs?: number;
@@ -96,26 +104,27 @@ interface AnthropicContentBlock {
 
 interface AnthropicMessage {
   role: "user" | "assistant";
-  content:
-    | string
-    | Array<{
-        type: string;
-        text?: string;
-        id?: string;
-        name?: string;
-        input?: unknown;
-      }>;
+  /**
+   * A string for the user turn; for a resent assistant turn, the response's
+   * content blocks exactly as received (see `rawContentBlocks`).
+   */
+  content: string | readonly unknown[];
 }
 
 interface AnthropicResponseBody {
   content?: unknown;
   stop_reason?: unknown;
+  model?: unknown;
+  usage?: unknown;
 }
 
 export class AnthropicLLMProvider implements LLMProvider {
   readonly name = "anthropic";
-  private readonly apiKey: string;
-  private readonly defaultModel: string;
+  readonly acceptsSystemPrompt = true;
+  // An ECMAScript private field: absent from JSON.stringify, Object.keys and
+  // inspect output, so printing the provider cannot print the key.
+  readonly #apiKey: string;
+  private readonly pinnedModel: string | undefined;
   private readonly timeoutMs: number;
   private readonly maxAttempts: number;
   private readonly fetchFn: FetchLike;
@@ -126,9 +135,9 @@ export class AnthropicLLMProvider implements LLMProvider {
     if (typeof key !== "string" || key.length === 0) {
       throw new AnthropicAuthenticationError();
     }
-    this.apiKey = key;
-    this.defaultModel =
-      options.model ?? process.env["ANTHROPIC_MODEL"] ?? DEFAULT_MODEL;
+    this.#apiKey = key;
+    const envModel = process.env["ANTHROPIC_MODEL"];
+    this.pinnedModel = options.model ?? (envModel !== "" ? envModel : undefined);
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.maxAttempts = options.maxAttempts ?? RETRY_BACKOFF_MS.length;
     this.fetchFn = options.fetchFn ?? fetch;
@@ -137,12 +146,13 @@ export class AnthropicLLMProvider implements LLMProvider {
 
   async complete(prompt: string, options: CompleteOptions = {}): Promise<string> {
     const messages: AnthropicMessage[] = [{ role: "user", content: prompt }];
-    const requestOpts: { max_tokens: number; temperature?: number; model: string } = {
+    const body = await this.request(messages, [], {
       max_tokens: options.max_tokens ?? DEFAULT_MAX_TOKENS,
-      model: this.defaultModel,
-    };
-    if (options.temperature !== undefined) requestOpts.temperature = options.temperature;
-    const body = await this.request(messages, [], requestOpts);
+      model: this.modelFor(options.model),
+      system: options.system,
+      outputSchema: options.output_schema,
+      timeoutMs: options.timeout_ms ?? this.timeoutMs,
+    });
     return extractText(body);
   }
 
@@ -152,54 +162,83 @@ export class AnthropicLLMProvider implements LLMProvider {
     options: CompleteWithToolsOptions = {}
   ): Promise<CompletionResult> {
     const maxRounds = options.max_tool_rounds ?? DEFAULT_MAX_TOOL_ROUNDS;
-    const model = options.model ?? this.defaultModel;
+    const model = this.modelFor(options.model);
     const max_tokens = options.max_tokens ?? DEFAULT_MAX_TOKENS;
     const messages: AnthropicMessage[] = [{ role: "user", content: prompt }];
 
     const collectedToolCalls: ToolCall[] = [];
+    const usage = emptyUsage();
+    let answeredBy: string | undefined;
     let rounds = 0;
     let stopReason = "";
     let finalText = "";
 
     for (let i = 0; i < maxRounds; i++) {
       rounds++;
-      const requestOpts: { max_tokens: number; temperature?: number; model: string } = {
+      const body = await this.request(messages, tools, {
         max_tokens,
         model,
-      };
-      if (options.temperature !== undefined) requestOpts.temperature = options.temperature;
-      const body = await this.request(messages, tools, requestOpts);
-      const content = parseContentBlocks(body);
+        system: options.system,
+        // Structured outputs are a 400 alongside citations, and web search
+        // citations are always on, so a schema rides only on tool-less calls.
+        outputSchema: tools.length === 0 ? options.output_schema : undefined,
+        timeoutMs: options.timeout_ms ?? this.timeoutMs,
+      });
+      addUsage(usage, body.usage);
+      if (typeof body.model === "string") answeredBy = body.model;
+      const raw = rawContentBlocks(body);
+      const content = parseContentBlocks(raw);
       collectedToolCalls.push(...extractToolCalls(content));
-      finalText = extractTextFromBlocks(content);
+      finalText = extractFinalText(content);
       stopReason = typeof body.stop_reason === "string" ? body.stop_reason : "";
 
       if (stopReason === "pause_turn") {
-        messages.push({ role: "assistant", content });
+        // The API resumes only from the paused turn sent back unchanged:
+        // web_search_tool_result blocks carry tool_use_id and encrypted
+        // content, cited text carries encrypted_index, and a dropped or
+        // altered field is a 400.
+        messages.push({ role: "assistant", content: raw });
         continue;
       }
       break;
     }
-    return {
+    const result: CompletionResult = {
       text: finalText,
       tool_calls: collectedToolCalls,
       rounds,
       stop_reason: stopReason,
+      usage,
     };
+    if (answeredBy !== undefined) result.model = answeredBy;
+    return result;
+  }
+
+  /** Pinned model, else the stage's `@model`, else the built-in default. */
+  private modelFor(requested: string | undefined): string {
+    return this.pinnedModel ?? requested ?? DEFAULT_MODEL;
   }
 
   private async request(
     messages: AnthropicMessage[],
     tools: Tool[],
-    opts: { max_tokens: number; temperature?: number; model: string }
+    opts: {
+      max_tokens: number;
+      model: string;
+      system: string | undefined;
+      outputSchema: Record<string, unknown> | undefined;
+      timeoutMs: number;
+    }
   ): Promise<AnthropicResponseBody> {
     const payload: Record<string, unknown> = {
       model: opts.model,
       max_tokens: opts.max_tokens,
-      messages,
     };
-    if (opts.temperature !== undefined) {
-      payload["temperature"] = opts.temperature;
+    if (opts.system !== undefined && opts.system.length > 0) {
+      payload["system"] = opts.system;
+    }
+    payload["messages"] = messages;
+    if (opts.outputSchema !== undefined) {
+      payload["output_config"] = { format: { type: "json_schema", schema: opts.outputSchema } };
     }
     if (tools.length > 0) {
       payload["tools"] = tools.map(mapToolToAnthropic);
@@ -207,7 +246,7 @@ export class AnthropicLLMProvider implements LLMProvider {
 
     let lastRetriableBody = "";
     for (let attempt = 1; attempt <= this.maxAttempts; attempt++) {
-      const response = await this.fetchWithTimeout(payload);
+      const response = await this.fetchWithTimeout(payload, opts.timeoutMs);
       if (response.ok) {
         const text = await response.text();
         try {
@@ -241,14 +280,17 @@ export class AnthropicLLMProvider implements LLMProvider {
     throw new AnthropicRateLimitError(this.maxAttempts, lastRetriableBody);
   }
 
-  private async fetchWithTimeout(payload: Record<string, unknown>): Promise<Response> {
+  private async fetchWithTimeout(
+    payload: Record<string, unknown>,
+    timeoutMs: number
+  ): Promise<Response> {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await this.fetchFn(ANTHROPIC_API_URL, {
         method: "POST",
         headers: {
-          "x-api-key": this.apiKey,
+          "x-api-key": this.#apiKey,
           "anthropic-version": ANTHROPIC_VERSION,
           "content-type": "application/json",
         },
@@ -258,7 +300,7 @@ export class AnthropicLLMProvider implements LLMProvider {
       return response;
     } catch (err) {
       if (isAbortError(err)) {
-        throw new AnthropicTimeoutError(this.timeoutMs);
+        throw new AnthropicTimeoutError(timeoutMs);
       }
       throw err;
     } finally {
@@ -269,10 +311,37 @@ export class AnthropicLLMProvider implements LLMProvider {
 
 function mapToolToAnthropic(tool: Tool): Record<string, unknown> {
   const anthropicType = TOOL_TYPE_MAP[tool.type] ?? tool.type;
-  return { type: anthropicType, name: tool.name };
+  const mapped: Record<string, unknown> = { type: anthropicType, name: tool.name };
+  if (tool.max_uses !== undefined) mapped["max_uses"] = tool.max_uses;
+  return mapped;
 }
 
-function parseContentBlocks(body: AnthropicResponseBody): AnthropicContentBlock[] {
+function emptyUsage(): TokenUsage {
+  return {
+    input_tokens: 0,
+    output_tokens: 0,
+    cache_creation_input_tokens: 0,
+    cache_read_input_tokens: 0,
+    web_search_requests: 0,
+  };
+}
+
+/** Adds one response's `usage` object to the running total; absent fields count 0. */
+function addUsage(total: TokenUsage, raw: unknown): void {
+  if (typeof raw !== "object" || raw === null) return;
+  const u = raw as Record<string, unknown>;
+  const n = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+  total.input_tokens += n(u["input_tokens"]);
+  total.output_tokens += n(u["output_tokens"]);
+  total.cache_creation_input_tokens += n(u["cache_creation_input_tokens"]);
+  total.cache_read_input_tokens += n(u["cache_read_input_tokens"]);
+  const server = u["server_tool_use"];
+  if (typeof server === "object" && server !== null) {
+    total.web_search_requests += n((server as Record<string, unknown>)["web_search_requests"]);
+  }
+}
+
+function rawContentBlocks(body: AnthropicResponseBody): readonly unknown[] {
   const raw = body.content;
   if (!Array.isArray(raw)) {
     throw new AnthropicAPIError(
@@ -280,6 +349,11 @@ function parseContentBlocks(body: AnthropicResponseBody): AnthropicContentBlock[
       "Anthropic response is missing a 'content' array"
     );
   }
+  return raw;
+}
+
+/** A typed read-only view of the blocks, for text and tool-call extraction. */
+function parseContentBlocks(raw: readonly unknown[]): AnthropicContentBlock[] {
   const out: AnthropicContentBlock[] = [];
   for (const item of raw) {
     if (typeof item !== "object" || item === null || Array.isArray(item)) continue;
@@ -296,7 +370,7 @@ function parseContentBlocks(body: AnthropicResponseBody): AnthropicContentBlock[
 }
 
 function extractText(body: AnthropicResponseBody): string {
-  return extractTextFromBlocks(parseContentBlocks(body));
+  return extractTextFromBlocks(parseContentBlocks(rawContentBlocks(body)));
 }
 
 function extractTextFromBlocks(blocks: AnthropicContentBlock[]): string {
@@ -304,6 +378,20 @@ function extractTextFromBlocks(blocks: AnthropicContentBlock[]): string {
     .filter((b) => b.type === "text" && typeof b.text === "string")
     .map((b) => b.text as string)
     .join("");
+}
+
+/**
+ * The answer is the text after the turn's last tool block. Text before it is
+ * the model narrating its searches ("I'll search for …"), and the answer
+ * itself arrives in several text blocks wherever a web search citation
+ * attaches, so the blocks after the boundary are joined.
+ */
+function extractFinalText(blocks: AnthropicContentBlock[]): string {
+  let lastToolBlock = -1;
+  blocks.forEach((b, i) => {
+    if (isToolUseType(b.type) || b.type.endsWith("_tool_result")) lastToolBlock = i;
+  });
+  return extractTextFromBlocks(blocks.slice(lastToolBlock + 1));
 }
 
 function extractToolCalls(blocks: AnthropicContentBlock[]): ToolCall[] {

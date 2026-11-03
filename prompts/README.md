@@ -30,14 +30,43 @@ be used; the agent module checks both when it loads the file.
 
 ## How a prompt is executed
 
-The agent module parses the file with PromptLang's lexer and parser, renders
-the `system` and `user` sections, joins them into one string (`system`, a `---`
-line, `user`) and passes that string to the `LLMProvider`, which sends it as a
-single user message. The `@model` line is not read: the provider's default
-model runs every stage. Both are known weaknesses listed in
-[`docs/architecture.md`](../docs/architecture.md).
+The agent module parses the file with PromptLang's lexer and parser and renders
+the `system` and `user` sections. `callModel` (`src/agents/prompt-runtime.ts`)
+sends the `system` text in the Messages API `system` field, the `user` text as
+the user message, and the file's `@model` as the model. A provider that does
+not declare `acceptsSystemPrompt` receives both joined by a `---` line, as
+before. A model pinned on `AnthropicLLMProvider` (constructor `model` or
+`ANTHROPIC_MODEL`) overrides every `@model`.
 
-Changing any line inside a `prompt` body changes what the model receives.
+Earlier stages' output (`{{*_json}}`) and the critique text of a synthesis
+rerun reach the prompt inside `<untrusted_data source="…">` blocks, with every
+`<` in the content escaped so it cannot close the block. Every stage's system
+text ends with `UNTRUSTED_CONTENT_RULE`, which tells the model that those
+blocks and every web_search result are data, never instructions. Code then
+checks the answer: `callModel` rejects one that repeats twelve consecutive
+words of the system text, and each stage's validator rejects references to
+options, risks or stakeholders that do not exist.
+
+Changing any line inside a `prompt` body changes what the model receives:
+bump `@version`. CI runs `promptlang semver-check` against `main`; a changed
+`@model` needs a major bump.
+
+## Stage models
+
+Prices are Anthropic first-party rates per million tokens (input / output):
+Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10; each `web_search` call adds $0.01.
+
+| Stage | `@model` | Why |
+| --- | --- | --- |
+| `scoping` | `claude-opus-5-5` | One short call (about 1k tokens in, 0.5k out), so the model costs cents at most; its framing feeds all six later stages, so quality wins. |
+| `research` | `claude-sonnet-5-5` | Search results arrive as input tokens and dominate the bill; the task is reading results and copying source fields, where Sonnet halves input cost. |
+| `stakeholder` | `claude-sonnet-5-5` | Same shape as research: search-heavy extraction. |
+| `risk` | `claude-sonnet-5-5` | Same shape as research; scoring rules are checked in code (`src/agents/risk.ts`), not left to the model. |
+| `options` | `claude-opus-5-5` | The recommendation is the decision the briefing exists for; input is the four upstream JSON documents, not raw search results. |
+| `synthesis` | `claude-sonnet-5-5` | One call per format section, each resending all upstream JSON, so input volume scales with section count; the task is writing to a given structure. |
+| `adversarial` | `claude-opus-5-5` | A critic weaker than the author of the brief misses what it should catch. |
+
+No live run has measured these trade-offs.
 
 ## Authoring guide
 

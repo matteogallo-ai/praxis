@@ -20,8 +20,8 @@
 // array types in struct fields. The full StakeholderMapResult schema
 // is enforced Praxis-side in src/agents/stakeholder.ts.
 
-@version "1.0.0"
-@model claude-sonnet-4-5
+@version "2.0.0"
+@model claude-sonnet-5-5
 @description "Praxis stakeholder mapping agent — maps actors, positions, power, priority."
 
 prompt stakeholder(
@@ -48,13 +48,16 @@ prompt stakeholder(
     For every stakeholder you list, the `position_evidence` field
     must be EITHER:
 
-      (a) A real, verifiable source with all four fields:
+      (a) A real, verifiable source with these three fields:
           {
             "url": "https://…",
             "title": "…",
-            "accessed_at": "<ISO 8601 UTC datetime>",
             "excerpt": "<the passage that documents the position, ≤500 chars>"
           }
+
+      Do not write `accessed_at`: Praxis records when the search ran.
+      Cite only a URL that web_search returned to you; copy its title
+      and quote the excerpt from that result.
 
       OR
 
@@ -63,6 +66,9 @@ prompt stakeholder(
             "status": "SOURCE_MISSING",
             "searched_for": "<what you tried to find, in your own words>"
           }
+
+    Use SOURCE_MISSING only when no search result supports the item,
+    never because a field is awkward to fill.
 
     NEVER fabricate a URL, title, or excerpt. If you cannot find a
     public statement documenting the position, mark it
@@ -136,14 +142,10 @@ prompt stakeholder(
     Stakeholder mapping task for briefing '{{format_id}}' under {{sourcing_policy}} sourcing.
 
     Scoping output (JSON):
-    ---
     {{scoping_json}}
-    ---
 
     Research output (JSON):
-    ---
     {{research_json}}
-    ---
 
     Produce the StakeholderMap JSON now. Search the web to confirm
     positions when needed. Remember: real source or SOURCE_MISSING —
