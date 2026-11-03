@@ -37,9 +37,10 @@ the command below names other questions.
 2. A clean working tree on `main`: `run-all.ts` refuses a live run over
    modified tracked files, because the artefacts record the commit.
 3. `ANTHROPIC_API_KEY` set; `PRAXIS_NOW` unset (live freshness uses the real
-   date).
-4. `bun run estimate:cost -- --ids <the five>` re-run on that commit, in
-   case prompts or prices changed since this page.
+   date); `ANTHROPIC_MODEL` unset, so each stage runs on its `@model` as
+   estimated.
+4. `bun run estimate:cost -- --ids <the five> --cap-usd 14` re-run on that
+   commit, in case prompts or prices changed since this page.
 
 ## Run (paid, after GO)
 
@@ -59,11 +60,14 @@ bun run bench:live -- --max-cost-usd 14 --ids 05-supply-chain-acquisition,08-ai-
   model id, request shape) or if any stage timed out: fix it, free, before
   spending more. A timed-out request is the one cost the cap cannot see
   ([§ Ceiling](#ceiling)).
-- **One attempt per question.** A failure leaves
+- **One attempt per question.** The rule is procedural: `run-all.ts`
+  refuses only a question that already has a `metadata.json`, so a question
+  that failed can be run again by the same command. Do not: running a
+  question again, 02 included after a fix that follows step 1, is a second
+  attempt and needs a new estimate and a new GO. A failure leaves
   `benchmarks/outputs/live/<id>/error-<time>.json` (cause, usage spent,
   commit, prompt versions, redacted); a completed run leaves `brief.md`,
   `brief.pdf`, `brief.docx` and `metadata.json` and is never overwritten.
-  Running a question again needs a new estimate and a new GO.
 - Then: `shasum -a 256 benchmarks/outputs/live/*/* > benchmarks/outputs/live/SHA256SUMS`
   and one commit with every artefact, failures included (DoD B6).
 
@@ -103,24 +107,35 @@ only if both thresholds hold; otherwise they are published as
 *unvalidated*, with the numbers that failed.
 
 - **Against a human**: the maintainer scores the five briefings blind on the
-  same grid (≈ 1 hour). Agreement: quadratic-weighted Cohen's kappa over the
-  35 criterion pairs. The pairs are clustered (seven per briefing), so its
-  95% interval is a bootstrap over briefings, not over pairs.
-  **Threshold: kappa ≥ 0.6.** With five briefings the interval will be wide;
-  it is published as is.
+  same grid (≈ 1 hour). The maintainer knows the pipeline, so this is one
+  informed rater, not an independent panel; it is published as such.
+  Agreement: quadratic-weighted Cohen's kappa over the 35 criterion pairs.
+  The pairs are clustered (seven per briefing), so its 95% interval is a
+  bootstrap over briefings, not over pairs. **Threshold: the point estimate
+  ≥ 0.6.** With five briefings the interval will be wide; it is published
+  next to it, and the threshold does not claim more than the point estimate.
 - **Against planted errors**: for each briefing, three copies with one fault
-  each, all detectable from the text alone: a figure changed so it
-  contradicts the same figure elsewhere in the brief; a citation to a source
-  id absent from the brief's own source list; the recommendation reversed
-  against its own analysis. Each copy is judged 3 times, against the
-  unchanged briefing's 3 judgments as control. A fault is detected when the
-  median score on the matching criterion is at least 1 below the control's
-  median. **Threshold: at least 12 of 15 detected**, published as k/15 with
-  its Wilson interval.
+  each, all detectable from the text alone, each with the criterion it must
+  lower, fixed before any judging:
 
-**What the five consume.** Once their results shape a prompt or a
-threshold, these five test questions are dev data. A later held-out claim
-uses the three test questions left (03, 07, 10) or new ones.
+  | Fault | Criterion |
+  | --- | --- |
+  | A figure changed so it contradicts the same figure elsewhere in the brief | 4 Concrete trade-offs |
+  | A citation to a source id absent from the brief's own source list | 5 Perceived sourcing |
+  | The recommendation reversed against its own analysis | 3 Decisive recommendation |
+
+  Two controls: the unchanged briefing, and a neutral copy (three sentences
+  reworded, meaning kept). Each copy and each control is judged 3 times. A
+  fault is detected when the median on its criterion is at least 1 below the
+  unchanged briefing's median; the neutral copy measures how often that
+  happens with no fault. **Threshold: at least 12 of 15 faults detected and
+  at most 1 of 15 neutral criterion readings (the same three criteria, five
+  briefings) 1 or more below the unchanged median**, each published as k/15
+  with its Wilson interval.
+
+**What the five consume.** Running and publishing these five test
+questions spends them: from then on they are dev data. A later held-out
+claim uses the three test questions left (03, 07, 10) or new ones.
 
 ## Not built yet (free, after the judge provider is chosen)
 
@@ -137,7 +152,7 @@ uses the three test questions left (03, 07, 10) or new ones.
 
 ## Cost
 
-`bun run estimate:cost -- --ids <the five>` on this commit:
+`bun run estimate:cost -- --ids <the five> --cap-usd 14` on this commit:
 
 | Question | Low | Central | High |
 | --- | ---: | ---: | ---: |
@@ -167,38 +182,61 @@ No prompt caching is assumed.
 
 ### Ceiling
 
-The cap is checked before each request, so a briefing ends above it by at
-most the requests in flight when it is reached. In the high scenario the
-costliest single request is adversarial (Opus, 5 searches, ≈ $2.45); the
-six concurrent synthesis requests together cost less (≈ $0.85).
+`bun run estimate:cost -- --ids <the five> --cap-usd 14` computes it
+(`ceiling` in `benchmarks/estimate-cost.ts`). These are high-scenario
+figures, not hard bounds: no code limits the size of one request (the
+tokens a search adds are not capped; the context window is the real limit).
 
-- **Metered ceiling**: five briefings at $14 + $2.45 each, **$82.25**.
+The cap is checked before each request, so a briefing ends above it by at
+most the request in flight when it is reached. In the high scenario the
+costliest single request $2.45 is adversarial (Opus, 5 searches); the six
+concurrent synthesis requests together cost less (≈ $0.85).
+
+- **Metered ceiling, high scenario**: $82.27, five briefings at $14 +
+  $2.45 each.
 - **Not metered: timed-out requests.** A request cut off by its timeout
   reports no usage, so the ledger does not count it, yet it may have been
-  billed. Each stage call has two attempts, so a briefing in which every
-  request timed out twice would add ≈ $17.66 unseen by the cap (high
-  scenario). Timeouts are set for a decode rate of 40 tokens/s
+  billed. Each stage call has two attempts, so if every request of a
+  briefing timed out twice, this much would escape the cap:
+
+  | Question | Unseen by the cap |
+  | --- | ---: |
+  | 02-cfo-buyback-briefing | $17.66 |
+  | 05-supply-chain-acquisition | $17.36 |
+  | 08-ai-regulation-position | $17.66 |
+  | 11-family-office-co-investment | $21.23 |
+  | 12-sodium-ion-plant-morocco | $17.36 |
+
+  Question 11 is higher because `strict_editorial` runs its synthesis twice.
+  Timeouts are set for a decode rate of 40 tokens/s
   (`src/agents/stage-limits.ts`), so this needs a degraded API; the stop
   rule after step 1 bounds it to one briefing unless the degradation starts
-  during step 2. The worst case, every request of all five timing out twice:
-  $82.25 + 5 × $17.66 = **$170.55**.
+  during step 2.
+- **Also not metered**, both narrow: a request whose answer arrives but
+  cannot be parsed (a 200 with a body that is not JSON, or content blocks
+  the parser rejects), and, when a synthesis section fails, the sibling
+  sections still in flight when `error-*.json` is written (they are
+  recorded, after it).
+- **Worst case**: $173.55, the metered ceiling plus every question's
+  timeouts.
 
 ### Judge
 
-≈ 8 000 input and up to 4 000 output tokens per call (briefing, grid,
-reasoning): $0.056 per call. Per briefing, 3 judgments of the unchanged
-briefing (noise band and control) and 3 × 3 of the perturbed copies: 12
-calls, 60 in all, **$3.36**; **$6.72** with a 2× margin.
+≈ 16 000 input tokens per call (a mock brief is 4 200–4 800 tokens, a live
+one 2–3 times that, plus the grid) and up to 4 000 output: $0.072 per call.
+Per briefing, 3 judgments each of the unchanged briefing (noise band and
+control), the neutral copy and the three faulty copies: 15 calls, 75 in
+all, **$5.40**; **$10.80** with a 2× margin.
 
 ## What GO authorizes
 
 Two separate GOs:
 
 1. **Anthropic**: the two `bench:live` commands above, one attempt per
-   question. Expected ≈ $25, metered ceiling $82.25, worst case with
-   timeouts $170.55.
-2. **Judge**, once the adapter is built and the briefings are in: the 60
-   judge calls, at most $6.72 on the judge provider.
+   question. Expected ≈ $25, metered ceiling $82.27, worst case with
+   timeouts $173.55 (high scenario).
+2. **Judge**, once the adapter is built and the briefings are in: the 75
+   judge calls, at most $10.80 on the judge provider.
 
 Anything else, a second attempt at a question included, needs a new
 estimate.

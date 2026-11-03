@@ -6,7 +6,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { estimateRun } from "../../benchmarks/estimate-cost.ts";
+import { ceiling, estimateRun } from "../../benchmarks/estimate-cost.ts";
 import { loadManifest } from "../../benchmarks/manifest.ts";
 import { loadSplit, MANIFEST_PATH } from "../../benchmarks/split.ts";
 
@@ -51,5 +51,15 @@ describe("docs/live-proof-protocol.md", () => {
       expect(doc).toContain(`| ${r.id} | ${usd(r.low)} | ${usd(r.central)} | ${usd(r.high)} |`);
     }
     expect(doc).toContain(`| **Total** | **${usd(totals.low)}** | **${usd(totals.central)}** | **${usd(totals.high)}** |`);
+  });
+
+  test("its ceiling is what estimate:cost computes for those questions and that cap", () => {
+    const cap = Number(doc.match(/--max-cost-usd (\d+(?:\.\d+)?)/)?.[1]);
+    const c = ceiling(".", selected(), cap);
+    const usd = (n: number) => `$${n.toFixed(2)}`;
+    expect(doc).toContain(`costliest single request ${usd(c.maxRequest)}`);
+    expect(doc).toContain(`Metered ceiling, high scenario**: ${usd(c.metered)}`);
+    for (const [id, v] of Object.entries(c.unmetered)) expect(doc).toContain(`| ${id} | ${usd(v)} |`);
+    expect(doc).toContain(`Worst case**: ${usd(c.worst)}`);
   });
 });
