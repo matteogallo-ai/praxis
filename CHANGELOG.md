@@ -70,6 +70,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- `docs/SLO.md` publishes each target's status. The cost target, set from
+  intended use, stays at p95 ≤ $2.50 per briefing and is **not met** on the
+  estimate (question 05: $5.75 central), pinned by `tests/docs/slo.test.ts`.
+  The advice to run with `--max-cost-usd 5`, below that estimate, is gone.
 - The cost estimate reads prompt sizes at the 2.73 characters per token
   Anthropic's count_tokens endpoint measured on the prompts of questions
   02, 05, 08 and 11, one per format (`benchmarks/token-counts/`,
