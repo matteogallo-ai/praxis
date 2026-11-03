@@ -223,12 +223,15 @@ export function interpolateScoringPrompt(
   meta: BriefingMetadata,
   briefingMarkdown: string
 ): string {
+  // Replacer functions: a string replacement would expand `$&`, `$'` and
+  // `` $` `` found in the briefing, which is model output.
   return template
-    .replace("{briefing_id}", meta.id)
-    .replace("{provider}", ref.mode === "mock" ? "mock" : "anthropic")
-    .replace("{format_id}", meta.format)
-    .replace("{question}", meta.question)
-    .replace("{briefing_markdown}", briefingMarkdown);
+    .replace("{briefing_id}", () => meta.id)
+    .replace("{provider}", () => (ref.mode === "mock" ? "mock" : "anthropic"))
+    .replace("{format_id}", () => meta.format)
+    .replace("{question}", () => meta.question)
+    // A closing tag inside the briefing would end the delimited block early.
+    .replace("{briefing_markdown}", () => briefingMarkdown.replace(/<\/\s*briefing\s*>/gi, "<\\/briefing>"));
 }
 
 // ---------------------------------------------------------------------------

@@ -54,7 +54,9 @@ Each stage sends its own `max_tokens`, timeout and web-search cap
 (`max_uses`, `src/agents/stage-limits.ts`). Every call's usage is recorded
 and priced per stage in the run's `metadata.json`, and `--max-cost-usd`
 (`maxCostUsd` in the library) stops a briefing before the next call once it
-has spent the cap. `bun run bench:live` runs every benchmark question.
+has spent the cap. `bun run bench:live` refuses to start without
+`--max-cost-usd`, which caps each briefing, and a key in `.env` alone never
+makes `bun run bench` go live.
 
 Controls in place:
 

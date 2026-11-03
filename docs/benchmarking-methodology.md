@@ -33,14 +33,16 @@ and `benchmarks/score-all.ts` refuses mock briefings.
 Adopted on 2026-11-02. No briefing has been scored with it: none has completed
 live ([`CLAIMS.md`](CLAIMS.md) C14, C18).
 
-A score is published only when all of the following hold. None of the tooling
-for points 1 and 4 exists today; it is roadmap work (C14, C18).
+A score is published only when all of the following hold. Point 1 is in
+`run-all.ts`; the tooling for point 4 is roadmap work (C18). The first run
+under this method is planned in [`live-proof-protocol.md`](live-proof-protocol.md).
 
 1. **Only live output is scored.** Each scored briefing has a committed run
-   artefact under `benchmarks/outputs/live/<date>/`: the briefing, and a
-   `metadata.json` with the model IDs, prompt versions, tokens, cost, duration
-   per stage and git SHA. Failed runs are committed with their cause. Today's
-   live metadata records none of tokens, cost or prompt versions.
+   artefact under `benchmarks/outputs/live/<id>/`, never overwritten: the
+   briefing, and a `metadata.json` with the model IDs, tokens, cost and
+   duration per stage, and the git SHA and each prompt's version, model and
+   hash (`provenance`). Failed runs are committed with their cause
+   (`error-<time>.json`).
 2. **The rubric** is the 7-criterion grid below, each scored 1–5 (total /35).
 3. **The judge is checked.** Either the judge is from another model family
    than the pipeline, or a human annotates at least two briefings on the same

@@ -54,8 +54,9 @@ From the repo root:
 
 ```
 bun run bench:mock     # twelve mock briefings, always reproducible
-bun run bench:live     # PAID: twelve live briefings, ANTHROPIC_API_KEY required
-bun run bench          # both if a key is present; mock only otherwise
+bun run bench:live -- --max-cost-usd 8   # PAID: live briefings, each capped at $8
+bun run bench          # mock; also live if a key is set AND --max-cost-usd given
+bun run bench:live -- --max-cost-usd 8 --ids 02-cfo-buyback-briefing   # one question
 ```
 
 ### v0.10 — scoring

@@ -70,7 +70,8 @@ bun run cli brief "Should we enter the German market?" --format auto --full   # 
 bun run cli brief --resume <run-id>           # continue a failed --full run from its checkpoints
 bun run bench:mock                            # renderer smoke test; must leave git status clean
 bun run fuzz -- --seconds 600                 # JSON-extraction fuzzer, fresh seed (a short run is in bun test)
-bun run bench:live                            # PAID — live Anthropic run of every benchmark; approval required
+bun run estimate:cost -- --ids <id,…> --cap-usd <n> # free: estimated live cost (low/central/high) and ceiling
+bun run bench:live -- --max-cost-usd 8 --ids … # PAID — live run, capped per briefing; approval required
 PRAXIS_LIVE_TESTS=1 bun test tests/live/      # PAID — live tests; approval required
 bun run score:live                            # PAID — scores live briefings; approval required
 ```

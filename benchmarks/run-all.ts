@@ -13,9 +13,15 @@
  *                   word-counts, critique summary, rerun status)
  *
  * Modes:
- *   default          — mock always; live only if ANTHROPIC_API_KEY is set.
+ *   default          — mock always; live only with ANTHROPIC_API_KEY set
+ *                      AND --max-cost-usd given, so a key on disk alone
+ *                      never spends.
  *   --mock-only      — mock only, ignore ANTHROPIC_API_KEY.
- *   --live-only      — live only; error if ANTHROPIC_API_KEY missing.
+ *   --live-only      — live only; needs ANTHROPIC_API_KEY and
+ *                      --max-cost-usd (except with --dry-run).
+ *   --max-cost-usd n — per-briefing cap in USD: the ledger stops starting
+ *                      calls once a briefing has spent it.
+ *   --ids a,b        — only these questions (manifest order).
  *   --dry-run        — parse+select without spawning the pipeline
  *                      (used by the test suite).
  *   --split dev|test — only the questions of that half of the frozen
@@ -31,6 +37,7 @@ import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { type BenchmarkEntry, loadManifest } from "./manifest.ts";
+import { assertNoLiveRecord, provenance, recordLiveFailure } from "./provenance.ts";
 import { loadSplit } from "./split.ts";
 import { FormatRegistry } from "../src/registry/registry.ts";
 import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
@@ -56,6 +63,8 @@ export interface RunAllOptions {
   dryRun: boolean;
   root: string;
   split?: "dev" | "test";
+  ids?: string[];
+  maxCostUsd?: number;
 }
 
 export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
@@ -64,6 +73,8 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
   let dryRun = false;
   let root = resolve(import.meta.dir, "..");
   let split: "dev" | "test" | undefined;
+  let ids: string[] | undefined;
+  let maxCostUsd: number | undefined;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
     if (a === "--mock-only") mockOnly = true;
@@ -75,6 +86,20 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
         throw new Error("--split expects dev or test");
       }
       split = value;
+    } else if (a === "--ids" || a.startsWith("--ids=")) {
+      const value = a === "--ids" ? argv[++i] : a.slice("--ids=".length);
+      const list = (value ?? "").split(",");
+      if (value === undefined || list.some((id) => id.length === 0)) {
+        throw new Error("--ids expects a comma-separated list of question ids");
+      }
+      ids = list;
+    } else if (a === "--max-cost-usd" || a.startsWith("--max-cost-usd=")) {
+      const value = a === "--max-cost-usd" ? argv[++i] : a.slice("--max-cost-usd=".length);
+      const n = Number(value);
+      if (value === undefined || value.trim() === "" || !Number.isFinite(n) || n <= 0) {
+        throw new Error("--max-cost-usd expects a positive number of US dollars");
+      }
+      maxCostUsd = n;
     } else if (a === "--root") {
       const next = argv[i + 1];
       if (next === undefined) throw new Error("--root expects a path");
@@ -89,9 +114,18 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
   if (mockOnly && liveOnly) {
     throw new Error("--mock-only and --live-only are mutually exclusive");
   }
-  return split === undefined
-    ? { mockOnly, liveOnly, dryRun, root }
-    : { mockOnly, liveOnly, dryRun, root, split };
+  if (liveOnly && !dryRun && maxCostUsd === undefined) {
+    throw new Error("--live-only needs --max-cost-usd <USD per briefing>");
+  }
+  return {
+    mockOnly,
+    liveOnly,
+    dryRun,
+    root,
+    ...(split === undefined ? {} : { split }),
+    ...(ids === undefined ? {} : { ids }),
+    ...(maxCostUsd === undefined ? {} : { maxCostUsd }),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -130,8 +164,23 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
     const ids = new Set(loadSplit(opts.root)[opts.split]);
     manifest.benchmarks = manifest.benchmarks.filter((b) => ids.has(b.id));
   }
+  if (opts.ids !== undefined) {
+    const known = new Set(manifest.benchmarks.map((b) => b.id));
+    const unknown = opts.ids.filter((id) => !known.has(id));
+    if (unknown.length > 0) {
+      const where = opts.split === undefined ? "questions.yaml" : `the ${opts.split} split`;
+      throw new Error(`--ids: not in ${where}: ${unknown.join(", ")}`);
+    }
+    const wanted = new Set(opts.ids);
+    manifest.benchmarks = manifest.benchmarks.filter((b) => wanted.has(b.id));
+  }
 
   const modes: readonly ("mock" | "live")[] = decideModes(opts);
+  const maxCostUsd = opts.maxCostUsd;
+  if (modes.includes("live") && !opts.dryRun && !(maxCostUsd !== undefined && Number.isFinite(maxCostUsd) && maxCostUsd > 0)) {
+    // The parser refuses this too; runAll is also called directly.
+    throw new Error("a live run needs --max-cost-usd, a positive number: no briefing is paid for without a cap");
+  }
   process.stderr.write(
     `→ benchmarks: ${manifest.benchmarks.length} entries × ${modes.length} mode(s) [${modes.join(", ")}]\n`
   );
@@ -149,6 +198,11 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
       continue;
     }
 
+    // A run of record names the commit it ran from, so it must be that commit.
+    const runProvenance = mode === "live" ? provenance(opts.root) : undefined;
+    if (runProvenance?.git_dirty) {
+      throw new Error("a live run needs a clean working tree: commit or stash tracked changes first");
+    }
     const llm = makeProvider(mode, opts.root);
     const registry = new FormatRegistry();
     registry.loadDirectory(join(opts.root, "formats"));
@@ -157,16 +211,21 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
     for (const b of manifest.benchmarks) {
       const outDir = join(opts.root, "benchmarks", "outputs", mode, b.id);
       const started = Date.now();
+      // Mock usage is simulated from text length, so it is flagged and its
+      // durations are left out to keep the artefacts byte-identical.
+      const ledger =
+        mode === "mock"
+          ? new UsageLedger({ simulated: true })
+          : liveLedger(maxCostUsd ?? 0);
+      let briefingStarted = false;
       try {
         // Validate format exists before spawning the orchestrator so
         // an unknown format surfaces as a clean per-benchmark failure
         // rather than a mid-pipeline throw.
         registry.get(b.format);
+        if (mode === "live") assertNoLiveRecord(outDir);
         mkdirSync(outDir, { recursive: true });
-
-        // Mock usage is simulated from text length, so it is flagged and its
-        // durations are left out to keep the artefacts byte-identical.
-        const ledger = new UsageLedger({ simulated: mode === "mock" });
+        briefingStarted = true;
         const result = await orchestrator.briefWithCritiqueAndRerun(
           b.question,
           b.format,
@@ -216,6 +275,7 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
           ),
           usage: ledger.summary(mode !== "mock"),
           artefacts,
+          ...(runProvenance === undefined ? {} : { provenance: runProvenance }),
         };
         const metadataPath = join(outDir, "metadata.json");
         writeFileSync(metadataPath, `${JSON.stringify(meta, null, 2)}\n`);
@@ -232,6 +292,17 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        if (mode === "live" && briefingStarted) {
+          recordLiveFailure(outDir, new Date(), {
+            id: b.id,
+            question: b.question,
+            format: b.format,
+            error: message,
+            error_type: err instanceof Error ? err.name : typeof err,
+            usage: ledger.summary(true),
+            provenance: runProvenance,
+          });
+        }
         outcomes.push({
           id: b.id,
           mode,
@@ -254,7 +325,12 @@ function decideModes(opts: RunAllOptions): readonly ("mock" | "live")[] {
   const hasKey =
     typeof process.env["ANTHROPIC_API_KEY"] === "string" &&
     process.env["ANTHROPIC_API_KEY"]!.length > 0;
-  return hasKey ? ["mock", "live"] : ["mock"];
+  return hasKey && opts.maxCostUsd !== undefined ? ["mock", "live"] : ["mock"];
+}
+
+/** A live briefing's ledger: real usage, stopped at `maxCostUsd`. */
+export function liveLedger(maxCostUsd: number): UsageLedger {
+  return new UsageLedger({ maxCostUsd });
 }
 
 function makeProvider(mode: "mock" | "live", root: string): LLMProvider {

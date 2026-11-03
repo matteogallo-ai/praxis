@@ -61,7 +61,7 @@ describe("parseRunAllArgs", () => {
   });
 
   test("--live-only sets liveOnly", () => {
-    expect(parseRunAllArgs(["--live-only"]).liveOnly).toBe(true);
+    expect(parseRunAllArgs(["--live-only", "--max-cost-usd", "8"]).liveOnly).toBe(true);
   });
 
   test("--dry-run sets dryRun", () => {
