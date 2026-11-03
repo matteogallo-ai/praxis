@@ -23,7 +23,9 @@ scale. Three faults made those numbers meaningless as a measure of Praxis:
    them, in a v1.3.1 release, to show that `framing_clarity` improved. The
    measurement would have graded the hand edit; v1.3.1 was abandoned.
 3. **No check on the scorer.** The judge was the same model family as the
-   pipeline's default, and it was never compared with a human reading.
+   pipeline's default, and it was never compared with a human reading. The
+   judge is still a Claude model (no other provider is available), but one
+   no stage uses, and a human now reads two briefings blind; point 3 below.
 
 Those scores are withdrawn from [`benchmarks/RESULTS.md`](../benchmarks/RESULTS.md),
 and `benchmarks/score-all.ts` refuses mock briefings.

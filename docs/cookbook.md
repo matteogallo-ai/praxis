@@ -382,21 +382,19 @@ entries.
 
 **Context.** `benchmarks/score-all.ts` grades live briefings under
 `benchmarks/outputs/live/` on the 7-criterion rubric in
-`benchmarks/scoring-prompt.txt`, with a Claude model. Mock briefings
-are refused: their text is fixture output. No live briefing has
-completed yet, so there is nothing to score. Scoring is paid; estimate
-the cost and get approval first. Method and judge validation:
+`benchmarks/scoring-prompt.txt`, with Claude Fable 5.1, a model no
+pipeline stage uses. Mock briefings are refused: their text is fixture
+output. No live briefing has completed yet, so there is nothing to score.
+Paid scoring is refused until the judge has a cost cap
+(`docs/live-proof-protocol.md`, "Not built yet"); only the dry run works. Method and judge validation:
 [`docs/benchmarking-methodology.md`](benchmarking-methodology.md).
 
 ```bash
 # Enumerate what would be scored; no API call, no cost.
 bun run score:dry
 
-# Score every live briefing on disk (PAID; requires bench:live first).
+# Refused until the judge is capped; then PAID, after its own GO.
 bun run score:live
-
-# Bypass the 24h cache for a single slug.
-bun run benchmarks/score-all.ts --refresh <slug>
 ```
 
 Each run rewrites the "AI-Assisted Qualitative Scoring" block in

@@ -35,6 +35,8 @@ export interface AnnotationRecord {
 }
 
 export function annotationRecords(root: string, ids: readonly string[]): AnnotationRecord[] {
+  const repeated = ids.filter((id, i) => ids.indexOf(id) !== i);
+  if (repeated.length > 0) throw new Error(`--ids names ${repeated.join(", ")} twice`);
   const manifest = loadManifest(join(root, "benchmarks", "questions.yaml"));
   return ids.map((id) => {
     const entry = manifest.benchmarks.find((b) => b.id === id);

@@ -96,4 +96,29 @@ describe("docs/live-proof-protocol.md", () => {
     for (const [id, v] of Object.entries(c.unmetered)) expect(doc).toContain(`| ${id} | ${usd(v)} |`);
     expect(doc).toContain(`Worst case**: ${usd(c.worst)}`);
   });
+
+  test("its judge figures follow the price table: 16 000 in, 8 000 out, 15 calls per briefing", async () => {
+    const { JUDGE_MODEL } = await import("../../benchmarks/score-all.ts");
+    const { DEFAULT_PRICE_TABLE } = await import("../../src/llm/pricing.ts");
+    const judge = DEFAULT_PRICE_TABLE.models[JUDGE_MODEL] as { input: number; output: number };
+    const opus = DEFAULT_PRICE_TABLE.models["claude-opus-5-5"] as { input: number; output: number };
+    const perCall = (p: { input: number; output: number }) => (16_000 * p.input + 8_000 * p.output) / 1e6;
+    const flat = doc.replace(/\s+/g, " ");
+    expect(flat).toContain(`$${judge.input} / $${judge.output} per million tokens`);
+    expect(flat).toContain(`${usd(perCall(judge))} per call`);
+    expect(flat).toContain(`**${usd(perCall(judge) * 15)} per briefing**`);
+    expect(flat).toContain(`${usd(perCall(judge) * 75)} for the five`);
+    expect(flat).toContain(`**${usd(perCall(judge) * 150)}** with a 2× margin`);
+    expect(flat).toContain(`Opus 5.5 (${usd(perCall(opus))} per call, ${usd(perCall(opus) * 75)} for the five)`);
+  });
+
+  test("its step 0 comparisons are the estimator's", () => {
+    const [q05] = estimateRun(".", [PROBE]).rows;
+    const [q11] = estimateRun(".", ["11-family-office-co-investment"]).rows;
+    const [q12] = estimateRun(".", ["12-sodium-ion-plant-morocco"]).rows;
+    expect(doc.replace(/\s+/g, " ")).toContain(`Question 11 is ${usd((q05?.central ?? 0) - (q11?.central ?? 0))} cheaper`);
+    for (const k of ["low", "central", "high"] as const) expect(usd(q12?.[k] ?? 0)).toBe(usd(q05?.[k] ?? 0));
+    const c = ceiling(".", [PROBE], commands[0]?.cap ?? Number.NaN);
+    expect(doc.replace(/\s+/g, " ")).toContain(`costliest request (${usd(c.maxRequest)}, adversarial)`);
+  });
 });

@@ -50,6 +50,11 @@ describe("annotationRecords", () => {
     expect(() => annotationRecords(root([]), ["05-supply-chain-acquisition"])).toThrow(/no live briefing/);
   });
 
+  test("refuses an id named twice", () => {
+    const dir = root(["05-supply-chain-acquisition"]);
+    expect(() => annotationRecords(dir, ["05-supply-chain-acquisition", "05-supply-chain-acquisition"])).toThrow(/twice/);
+  });
+
   test("refuses an id not in questions.yaml", () => {
     expect(() => annotationRecords(root([]), ["99-nope"])).toThrow(/99-nope/);
   });

@@ -54,17 +54,22 @@ bun run bench:live -- --max-cost-usd 8 --ids 05-supply-chain-acquisition
 
 `05-supply-chain-acquisition` is the cheapest representative of the five:
 its format, `mckinsey-style-note`, is the one two of the five use (the hard
-case included), and it is not `strict_editorial`. Question 11 is a few
-cents cheaper in the central case but atypical (synthesis regenerated
-under `strict_editorial`, $13.07 in the high case).
+case included), and it is not `strict_editorial`. Question 12 costs the
+same to the cent but is the hard case, built to stress sourcing, not to represent.
+Question 11 is $0.08 cheaper in the central case but atypical (synthesis
+regenerated under `strict_editorial`, $13.07 in the high case).
 
 What $8 lets through, by the estimator's stages (high scenario, cumulative):
 scoping $0.17, research $0.95, stakeholders $1.77, risks $2.68, options
-$4.68, synthesis $5.52, adversarial $7.83. A healthy briefing therefore
-completes in the low and central cases; in the high case the cap is reached
-during the synthesis rerun, and if a stage retries, earlier. A stop at the
-cap is a result, not a fault: `error-*.json` records what each stage spent,
-which is the measurement step 1 is costed from.
+$4.68, synthesis $5.52, adversarial $7.83. The cap is checked before each
+request, and the six rerun sections start together at $7.83, so a healthy
+briefing completes in every case without a retry, the high one at about
+$8.68. A stage retry can bring the cap forward:
+
+- reached during the synthesis rerun, the complete pre-rerun brief is kept
+  and written, with `rerun.skipped` in its `metadata.json`;
+- reached before, the run stops and `error-*.json` records what each stage
+  spent, which is the measurement step 1 is costed from.
 
 ### Step 1: the other four, capped at $14 each
 
@@ -121,8 +126,10 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 - **Limitation, same family.** Judge and pipeline are all Claude models,
   trained by the same company on overlapping data. A bias they share (a
   phrasing they all reward, a claim they all accept) is not seen by the
-  judge. No judge from another provider is available to this project; the
-  human review below is the only check on that bias, and it is small.
+  judge. The standard asks for different families "when possible"
+  (`ENGINEERING_STANDARDS.md`); here it is not: the maintainer has no
+  account with another model provider. The human review below is the only
+  check on that bias, and it is small.
 - **Prompt**: `benchmarks/scoring-prompt.txt`, the briefing delimited as
   untrusted content (`interpolateScoringPrompt`). The judge has no web
   access: it scores the text, and cannot tell whether a cited page exists.
@@ -132,21 +139,30 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 - **Noise band**: each briefing judged 3 times; the median per criterion is
   the score, the spread is published next to it.
 
-**3. The judge is checked** (DoD B2). Its scores are called *validated*
+**3. The judge is checked** (DoD B2). Its scores are called *indicative*
 only if both thresholds hold; otherwise they are published as
 *unvalidated*, with the numbers that failed.
 
 - **Against a human**: the maintainer scores two briefings blind on the
   same grid: `05-supply-chain-acquisition` (step 0) and the first of 02, 08,
-  11, 12 in id order that completes. `bun run export:annotation -- --ids
+  11, 12 in id order that completes; if 05 does not complete, the first two
+  of those that do. `bun run export:annotation -- --ids
   <the two> > review.jsonl` writes them for an annotation tool, one JSON
   object per line: question, format, the brief's Markdown, and the seven
   criteria with their definitions and an empty `score` (1–5) and `note`.
-  Nothing the judge wrote is in the file. The maintainer knows the pipeline:
+  Nothing the judge wrote is in the file. The brief is model output built
+  on web excerpts: the annotation tool renders it as plain text, not as
+  Markdown or HTML. The scores are filled in and the file committed, its
+  SHA-256 recorded, **before the judge's GO**, so no judge score can be
+  seen first. The maintainer will already have read step 0's run record
+  while applying the stop rule; that is said next to the agreement. The maintainer knows the pipeline:
   one informed rater, published as such. Agreement over the 14 criterion
   pairs: exact and within-one agreement, and quadratic-weighted Cohen's
-  kappa. **Threshold: kappa ≥ 0.6**, read as indicative: 14 pairs from two
-  briefings support no interval, and none is claimed.
+  kappa. **Threshold: kappa ≥ 0.6.** The 14 pairs come from one rater and
+  two briefings, are not independent, and support no interval; kappa is
+  unstable when scores bunch at 3–4. Passing this check makes the judge's
+  scores *indicative*, never *validated*, and CLAIMS C18 stays on the
+  roadmap.
 - **Against planted errors**: for each briefing, three copies with one fault
   each, all detectable from the text alone, each with the criterion it must
   lower, fixed before any judging:
@@ -172,9 +188,13 @@ claim uses the three test questions left (03, 07, 10) or new ones.
 
 ## Not built yet (free, before the judge's GO)
 
-- A cap and an output ceiling on the judge: `score-all.ts` calls
-  `complete()` with neither a ledger nor `max_tokens`, and Fable 5.1 thinks
-  on every call.
+- A cost cap on the judge. Until it exists `score-all.ts` refuses any run
+  but `--dry-run`. Today the judge calls `complete()` with no ledger, the
+  provider's default `max_tokens` (4 096, which Fable 5.1's thinking can
+  use up) and default timeout (60 s, short for a thinking model: a request
+  that times out is billed and not counted), without reading `stop_reason`
+  (a `refusal` or `max_tokens` answer becomes a JSON error) and without an
+  `effort`. All five are set and tested before the judge's GO.
 - Reading the maintainer's scores back from the annotation file, and the
   agreement computation.
 - The script that writes `RESULTS.md` from the artefacts and its `--check`
@@ -283,9 +303,14 @@ judgments each of the unchanged briefing (noise band and control), the
 neutral copy and the three faulty copies: 15 calls, **$8.40 per briefing**,
 $42.00 for the five; **$84.00** with a 2× margin.
 
-Cheaper and rejected: Opus 5.5 ($0.22 per call, $16.80 for the five). It
-wrote the scoping, the options and the adversarial critique the judged
-brief rests on, so it would score its own work.
+Rejected: Opus 5.5 ($0.22 per call, $16.80 for the five). It wrote the
+scoping, the options and the adversarial critique the judged brief rests
+on, so it would score its own work.
+
+Open: Opus 5 ($5 / $25, ≈ $0.28 per call, $21.00 for the five) is also a
+model no stage uses, at half Fable 5.1's price. Fable 5.1 is chosen as the
+strongest reader; Opus 5 is the cheaper choice with the same same-family
+limitation. The maintainer's call.
 
 ## What each GO authorizes
 
