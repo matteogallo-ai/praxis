@@ -15,7 +15,7 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { loadManifest } from "../../benchmarks/run-all.ts";
+import { loadManifest } from "../../benchmarks/manifest.ts";
 import {
   AUTO_FORMAT_IDS,
   detectFormatFromQuestion,

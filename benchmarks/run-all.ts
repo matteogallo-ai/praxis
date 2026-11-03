@@ -25,11 +25,10 @@
  * code is 1 if any benchmark failed.
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { parseYaml } from "@promptlang/yaml-parser";
-
+import { type BenchmarkEntry, loadManifest } from "./manifest.ts";
 import { FormatRegistry } from "../src/registry/registry.ts";
 import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
 import { UsageLedger } from "../src/orchestrator/ledger.ts";
@@ -80,87 +79,6 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
     throw new Error("--mock-only and --live-only are mutually exclusive");
   }
   return { mockOnly, liveOnly, dryRun, root };
-}
-
-// ---------------------------------------------------------------------------
-// Benchmark manifest
-// ---------------------------------------------------------------------------
-
-export interface BenchmarkEntry {
-  id: string;
-  question: string;
-  format: string;
-  tags: string[];
-  intent: string;
-}
-
-export interface BenchmarkManifest {
-  version: number;
-  benchmarks: BenchmarkEntry[];
-}
-
-export function loadManifest(path: string): BenchmarkManifest {
-  const raw = readFileSync(path, "utf-8");
-  const parsed = parseYaml(raw);
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(`benchmarks manifest at ${path} must be a mapping`);
-  }
-  const version = (parsed as { version: unknown }).version;
-  if (typeof version !== "number") {
-    throw new Error(`benchmarks manifest missing numeric 'version' field`);
-  }
-  const benchmarks = (parsed as { benchmarks: unknown }).benchmarks;
-  if (!Array.isArray(benchmarks)) {
-    throw new Error(`benchmarks manifest 'benchmarks' must be a list`);
-  }
-  const validated: BenchmarkEntry[] = [];
-  for (const [i, b] of benchmarks.entries()) {
-    if (b === null || typeof b !== "object" || Array.isArray(b)) {
-      throw new Error(`benchmarks[${i}] must be a mapping`);
-    }
-    const entry = b as Record<string, unknown>;
-    validated.push({
-      id: requireString(entry, "id", i),
-      question: requireString(entry, "question", i),
-      format: requireString(entry, "format", i),
-      tags: requireStringList(entry, "tags", i),
-      intent: requireString(entry, "intent", i),
-    });
-  }
-  return { version, benchmarks: validated };
-}
-
-function requireString(
-  o: Record<string, unknown>,
-  key: string,
-  index: number
-): string {
-  const v = o[key];
-  if (typeof v !== "string" || v.length === 0) {
-    throw new Error(
-      `benchmarks[${index}]: '${key}' must be a non-empty string`
-    );
-  }
-  return v;
-}
-
-function requireStringList(
-  o: Record<string, unknown>,
-  key: string,
-  index: number
-): string[] {
-  const v = o[key];
-  if (!Array.isArray(v)) {
-    throw new Error(`benchmarks[${index}]: '${key}' must be a list`);
-  }
-  for (const [j, e] of v.entries()) {
-    if (typeof e !== "string" || e.length === 0) {
-      throw new Error(
-        `benchmarks[${index}].${key}[${j}] must be a non-empty string`
-      );
-    }
-  }
-  return v as string[];
 }
 
 // ---------------------------------------------------------------------------

@@ -28,11 +28,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import {
-  loadManifest,
-  parseRunAllArgs,
-  runAll,
-} from "../../benchmarks/run-all.ts";
+import { loadManifest } from "../../benchmarks/manifest.ts";
+import { parseRunAllArgs, runAll } from "../../benchmarks/run-all.ts";
 
 let originalStderr: typeof process.stderr.write;
 
