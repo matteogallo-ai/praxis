@@ -9,6 +9,8 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- The judge prompt embedded the briefing bare, and expanded `$&`-style
+  patterns in it; the briefing is now delimited as untrusted content.
 - The project was described as feature-complete and as running live against
   Anthropic. It has never completed a live briefing (5 of 5 aborted, see 1.2.1).
   README, ROADMAP and `docs/architecture.md` now say so.
@@ -18,6 +20,13 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Part C preparation: `docs/live-proof-protocol.md` (five test-split
+  briefings, deterministic checks, a judge from another model family and how
+  it is checked, cost) and `bun run estimate:cost`. `bench:live` needs
+  `--max-cost-usd` (per briefing), a key alone never makes `bun run bench` go
+  live, `--ids` selects questions; live artefacts record the commit and each
+  prompt's version, model and hash, are never overwritten, and a failure
+  leaves a redacted `error-<time>.json`.
 - A hard case in the evaluation set (question 12, manifest version 2) and a
   frozen dev/test split of it (`benchmarks/split.yaml`, 4 / 8, stratified by
   format, fixed seed), checked by the test suite against the manifest's

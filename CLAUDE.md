@@ -69,6 +69,7 @@ bun run check:commits main..HEAD              # Conventional Commits on the bran
 bun run cli brief "Should we enter the German market?" --format auto --full   # brief, mock provider
 bun run cli brief --resume <run-id>           # continue a failed --full run from its checkpoints
 bun run bench:mock                            # renderer smoke test; must leave git status clean
+bun run estimate:cost -- --ids <id,…>         # free: estimated live cost (low/central/high)
 bun run bench:live -- --max-cost-usd 8 --ids … # PAID — live run, capped per briefing; approval required
 PRAXIS_LIVE_TESTS=1 bun test tests/live/      # PAID — live tests; approval required
 bun run score:live                            # PAID — scores live briefings; approval required
