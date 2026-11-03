@@ -193,6 +193,7 @@ published as *unvalidated*, with the numbers that failed.
   unstable when scores bunch at 3–4. Passing this check makes the judge's
   scores *indicative*, never *validated*, and CLAIMS C18 stays on the
   roadmap.
+
 **What the five consume.** Running and publishing these five test
 questions spends them: from then on they are dev data. A later held-out
 claim uses the three test questions left (03, 07, 10) or new ones.
@@ -215,7 +216,7 @@ built; neither result exists, and no published score depends on them.
   | The recommendation reversed against its own analysis | 3 Decisive recommendation |
 
   Two controls: the unchanged briefing, and a neutral copy (three sentences
-  reworded, meaning kept). Each copy and each control is judged 3 times. A
+  reworded, meaning kept). Each copy and each control would be judged 3 times. A
   fault is detected when the median on its criterion is at least 1 below the
   unchanged briefing's median; the neutral copy measures how often that
   happens with no fault. **Threshold: at least 12 of 15 faults detected and
@@ -353,7 +354,8 @@ of the unchanged briefing, the neutral copy and the three faulty copies,
 15 calls, 75 for the five. This protocol sends one call per briefing
 (the noise band and the copies are roadmap): on Opus 5 through the Batch
 API, $0.14 per briefing, $0.70 for the five. Prices from Anthropic's pricing page, read 2026-11-03
-(`src/llm/pricing.ts`):
+(`src/llm/pricing.ts`). The table is the full design (roadmap), not this
+protocol's cost:
 
 | Variant | Per call | Per briefing | Five | Five, 2× margin |
 | --- | ---: | ---: | ---: | ---: |
@@ -389,6 +391,7 @@ API, $0.14 per briefing, $0.70 for the five. Prices from Anthropic's pricing pag
 3. **Judge**, once the briefings are in:
    `bun run score:live -- --max-cost-usd <n>`, one judgment per
    briefing, with `<n>` the worst case `bun run score:dry` prints.
+   Expected ≈ $0.70 for the five; `<n>` at most $1.40 (2× margin).
 
 Anything else, a second attempt at a question included, needs a new
 estimate.

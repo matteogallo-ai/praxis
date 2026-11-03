@@ -184,6 +184,7 @@ describe("docs/live-proof-protocol.md", () => {
     expect(flat).toContain(`Rejected: Opus 5.5 (${usd(perCall("claude-opus-5-5"))} per call)`);
     const batchCall = perCall("claude-opus-5") / 2;
     expect(flat).toContain(`${usd(batchCall)} per briefing, ${usd(5 * batchCall)} for the five`);
+    expect(flat).toContain(`Expected ≈ ${usd(5 * batchCall)} for the five; \`<n>\` at most ${usd(10 * batchCall)} (2× margin)`);
   });
 
   test("its step 0 comparisons are the estimator's", () => {
