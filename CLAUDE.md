@@ -50,9 +50,10 @@ tests/            unit, integration (mock provider), live/ (paid, opt-in), fixtu
 .claude/          Claude Code permission settings for this repo
 ```
 
-PromptLang's lexer and parser are imported as `promptlang/*` through `tsconfig.json`
-`paths` → `../promptlang/src`: clone https://github.com/matteogallo-ai/promptlang next
-to this repo and check out tag `v1.2.0` (the tag CI uses).
+PromptLang's lexer, parser and AST types come from `@promptlang/core`, pinned
+exactly in `package.json`; its CLI runs the `prompt semver-check` CI job
+(`bun run promptlang semver-check prompts/`). The repository needs nothing
+next to it: the CI job `clean-clone` proves it.
 
 ## Commands
 

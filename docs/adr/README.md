@@ -32,10 +32,10 @@ would have caught it earlier.
    after the failures (ADR 0002). In a pipeline of paid calls, each stage's
    output is worth keeping before the next one runs.
 4. **Publish a dependency before depending on it.** PromptLang's lexer and
-   parser are imported through a `tsconfig` path to a sibling checkout, so a
-   fresh clone does not build alone (`docs/CLAIMS.md` C19). Depending on a
-   published, pinned package from day one would have kept the repository
-   self-contained.
+   parser were imported through a `tsconfig` path to a sibling checkout, so
+   for months a fresh clone did not build alone. Depending on a published,
+   pinned package from day one, as `@promptlang/core` is now, would have
+   kept the repository self-contained.
 5. **Claims backed by tests from the first README.** The README once called
    the project feature-complete and running live. `docs/CLAIMS.md` and the
    `check:claims` CI job now tie each claim to passing tests; written first,

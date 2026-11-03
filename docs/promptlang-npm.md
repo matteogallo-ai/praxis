@@ -7,6 +7,15 @@ clone therefore needs a sibling checkout of PromptLang; CI checks out tag
 blocked by that, and is unblocked once Praxis depends on the published
 package instead.
 
+## Where it stands
+
+Since the pull request that added `tests/ci/clean-clone.test.ts`, Praxis
+depends on `@promptlang/core` 2.0.0 from npm. Done there: the dependency,
+DoD D5 (CI job `clean-clone`, a required check), CLAIMS C19, the
+`semver-check` job on the package's CLI, Stryker without `inPlace`, the
+lockfile and OSV-Scanner coverage, and the docs below. Left: TypeScript 7
+(#14), its own pull request.
+
 ## Status of the package
 
 Checked 2026-11-03 (`npm view @promptlang/core`):

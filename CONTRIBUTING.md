@@ -20,34 +20,12 @@ Architectural context lives in
 
 ---
 
-## Repository layout (sibling PromptLang checkout still required)
+## Repository layout
 
-Since Praxis v1.1, the `@promptlang/yaml-parser` sub-package is
-consumed from the npm registry — `bun install` alone resolves it.
-The `promptlang` **core** (lexer / parser / ast / runtime) is
-still consumed via TypeScript `paths` against a sibling
-[PromptLang](https://github.com/matteogallo-ai/promptlang)
-checkout. Both repositories must therefore currently live side by
-side under the same parent directory:
-
-```
-~/dev/
-├── praxis/        ← this repo
-└── promptlang/    ← required for the promptlang core imports
-```
-
-If you clone them under different names or paths, TypeScript path
-mapping will fail. Fix:
-
-```bash
-git clone https://github.com/matteogallo-ai/promptlang.git ~/dev/promptlang
-git -C ~/dev/promptlang checkout v1.2.0   # the tag CI uses
-git clone https://github.com/matteogallo-ai/praxis.git ~/dev/praxis
-```
-
-This constraint applies only to the core `promptlang` package.
-Publishing it to npm and deleting the `paths` entries in
-`tsconfig.json` is planned for a future release.
+Praxis stands alone: `git clone` and `bun install --frozen-lockfile` are
+enough. PromptLang comes from npm as `@promptlang/core` (lexer, parser, AST
+types, and the CLI behind `bun run promptlang semver-check`) and
+`@promptlang/yaml-parser`, both through the lockfile.
 
 ---
 
