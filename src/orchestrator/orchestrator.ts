@@ -47,6 +47,7 @@ import {
 import {
   InMemorySourcingAccumulator,
   NoopSourcingAccumulator,
+  levenshtein,
 } from "../sourcing/dedupe.ts";
 import { buildReport, mergeReports } from "../sourcing/report.ts";
 import { SourcingValidationError } from "../sourcing/errors.ts";
@@ -984,7 +985,11 @@ export function computeReSynthesisDeviations(
   return deviations;
 }
 
-function isSubstantiallyChanged(
+/**
+ * A rerun section counts as changed when its word count moves by more than
+ * 20% or its text by more than 0.3 of its length in edits.
+ */
+export function isSubstantiallyChanged(
   a: SynthesizedSection,
   b: SynthesizedSection
 ): boolean {
@@ -999,30 +1004,10 @@ function isSubstantiallyChanged(
   return nlev > 0.3;
 }
 
-/** Iterative-DP Levenshtein, memory-bounded to O(min(m,n)). */
+/** Edit distance over the longer length: 0 for equal texts, 1 when one is empty. */
 function normalisedLevenshtein(a: string, b: string): number {
-  if (a === b) return 0;
-  if (a.length === 0) return 1;
-  if (b.length === 0) return 1;
-  const [s, t] = a.length <= b.length ? [a, b] : [b, a];
-  const m = s.length;
-  const n = t.length;
-  let prev = new Array<number>(m + 1);
-  let curr = new Array<number>(m + 1);
-  for (let i = 0; i <= m; i++) prev[i] = i;
-  for (let j = 1; j <= n; j++) {
-    curr[0] = j;
-    for (let i = 1; i <= m; i++) {
-      const cost = s.charCodeAt(i - 1) === t.charCodeAt(j - 1) ? 0 : 1;
-      curr[i] = Math.min(
-        curr[i - 1]! + 1,
-        prev[i]! + 1,
-        prev[i - 1]! + cost
-      );
-    }
-    [prev, curr] = [curr, prev];
-  }
-  return prev[m]! / Math.max(m, n);
+  const longest = Math.max(a.length, b.length);
+  return longest === 0 ? 0 : levenshtein(a, b) / longest;
 }
 
 function buildRerunReason(

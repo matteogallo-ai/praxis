@@ -18,6 +18,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Property-based tests (fast-check) of the tolerant JSON extraction, the
+  source validators and `parseCitedSource`; mutation testing (Stryker,
+  `bun run mutation`) of the orchestrator and the validators, scored and
+  each surviving mutant explained in `docs/mutation-testing.md`.
 - CI: typecheck, tests, Biome, knip, `check:claims`, `check:stale-narrative`,
   `bench:mock` drift check, Conventional Commits.
 - `docs/CLAIMS.md` and `scripts/check-claims.ts`; `CLAUDE.md`; `SECURITY.md`;

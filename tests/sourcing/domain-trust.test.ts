@@ -181,3 +181,44 @@ describe("evaluateDomainTrust — reputation-only mode", () => {
     );
   });
 });
+
+describe("domain trust — edges mutation testing found unchecked", () => {
+  test.each([
+    ["reuters.com", "Reuters.COM", true],
+    ["reuters.com", "   ", false],
+    // A file: URL has an empty host; an empty pattern must not match it.
+    ["", "", false],
+    ["reuters.com", "  reuters.com  ", true],
+    ["gov.", "*.", false],
+    [".uk", ".*", false],
+    ["abc.uk", "gov.*", false],
+    ["example.com", "*.", false],
+    ["gov.uk", ".*", false],
+    ["gov.uk", "gov.*", true],
+    ["gov.uk.example", "gov.*", false],
+    ["gov.", "gov.*", false],
+    ["news.bbc.com", "news.*.com", true],
+    ["newsxbbcxcom", "news.*.com", false],
+    ["news.a.b.com", "news.*.com", false],
+  ])("host %p against %p: %p", (host, pattern, matches) => {
+    expect(matchHostPattern(host, pattern)).toBe(matches);
+  });
+
+  const tiers = { tier_1: ["gov.uk"], tier_2: ["reuters.com"], tier_3: ["blog.example"] };
+  test.each([
+    ["https://x.example/a", { mode: "allow-list" }, "untrusted", "host 'x.example' matches no entry in allow-list"],
+    ["https://x.example/a", { mode: "deny-list" }, "trusted", ""],
+    ["https://x.example/a", { mode: "deny-list", deny_list: ["*.example"] }, "untrusted", "host 'x.example' matches deny-list entry '*.example'"],
+    ["https://x.example/a", { mode: "allow-list", allow_list: ["x.example"] }, "trusted", ""],
+    ["https://x.example/a", { mode: "reputation-only" }, "untrusted", "reputation-only mode without a reputation_tiers table"],
+    ["https://gov.uk/a", { mode: "reputation-only", reputation_tiers: { ...tiers, min_tier: 1 } }, "trusted", ""],
+    ["https://reuters.com/a", { mode: "reputation-only", reputation_tiers: { ...tiers, min_tier: 1 } }, "untrusted", "host 'reuters.com' is tier-2; min_tier is 1"],
+    ["https://reuters.com/a", { mode: "reputation-only", reputation_tiers: { ...tiers, min_tier: 2 } }, "trusted", ""],
+    ["https://blog.example/a", { mode: "reputation-only", reputation_tiers: { ...tiers, min_tier: 2 } }, "untrusted", "host 'blog.example' is tier-3; min_tier is 2"],
+    ["https://blog.example/a", { mode: "reputation-only", reputation_tiers: { ...tiers, min_tier: 3 } }, "trusted", ""],
+    ["https://other.example/a", { mode: "reputation-only", reputation_tiers: { ...tiers, min_tier: 3 } }, "untrusted", "host 'other.example' matches no reputation tier"],
+    ["not a url", { mode: "deny-list" }, "untrusted", "unparseable URL 'not a url'"],
+  ] as const)("%s under %j is %s", (url, rule, classification, reason) => {
+    expect(evaluateDomainTrust(url, rule as DomainTrustRule)).toEqual({ classification, reason });
+  });
+});

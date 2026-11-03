@@ -88,7 +88,7 @@ are expected and are not hidden:
 | Maintained | Counts activity over 90 days; a young or quiet repository scores low whatever its state. |
 | Packaging | Nothing is published to a package registry (see "The release artefact"). |
 | Signed-Releases | Scores the last five releases; v0.10.0 to v1.3.0 predate `release.yml` and carry no signature. Each new release scores up to 8 of 10 (a Sigstore bundle; 10 needs an in-toto provenance file). |
-| Fuzzing | Low until Scorecard finds a fuzzer or a property-based testing library it recognises. |
+| Fuzzing | No fuzzer. Property-based tests with fast-check run in `tests/property/`; whether Scorecard counts them shows on its first run after merge. |
 
 The live score is on the badge in the README; the results also land in the
 repository's Security tab.

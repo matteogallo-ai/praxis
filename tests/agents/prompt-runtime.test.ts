@@ -282,9 +282,52 @@ describe("terminal control characters in an answer (OWASP LLM05)", () => {
     expect(claim).toContain("�");
   });
 
+  test("a raw control character inside a string parses to U+FFFD", async () => {
+    const out = await callModel("demo", answering('{"claim": "a \u001b[31m b"}'), loaded(), { system: "SYS", user: "U" }, { tools: [] });
+    expect((JSON.parse(out.text) as { claim: string }).claim).toBe("a \ufffd[31m b");
+  });
+
   test("tab, newline, an escaped backslash before u, and ordinary escapes are kept", async () => {
     const answer = '{"claim": "a\\tb\\nc \\\\u001b \\u00e9"}';
     const out = await callModel("demo", answering(answer), loaded(), { system: "SYS", user: "U" }, { tools: [] });
     expect((JSON.parse(out.text) as { claim: string }).claim).toBe("a\tb\nc \\u001b é");
+  });
+});
+
+describe("output reader refusals name the field and the rule", () => {
+  const reader = outputReader("research");
+  const source = { url: "https://x.example/a", title: "t", excerpt: "" };
+
+  test.each([
+    [{ v: "" }, "x.v must be a non-empty string"],
+    [{ v: 5 }, "x.v must be a non-empty string"],
+    [{}, "x.v must be a non-empty string"],
+  ])("requireNonEmptyString refuses %j", (obj, message) => {
+    expect(() => reader.requireNonEmptyString(obj, "v", "x.v", "raw")).toThrow(message);
+  });
+
+  test("requireNonEmptyString returns the string it accepts", () => {
+    expect(reader.requireNonEmptyString({ v: "ok" }, "v", "x.v", "raw")).toBe("ok");
+  });
+
+  test("requireEnum refuses a value outside the list, and names the list", () => {
+    expect(() => reader.requireEnum({ v: "huge" }, "v", ["low", "high"], "x.v", "raw")).toThrow(
+      "x.v must be one of low|high"
+    );
+    expect(() => reader.requireEnum({ v: 1 }, "v", ["low", "high"], "x.v", "raw")).toThrow("x.v must be one of");
+    expect(reader.requireEnum({ v: "low" }, "v", ["low", "high"], "x.v", "raw")).toBe("low");
+  });
+
+  test.each([
+    ["a string", "https://x.example", "s must be an object"],
+    ["null", null, "s must be an object"],
+    ["an array", [source], "s must be an object"],
+    ["an empty url", { ...source, url: "" }, "s.url must be a non-empty string (or use SOURCE_MISSING)"],
+    ["a numeric url", { ...source, url: 5 }, "s.url must be a non-empty string (or use SOURCE_MISSING)"],
+    ["an empty title", { ...source, title: "" }, "s.title must be a non-empty string"],
+    ["a numeric accessed_at", { ...source, accessed_at: 1 }, "s.accessed_at must be an ISO 8601 string when present"],
+    ["a missing excerpt", { url: source.url, title: "t" }, "s.excerpt must be a string"],
+  ])("parseSource refuses %s with its own message", (_label, value, message) => {
+    expect(() => reader.parseSource(value, "s", "raw")).toThrow(message);
   });
 });

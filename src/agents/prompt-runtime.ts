@@ -311,8 +311,8 @@ function withoutControlCharacters(text: string): string {
  *
  * Models put prose before or after the object, or wrap it in a fence, even
  * when told to return JSON only. This returns the largest balanced `{…}`
- * span that parses as an object (braces inside strings and escapes are
- * skipped). With no such span it returns the trimmed answer, so the caller's
+ * span that parses as an object, the first on a tie (braces inside strings
+ * and escapes are skipped). With no such span it returns the trimmed answer, so the caller's
  * `JSON.parse` error still describes what the model sent. Nothing is
  * repaired: a truncated object stays invalid.
  */
@@ -328,11 +328,12 @@ export function extractJsonText(raw: string): string {
   return best ?? trimmed;
 }
 
+/** Text that starts with `{` and parses can only be an object. */
 function isJsonObject(text: string): boolean {
   if (!text.startsWith("{")) return false;
   try {
-    const v: unknown = JSON.parse(text);
-    return typeof v === "object" && v !== null && !Array.isArray(v);
+    JSON.parse(text);
+    return true;
   } catch {
     // Not JSON is an expected answer here, not an error: the caller tries the
     // next candidate, and reports the parse failure itself if none fits.
