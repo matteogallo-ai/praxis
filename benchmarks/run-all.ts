@@ -42,6 +42,7 @@ import { loadSplit } from "./split.ts";
 import { FormatRegistry } from "../src/registry/registry.ts";
 import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
 import { UsageLedger } from "../src/orchestrator/ledger.ts";
+import { parseUsd } from "../src/cli/run-args.ts";
 import { MockLLMProvider } from "../src/llm/mock-provider.ts";
 import { AnthropicLLMProvider } from "../src/llm/anthropic-provider.ts";
 import type { LLMProvider } from "../src/llm/provider.ts";
@@ -95,9 +96,9 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
       ids = list;
     } else if (a === "--max-cost-usd" || a.startsWith("--max-cost-usd=")) {
       const value = a === "--max-cost-usd" ? argv[++i] : a.slice("--max-cost-usd=".length);
-      const n = Number(value);
-      if (value === undefined || value.trim() === "" || !Number.isFinite(n) || n <= 0) {
-        throw new Error("--max-cost-usd expects a positive number of US dollars");
+      const n = parseUsd(value);
+      if (n === undefined) {
+        throw new Error("--max-cost-usd expects a positive decimal number of US dollars, e.g. 8 or 7.50");
       }
       maxCostUsd = n;
     } else if (a === "--root") {
