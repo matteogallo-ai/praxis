@@ -2,15 +2,24 @@
 
 Praxis is a CLI that one person runs on a question, so its "service" is one
 briefing: `praxis brief --full` against Anthropic, stages 1–6. These are the
-targets a live briefing is held to. **No live briefing has been measured
-yet** (`docs/CLAIMS.md` C14); until one is, each objective below is a
-target, not a fact about Praxis.
+targets a live briefing is held to. Each is set from intended use (what a
+reader waits for, tolerates and pays for one briefing), not from what the
+pipeline happens to cost. A target that the measurement, or before it the
+estimate, misses is published as **not met**; it is not moved to fit.
+**No live briefing has been measured yet** (`docs/CLAIMS.md` C14).
 
-| Objective | Target | Measured on |
-| --- | --- | --- |
-| Latency | p95 ≤ 10 minutes per briefing | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
-| Error rate | ≤ 10% of started briefings end in an error | exit code of each run |
-| Cost | p95 ≤ $2.50 per briefing | `usage.total.cost_usd` in `metadata.json` |
+| Objective | Target | Status | Measured on |
+| --- | --- | --- | --- |
+| Latency | p95 ≤ 10 minutes per briefing | Not measured | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
+| Error rate | ≤ 10% of started briefings end in an error | Not measured | exit code of each run |
+| Cost | p95 ≤ $2.50 per briefing | **Not met**, on the estimate: question 05 (step 0), $1.33 low, $5.75 central, $12.54 high | `usage.total.cost_usd` in `metadata.json` |
+
+The cost status comes from `bun run estimate:cost` (prompt sizes measured
+with count_tokens, `docs/live-proof-protocol.md`), and
+`tests/docs/slo.test.ts` fails if the estimate moves without it. Only the
+low case meets the target; the central and high cases miss it, and the five
+protocol questions range from $5.68 to $5.90 central. The first live
+measurements replace the estimate here.
 
 ## What counts
 
@@ -44,9 +53,10 @@ per briefing in the worst case.
 - **Web search**: five searches per request, so 20 with one round per
   search stage ($0.20) and 100 with five ($1.00).
 - **Input tokens** have no ceiling in code: search results enter the
-  context, and each continuation resends them. The $2.50 target assumes one
-  or two rounds per search stage; a briefing above it is the signal to look
-  at `input_tokens` and the rounds per stage.
+  context, and each continuation resends them, model output included. The
+  estimate does not split its total into input and output, so which one
+  closes the gap to the target (fewer search rounds, shorter upstream
+  outputs passed downstream, prompt caching) is for live runs to measure.
 - **Worst case versus target**: the ceilings add up to more than the
   target, so the target cannot be proven from the limits alone. The hard
   stop is `--max-cost-usd` (below): each request reserves its worst case
@@ -59,12 +69,17 @@ per briefing in the worst case.
   second. Ten minutes is what a reader waiting for a briefing tolerates, and
   assumes stages use a fraction of their ceilings and rounds, which only a
   live measurement can confirm.
+- **Cost**: a briefing must cost less than 10 minutes of the time of the
+  analyst it replaces (the maintainer's rule). $2.50 for 10 minutes is $15.00
+  an hour of analyst time; a dearer analyst raises the bound, and the target
+  stays the maintainer's choice, not a figure derived from the pipeline.
 - **Error rate**: one failed briefing in ten is tolerable for a CLI that
   resumes from its checkpoints without paying again for finished stages.
 
-Run with `--max-cost-usd 5`: twice the cost objective, so a normal briefing
-never reaches it and a runaway one stops; the objective is a target, the cap
-is a hard stop.
+The cap is not the objective. It is set per run above the estimate's
+central case so a normal briefing completes and a runaway one stops: $10
+for the first live briefing, $14 for each of the next four
+(`docs/live-proof-protocol.md`).
 
 ## How it is reported
 
