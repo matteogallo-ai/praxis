@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/matteogallo-ai/praxis/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/matteogallo-ai/praxis/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/matteogallo-ai/praxis)](LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/matteogallo-ai/praxis/badge)](https://scorecard.dev/viewer/?uri=github.com/matteogallo-ai/praxis) ([why some checks stay low](docs/supply-chain.md#scorecard-checks-that-stay-low))
 
 > A 7-stage LLM pipeline that turns a business question into an analytical
 > briefing shaped by a declared format (executive pre-read, McKinsey-style

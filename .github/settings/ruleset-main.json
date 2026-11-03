@@ -1,0 +1,96 @@
+{
+  "name": "main: PR required",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "~DEFAULT_BRANCH"
+      ],
+      "exclude": []
+    }
+  },
+  "bypass_actors": [],
+  "rules": [
+    {
+      "type": "deletion"
+    },
+    {
+      "type": "non_fast_forward"
+    },
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": false,
+        "required_reviewers": [],
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": false,
+        "allowed_merge_methods": [
+          "merge",
+          "squash",
+          "rebase"
+        ],
+        "require_extra_approval_for_unattributed_changes": true
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          {
+            "context": "typecheck · test",
+            "integration_id": 15368
+          },
+          {
+            "context": "test · wall clock at 2029-01-01T00:00:00Z",
+            "integration_id": 15368
+          },
+          {
+            "context": "test · wall clock at 2040-06-01T00:00:00Z",
+            "integration_id": 15368
+          },
+          {
+            "context": "prompt semver-check",
+            "integration_id": 15368
+          },
+          {
+            "context": "biome · knip",
+            "integration_id": 15368
+          },
+          {
+            "context": "claims (rule 1)",
+            "integration_id": 15368
+          },
+          {
+            "context": "stale narrative (rule 2)",
+            "integration_id": 15368
+          },
+          {
+            "context": "renderer smoke test (bench:mock, no model)",
+            "integration_id": 15368
+          },
+          {
+            "context": "conventional commits (rule 8)",
+            "integration_id": 15368
+          },
+          {
+            "context": "CodeQL (javascript-typescript)",
+            "integration_id": 15368
+          },
+          {
+            "context": "CodeQL (actions)",
+            "integration_id": 15368
+          },
+          {
+            "context": "OSV-Scanner (bun.lock) / osv-scan",
+            "integration_id": 15368
+          }
+        ]
+      }
+    }
+  ]
+}
