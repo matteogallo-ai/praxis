@@ -125,7 +125,7 @@ describe("callModel", () => {
     };
     const err = await callModel("risk", llm, loaded(), rendered, { tools: [] }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(TruncatedOutputError);
-    expect((err as Error).message).toMatch(/max_tokens \(16000\)/);
+    expect((err as Error).message).toContain(`max_tokens (${stageLimits("risk").maxTokens})`);
     expect(isRecoverable(err)).toBe(false);
   });
 

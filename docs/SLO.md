@@ -12,13 +12,13 @@ estimate, misses is published as **not met**; it is not moved to fit.
 | --- | --- | --- | --- |
 | Latency | p95 ≤ 10 minutes per briefing | Not measured | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
 | Error rate | ≤ 10% of started briefings end in an error | Not measured | exit code of each run |
-| Cost | p95 ≤ $2.50 per briefing | **Not met**, on the estimate: question 05 (step 0), $1.33 low, $5.75 central, $12.54 high | `usage.total.cost_usd` in `metadata.json` |
+| Cost | p95 ≤ $2.50 per briefing | **Not met**, on the estimate: question 05 (step 0), $1.37 low, $5.87 central, $12.78 high | `usage.total.cost_usd` in `metadata.json` |
 
 The cost status comes from `bun run estimate:cost` (prompt sizes measured
 with count_tokens, `docs/live-proof-protocol.md`), and
 `tests/docs/slo.test.ts` fails if the estimate moves without it. Only the
 low case meets the target; the central and high cases miss it, and the five
-protocol questions range from $5.68 to $5.90 central. The first live
+protocol questions range from $5.80 to $6.02 central. The first live
 measurements replace the estimate here.
 
 ## What counts
