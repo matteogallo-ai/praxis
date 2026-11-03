@@ -45,7 +45,7 @@
     "score:live": "bun run benchmarks/score-all.ts --live-only",
     "score:dry": "bun run benchmarks/score-all.ts --dry-run",
     "fuzz": "bun run scripts/fuzz.ts",
-    "mutation": "git diff --quiet -- src && stryker run"
+    "mutation": "stryker run"
   },
   "dependencies": {
     "@promptlang/core": "2.0.0",

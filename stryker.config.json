@@ -1,18 +1,17 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "inPlace: PromptLang resolves through tsconfig paths to ../promptlang, which a sandbox copy would break. The command runner keeps Stryker on bun test without a third-party runner.",
+  "_comment": "The command runner keeps Stryker on bun test without a third-party runner.",
   "testRunner": "command",
   "commandRunner": {
     "command": "bun test tests/orchestrator tests/sourcing tests/agents tests/property --bail"
   },
-  "inPlace": true,
   "checkers": [],
   "mutate": [
     "src/orchestrator/orchestrator.ts",
     "src/sourcing/validator.ts",
     "src/sourcing/freshness.ts",
     "src/sourcing/domain-trust.ts",
-    "src/agents/prompt-runtime.ts:292-457",
+    "src/agents/prompt-runtime.ts:297-463",
     "src/agents/synthesis.ts:692-776"
   ],
   "reporters": ["clear-text", "progress", "json"],
