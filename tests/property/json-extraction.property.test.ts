@@ -74,7 +74,7 @@ describe("extractJsonText — properties", () => {
 
   test("the result is either an object that parses or the trimmed answer itself", () => {
     fc.assert(
-      fc.property(fc.string(), (raw) => {
+      fc.property(fc.oneof(fc.string(), fc.tuple(prose, answer, prose).map(([a, v, b]) => `${a}${JSON.stringify(v)}${b}`)), (raw) => {
         const text = extractJsonText(raw);
         let parsed: unknown;
         try {
@@ -100,12 +100,23 @@ describe("extractJsonText — properties", () => {
     );
   });
 
+  test("an array around an object yields the object, not the array", () => {
+    fc.assert(
+      fc.property(answer, (value) => {
+        expect(JSON.parse(extractJsonText(`[${JSON.stringify(value)}]`))).toEqual(asJson(value));
+      })
+    );
+  });
+
+  test("of two objects of equal length, the first is returned", () => {
+    expect(extractJsonText('{"a":1} {"b":2}')).toBe('{"a":1}');
+  });
+
   test("a truncated object is never repaired into one", () => {
     fc.assert(
       fc.property(answer, fc.nat(), (value, cut) => {
         const full = JSON.stringify(value);
         const truncated = full.slice(0, cut % full.length);
-        fc.pre(!/[{}]/.test(truncated.slice(1)));
         expect(extractJsonText(truncated)).toBe(truncated.trim());
       })
     );

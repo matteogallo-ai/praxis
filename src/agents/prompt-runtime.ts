@@ -311,8 +311,8 @@ function withoutControlCharacters(text: string): string {
  *
  * Models put prose before or after the object, or wrap it in a fence, even
  * when told to return JSON only. This returns the largest balanced `{…}`
- * span that parses as an object (braces inside strings and escapes are
- * skipped). With no such span it returns the trimmed answer, so the caller's
+ * span that parses as an object, the first on a tie (braces inside strings
+ * and escapes are skipped). With no such span it returns the trimmed answer, so the caller's
  * `JSON.parse` error still describes what the model sent. Nothing is
  * repaired: a truncated object stays invalid.
  */

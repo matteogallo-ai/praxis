@@ -26,13 +26,7 @@ const excerptField = fc.oneof(anyField, fc.string({ minLength: 495, maxLength: 5
 
 /** The rule for a usable source URL, written without the code's helper. */
 function isWebUrl(url: unknown): boolean {
-  if (typeof url !== "string" || !/^https?:/i.test(url)) return false;
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
+  return typeof url === "string" && /^https?:/i.test(url) && URL.canParse(url);
 }
 
 /** A well-formed source with a web URL, as a stage returns it. */

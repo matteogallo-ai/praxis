@@ -186,6 +186,8 @@ describe("domain trust — edges mutation testing found unchecked", () => {
   test.each([
     ["reuters.com", "Reuters.COM", true],
     ["reuters.com", "   ", false],
+    // A file: URL has an empty host; an empty pattern must not match it.
+    ["", "", false],
     ["reuters.com", "  reuters.com  ", true],
     ["gov.", "*.", false],
     [".uk", ".*", false],
