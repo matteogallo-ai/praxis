@@ -83,8 +83,9 @@ export interface CompleteWithToolsOptions {
   timeout_ms?: number;
   /**
    * Called before each request the call sends (a `pause_turn` re-send is a
-   * request), with the usage of the requests already answered. Throwing
-   * stops the call before that request; the budget cap uses it.
+   * request), with the usage of the requests already answered and the model
+   * they went to (a pinned model overrides `model`). Throwing stops the
+   * call before that request; the budget cap uses it.
    */
-  before_request?: (answered: TokenUsage) => void;
+  before_request?: (answered: TokenUsage, model: string) => void;
 }

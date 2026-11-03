@@ -174,7 +174,7 @@ export class AnthropicLLMProvider implements LLMProvider {
     let finalText = "";
 
     for (let i = 0; i < maxRounds; i++) {
-      options.before_request?.({ ...usage });
+      options.before_request?.({ ...usage }, model);
       rounds++;
       const body = await this.request(messages, tools, {
         max_tokens,

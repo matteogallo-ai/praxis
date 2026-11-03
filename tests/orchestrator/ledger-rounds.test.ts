@@ -19,14 +19,18 @@ const PAUSED = {
 };
 const DONE = { ...PAUSED, stop_reason: "end_turn", usage: { input_tokens: 10, output_tokens: 10 } };
 
-function provider(bodies: Array<{ status: number; body: unknown }>): { p: AnthropicLLMProvider; sent: () => number } {
+function provider(
+  bodies: Array<{ status: number; body: unknown }>,
+  model?: string
+): { p: AnthropicLLMProvider; sent: () => number } {
   let n = 0;
   const fetchFn = async () => {
     const next = bodies[n++];
     if (next === undefined) throw new Error("no scripted response");
     return new Response(JSON.stringify(next.body), { status: next.status });
   };
-  return { p: new AnthropicLLMProvider({ apiKey: "sk-test", fetchFn, sleepFn: async () => {} }), sent: () => n };
+  const p = new AnthropicLLMProvider({ apiKey: "sk-test", fetchFn, sleepFn: async () => {}, ...(model ? { model } : {}) });
+  return { p, sent: () => n };
 }
 
 const SEARCH = [{ type: "web_search" as const, name: "web_search" }];
@@ -53,6 +57,17 @@ describe("meter — cap checked before every request of a call", () => {
     expect(ledger.summary(false).stages["research"]?.input_tokens).toBe(1_000_000);
   });
 
+  test("answered rounds are priced at the model the provider sent, not the stage's @model", async () => {
+    // Pinned to Opus ($4/MTok input): the paused round costs $4, over a $3 cap.
+    const { p, sent } = provider([{ status: 200, body: PAUSED }, { status: 400, body: { error: "bad" } }], "claude-opus-5-5");
+    const ledger = new UsageLedger({ maxCostUsd: 3 });
+    await expect(
+      meter(p, ledger, "research").completeWithTools?.("q", SEARCH, { model: "claude-sonnet-5-5" })
+    ).rejects.toBeInstanceOf(BudgetExceededError);
+    expect(sent()).toBe(1);
+    expect(ledger.summary(false).total.cost_usd).toBeCloseTo(4, 6);
+  });
+
   test("under the cap, the call completes and is recorded once, in full", async () => {
     const { p, sent } = provider([{ status: 200, body: PAUSED }, { status: 200, body: DONE }]);
     const ledger = new UsageLedger({ maxCostUsd: 100 });
@@ -62,5 +77,14 @@ describe("meter — cap checked before every request of a call", () => {
     const stage = ledger.summary(false).stages["research"];
     expect(stage?.calls).toBe(1);
     expect(stage?.input_tokens).toBe(1_000_010);
+  });
+});
+
+describe("UsageLedger cap values", () => {
+  test("refuses a cap it could never reach", () => {
+    for (const maxCostUsd of [Number.NaN, Number.POSITIVE_INFINITY, 0, -1]) {
+      expect(() => new UsageLedger({ maxCostUsd })).toThrow(RangeError);
+    }
+    expect(new UsageLedger({ maxCostUsd: 0.01 }).summary().max_cost_usd).toBe(0.01);
   });
 });

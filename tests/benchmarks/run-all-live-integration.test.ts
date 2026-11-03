@@ -96,3 +96,12 @@ describe("run-all live guards", () => {
     expect(existsSync(join(liveDir(), "metadata.json"))).toBe(false);
   });
 });
+
+describe("run-all live guards — cap values", () => {
+  test("a NaN, infinite or non-positive cap is refused before any request", async () => {
+    for (const maxCostUsd of [Number.NaN, Number.POSITIVE_INFINITY, 0, -1]) {
+      await expect(runAll({ ...live(), maxCostUsd })).rejects.toThrow(/--max-cost-usd/);
+    }
+    expect(calls).toBe(0);
+  });
+});

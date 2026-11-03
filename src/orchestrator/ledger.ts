@@ -119,7 +119,13 @@ export class UsageLedger {
 
   constructor(options: UsageLedgerOptions = {}) {
     this.prices = options.prices ?? DEFAULT_PRICE_TABLE;
-    this.maxCostUsd = options.maxCostUsd;
+    const cap = options.maxCostUsd;
+    // `spent >= cap` is never true for NaN or Infinity: such a cap would
+    // silently allow any spend.
+    if (cap !== undefined && !(Number.isFinite(cap) && cap > 0)) {
+      throw new RangeError(`maxCostUsd must be a positive finite number, got ${cap}`);
+    }
+    this.maxCostUsd = cap;
     this.simulated = options.simulated ?? false;
   }
 
@@ -132,8 +138,10 @@ export class UsageLedger {
     return entry;
   }
 
-  /** Throws `BudgetExceededError` when the cap is already spent. */
-  /** `pendingUsd`: spent by a call still running, not yet recorded. */
+  /**
+   * Throws `BudgetExceededError` when the cap is spent. `pendingUsd`: spent
+   * by a call still running, not yet recorded.
+   */
   assertWithinBudget(stage: string, pendingUsd = 0): void {
     if (this.maxCostUsd === undefined) return;
     if (this.unpriced !== undefined) {
@@ -238,14 +246,15 @@ export function meter(inner: LLMProvider, ledger: UsageLedger, stage: string): L
   if (withTools !== undefined) {
     wrapped.completeWithTools = async (prompt, tools, options): Promise<CompletionResult> => {
       ledger.assertWithinBudget(stage);
-      const model = options?.model ?? "unknown";
+      let model = options?.model ?? "unknown";
       let answered: TokenUsage | undefined;
       let result: CompletionResult;
       try {
         result = await withTools(prompt, tools, {
           ...options,
-          before_request: (soFar) => {
+          before_request: (soFar, sentTo) => {
             answered = soFar;
+            model = sentTo;
             ledger.assertWithinBudget(stage, ledger.costOf(soFar, model));
           },
         });

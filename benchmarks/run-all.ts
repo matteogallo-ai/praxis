@@ -177,9 +177,9 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
 
   const modes: readonly ("mock" | "live")[] = decideModes(opts);
   const maxCostUsd = opts.maxCostUsd;
-  if (modes.includes("live") && !opts.dryRun && maxCostUsd === undefined) {
+  if (modes.includes("live") && !opts.dryRun && !(maxCostUsd !== undefined && Number.isFinite(maxCostUsd) && maxCostUsd > 0)) {
     // The parser refuses this too; runAll is also called directly.
-    throw new Error("a live run needs --max-cost-usd: no briefing is paid for without a cap");
+    throw new Error("a live run needs --max-cost-usd, a positive number: no briefing is paid for without a cap");
   }
   process.stderr.write(
     `→ benchmarks: ${manifest.benchmarks.length} entries × ${modes.length} mode(s) [${modes.join(", ")}]\n`
