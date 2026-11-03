@@ -98,17 +98,76 @@ describe("validateFormat — properties", () => {
     );
   });
 
-  test("a top-level field removed is either optional or named by an issue", () => {
+  // The rules below are docs/format-schema.md's, not the validator's code.
+
+  test("a format missing any documented top-level key is refused, naming that key", () => {
+    const required = [
+      "id",
+      "name",
+      "version",
+      "metadata",
+      "target_length",
+      "sections",
+      "sourcing_policy",
+      "style_guide",
+      "output_targets",
+    ];
     fc.assert(
-      fc.property(edited, ({ root }) => {
-        for (const key of Object.keys(root)) {
-          const err = thrownBy(() => validateFormat(edit(root, key, undefined)));
-          if (err instanceof ValidationError) {
-            expect(err.issues.some((i) => i.path === key || i.path.startsWith(`${key}.`))).toBe(true);
-          }
+      fc.property(fc.constantFrom(...parsedShipped), fc.constantFrom(...required), (root, key) => {
+        const err = thrownBy(() => validateFormat(edit(root, key, undefined)));
+        expect(err).toBeInstanceOf(ValidationError);
+        expect((err as ValidationError).issues.map((i) => i.path)).toContain(key);
+      })
+    );
+  });
+
+  /** A section of a shipped format, by index. */
+  const section = fc.constantFrom(...parsedShipped).chain((root) =>
+    fc.record({
+      root: fc.constant(root),
+      i: fc.nat({ max: (root["sections"] as YamlValue[]).length - 1 }),
+    })
+  );
+
+  test("a section missing a required field is refused, naming the section and the field", () => {
+    fc.assert(
+      fc.property(
+        section,
+        fc.constantFrom("id", "title", "purpose", "max_length", "required_agents"),
+        ({ root, i }, field) => {
+          const err = thrownBy(() => validateFormat(edit(root, `sections[${i}].${field}`, undefined)));
+          expect(err).toBeInstanceOf(ValidationError);
+          expect((err as ValidationError).issues.map((x) => x.path)).toContain(`sections[${i}].${field}`);
         }
-      }),
-      { numRuns: parsedShipped.length * 4 }
+      )
+    );
+  });
+
+  test("an unknown key in a section is refused, naming it", () => {
+    fc.assert(
+      fc.property(section, fc.stringMatching(/^[a-z][a-z_]{0,15}$/), ({ root, i }, key) => {
+        const allowed = ["id", "title", "purpose", "max_length", "required_agents", "tone_directives", "tone_hook", "validation_rules"];
+        fc.pre(!allowed.includes(key));
+        const err = thrownBy(() => validateFormat(edit(root, `sections[${i}].${key}`, "x")));
+        expect(err).toBeInstanceOf(ValidationError);
+        expect((err as ValidationError).issues.map((x) => x.path)).toContain(`sections[${i}].${key}`);
+      })
+    );
+  });
+
+  test("every length budget must be an integer strictly above zero", () => {
+    const badCount = fc.oneof(fc.integer({ max: 0 }), fc.double({ min: 0.1, max: 1000, noInteger: true }), fc.string());
+    const budgetPath = fc.oneof(
+      fc.constantFrom(...parsedShipped).map((root) => ({ root, path: "target_length.words" })),
+      fc.constantFrom(...parsedShipped).map((root) => ({ root, path: "target_length.pages" })),
+      section.map(({ root, i }) => ({ root, path: `sections[${i}].max_length.words` }))
+    );
+    fc.assert(
+      fc.property(budgetPath, badCount, ({ root, path }, n) => {
+        const err = thrownBy(() => validateFormat(edit(root, path, n)));
+        expect(err).toBeInstanceOf(ValidationError);
+        expect((err as ValidationError).issues.map((x) => x.path)).toContain(path);
+      })
     );
   });
 

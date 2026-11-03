@@ -27,7 +27,7 @@ import { PRAXIS_VERSION } from "./version-constant.ts";
 import { PraxisError } from "../registry/errors.ts";
 
 /**
- * Strip global verbosity flags (--verbose / -v / --quiet / -q) from the
+ * Strip global verbosity flags (--verbose / --quiet) from the
  * argument list and apply them via `setVerbosity()`. The residual
  * `argv` (order preserved) is returned so downstream parsers do not
  * see the flags. Later flags win — `--quiet --verbose` yields verbose.

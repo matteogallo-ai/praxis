@@ -12,6 +12,7 @@ import fc from "fast-check";
 
 import { parseBriefArgs } from "../../src/cli/commands/brief.ts";
 import { stripVerbosityFlags } from "../../src/cli/index.ts";
+import { getVerbosity } from "../../src/cli/output.ts";
 import { extractRunArgs, resumeArgs } from "../../src/cli/run-args.ts";
 import { CheckpointStore } from "../../src/orchestrator/checkpoint.ts";
 
@@ -28,6 +29,7 @@ const BRIEF_BOOLEAN_FLAGS = [
   "--with-rerun",
   "--include-toc",
   "--include-appendices",
+  "--with-sourcing-report",
 ];
 
 /** A value a user may type after a flag: anything but another flag. */
@@ -36,7 +38,19 @@ const value = fc.string({ minLength: 1 }).filter((s) => !s.startsWith("--"));
 /** An argument list mixing known flags, their values and free words. */
 const argv = fc.array(
   fc.oneof(
-    fc.constantFrom(...RUN_FLAGS, ...BRIEF_VALUE_FLAGS, ...BRIEF_BOOLEAN_FLAGS, "--verbose", "--quiet"),
+    fc.constantFrom(
+      ...RUN_FLAGS,
+      ...BRIEF_VALUE_FLAGS,
+      ...BRIEF_BOOLEAN_FLAGS,
+      "--on-sourcing-failure",
+      "--verbose",
+      "--quiet",
+      "-v",
+      "-q",
+      "abort",
+      "degrade"
+    ),
+    fc.constantFrom("--on-sourcing-failure=abort", "--on-sourcing-failure=degrade", "--on-sourcing-failure=x"),
     fc.string(),
     fc.tuple(fc.constantFrom(...RUN_FLAGS, ...BRIEF_VALUE_FLAGS), fc.string()).map(([f, v]) => `${f}=${v}`)
   ),
@@ -47,12 +61,16 @@ const root = mkdtempSync(join(tmpdir(), "praxis-cli-prop-"));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 describe("stripVerbosityFlags — properties", () => {
-  test("removes exactly the verbosity flags and keeps the rest in order", () => {
+  test("only --verbose and --quiet are verbosity flags, and the last one given wins", () => {
     fc.assert(
       fc.property(argv, (args) => {
-        expect(stripVerbosityFlags(args)).toEqual(args.filter((a) => a !== "--verbose" && a !== "--quiet"));
+        const rest = stripVerbosityFlags(args);
+        expect(rest).toEqual(args.filter((a) => a !== "--verbose" && a !== "--quiet"));
+        const last = [...args].reverse().find((a) => a === "--verbose" || a === "--quiet");
+        expect(getVerbosity()).toBe(last === undefined ? "normal" : last === "--verbose" ? "verbose" : "quiet");
       })
     );
+    stripVerbosityFlags([]);
   });
 });
 

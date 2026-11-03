@@ -67,6 +67,30 @@ const manifestText = fc.oneof(
   fc.nat({ max: 200 }).map((n) => JSON.stringify(validManifest).slice(0, n))
 );
 
+/**
+ * A valid run.json with one field changed or removed: the case the
+ * validation exists for, which random JSON almost never reaches.
+ */
+const oneFieldOff = fc
+  .record({
+    field: fc.constantFrom("question", "format_id", "started_at", "settings"),
+    value: fc.option(
+      fc.oneof(
+        fc.jsonValue(),
+        fc.string(),
+        fc.dictionary(fc.string(), fc.oneof(fc.string(), fc.integer(), fc.constant(null), fc.boolean())),
+        fc.array(fc.string())
+      ),
+      { nil: undefined }
+    ),
+  })
+  .map(({ field, value }) => {
+    const manifest: Record<string, unknown> = { ...validManifest };
+    if (value === undefined) delete manifest[field];
+    else manifest[field] = value;
+    return JSON.stringify(manifest);
+  });
+
 /** What a resume may rely on: every field typed, every setting a string. */
 function isWellTyped(store: CheckpointStore): boolean {
   const m = store.manifest;
@@ -86,7 +110,15 @@ describe("CheckpointStore.open — properties", () => {
     const runsDir = runWithManifest(JSON.stringify(validManifest));
     fc.assert(
       fc.property(
-        fc.oneof(fc.string(), fc.stringMatching(/^[A-Za-z0-9_./-]{0,70}$/), fc.constant("r")),
+        fc.oneof(
+          fc.string(),
+          fc.stringMatching(/^[A-Za-z0-9_./-]{0,70}$/),
+          // Plain names around the 64-character limit.
+          fc.integer({ min: 60, max: 68 }).chain((n) =>
+            fc.stringMatching(new RegExp(`^[A-Za-z0-9][A-Za-z0-9_-]{${n - 1}}$`))
+          ),
+          fc.constant("r")
+        ),
         (id) => {
           let error: unknown;
           try {
@@ -105,7 +137,7 @@ describe("CheckpointStore.open — properties", () => {
 
   test("whatever run.json holds, it opens well-typed or is refused with OrchestrationError", () => {
     fc.assert(
-      fc.property(manifestText, (text) => {
+      fc.property(fc.oneof(manifestText, oneFieldOff), (text) => {
         const runsDir = runWithManifest(text);
         try {
           expect(isWellTyped(CheckpointStore.open(runsDir, "r"))).toBe(true);
@@ -113,7 +145,8 @@ describe("CheckpointStore.open — properties", () => {
           expect(err).toBeInstanceOf(OrchestrationError);
           expect((err as Error).message).toContain("run.json");
         }
-      })
+      }),
+      { numRuns: 500 }
     );
   });
 });
