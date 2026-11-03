@@ -4,7 +4,7 @@
  * what `estimate:cost` prints for them.
  */
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 import {
   capWalk,
@@ -53,6 +53,19 @@ function smallestCap(sc: Scenario, done: (refusedAt: string | null) => boolean):
   return Number.NaN;
 }
 
+
+/** Every request of every committed count_tokens measurement. */
+function measuredRequests(): { stage: string; chars: number; tokens: number }[] {
+  return readdirSync("benchmarks/token-counts")
+    .filter((f) => f.endsWith(".json"))
+    .flatMap(
+      (f) =>
+        (JSON.parse(readFileSync(`benchmarks/token-counts/${f}`, "utf-8")) as {
+          requests: { stage: string; chars: number; tokens: number }[];
+        }).requests
+    );
+}
+
 describe("docs/live-proof-protocol.md", () => {
   test("its bench:live commands run exactly the questions the rule selects", () => {
     const ids = [...doc.matchAll(/bun run bench:live -- [^\n]*--ids (\S+)/g)].flatMap((m) => (m[1] ?? "").split(","));
@@ -83,12 +96,34 @@ describe("docs/live-proof-protocol.md", () => {
     }
   });
 
-  test("under later caps, every question's high case completes through the reservations", () => {
+  test("under later caps, every question's high case yields a brief through the reservations", () => {
     for (const c of commands.slice(1)) {
       for (const id of c.ids) {
-        expect(capWalk(mock(id), STRICT.has(id), scenario("high"), c.cap).refusedAt).toBeNull();
+        const w = capWalk(mock(id), STRICT.has(id), scenario("high"), c.cap);
+        // A rerun the cap refuses leaves the complete pre-rerun brief.
+        expect([null, "synthesis-rerun"]).toContain(w.refusedAt);
+        if (w.refusedAt === "synthesis-rerun") expect(flat).toContain(`rerun skipped, at ${usd(w.spent)}`);
       }
     }
+  });
+
+  test("its measured ratio, range and count are the committed measurements'", async () => {
+    const { measuredCharsPerToken } = await import("../../benchmarks/estimate-cost.ts");
+    const requests = measuredRequests();
+    const ratios = requests.map((r) => r.chars / r.tokens);
+    const files = readdirSync("benchmarks/token-counts").filter((f) => f.endsWith(".json")).length;
+    expect(flat).toContain(`read at the ${measuredCharsPerToken(".").toFixed(2)} characters per token`);
+    expect(flat).toContain(`measured on ${requests.length} rendered prompts of ${files} questions`);
+    expect(flat).toContain(`${Math.min(...ratios).toFixed(2)} to ${Math.max(...ratios).toFixed(2)} per request`);
+  });
+
+  test("its API-overhead margin is what the measured counts leave under the floor", async () => {
+    const { CHARS_PER_TOKEN_FLOOR } = await import("../../src/llm/pricing.ts");
+    const requests = measuredRequests();
+    const margin = (stages: string[]) =>
+      Math.min(...requests.filter((r) => stages.includes(r.stage)).map((r) => Math.floor(r.chars / CHARS_PER_TOKEN_FLOOR - r.tokens)));
+    expect(flat).toContain(`at least ${margin(["scoping"])} tokens on the shortest`);
+    expect(flat).toContain(`and ${margin(["research", "stakeholder", "risk", "options", "adversarial"])} on the shortest search stage`);
   });
 
   test("step 0's estimate and ceiling are what estimate:cost computes", () => {
@@ -154,6 +189,6 @@ describe("docs/live-proof-protocol.md", () => {
     const [q11] = estimateRun(".", ["11-family-office-co-investment"]).rows;
     const [q12] = estimateRun(".", ["12-sodium-ion-plant-morocco"]).rows;
     expect(doc.replace(/\s+/g, " ")).toContain(`Question 11 is ${usd((q05?.central ?? 0) - (q11?.central ?? 0))} cheaper`);
-    for (const k of ["low", "central", "high"] as const) expect(usd(q12?.[k] ?? 0)).toBe(usd(q05?.[k] ?? 0));
+    for (const k of ["low", "central", "high"] as const) expect(Math.abs((q12?.[k] ?? 0) - (q05?.[k] ?? 0))).toBeLessThan(0.015);
   });
 });

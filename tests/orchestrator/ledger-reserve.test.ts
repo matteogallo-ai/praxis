@@ -17,7 +17,7 @@ import { meter, parseUsageSummary, UsageLedger } from "../../src/orchestrator/le
 
 const SONNET = "claude-sonnet-5-5";
 const SEARCH: Tool = { type: "web_search", name: "web_search", max_uses: 5 };
-// System "S" and prompt "U": 2 characters, 1 token at 3 characters per token.
+// System "S" and prompt "U": 2 characters, 1 token at the 2.5-character floor.
 // Sonnet 5.5 at $2 / $10 per million, $10 per 1000 searches, 16 000 max_tokens,
 // 5 searches of 15 000 tokens, the context re-read after each search, and the
 // whole output written before the first search so all 5 later rounds re-read it:

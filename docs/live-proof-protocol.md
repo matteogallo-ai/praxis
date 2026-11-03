@@ -41,44 +41,46 @@ the command below names other questions.
 3. `ANTHROPIC_API_KEY` set; `PRAXIS_NOW` unset (live freshness uses the real
    date); `ANTHROPIC_MODEL` unset, so each stage runs on its `@model` as
    estimated.
-4. `bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 8`
+4. `bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`
    re-run on that commit, in case prompts or prices changed since this page.
 
 ## Run (paid, one GO per step)
 
-### Step 0: one briefing, capped at $8
+### Step 0: one briefing, capped at $10
 
 ```bash
-bun run bench:live -- --max-cost-usd 8 --ids 05-supply-chain-acquisition
+bun run bench:live -- --max-cost-usd 10 --ids 05-supply-chain-acquisition
 ```
 
 `05-supply-chain-acquisition` is the cheapest representative of the five:
 its format, `mckinsey-style-note`, is the one two of the five use (the hard
-case included), and it is not `strict_editorial`. Question 12 costs the
-same to the cent but is the hard case, built to stress sourcing, not to represent.
-Question 11 is $0.08 cheaper in the central case but atypical (synthesis
-regenerated under `strict_editorial`, $13.07 in the high case).
+case included), and it is not `strict_editorial`. Question 12 costs
+within a cent of it but is the hard case, built to stress sourcing, not to represent.
+Question 11 is $0.07 cheaper in the central case but atypical (synthesis
+regenerated under `strict_editorial`, $15.16 in the high case).
 
-$8 is a limit, not a fuse: before each request the ledger reserves that
+$10 is a limit, not a fuse: before each request the ledger reserves that
 request's worst case and sends it only if what is spent, what requests in
-flight hold and that worst case fit in $8 ([§ Ceiling](#ceiling)). The
+flight hold and that worst case fit in $10 ([§ Ceiling](#ceiling)). The
 estimator's stages, high scenario, cumulative: scoping $0.17, research
-$0.95, stakeholders $1.77, risks $2.68, options $4.68, synthesis $5.52,
-adversarial $7.83. Walked through the reservations
-(`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 8`):
+$0.97, stakeholders $1.83, risks $2.82, options $5.09, synthesis $6.10,
+adversarial $8.81. Walked through the reservations
+(`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`):
 
-| Scenario | Under $8 |
+| Scenario | Under $10 |
 | --- | --- |
-| Low | completes at $1.13 |
-| Central | completes at $4.98 |
-| High | stops before adversarial at $5.52 |
+| Low | completes at $1.33 |
+| Central | completes at $5.75 |
+| High | stops before adversarial at $8.81 |
 
-In the high scenario the adversarial request (Opus, 5 searches, 16 000
-`max_tokens`) reserves $2.76 on top of $5.52 spent, more than $8 allows.
+The high scenario retries its costliest stage once, and that stage is
+adversarial (Opus, 5 searches, 16 000 `max_tokens`): the first attempt
+runs, then the retry reserves $2.99 on top of $8.81 spent, more than $10
+allows. Without that retry the high case completes under $10.
 A run that stops leaves no brief: `error-*.json` records what each stage
 spent, which is the measurement step 1 is costed from. The high case would
-yield a brief from a cap of $8.28 (rerun skipped) and finish in full from
-$8.81, without a retry; with one stage retry, $10.59 and $11.11. A cap
+yield a brief from a cap of $9.09 (rerun skipped) and finish in full from
+$9.89, without a retry; with one stage retry, $11.80 and $12.60. A cap
 reached during the synthesis rerun keeps the complete pre-rerun brief,
 with `rerun.skipped` in its `metadata.json`.
 
@@ -92,9 +94,10 @@ Only after step 0 completed, or stopped at its cap, without a timeout, and
 after `estimate:cost` has been re-costed from step 0's measured usage.
 
 - `--max-cost-usd 14` caps each briefing the same way. Walked through the
-  reservations, every question's high case completes under it (question
-  11, the costliest, at $13.07); `tests/benchmarks/live-protocol.test.ts`
-  fails if one would not.
+  reservations, every question's high case yields a brief under it;
+  question 11, the costliest ($15.16 in full), does so with its rerun
+  skipped, at $13.11. `tests/benchmarks/live-protocol.test.ts` fails if
+  one would not.
 - Stop after step 0 if it failed for a systematic cause (authentication,
   model id, request shape) or if any stage timed out: fix it, free, before
   spending more. A timed-out request is charged its worst case, so
@@ -222,12 +225,12 @@ claim uses the three test questions left (03, 07, 10) or new ones.
 
 | Question | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| 02-cfo-buyback-briefing | $1.16 | $5.08 | $11.18 |
-| 05-supply-chain-acquisition | $1.13 | $4.98 | $10.98 |
-| 08-ai-regulation-position | $1.16 | $5.08 | $11.22 |
-| 11-family-office-co-investment | $1.18 | $4.90 | $13.07 |
-| 12-sodium-ion-plant-morocco | $1.13 | $4.98 | $10.98 |
-| **Total** | **$5.76** | **$25.03** | **$57.44** |
+| 02-cfo-buyback-briefing | $1.36 | $5.90 | $12.83 |
+| 05-supply-chain-acquisition | $1.33 | $5.75 | $12.54 |
+| 08-ai-regulation-position | $1.36 | $5.90 | $12.89 |
+| 11-family-office-co-investment | $1.39 | $5.68 | $15.16 |
+| 12-sodium-ion-plant-morocco | $1.33 | $5.75 | $12.55 |
+| **Total** | **$6.76** | **$28.99** | **$65.97** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -241,28 +244,31 @@ Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 | Synthesis rerun | no | as in the mock run | yes, for every question |
 | Stage retries | 0 | 0 | the costliest stage once |
 
-Each web-searching call re-reads its context after every search, model
-output included. Prices: Claude Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10 per
+Prompt sizes are the mock run's, read at the 2.73 characters per token
+Anthropic's count_tokens endpoint measured on 66 rendered prompts of 4 questions,
+one per format: 02, 05, 08, 11 (`benchmarks/token-counts/`, 2026-11-03;
+2.63 to 3.01 per request). Every question, 12 included, is read at that
+one ratio. Each web-searching call re-reads its context after every search,
+model output included. Prices: Claude Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10 per
 million tokens, web search $10 per 1000 (`src/llm/pricing.ts`, 2026-11-02).
 No prompt caching is assumed.
 
 ### Step 0 alone
 
-`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 8`:
+`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`:
 
 | | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| Estimate | $1.13 | $4.98 | $10.98 |
+| Estimate | $1.33 | $5.75 | $12.54 |
 
-- Ceiling: **$8.00**, timeouts included, within the allowances below. In
-  the high case the run stops before adversarial at $5.52 rather than
-  reaching $10.98.
+- Ceiling: **$10.00**, timeouts included, within the allowances below. In
+  the high case the run stops before adversarial's retry at $8.81 rather than
+  reaching $12.54.
 
-These are estimates from the mock run's prompt sizes, 4 characters per
-token, and assumed search sizes. Anthropic's token-counting endpoint is
-free and would replace the 4-characters rule with the model's own count,
-but it rejects requests that carry `web_search` and needs the API key; the
-search sizes stay assumptions. Step 0 itself is the measurement.
+The prompt sizes are measured; the search sizes, output shares and the
+growth of live upstream outputs over the fixtures stay assumptions:
+count_tokens refuses requests that carry `web_search`. Step 0 itself is the
+measurement.
 
 ### Ceiling
 
@@ -276,7 +282,8 @@ Each request reserves its worst case before it is sent (`meter` and
   the high scenario's figure), the context re-read after each search, and
   all of the output, thinking included, written before the first search so
   that every later round re-reads it;
-- its prompt at 3 characters per token (`CHARS_PER_TOKEN_FLOOR`);
+- its prompt at 2.5 characters per token (`CHARS_PER_TOKEN_FLOOR`), below
+  every request count_tokens measured;
 - a `pause_turn` re-send carrying back each earlier round's prompt,
   searches and output.
 
@@ -300,10 +307,12 @@ allowances hold**. They are assumptions, not bounds the API enforces:
   more than 15 000 tokens makes its request cost more than it reserved,
   and the spend can pass the cap by that excess on the requests in flight;
   the next request is then refused.
-- Text that tokenizes below 3 characters per token (code, base64, CJK) is
+- Text that tokenizes below 2.5 characters per token (base64, CJK) is
   sized low the same way. The tool definitions and message framing the API
-  adds are not counted apart: for a stage's prompt of several thousand
-  tokens, the margin between 3 and 4 characters per token covers them.
+  adds are not counted apart: on the measured prompts, the margin between
+  2.5 and the measured 2.63 or more is at least 122 tokens on the shortest
+  (scoping, which has no tools) and 224 on the shortest search stage
+  (research).
 - A run killed by a signal writes no `metadata.json`: what it spent since
   its last stage is unknown to a `--resume`.
 - A 429 or 5xx is retried inside one reservation; such responses are not
@@ -354,7 +363,7 @@ band and control), the neutral copy and the three faulty copies: 15 calls,
 ## What each GO authorizes
 
 1. **Step 0**: the one `bench:live` command for `05-supply-chain-acquisition`,
-   one attempt. Expected ≈ $5 (central); at most $8.00, timeouts included,
+   one attempt. Expected ≈ $5.75 (central); at most $10.00, timeouts included,
    within the allowances of [§ Ceiling](#ceiling).
 2. **Step 1**, after step 0 and a re-costing from its measured usage: the
    other four. Before that re-costing: at most $14 each, $56.00 for the

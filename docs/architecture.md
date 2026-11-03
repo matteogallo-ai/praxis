@@ -106,13 +106,13 @@ table (`src/llm/pricing.ts`: list prices by default, a JSON file through
 guessed; a dated model id is priced as its alias. With `maxCostUsd` set,
 each request reserves its worst case before it is sent (whole `max_tokens`,
 every search `max_uses` allows, 15 000 tokens of context per search, the
-prompt at 3 characters per token) and is sent only if spent, held and that
+prompt at 2.5 characters per token) and is sent only if spent, held and that
 worst case fit in the cap. An answered request is charged what it reports;
 one that fails or reports no usage, a timeout included, stays charged at
 its worst case (`unreported_usd`). A request that cannot be sized (no
 price, no `max_tokens`, a search without `max_uses`) is not sent. The
 spend passes the cap only when a request costs more than its worst case:
-searches above the allowance, or text below 3 characters per token.
+searches above the allowance, or text below 2.5 characters per token.
 `benchmarks/run-all.ts` writes the summary to `metadata.json` under `usage`.
 The mock provider simulates usage from text length (`simulated: true`).
 

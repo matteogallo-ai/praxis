@@ -7,8 +7,10 @@
  * named in `SCENARIOS`:
  *   - the size of each stage's rendered prompt, measured on the committed
  *     mock run of the same question (`usage.stages.<stage>.input_tokens`,
- *     4 characters per token), scaled by how much longer live upstream
- *     outputs may be than the fixtures (`upstreamGrowth`);
+ *     which the mock counts at 4 characters per token), read at the ratio
+ *     count_tokens measured (`benchmarks/token-counts/`), and scaled by how
+ *     much longer live upstream outputs may be than the fixtures
+ *     (`upstreamGrowth`);
  *   - each stage's model (`@model`, recorded in the mock metadata), output
  *     ceiling and web-search cap (`src/agents/stage-limits.ts`);
  *   - the price table (`src/llm/pricing.ts`).
@@ -17,7 +19,7 @@
  *
  *   bun run estimate:cost -- --ids 02-cfo-buyback-briefing,12-sodium-ion-plant-morocco
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { parseUsd } from "../src/cli/run-args.ts";
@@ -29,6 +31,46 @@ import {
   requestCostUsd,
   TOKENS_PER_SEARCH_CEILING,
 } from "../src/llm/pricing.ts";
+
+/** The mock's simulated usage counts 4 characters per token (`simulatedUsage`). */
+export const MOCK_CHARS_PER_TOKEN = 4;
+
+/**
+ * Characters per token of the briefings measured with Anthropic's
+ * count_tokens endpoint (`benchmarks/token-counts/*.json`): all their
+ * characters over all their tokens. A record that is not a positive count
+ * stops the estimate rather than turning it into NaN.
+ */
+export function measuredCharsPerToken(root: string): number {
+  const dir = join(root, "benchmarks", "token-counts");
+  if (!existsSync(dir)) throw new Error(`no measured token counts: ${dir} is missing`);
+  let chars = 0;
+  let tokens = 0;
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".json"))) {
+    let requests: unknown;
+    try {
+      requests = (JSON.parse(readFileSync(join(dir, file), "utf-8")) as { requests?: unknown }).requests;
+    } catch (err) {
+      throw new Error(`${file}: not JSON (${err instanceof Error ? err.message : String(err)})`);
+    }
+    if (!Array.isArray(requests)) throw new Error(`${file}: no 'requests' array`);
+    for (const r of requests as { chars?: unknown; tokens?: unknown }[]) {
+      const ok = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v > 0;
+      if (!ok(r.chars) || !ok(r.tokens)) throw new Error(`${file}: a request without positive 'chars' and 'tokens'`);
+      chars += r.chars;
+      tokens += r.tokens;
+    }
+  }
+  if (tokens === 0) throw new Error(`no measured token counts under ${dir}`);
+  return chars / tokens;
+}
+
+let measuredRatio: number | undefined;
+/** Read on first use, so importing this module reads no file. */
+function defaultCharsPerToken(): number {
+  measuredRatio ??= measuredCharsPerToken(resolve(import.meta.dir, ".."));
+  return measuredRatio;
+}
 
 export interface Scenario {
   name: "low" | "central" | "high";
@@ -98,7 +140,8 @@ export function estimateBriefing(
   meta: MockMetadata,
   strictEditorial: boolean,
   scenario: Scenario,
-  prices: PriceTable = DEFAULT_PRICE_TABLE
+  prices: PriceTable = DEFAULT_PRICE_TABLE,
+  charsPerToken: number = defaultCharsPerToken()
 ): { stages: Record<string, number>; total: number } {
   const stages: Record<string, number> = {};
   const measured = { ...meta.usage.stages };
@@ -120,7 +163,8 @@ export function estimateBriefing(
     const passes = stage.startsWith("synthesis") && strictEditorial ? scenario.strictEditorialPasses : 1;
     const perCall = requestCostUsd(
       {
-        promptTokens: (mock.input_tokens / mock.calls) * scenario.upstreamGrowth,
+        promptTokens:
+          ((mock.input_tokens / mock.calls) * MOCK_CHARS_PER_TOKEN * scenario.upstreamGrowth) / charsPerToken,
         outputTokens: limits.maxTokens * scenario.outputShare,
         searches: Math.min(scenario.searches, limits.maxSearches),
         tokensPerSearch: scenario.tokensPerSearch,
@@ -197,8 +241,8 @@ export function capWalk(
     if (mock === undefined) throw new Error(`${meta.id}: no mock record for stage '${stage}'`);
     const limits = stageLimits(stage === "synthesis-rerun" ? "synthesis" : stage);
     const model = mock.models[0] as string;
-    // The mock counts 4 characters per token; the cap sizes them at the floor.
-    const chars = (mock.input_tokens / mock.calls) * 4 * scenario.upstreamGrowth;
+    // The cap sizes the prompt's characters at the floor.
+    const chars = (mock.input_tokens / mock.calls) * MOCK_CHARS_PER_TOKEN * scenario.upstreamGrowth;
     const worst = requestCostUsd(
       {
         promptTokens: Math.ceil(chars / CHARS_PER_TOKEN_FLOOR),
