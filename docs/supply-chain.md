@@ -17,8 +17,10 @@ maintainer applies.
 | OpenSSF Scorecard, results published, badge in the README | `.github/workflows/scorecard.yml` | A11 |
 | A `v*` tag's source archive attested (SLSA Build L2) and released with its Sigstore bundle | `.github/workflows/release.yml` | A10, G3 |
 
-Scorecard's Fuzzing check scores 10: it detects the fast-check property
-tests in `tests/property/` (`TypeScriptPropertyBasedTesting`). The
+Scorecard's Fuzzing check scored 10 on its run of 2026-11-03 ("project is
+fuzzed": `TypeScriptPropertyBasedTesting integration found` in
+`tests/property/`), read from
+`https://api.securityscorecards.dev/projects/github.com/matteogallo-ai/praxis`. The
 JSON-extraction fuzzer in `tests/fuzz/` runs briefly in every test run and
 for longer with `bun run fuzz`.
 

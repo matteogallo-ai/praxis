@@ -95,8 +95,8 @@ function isObjectJson(text: string): boolean {
 
 /**
  * The text from the first `{` to the last `}`, when it is a JSON object.
- * With no brace outside it, it is the only candidate an answer can hold, so
- * the extractor must return it whatever the prose around it says.
+ * Any other balanced span lies inside it, so under "the largest object wins"
+ * (ADR 0001) the extractor must return it whatever the prose around it says.
  */
 function soleObject(text: string): string | undefined {
   const first = text.indexOf("{");

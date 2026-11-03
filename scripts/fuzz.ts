@@ -17,8 +17,9 @@ export function parseFuzzArgs(argv: readonly string[]): { seconds: number; seed:
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     const value = Number(argv[i + 1]);
-    if ((flag !== "--seconds" && flag !== "--seed") || !Number.isInteger(value) || value <= 0) {
-      return { error: "usage: bun run fuzz -- [--seconds <positive integer>] [--seed <positive integer>]" };
+    const min = flag === "--seconds" ? 1 : 0;
+    if ((flag !== "--seconds" && flag !== "--seed") || !Number.isInteger(value) || value < min) {
+      return { error: "usage: bun run fuzz -- [--seconds <positive integer>] [--seed <non-negative integer>]" };
     }
     if (flag === "--seconds") seconds = value;
     else seed = value;
