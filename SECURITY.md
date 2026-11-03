@@ -17,6 +17,8 @@ questions they choose. It has no server, no user accounts and no stored data
 beyond the files it writes. The risks below are about what the pipeline reads
 from the web, what it spends, and the key it holds. Each states what the code
 does **today**.
+[`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) walks the OWASP Top 10 for
+LLM Applications 2025 item by item, with the test behind each mitigation.
 
 ### 1. Untrusted web content flowing between stages
 

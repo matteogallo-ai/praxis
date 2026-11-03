@@ -286,7 +286,24 @@ export async function callModel(
   ) {
     throw new MaxToolRoundsExceededError(options.maxToolRounds);
   }
-  return completion;
+  return { ...completion, text: withoutControlCharacters(completion.text) };
+}
+
+// A JSON escape for a C0 control other than tab, LF and CR, for DEL or a C1
+// control, or the short forms \b and \f, not itself escaped by a backslash.
+const CONTROL_ESCAPE = /(?<!\\)((?:\\\\)*)\\(?:u(?:00(?:0[0-8bcefBCEF]|1[0-9a-fA-F]|7[fF]|[89][0-9a-fA-F]))|[bf])/g;
+// The same characters written raw.
+// biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is this regex's purpose.
+const CONTROL_RAW = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g;
+
+/**
+ * An answer's control characters replaced by U+FFFD, raw or as JSON escapes.
+ * Parsed answers are printed to the terminal, where ESC and C1 sequences
+ * recolour, hide or rewrite text and can carry links (OWASP LLM05). Every
+ * stage's answer passes here, so no parser has to remember it.
+ */
+function withoutControlCharacters(text: string): string {
+  return text.replace(CONTROL_ESCAPE, "$1\\ufffd").replace(CONTROL_RAW, "\ufffd");
 }
 
 /**
@@ -408,6 +425,9 @@ export function outputReader(agentId: string): OutputReader {
       if (typeof url !== "string" || url.length === 0) {
         return fail(`${path}.url must be a non-empty string (or use SOURCE_MISSING)`, raw);
       }
+      if (!isWebUrl(url)) {
+        return fail(`${path}.url must be an absolute http(s) URL`, raw);
+      }
       if (typeof title !== "string" || title.length === 0) {
         return fail(`${path}.title must be a non-empty string`, raw);
       }
@@ -423,6 +443,17 @@ export function outputReader(agentId: string): OutputReader {
       return { url, title, accessed_at: accessedAt, excerpt };
     },
   };
+}
+
+/**
+ * Whether `url` is an absolute http or https URL. A cited URL becomes a link
+ * in the Markdown briefing, so `javascript:`, `data:` or `file:` from a
+ * steered model would be a link the reader clicks (OWASP LLM05).
+ */
+function isWebUrl(url: string): boolean {
+  if (!URL.canParse(url)) return false;
+  const { protocol } = new URL(url);
+  return protocol === "https:" || protocol === "http:";
 }
 
 /**

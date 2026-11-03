@@ -194,3 +194,34 @@ describe("renderFullBrief — ANSI freedom", () => {
     expect(md.includes("\x1b[")).toBe(false);
   });
 });
+
+describe("renderFullBrief — model text cannot become markup (OWASP LLM05)", () => {
+  test("raw HTML and images in a section are written inert", () => {
+    const brief = makeBrief();
+    const [first] = brief.synthesis.sections;
+    if (first === undefined) throw new Error("makeBrief has a section");
+    first.content_markdown = 'Held. <img src="https://attacker.example/b?d=1"> ![x](https://attacker.example/p.png)';
+    first.title = "Intro <script>alert(1)</script>";
+    const md = renderFullBrief(brief);
+    expect(md).not.toMatch(/<(img|script)/);
+    expect(md).not.toContain("![x]");
+  });
+
+  test("a validation issue cannot close its comment, and a URL stays one link target", () => {
+    const brief = makeBrief();
+    const [first] = brief.synthesis.sections;
+    if (first === undefined) throw new Error("makeBrief has a section");
+    first.validation_issues = ["fine --> # Injected heading"];
+    first.sources_cited = [{ url: "https://example.org/Foo_(bar)", title: "T", accessed_at: "2026-08-15T00:00:00Z", excerpt: "" }];
+    const md = renderFullBrief(brief);
+    const comment = md.slice(md.indexOf("<!-- Validation issues:"));
+    expect(comment.indexOf("-->")).toBe(comment.indexOf("\n-->") + 1);
+    expect(md).toContain("[T](https://example.org/Foo_%28bar%29)");
+  });
+
+  test("the question keeps its characters in the front matter", () => {
+    const md = renderFullBrief(makeBrief({ question: "Is X < Y?" }));
+    expect(md).toContain('question: "Is X < Y?"');
+    expect(md).toContain("# Is X &lt; Y?");
+  });
+});

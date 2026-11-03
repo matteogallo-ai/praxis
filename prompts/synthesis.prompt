@@ -19,7 +19,7 @@
 // The full response schema is enforced Praxis-side in
 // src/agents/synthesis.ts.
 
-@version "2.0.0"
+@version "2.1.0"
 @model claude-sonnet-5-5
 @description "Praxis synthesis agent — assembles one briefing section, respecting the target format's constraints."
 
@@ -77,7 +77,10 @@ prompt synthesis(
     1. `content_markdown` is the section text in GitHub-flavoured
        Markdown. No heading (the section title is rendered by the
        assembler around your output). No leading or trailing blank
-       lines.
+       lines. No image and no HTML. A link or a URL in the text must
+       be a source URL copied exactly from the artefacts, with
+       nothing added to it; write no other URL, link or `www.`
+       address. The answer is refused otherwise.
 
     2. Respect the section's `tone_directives` verbatim. If the
        tone says "authoritative, imperative; lead with the verb",

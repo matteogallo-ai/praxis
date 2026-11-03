@@ -233,3 +233,58 @@ describe("retrieval time", () => {
     ).toThrow("findings[0].source.accessed_at must be an ISO 8601 string when present");
   });
 });
+
+describe("source URLs (OWASP LLM05)", () => {
+  const reader = outputReader("research");
+  const source = (url: string) => ({ url, title: "t", excerpt: "" });
+
+  // A model steered by a page it searched can cite any string as a URL; the
+  // Markdown briefing turns it into a link the reader clicks.
+  test.each([
+    "javascript:alert(document.cookie)",
+    "data:text/html,<script>alert(1)</script>",
+    "file:///etc/passwd",
+    "www.destatis.de/x",
+    "not a url",
+  ])("refuses %p", (url) => {
+    expect(() => reader.parseSource(source(url), "findings[0].source", "raw")).toThrow(
+      "findings[0].source.url must be an absolute http(s) URL"
+    );
+  });
+
+  test.each(["https://www.destatis.de/x?y=1#z", "http://example.org/a_(b)"])("accepts %p", (url) => {
+    expect(reader.parseSource(source(url), "findings[0].source", "raw")).toMatchObject({ url });
+  });
+});
+
+describe("terminal control characters in an answer (OWASP LLM05)", () => {
+  // JSON can carry ESC and other control characters as \u escapes; parsed,
+  // they reach the terminal the CLI prints to (colours, hidden text, links).
+  const loaded = () => loadPrompt("demo", writePrompt(PROMPT), "demo");
+  const answering = (text: string): LLMProvider => ({
+    name: "plain",
+    acceptsSystemPrompt: true,
+    async complete() {
+      return text;
+    },
+  });
+
+  test.each([
+    ["ESC", '{"claim": "a \\u001b[31mred\\u001B[0m b"}'],
+    ["CSI (C1)", '{"claim": "a \\u009b31m b"}'],
+    ["BEL and backspace", '{"claim": "a \\u0007\\u0008 b"}'],
+    ["DEL", '{"claim": "a \\u007f b"}'],
+  ])("%s escapes parse to U+FFFD", async (_label, answer) => {
+    const out = await callModel("demo", answering(answer), loaded(), { system: "SYS", user: "U" }, { tools: [] });
+    const claim = (JSON.parse(out.text) as { claim: string }).claim;
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: the test asserts these characters are absent.
+    expect(claim).not.toMatch(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/);
+    expect(claim).toContain("�");
+  });
+
+  test("tab, newline, an escaped backslash before u, and ordinary escapes are kept", async () => {
+    const answer = '{"claim": "a\\tb\\nc \\\\u001b \\u00e9"}';
+    const out = await callModel("demo", answering(answer), loaded(), { system: "SYS", user: "U" }, { tools: [] });
+    expect((JSON.parse(out.text) as { claim: string }).claim).toBe("a\tb\nc \\u001b é");
+  });
+});

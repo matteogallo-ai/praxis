@@ -8,9 +8,11 @@
  * would turn every live call into a 400 cannot slip back in.
  */
 import { describe, expect, test } from "bun:test";
+import { readFileSync, readdirSync } from "node:fs";
 
 import { AnthropicLLMProvider } from "../../src/llm/anthropic-provider.ts";
 import type { FetchLike } from "../../src/llm/anthropic-provider.ts";
+import { DEFAULT_PRICE_TABLE } from "../../src/llm/pricing.ts";
 
 interface Captured {
   url: string;
@@ -152,5 +154,22 @@ describe("Anthropic request contract — API version 2026-10-21", () => {
     } finally {
       if (saved !== undefined) process.env["ANTHROPIC_MODEL"] = saved;
     }
+  });
+});
+
+describe("every stage's model", () => {
+  const models = readdirSync("prompts")
+    .filter((f) => f.endsWith(".prompt"))
+    .map((f) => [f, /^@model (\S+)$/m.exec(readFileSync(`prompts/${f}`, "utf-8"))?.[1] ?? ""] as const);
+
+  test("each prompt declares one", () => {
+    expect(models.length).toBe(7);
+    expect(models.filter(([, m]) => m === "")).toEqual([]);
+  });
+
+  test.each(models)("%s: neither retired nor deprecated, and priced", (_file, model) => {
+    expect(RETIRED_OR_DEPRECATED).not.toContain(model);
+    expect(model).toMatch(/^claude-(opus|sonnet|haiku)-\d+(-\d+)?$/);
+    expect(DEFAULT_PRICE_TABLE.models[model]).toBeDefined();
   });
 });

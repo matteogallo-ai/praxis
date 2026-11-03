@@ -254,6 +254,7 @@ export function parseStoredSynthesis(
     for (const key of ["sources_cited", "validation_issues", "editorial_attempts"]) {
       if (!Array.isArray(s[key])) fail(`sections[${i}].${key} must be an array`);
     }
+    checkProse(s["content_markdown"] as string, `sections[${i}]`, knownSources, stored);
     for (const [j, source] of (s["sources_cited"] as unknown[]).entries()) {
       parseCitedSource(source, `sections[${i}].sources_cited[${j}]`, knownSources, stored);
     }
@@ -517,6 +518,8 @@ function parseSectionResponse(
     );
   }
 
+  checkProse(content, `section '${section.id}'`, knownSources, raw);
+
   const rawSources = obj["sources_cited"];
   if (!Array.isArray(rawSources)) {
     throw new InvalidAgentOutputError(
@@ -682,9 +685,52 @@ function buildFormatConformance(
 
 interface KnownSourcesIndex {
   hasUrl(url: string): boolean;
+  /** Every upstream URL, longest first. */
+  urls(): string[];
 }
 
+/** What, once the upstream URLs are taken out, makes prose point elsewhere. */
+const PROSE_POINTERS: readonly [RegExp, string][] = [
+  [/!\[/, "an image (a Markdown viewer fetches it on open)"],
+  [/\b(?:src|href)\s*=/i, "an HTML element that loads or links a URL"],
+  [/^\s*\[[^\]]+\]:\s*\S/m, "a reference link to a URL no upstream stage returned"],
+  [/<[a-z][a-z0-9+.-]{1,31}:[^\s>]*>/i, "an autolink to a URL no upstream stage returned"],
+  [/\b[a-z][a-z0-9+.-]*:\/\//i, "a URL no upstream stage returned"],
+  [/(?:^|[\s("'=])\/\/[^\s/]/, "a protocol-relative URL"],
+  [/\bwww\./i, "a www. address, which viewers turn into a link"],
+];
 
+/** A link destination left empty once its upstream URL is taken out: `()`, `(<>)`, with an optional title. */
+const EMPTIED_DESTINATION = /^\]\(\s*(?:<>)?\s*(?:"[^"]*"|'[^']*')?\s*\)/;
+
+/** Where an upstream URL may end: what follows it cannot extend it into another URL. */
+const URL_END = `(?=$|[\\s)>"'\\]]|[.,;:!?](?:\\s|$))`;
+
+/**
+ * A section's prose may point only at upstream sources, exactly as they were
+ * returned: no image, no element that loads a URL, and no link, reference,
+ * autolink, scheme, protocol-relative or `www.` address beyond them. A page
+ * the model searched could otherwise steer it into a beacon image that leaks
+ * the briefing when opened, or a look-alike link (OWASP LLM05). An upstream
+ * URL with anything appended is refused too: the upstream page may be the
+ * attacker's. Checked on fresh answers and stored checkpoints alike.
+ */
+function checkProse(content: string, where: string, knownSources: KnownSourcesIndex, raw: string): void {
+  let rest = content;
+  for (const url of knownSources.urls()) {
+    rest = rest.replace(new RegExp(url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + URL_END, "g"), "");
+  }
+  const refuse = (what: string, hit: string): never => {
+    throw new InvalidAgentOutputError(AGENT_ID, `${where}: content_markdown contains ${what}: '${hit}'`, raw);
+  };
+  for (const [pattern, what] of PROSE_POINTERS) {
+    const hit = pattern.exec(rest);
+    if (hit !== null) refuse(what, hit[0]);
+  }
+  for (let at = rest.indexOf("]("); at !== -1; at = rest.indexOf("](", at + 2)) {
+    if (!EMPTIED_DESTINATION.test(rest.slice(at))) refuse("a link to a URL no upstream stage returned", rest.slice(at, at + 40));
+  }
+}
 
 /**
  * One entry of a section's `sources_cited`, for a fresh answer and for a
@@ -743,10 +789,12 @@ function collectUpstreamSources(ctx: SynthesisContext): KnownSourcesIndex {
   for (const o of ctx.options.options) {
     if ("url" in o.supporting_evidence) urls.add(o.supporting_evidence.url);
   }
+  const longestFirst = [...urls].sort((a, b) => b.length - a.length);
   return {
     hasUrl(url: string): boolean {
       return urls.has(url);
     },
+    urls: () => longestFirst,
   };
 }
 

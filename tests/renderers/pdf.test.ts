@@ -314,3 +314,12 @@ describe("pdfRenderer — reproducible output", () => {
     }
   });
 });
+
+describe("pdfRenderer — links (OWASP LLM05)", () => {
+  test("source URLs are drawn as text: the PDF has no link annotation", async () => {
+    const buf = await pdfRenderer.render(makeBrief(), { include_appendices: true });
+    const pdf = buf.toString("latin1");
+    expect(pdf).toContain("/Type /Page");
+    expect(pdf).not.toMatch(/\/Annots|\/URI|\/Launch|\/JavaScript/);
+  });
+});

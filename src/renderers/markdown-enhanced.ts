@@ -22,6 +22,14 @@ import type {
 import type { SourceReference } from "../sourcing/types.ts";
 import type { RenderOptions, Renderer } from "./types.ts";
 import { hasCritique } from "./types.ts";
+import {
+  escapeMarkdownHeading,
+  escapeMarkdownLinkText,
+  inert,
+  linkTarget,
+  renderSynthesisSections,
+  yamlString,
+} from "./markdown-text.ts";
 
 /**
  * A `Renderer` returning a UTF-8 Buffer holding the enhanced
@@ -44,41 +52,15 @@ export function renderMarkdownEnhanced(
   brief: BriefResult | BriefWithCritiqueResult,
   options: RenderOptions = {}
 ): string {
-  const parts: string[] = [];
-  parts.push(renderFrontMatter(brief));
-  parts.push(`# ${escapeMarkdownHeading(brief.question)}\n\n`);
-
-  if (options.include_toc) {
-    parts.push(renderToc(brief, options));
-  }
-
-  for (const section of brief.synthesis.sections) {
-    parts.push(`## ${escapeMarkdownHeading(section.title)}\n\n`);
-    parts.push(`${section.content_markdown.trim()}\n\n`);
-    if (section.sources_cited.length > 0) {
-      parts.push("**Sources:**\n\n");
-      for (const s of section.sources_cited) {
-        parts.push(`- [${escapeMarkdownLinkText(s.title)}](${s.url})\n`);
-      }
-      parts.push("\n");
-    }
-    if (section.validation_issues.length > 0) {
-      parts.push("<!-- Validation issues:\n");
-      for (const issue of section.validation_issues) parts.push(`  - ${issue}\n`);
-      parts.push("-->\n\n");
-    }
-  }
-
-  if (options.include_critique && hasCritique(brief)) {
-    parts.push(renderCritiqueSection(brief));
-  }
-
-  if (options.include_appendices) {
-    parts.push(renderAppendices(brief));
-  }
-
-  parts.push(renderSourcesSection(brief, options));
-
+  // The front matter holds YAML-quoted values; every other part is Markdown
+  // that carries model text, made inert (src/renderers/markdown-text.ts).
+  const parts: string[] = [renderFrontMatter(brief)];
+  parts.push(inert(`# ${escapeMarkdownHeading(brief.question)}\n\n`));
+  if (options.include_toc) parts.push(inert(renderToc(brief, options)));
+  parts.push(renderSynthesisSections(brief.synthesis.sections));
+  if (options.include_critique && hasCritique(brief)) parts.push(inert(renderCritiqueSection(brief)));
+  if (options.include_appendices) parts.push(inert(renderAppendices(brief)));
+  parts.push(inert(renderSourcesSection(brief, options)));
   return parts.join("");
 }
 
@@ -163,7 +145,7 @@ function renderCritiqueSection(brief: BriefWithCritiqueResult): string {
     parts.push(`**Suggested revision:** ${c.suggested_revision}\n\n`);
     if ("url" in c.counter_evidence) {
       parts.push(
-        `**Counter-evidence:** [${escapeMarkdownLinkText(c.counter_evidence.title)}](${c.counter_evidence.url})\n\n`
+        `**Counter-evidence:** [${escapeMarkdownLinkText(c.counter_evidence.title)}](${linkTarget(c.counter_evidence.url)})\n\n`
       );
     } else {
       parts.push(
@@ -185,7 +167,7 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
     parts.push(`**Evidence:** ${f.supporting_evidence}\n\n`);
     if ("url" in f.source) {
       parts.push(
-        `**Source:** [${escapeMarkdownLinkText(f.source.title)}](${f.source.url})\n\n`
+        `**Source:** [${escapeMarkdownLinkText(f.source.title)}](${linkTarget(f.source.url)})\n\n`
       );
     } else {
       parts.push(
@@ -262,7 +244,7 @@ function renderSourcesSection(
   for (const domain of domains) {
     parts.push(`### ${domain}\n\n`);
     for (const s of byDomain.get(domain)!.sort((a, b) => a.title.localeCompare(b.title))) {
-      parts.push(`- [${escapeMarkdownLinkText(s.title)}](${s.url}) · accessed ${s.accessed_at}\n`);
+      parts.push(`- [${escapeMarkdownLinkText(s.title)}](${linkTarget(s.url)}) · accessed ${s.accessed_at}\n`);
     }
     parts.push("\n");
   }
@@ -288,19 +270,6 @@ function extractHost(url: string): string {
   } catch {
     return "(unparseable)";
   }
-}
-
-function yamlString(v: string): string {
-  const escaped = v.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-  return `"${escaped}"`;
-}
-
-function escapeMarkdownHeading(v: string): string {
-  return v.replace(/[\r\n]+/g, " ");
-}
-
-function escapeMarkdownLinkText(v: string): string {
-  return v.replace(/\[/g, "\\[").replace(/\]/g, "\\]");
 }
 
 /** Table-cell escaping (pipes need to be escaped in Markdown tables). */
