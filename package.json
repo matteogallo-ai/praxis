@@ -48,6 +48,7 @@
     "mutation": "git diff --quiet -- src && stryker run"
   },
   "dependencies": {
+    "@promptlang/core": "2.0.0",
     "@promptlang/yaml-parser": "^1.0.0",
     "pdfkit": "^0.19.1"
   },

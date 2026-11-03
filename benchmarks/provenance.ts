@@ -8,8 +8,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { tokenize } from "promptlang/lexer";
-import { parse } from "promptlang/parser";
+import { parse, tokenize } from "@promptlang/core";
 
 import { promptMetadata } from "../src/agents/prompt-runtime.ts";
 import { redactSecrets } from "../src/cli/redact.ts";

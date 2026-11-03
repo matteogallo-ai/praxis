@@ -9,9 +9,8 @@
 
 import { existsSync, readFileSync } from "node:fs";
 
-import { tokenize } from "promptlang/lexer";
-import { parse } from "promptlang/parser";
-import type { MessageSection, Program, PromptDeclaration } from "promptlang/ast";
+import { parse, tokenize } from "@promptlang/core";
+import type { MessageSection, Program, PromptDeclaration } from "@promptlang/core";
 
 import { stageLimits } from "./stage-limits.ts";
 import { BudgetExceededError } from "../llm/errors.ts";
