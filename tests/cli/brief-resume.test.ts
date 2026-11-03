@@ -138,7 +138,7 @@ describe("praxis brief --max-cost-usd", () => {
 
   test("the run flags are validated", () => {
     expect(extractRunArgs(["--max-cost-usd", "-1"])).toEqual({
-      error: "--max-cost-usd expects a positive number of US dollars",
+      error: "--max-cost-usd expects a positive decimal number of US dollars, e.g. 8 or 7.50",
     });
     expect(extractRunArgs(["--resume"])).toEqual({ error: "--resume expects a value" });
     expect(extractRunArgs(["Q", "--price-table=p.json"])).toMatchObject({ rest: ["Q"], run: { priceTable: "p.json" } });

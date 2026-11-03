@@ -44,6 +44,19 @@ function clock(): Date | { error: string } {
 
 const VALUE_FLAGS = ["--resume", "--runs-dir", "--max-cost-usd", "--price-table"] as const;
 
+const PLAIN_DECIMAL = /^\d+(?:\.\d+)?$/;
+
+/**
+ * A positive amount of US dollars written as plain decimal digits, else
+ * `undefined`. `Number()` alone also takes hex, binary, exponents and
+ * surrounding spaces, which no one types as a spending cap on purpose.
+ */
+export function parseUsd(value: string | undefined): number | undefined {
+  if (value === undefined || !PLAIN_DECIMAL.test(value)) return undefined;
+  const n = Number(value);
+  return n > 0 && Number.isFinite(n) ? n : undefined;
+}
+
 export function extractRunArgs(
   args: readonly string[]
 ): { rest: string[]; run: RunArgs } | { error: string } {
@@ -62,10 +75,11 @@ export function extractRunArgs(
   }
   let maxCostUsd: number | null = null;
   if (values["--max-cost-usd"] !== undefined) {
-    maxCostUsd = Number(values["--max-cost-usd"]);
-    if (!Number.isFinite(maxCostUsd) || maxCostUsd <= 0) {
-      return { error: "--max-cost-usd expects a positive number of US dollars" };
+    const usd = parseUsd(values["--max-cost-usd"]);
+    if (usd === undefined) {
+      return { error: "--max-cost-usd expects a positive decimal number of US dollars, e.g. 8 or 7.50" };
     }
+    maxCostUsd = usd;
   }
   const now = clock();
   if (!(now instanceof Date)) return now;
