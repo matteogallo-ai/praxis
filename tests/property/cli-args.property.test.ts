@@ -175,3 +175,10 @@ describe("resumeArgs — properties", () => {
     );
   });
 });
+
+describe("resumeArgs — a format id containing '='", () => {
+  test("--format=<id> is compared whole", () => {
+    const store = CheckpointStore.create(join(root, "runs"), "q", "a=b", new Date(0));
+    expect(resumeArgs(["--format=a=b"], store)).toEqual(["q", "--format=a=b", "--full"]);
+  });
+});
