@@ -391,3 +391,32 @@ describe("Orchestrator.briefWithCritiqueAndRerun() — the rerun prompt", () => 
     }
   });
 });
+
+describe("Orchestrator.briefWithCritiqueAndRerun() — budget reached during the rerun", () => {
+  test("the paid pre-rerun brief is returned, the skip recorded, nothing rerun", async () => {
+    const { BudgetExceededError } = await import("../../src/llm/errors.ts");
+    const inner = makeMockProvider();
+    const capped: LLMProvider = {
+      name: inner.name,
+      ...(inner.acceptsSystemPrompt === undefined ? {} : { acceptsSystemPrompt: inner.acceptsSystemPrompt }),
+      complete: (p, o) => inner.complete(p, o),
+      completeWithTools: (p: string, tools: Tool[], o) => {
+        if (`${o?.system ?? ""}\n${p}`.includes("REVISION MODE")) {
+          return Promise.reject(new BudgetExceededError(8.2, 8, "synthesis-rerun"));
+        }
+        return inner.completeWithTools?.(p, tools, o) as Promise<CompletionResult>;
+      },
+    };
+    const registry = new FormatRegistry();
+    registry.loadDirectory("formats");
+    const out = await new Orchestrator(registry, capped).briefWithCritiqueAndRerun(
+      "Should we enter the German market?",
+      "executive-pre-read",
+      { now: new Date("2026-08-18T00:00:00Z") }
+    );
+    expect(out.rerun_performed).toBe(false);
+    expect(out.rerun_skipped).toMatch(/budget/i);
+    expect(out.original_synthesis).toBeNull();
+    expect(out.synthesis.sections.length).toBe(6);
+  });
+});

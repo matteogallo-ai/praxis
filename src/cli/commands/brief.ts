@@ -526,6 +526,10 @@ async function fullBrief(
       `${c.dim("rerun:")} synthesis rewritten to address ${critIds} — ` +
         `${changed} section(s) changed substantially.\n`
     );
+  } else if (opts.withRerun && hasRerunMetadata(result) && result.rerun_skipped !== undefined) {
+    process.stderr.write(
+      `${c.dim("rerun:")} asked for by the critique but not run (${result.rerun_skipped}); the pre-rerun brief is kept.\n`
+    );
   } else if (opts.withRerun && hasRerunMetadata(result) && !result.rerun_performed) {
     process.stderr.write(
       `${c.dim("rerun:")} adversarial critique did not require a rerun.\n`
@@ -658,6 +662,7 @@ function hasRerunMetadata(
   v: object
 ): v is {
   rerun_performed: boolean;
+  rerun_skipped?: string;
   rerun_metadata: { critiques_addressed: string[]; re_synthesis_deviations: string[] };
 } {
   return "rerun_performed" in v;

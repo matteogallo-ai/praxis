@@ -70,6 +70,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- When the cost cap is reached during the synthesis rerun, the complete
+  pre-rerun brief is returned instead of being discarded with the run;
+  `rerun_skipped` (a new optional field of the result, and `rerun.skipped`
+  in benchmark metadata) says why. Paid scoring (`score-all.ts` without
+  `--dry-run`) is refused until the judge has a cost cap.
+
 - Live tests run only with `PRAXIS_LIVE_TESTS=1`; a key in `.env` no longer
   makes `bun test` call the paid API.
 - `bun run bench:mock` is reproducible (fixed clock in mock runs, PDF creation

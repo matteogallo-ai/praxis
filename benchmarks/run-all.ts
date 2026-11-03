@@ -387,6 +387,7 @@ function buildMetadata(
         result.rerun_metadata?.critiques_addressed.length ?? 0,
       re_synthesis_deviations:
         result.rerun_metadata?.re_synthesis_deviations ?? [],
+      ...(result.rerun_skipped === undefined ? {} : { skipped: result.rerun_skipped }),
     },
     sourcing: {
       total_items: result.sourcing_report.total_items,
