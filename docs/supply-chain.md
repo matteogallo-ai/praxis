@@ -17,6 +17,11 @@ maintainer applies.
 | OpenSSF Scorecard, results published, badge in the README | `.github/workflows/scorecard.yml` | A11 |
 | A `v*` tag's source archive attested (SLSA Build L2) and released with its Sigstore bundle | `.github/workflows/release.yml` | A10, G3 |
 
+Scorecard's Fuzzing check scores 10: it detects the fast-check property
+tests in `tests/property/` (`TypeScriptPropertyBasedTesting`). The
+JSON-extraction fuzzer in `tests/fuzz/` runs briefly in every test run and
+for longer with `bun run fuzz`.
+
 The license is MIT; GitHub reads it from `LICENSE` as the SPDX id `MIT`
 (`gh api repos/matteogallo-ai/praxis --jq .license.spdx_id`), and
 `package.json` declares the same id (A9).
@@ -90,7 +95,6 @@ are expected and are not hidden:
 | Maintained | Counts activity over 90 days; a young or quiet repository scores low whatever its state. |
 | Packaging | Nothing is published to a package registry (see "The release artefact"). |
 | Signed-Releases | Scores the last five releases; v0.10.0 to v1.3.0 predate `release.yml` and carry no signature. Each new release scores up to 8 of 10 (a Sigstore bundle; 10 needs an in-toto provenance file). |
-| Fuzzing | No fuzzer. Property-based tests with fast-check run in `tests/property/`; whether Scorecard counts them shows on its first run after merge. |
 
 The live score is on the badge in the README; the results also land in the
 repository's Security tab.
