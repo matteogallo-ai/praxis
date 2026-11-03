@@ -1,14 +1,21 @@
-# Praxis benchmarks (v0.9+)
+# Praxis benchmarks
 
-A calibrated set of ten briefing questions that stress the three
-shipped formats end to end. The benchmarks live here to give
+A frozen set of twelve briefing questions that stress the four
+shipped formats end to end, one of them a hard case. The benchmarks live here to give
 reviewers, contributors, and downstream embedders a fixed
 reference set they can regenerate at any commit.
 
 ## What is here
 
-- `questions.yaml` — the ten calibrated questions and their target
+- `questions.yaml` — the twelve questions and their target
   formats. This is the manifest; every other file is derived.
+- `split.yaml` — the frozen dev/test split of the manifest, drawn by
+  `split.ts` (stratified by format, the hard case as its own stratum,
+  fixed seed). Tune on dev; publish live results on test. It records
+  the manifest's version and SHA-256, so any edit to `questions.yaml`
+  fails the test suite until `bun run bench:split` redraws it. Adding
+  questions redraws the split: do it before tuning, never after.
+  `run-all.ts --split dev|test` runs one half.
 - `run-all.ts` — the Bun script that generates artefacts. Modes:
   `--mock-only`, `--live-only`, or default (mock + live if
   `ANTHROPIC_API_KEY` is set).
@@ -46,8 +53,8 @@ reference set they can regenerate at any commit.
 From the repo root:
 
 ```
-bun run bench:mock     # ten mock briefings, always reproducible
-bun run bench:live     # ten live briefings, ANTHROPIC_API_KEY required
+bun run bench:mock     # twelve mock briefings, always reproducible
+bun run bench:live     # PAID: twelve live briefings, ANTHROPIC_API_KEY required
 bun run bench          # both if a key is present; mock only otherwise
 ```
 
@@ -73,9 +80,11 @@ Each benchmark writes four files under `outputs/<mode>/<id>/`:
 
 ## Design notes
 
-- **Ten benchmarks, no more.** The set is closed at v0.9. Adding
-  an eleventh requires a v-plus-one release. The point is to have
-  a stable reference, not to grow it.
+- **A frozen set.** The point is a stable reference, not a growing
+  one. The rule that closed the set at ten (v0.9) was retired when
+  the family-office question (v1.2.0) and the hard case (version 2
+  of the manifest) were added. A change to the set bumps the
+  manifest's `version` and redraws `split.yaml`, before any tuning.
 - **Formats are canonical.** The `format` field on each entry is
   what `--format auto` should pick from the question alone. If
   the auto-router disagrees, that is a bug — either in the

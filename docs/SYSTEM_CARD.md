@@ -56,8 +56,9 @@ provider sends no sampling parameter.
 - **Stored**: each run's checkpoints and `metadata.json` (tokens, searches,
   cost and duration per stage) under `.praxis/runs/`, on the operator's
   disk, git-ignored. No telemetry; nothing is sent anywhere but Anthropic.
-- **Evaluation data**: `benchmarks/questions.yaml`, eleven business
-  questions across the four formats; no dev/test split, no human labels.
+- **Evaluation data**: `benchmarks/questions.yaml`, twelve business
+  questions across the four formats plus a hard case, with a frozen
+  dev/test split (4 / 8) in `benchmarks/split.yaml`; no human labels.
 
 ## Measured performance
 
@@ -66,7 +67,7 @@ provider sends no sampling parameter.
 | Live briefings completed | 5 runs (CHANGELOG 1.2.1) | 0 of 5 | 0%–43% (Wilson) |
 | Live briefing quality | 0 | not measured | — |
 | Live cost and latency per briefing | 0 | not measured; targets in [`docs/SLO.md`](SLO.md) | — |
-| Mock pipeline end to end | 11 benchmark questions | completes; outputs committed under `benchmarks/outputs/mock/` | not a quality measure |
+| Mock pipeline end to end | 12 benchmark questions | completes; outputs committed under `benchmarks/outputs/mock/` | not a quality measure |
 
 The mock row proves the wiring: stage order, validation, rendering,
 checkpoints, cost accounting with simulated usage. The text it produces is

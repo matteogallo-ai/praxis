@@ -18,7 +18,7 @@ none.
 
 ## Renderer smoke test (no model involved)
 
-`bun run bench:mock` runs the 11 entries of `questions.yaml` through the full
+`bun run bench:mock` runs the 12 entries of `questions.yaml` through the full
 pipeline on the mock provider and writes `brief.md`, `brief.pdf`,
 `brief.docx` and `metadata.json` for each under `benchmarks/outputs/mock/`.
 It proves that every stage, the sourcing checks and the three renderers are
@@ -32,7 +32,7 @@ fixtures and not a model.
 ## Withdrawn
 
 The "AI-assisted qualitative scoring" published here on 2026-08-20 scored the
-11 mock briefings above with a Claude model. For the reason just given it
+11 mock briefings of that date with a Claude model. For the reason just given it
 measured the fixtures, and it is withdrawn; `benchmarks/score-all.ts` now
 refuses mock briefings. The scoring method for live briefings is described in
 [`docs/benchmarking-methodology.md`](../docs/benchmarking-methodology.md).
