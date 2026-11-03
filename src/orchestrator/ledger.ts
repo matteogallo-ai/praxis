@@ -332,8 +332,8 @@ function searchCap(tools: readonly Tool[]): number | undefined {
 /**
  * `inner`, with every call checked against the budget and recorded under
  * `stage` (see the file comment for the cap). Only `completeWithTools`
- * returns usage, so a provider without it is passed through and its calls
- * are recorded with zero usage.
+ * returns usage, so a `complete()` call reports none: under a cap it is
+ * charged its worst case, without one it is recorded with zero usage.
  */
 export function meter(inner: LLMProvider, ledger: UsageLedger, stage: string): LLMProvider {
   /** The worst case of one request, or a `BudgetExceededError` saying why it has none. */
@@ -359,8 +359,24 @@ export function meter(inner: LLMProvider, ledger: UsageLedger, stage: string): L
       : { acceptsSystemPrompt: inner.acceptsSystemPrompt }),
     complete: async (prompt, options) => {
       ledger.assertWithinBudget(stage);
-      const text = await inner.complete(prompt, options);
-      ledger.record(stage, options?.model ?? "unknown", undefined);
+      const model = options?.model ?? "unknown";
+      let held = 0;
+      if (ledger.capped) {
+        held = worstCase(model, prompt.length + (options?.system?.length ?? 0), options?.max_tokens, 0);
+        ledger.reserve(stage, held);
+      }
+      let text: string;
+      try {
+        text = await inner.complete(prompt, options);
+      } finally {
+        // Reports no usage, answered or not: under a cap it stays at its worst case.
+        ledger.release(held);
+        if (held > 0) {
+          ledger.record(stage, model, undefined);
+          ledger.chargeUnreported(stage, model, held);
+        }
+      }
+      if (held === 0) ledger.record(stage, model, undefined);
       return text;
     },
   };

@@ -11,6 +11,7 @@ import { describe, expect, test } from "bun:test";
 
 import { AnthropicLLMProvider, type FetchLike } from "../../src/llm/anthropic-provider.ts";
 import { AnthropicTimeoutError, BudgetExceededError } from "../../src/llm/errors.ts";
+import type { LLMProvider } from "../../src/llm/provider.ts";
 import type { Tool } from "../../src/llm/types.ts";
 import { meter, UsageLedger } from "../../src/orchestrator/ledger.ts";
 
@@ -167,5 +168,13 @@ describe("a request that reports no usage is charged its worst case", () => {
     const err = await metered.completeWithTools?.("U", [SEARCH], OPTIONS).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(BudgetExceededError);
     expect(sent).toBe(1);
+  });
+
+  test("a complete()-only provider is charged its worst case under a cap", async () => {
+    const ledger = new UsageLedger({ maxCostUsd: 100 });
+    const plain: LLMProvider = { name: "plain", complete: async () => "{}" };
+    await meter(plain, ledger, "scoping").complete("U", { model: SONNET, max_tokens: 8_000 });
+    // 1 input token, 8 000 output tokens on Sonnet: $0.000002 + $0.08.
+    expect(ledger.summary().stages["scoping"]?.cost_usd).toBeCloseTo(0.080002, 10);
   });
 });

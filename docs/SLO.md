@@ -49,9 +49,10 @@ per briefing in the worst case.
   at `input_tokens` and the rounds per stage.
 - **Worst case versus target**: the ceilings add up to more than the
   target, so the target cannot be proven from the limits alone. The hard
-  stop is `--max-cost-usd` (below): no call starts once the recorded cost
-  reaches it, and a run can end above it by the calls already in flight,
-  which for a search stage include all its rounds (`src/orchestrator/ledger.ts`).
+  stop is `--max-cost-usd` (below): each request reserves its worst case
+  before it is sent, timeouts are charged at it, and a run passes the cap
+  only when a request costs more than its worst case, through searches
+  that add more than 15 000 tokens each (`src/orchestrator/ledger.ts`).
 - **Latency**: the request timeouts add up to 40 minutes with one round
   per stage, 168 minutes with five rounds per search stage; they are sized
   for a request using its whole output ceiling at a slow 40 tokens per
