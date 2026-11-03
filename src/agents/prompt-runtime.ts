@@ -293,6 +293,7 @@ export async function callModel(
 // control, or the short forms \b and \f, not itself escaped by a backslash.
 const CONTROL_ESCAPE = /(?<!\\)((?:\\\\)*)\\(?:u(?:00(?:0[0-8bcefBCEF]|1[0-9a-fA-F]|7[fF]|[89][0-9a-fA-F]))|[bf])/g;
 // The same characters written raw.
+// biome-ignore lint/suspicious/noControlCharactersInRegex: matching control characters is this regex's purpose.
 const CONTROL_RAW = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g;
 
 /**
