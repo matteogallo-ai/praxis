@@ -426,6 +426,67 @@ describe("executeSynthesis — links and images in the prose", () => {
   });
 });
 
+describe("executeSynthesis — each prose check on its own", () => {
+  // Each input below trips exactly one check, and the reason is asserted, so
+  // a weakened check cannot hide behind another that catches the same text.
+  const QUERY_SOURCE = { ...SOURCE_A, url: "https://example.org/report?id=1" };
+  async function synthesize(prose: string): Promise<unknown> {
+    const ctx: SynthesisContext = {
+      ...CTX_BASE,
+      research: {
+        ...CTX_BASE.research,
+        findings: [...CTX_BASE.research.findings, { claim: "c3", supporting_evidence: "e3", source: QUERY_SOURCE }],
+      },
+      format: makeFormat(),
+    };
+    const provider = fakeLLM({ intro: { content_markdown: prose }, body: { content_markdown: "Body." } });
+    return executeSynthesis(ctx, provider).catch((e: unknown) => e);
+  }
+
+  test.each([
+    ["a relative image", "Growth. ![chart](/p.png?d=1)", "an image (a Markdown viewer fetches it on open)", "!["],
+    ["a src attribute", '<img src="beacon.png">', "an HTML element that loads or links a URL", "src="],
+    ["a spaced href attribute", '<a href = "page">x</a>', "an HTML element that loads or links a URL", "href ="],
+    ["a reference definition", "[ref]: /track?d=1\n\nSee [it][ref].", "a reference link to a URL no upstream stage returned", "[ref]: /"],
+    ["an indented reference definition", "  [r]: /track\n\nSee [it][r].", "a reference link to a URL no upstream stage returned", "  [r]: /"],
+    ["a reference definition without a space", "[r]:/track\n\nSee [it][r].", "a reference link to a URL no upstream stage returned", "[r]:/"],
+    ["a mailto autolink", "Write to <mailto:ceo@attacker.example>.", "an autolink to a URL no upstream stage returned", "<mailto:ceo@attacker.example>"],
+    ["a bare unknown URL", "Details at https://attacker.example/?q=memo today.", "a URL no upstream stage returned", "https://"],
+    ["a protocol-relative URL opening the prose", "//attacker.example/p is the source.", "a protocol-relative URL", "//a"],
+    ["a protocol-relative URL after a space", "Beacon at //attacker.example/p today.", "a protocol-relative URL", " //a"],
+    ["a protocol-relative URL in parentheses", "See (//attacker.example/p).", "a protocol-relative URL", "(//a"],
+    ["a www. address", "Details at www.attacker.example today.", "a www. address, which viewers turn into a link", "www."],
+    ["a javascript: link", "[click](javascript:alert(1))", "a link to a URL no upstream stage returned", "](javascript:alert(1))"],
+    ["a relative link", "[the report](/track?d=1)", "a link to a URL no upstream stage returned", "](/track?d=1)"],
+    [
+      "an unknown link before a known one",
+      `[x](/track) and [Precedent A](${SOURCE_A.url})`,
+      "a link to a URL no upstream stage returned",
+      "](/track)",
+    ],
+  ])("refuses %s, for its own reason", async (_label, prose, reason, hit) => {
+    const err = await synthesize(prose);
+    expect(err).toBeInstanceOf(InvalidAgentOutputError);
+    const message = (err as Error).message;
+    expect(message).toContain(`content_markdown contains ${reason}: '`);
+    expect(message.slice(message.indexOf(`${reason}: '`) + reason.length + 3)).toStartWith(hit);
+  });
+
+  test.each([
+    ["a space inside the parentheses", `Per [Precedent A]( <${SOURCE_A.url}>), margins held.`],
+    ["an angle-bracket destination with a title", `Per [Precedent A](<${SOURCE_A.url}> "Reuters"), margins held.`],
+    ["a single-quoted title", `Per [Precedent A](${SOURCE_A.url} 'Reuters'), margins held.`],
+    ["a space before the closing parenthesis", `Per [Precedent A](${SOURCE_A.url} "Reuters" ), margins held.`],
+    ["an upstream URL with a query", `Per [the report](${QUERY_SOURCE.url}), margins held.`],
+    ["the same upstream URL twice", `Per [Precedent A](${SOURCE_A.url}), and again ${SOURCE_A.url} here.`],
+    ["a bracketed note followed by a colon mid-line", "Margins [table 1]: held at 4%."],
+    ["a comparison written with =", "Revenue = cost plus margin."],
+  ])("keeps %s", async (_label, prose) => {
+    const result = (await synthesize(prose)) as { sections: { content_markdown: string }[] };
+    expect(result.sections?.[0]?.content_markdown).toBe(prose);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // executeSynthesis — format conformance (forbidden_terms, over_length)
 // ---------------------------------------------------------------------------
