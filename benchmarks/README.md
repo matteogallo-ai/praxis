@@ -1,13 +1,13 @@
 # Praxis benchmarks (v0.9+)
 
-A calibrated set of ten briefing questions that stress the three
-shipped formats end to end. The benchmarks live here to give
+A frozen set of twelve briefing questions that stress the four
+shipped formats end to end, one of them a hard case. The benchmarks live here to give
 reviewers, contributors, and downstream embedders a fixed
 reference set they can regenerate at any commit.
 
 ## What is here
 
-- `questions.yaml` — the ten calibrated questions and their target
+- `questions.yaml` — the twelve questions and their target
   formats. This is the manifest; every other file is derived.
 - `run-all.ts` — the Bun script that generates artefacts. Modes:
   `--mock-only`, `--live-only`, or default (mock + live if
@@ -46,8 +46,8 @@ reference set they can regenerate at any commit.
 From the repo root:
 
 ```
-bun run bench:mock     # ten mock briefings, always reproducible
-bun run bench:live     # ten live briefings, ANTHROPIC_API_KEY required
+bun run bench:mock     # twelve mock briefings, always reproducible
+bun run bench:live     # PAID: twelve live briefings, ANTHROPIC_API_KEY required
 bun run bench          # both if a key is present; mock only otherwise
 ```
 

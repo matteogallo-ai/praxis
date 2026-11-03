@@ -149,8 +149,8 @@ describe("loadManifest — structural failures", () => {
 describe("loadManifest — happy path", () => {
   test("loads the shipped benchmarks/questions.yaml", () => {
     const m = loadManifest("benchmarks/questions.yaml");
-    expect(m.version).toBe(1);
-    expect(m.benchmarks.length).toBe(11);
+    expect(m.version).toBe(2);
+    expect(m.benchmarks.length).toBe(12);
     for (const b of m.benchmarks) {
       expect(b.id.length).toBeGreaterThan(0);
       expect(b.question.length).toBeGreaterThan(0);
@@ -163,15 +163,15 @@ describe("loadManifest — happy path", () => {
 // ---------------------------------------------------------------------------
 
 describe("runAll — --dry-run", () => {
-  test("mock-only + dry-run returns 11 ok outcomes without spawning the pipeline", async () => {
+  test("mock-only + dry-run returns 12 ok outcomes without spawning the pipeline", async () => {
     const summary = await runAll({
       mockOnly: true,
       liveOnly: false,
       dryRun: true,
       root: ".",
     });
-    expect(summary.total).toBe(11);
-    expect(summary.ok).toBe(11);
+    expect(summary.total).toBe(12);
+    expect(summary.ok).toBe(12);
     expect(summary.failed).toBe(0);
     expect(summary.outcomes.every((o) => o.mode === "mock")).toBe(true);
     expect(summary.outcomes.every((o) => o.ok)).toBe(true);
@@ -186,7 +186,7 @@ describe("runAll — --dry-run", () => {
       dryRun: true,
       root: ".",
     });
-    expect(summary.total).toBe(11);
+    expect(summary.total).toBe(12);
     expect(summary.outcomes.every((o) => o.mode === "live")).toBe(true);
   });
 });

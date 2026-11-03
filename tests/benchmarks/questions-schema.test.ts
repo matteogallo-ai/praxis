@@ -1,14 +1,12 @@
 /**
- * v0.9 — Validate `benchmarks/questions.yaml` at test time.
+ * Validate `benchmarks/questions.yaml` at test time, so a bad edit
+ * surfaces in CI rather than at bench time. Contract:
  *
- * This test pins the manifest schema so a bad edit surfaces in
- * CI, not at bench-time. Contract:
- *
- *   - version:        integer, currently 1.
- *   - benchmarks[]:   exactly 10 entries (closed set for v0.9).
+ *   - version:        integer, currently 2.
+ *   - benchmarks[]:   exactly 12 entries.
  *   - each benchmark: id (kebab, numbered NN-title-slug),
  *                     question (non-empty),
- *                     format (one of the three shipped ids),
+ *                     format (one of the shipped ids),
  *                     tags   (non-empty list of strings),
  *                     intent (non-empty).
  *   - ids are unique.
@@ -26,12 +24,12 @@ import {
 const MANIFEST = loadManifest("benchmarks/questions.yaml");
 
 describe("benchmarks/questions.yaml — schema", () => {
-  test("version is 1", () => {
-    expect(MANIFEST.version).toBe(1);
+  test("version is 2", () => {
+    expect(MANIFEST.version).toBe(2);
   });
 
-  test("exactly 11 entries (v1.2 set — 10 shipped in v0.9, family-office added in v1.2)", () => {
-    expect(MANIFEST.benchmarks.length).toBe(11);
+  test("exactly 12 entries", () => {
+    expect(MANIFEST.benchmarks.length).toBe(12);
   });
 
   test("every id is kebab-case with a leading NN- prefix", () => {
@@ -46,7 +44,7 @@ describe("benchmarks/questions.yaml — schema", () => {
       expect(ids.has(b.id)).toBe(false);
       ids.add(b.id);
     }
-    expect(ids.size).toBe(11);
+    expect(ids.size).toBe(12);
   });
 
   test("every format field is one of the shipped ids", () => {

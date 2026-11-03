@@ -66,7 +66,7 @@ provider sends no sampling parameter.
 | Live briefings completed | 5 runs (CHANGELOG 1.2.1) | 0 of 5 | 0%–43% (Wilson) |
 | Live briefing quality | 0 | not measured | — |
 | Live cost and latency per briefing | 0 | not measured; targets in [`docs/SLO.md`](SLO.md) | — |
-| Mock pipeline end to end | 11 benchmark questions | completes; outputs committed under `benchmarks/outputs/mock/` | not a quality measure |
+| Mock pipeline end to end | 12 benchmark questions | completes; outputs committed under `benchmarks/outputs/mock/` | not a quality measure |
 
 The mock row proves the wiring: stage order, validation, rendering,
 checkpoints, cost accounting with simulated usage. The text it produces is
