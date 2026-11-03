@@ -107,6 +107,7 @@ prove it; CI fails if one of them does not pass.
 - Live-output quality scored by a judge validated against human labels (C18).
 - Source freshness judged on each page's own age (`page_age`) (C21).
 - Web search with dynamic filtering (`web_search_20260209`), evaluated against the basic tool (C22).
+- The judge's noise band and planted-error detection; today each briefing is judged once (C23).
 
 ## Formats
 

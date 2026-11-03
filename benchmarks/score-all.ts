@@ -9,9 +9,10 @@
  *      (the audit trail).
  *   2. Interpolates `benchmarks/scoring-prompt.txt` with the
  *      briefing content + metadata.
- *   3. Calls `AnthropicLLMProvider.complete()` on `JUDGE_MODEL` and
- *      expects the calibrated 7-criterion
- *      JSON payload back.
+ *   3. Sends every briefing not in the cache to `JUDGE_MODEL` as one
+ *      Message Batch (`judge-batch.ts`), after reserving the batch's
+ *      worst case against `--max-cost-usd`, and expects the calibrated
+ *      7-criterion JSON payload back from each.
  *   4. Validates the payload structurally
  *      (`parseScoringPayload()`) — the score for every criterion is
  *      an integer in [1, 5], `total` equals the sum, `provider` is
@@ -29,8 +30,10 @@
  *   --mock-only      — refused: mock text is fixture output.
  *   --live-only      — score live only; error if no live outputs.
  *   --refresh <slug> — ignore the cache for this slug.
+ *   --max-cost-usd <n> — required for a paid run: the batch is sent
+ *                      only if its worst case fits.
  *   --dry-run        — enumerate briefings, print what WOULD be
- *                      scored, do NOT call the API. Exit 0.
+ *                      scored and the worst case, do NOT call the API.
  *   --root <path>    — override the repo root (used by tests).
  *
  * ANTHROPIC_API_KEY is required for non-dry runs. When absent, the
@@ -45,8 +48,10 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { AnthropicLLMProvider } from "../src/llm/anthropic-provider.ts";
-import type { LLMProvider } from "../src/llm/provider.ts";
+import { parseUsd } from "../src/cli/run-args.ts";
+import type { FetchLike } from "../src/llm/anthropic-provider.ts";
+import { DEFAULT_PRICE_TABLE } from "../src/llm/pricing.ts";
+import { batchWorstCaseUsd, clearPendingBatch, type JudgeRequest, runJudgeBatch } from "./judge-batch.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,7 +65,7 @@ export type ScoringMode = "mock" | "live";
  * model that wrote it. It is still the same family, so a shared bias can go
  * unseen; the human review in `docs/live-proof-protocol.md` measures it.
  */
-export const JUDGE_MODEL = "claude-fable-5-1";
+export const JUDGE_MODEL = "claude-opus-5";
 
 /** The seven-criterion rubric used by the scoring prompt. */
 export const SCORING_CRITERIA = [
@@ -115,6 +120,11 @@ export interface ScoreAllOptions {
   root: string;
   /** Cache freshness window; default 24h. Exposed for tests. */
   cacheTtlMs: number;
+  /** USD the judge's batch may reserve; a paid run without it is refused. */
+  maxCostUsd?: number | null;
+  /** The Batches API transport and the wait between polls; tests inject them. */
+  fetchFn?: FetchLike;
+  sleepFn?: (ms: number) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -133,6 +143,7 @@ export function parseScoreArgs(argv: readonly string[]): ScoreAllOptions {
   let liveOnly = false;
   let refresh: string | null = null;
   let dryRun = false;
+  let maxCostUsd: number | null = null;
   let root = resolve(import.meta.dir, "..");
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]!;
@@ -151,6 +162,11 @@ export function parseScoreArgs(argv: readonly string[]): ScoreAllOptions {
       if (next === undefined) throw new Error("--root expects a path");
       root = resolve(next);
       i++;
+    } else if (a === "--max-cost-usd" || a.startsWith("--max-cost-usd=")) {
+      const value = a === "--max-cost-usd" ? argv[++i] : a.slice("--max-cost-usd=".length);
+      const usd = parseUsd(value);
+      if (usd === undefined) throw new Error("--max-cost-usd expects a positive amount in USD");
+      maxCostUsd = usd;
     } else if (a.startsWith("--root=")) {
       root = resolve(a.slice("--root=".length));
     } else {
@@ -167,6 +183,7 @@ export function parseScoreArgs(argv: readonly string[]): ScoreAllOptions {
     dryRun,
     root,
     cacheTtlMs: 24 * 60 * 60 * 1000,
+    maxCostUsd,
   };
 }
 
@@ -698,19 +715,36 @@ export interface ScoreAllReport {
   errors: number;
   results_md_path: string | null;
   scorings: ScoringPayload[];
+  /** The batch's worst case, reserved against the cap; 0 when nothing was sent. */
+  reserved_usd: number;
+  /** What the batch's usage costs at batch prices. */
+  spent_usd: number;
 }
 
-/**
- * The judge sends `complete()` with no ledger, no output ceiling and the
- * provider's default timeout, and on Claude Fable 5.1 every call thinks. A
- * paid scoring run is refused until that is capped (docs/live-proof-protocol.md,
- * "Not built yet"); `--dry-run` stays available. Declared `void`, not
- * `never`, so the paid path after it stays type-checked for when it returns.
- */
-function refuseUncappedJudge(): void {
-  throw new Error(
-    "judge scoring has no cost cap yet, so it does not run: see 'Not built yet' in docs/live-proof-protocol.md. Use --dry-run to list what would be scored."
-  );
+/** Polls a batch once a minute for up to 25 hours: batches expire after 24. */
+const POLL_MS = 60_000;
+const MAX_POLLS = 25 * 60;
+
+function batchState(root: string): string {
+  const dir = join(root, "benchmarks", ".scoring-cache");
+  mkdirSync(dir, { recursive: true });
+  return join(dir, "batch-pending.json");
+}
+
+/** The judge's prompt for one briefing, keyed by the batch's custom id. */
+function judgeRequest(template: string, ref: BriefingRef): JudgeRequest {
+  const metaRaw = JSON.parse(readFileSync(ref.metadata_path, "utf-8"));
+  const meta: BriefingMetadata = {
+    id: String(metaRaw.id ?? ref.slug),
+    question: String(metaRaw.question ?? "(unknown question)"),
+    format: String(metaRaw.format ?? "(unknown format)"),
+    mode: ref.mode,
+  };
+  const briefingMarkdown = readFileSync(ref.brief_md_path, "utf-8");
+  return {
+    custom_id: `${ref.mode}-${ref.slug}`,
+    prompt: interpolateScoringPrompt(template, ref, meta, briefingMarkdown),
+  };
 }
 
 export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
@@ -738,6 +772,14 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     for (const r of refs) {
       process.stderr.write(`  · [${r.mode}] ${r.slug} → ${r.brief_md_path}\n`);
     }
+    const worst = batchWorstCaseUsd(
+      refs.map((r) => judgeRequest(template, r)),
+      JUDGE_MODEL,
+      DEFAULT_PRICE_TABLE
+    );
+    process.stderr.write(
+      `  batch worst case: $${worst.toFixed(4)}, cached briefings included (a --max-cost-usd at least this is never refused)\n`
+    );
     process.stderr.write(
       `(no API call issued; --dry-run does not require ANTHROPIC_API_KEY)\n`
     );
@@ -747,10 +789,15 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
       errors: 0,
       results_md_path: null,
       scorings: [],
+      reserved_usd: 0,
+      spent_usd: 0,
     };
   }
 
-  refuseUncappedJudge();
+  const capUsd = opts.maxCostUsd ?? null;
+  if (capUsd === null) {
+    throw new Error("a paid scoring run needs --max-cost-usd: run --dry-run first for the batch's worst case");
+  }
 
   // Non-dry-run: require the key.
   if (
@@ -763,12 +810,13 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     throw new Error("ANTHROPIC_API_KEY missing");
   }
 
-  const llm: LLMProvider = new AnthropicLLMProvider({ model: JUDGE_MODEL });
+  const apiKey = process.env["ANTHROPIC_API_KEY"] as string;
   const scorings: ScoringPayload[] = [];
   let scored = 0;
   let fromCache = 0;
   let errors = 0;
 
+  const toSend: { ref: BriefingRef; request: JudgeRequest }[] = [];
   for (const ref of refs) {
     const shouldRefresh = opts.refresh !== null && opts.refresh === ref.slug;
     if (!shouldRefresh) {
@@ -780,27 +828,54 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
         continue;
       }
     }
-    try {
-      const metaRaw = JSON.parse(readFileSync(ref.metadata_path, "utf-8"));
-      const meta: BriefingMetadata = {
-        id: String(metaRaw.id ?? ref.slug),
-        question: String(metaRaw.question ?? "(unknown question)"),
-        format: String(metaRaw.format ?? "(unknown format)"),
-        mode: ref.mode,
-      };
-      const briefingMarkdown = readFileSync(ref.brief_md_path, "utf-8");
-      const prompt = interpolateScoringPrompt(template, ref, meta, briefingMarkdown);
-      const raw = await llm.complete!(prompt);
-      const body = extractJsonBody(raw);
-      const parsed = parseScoringPayload(JSON.parse(body));
-      scorings.push(parsed);
-      writeCache(opts.root, ref.slug, ref.mode, parsed);
-      scored += 1;
-      process.stderr.write(`  ✓ [${ref.mode}] ${ref.slug} (score=${parsed.total}/35)\n`);
-    } catch (err) {
+    toSend.push({ ref, request: judgeRequest(template, ref) });
+  }
+
+  let reservedUsd = 0;
+  let spentUsd = 0;
+  if (toSend.length > 0) {
+    const statePath = batchState(opts.root);
+    const run = await runJudgeBatch(
+      toSend.map((t) => t.request),
+      {
+        model: JUDGE_MODEL,
+        apiKey,
+        capUsd,
+        table: DEFAULT_PRICE_TABLE,
+        statePath,
+        fetchFn: opts.fetchFn ?? fetch,
+        sleepFn: opts.sleepFn ?? ((ms) => new Promise((r) => setTimeout(r, ms))),
+        pollMs: POLL_MS,
+        maxPolls: MAX_POLLS,
+      }
+    );
+    reservedUsd = run.reserved_usd;
+    spentUsd = run.spent_usd;
+    toSend.forEach(({ ref }, i) => {
+      const outcome = run.outcomes[i];
+      try {
+        if (outcome === undefined || outcome.text === null) throw new Error(outcome?.error ?? "no outcome");
+        const parsed = parseScoringPayload(JSON.parse(extractJsonBody(outcome.text)));
+        scorings.push(parsed);
+        writeCache(opts.root, ref.slug, ref.mode, parsed);
+        scored += 1;
+        process.stderr.write(`  ✓ [${ref.mode}] ${ref.slug} (score=${parsed.total}/35)\n`);
+      } catch (err) {
+        // One unusable answer fails its briefing only; it is counted and named.
+        errors += 1;
+        const message = err instanceof Error ? err.message : String(err);
+        process.stderr.write(`  ✗ [${ref.mode}] ${ref.slug} — ${message}\n`);
+      }
+    });
+    // Every answer is now cached or counted as an error: nothing is left to resume.
+    clearPendingBatch(statePath);
+    process.stderr.write(
+      `  batch ${run.batch_id}: $${spentUsd.toFixed(4)} spent, $${reservedUsd.toFixed(4)} reserved, cap $${capUsd.toFixed(2)}\n`
+    );
+    if (spentUsd > capUsd) {
+      // The run's exit status must show it, not only a line on stderr.
       errors += 1;
-      const message = err instanceof Error ? err.message : String(err);
-      process.stderr.write(`  ✗ [${ref.mode}] ${ref.slug} — ${message}\n`);
+      process.stderr.write("  ✗ spend passed the cap: a prompt tokenized below the floor's characters per token\n");
     }
   }
 
@@ -819,7 +894,15 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     writeFileSync(resultsPath, next);
   }
 
-  return { scored, from_cache: fromCache, errors, results_md_path: resultsPath, scorings };
+  return {
+    scored,
+    from_cache: fromCache,
+    errors,
+    results_md_path: resultsPath,
+    scorings,
+    reserved_usd: reservedUsd,
+    spent_usd: spentUsd,
+  };
 }
 
 // ---------------------------------------------------------------------------
