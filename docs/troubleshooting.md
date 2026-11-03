@@ -208,6 +208,21 @@ of truth; fix the fixture.
 
 ---
 
+## 13. `the answer was cut at max_tokens (N)` (`TruncatedOutputError`)
+
+**Cause.** The model stopped at the stage's output ceiling, thinking
+included, so its answer is incomplete. Praxis refuses it before reading any
+JSON from it, and does not retry: a second sample bills the whole ceiling
+again. For a synthesis section the message names the section.
+
+**Fix.** The ceilings are in `src/agents/stage-limits.ts`, one per stage,
+with the timeout derived from them. Raise the stage's ceiling, or shorten
+what its prompt asks for (a `@version` bump, since it changes the prompt).
+`--resume` reruns the stage with the same ceiling, so change one of the two
+first.
+
+---
+
 ## Escalation
 
 If none of the above fits:

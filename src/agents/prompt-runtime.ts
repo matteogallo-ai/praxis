@@ -279,8 +279,11 @@ export async function callModel(
     });
   }
 
+  // Only completeWithTools reports a stop reason; a complete()-only
+  // provider's answer is read as finished.
   if (completion.stop_reason === "max_tokens") {
-    throw new TruncatedOutputError(agentId, limits.maxTokens);
+    const where = options.errorContext === undefined ? "" : ` ${options.errorContext}`;
+    throw new TruncatedOutputError(agentId, limits.maxTokens, completion.text, where);
   }
   if (leaksSystemPrompt(completion.text, rendered.system)) {
     throw new InvalidAgentOutputError(
