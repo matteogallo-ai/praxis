@@ -600,3 +600,65 @@ describe("validateRiskSourcing — permissive", () => {
   });
 });
 
+
+describe("validators — what mutation testing found unchecked", () => {
+  const OLD = "2000-01-01T00:00:00Z";
+  const THEN = new Date("2000-01-02T00:00:00Z");
+  const freshness: SourcingRules = { freshness: { max_source_age_days: 365, warn_after_days: 30 } };
+  const old = (url: string) => ({ url, title: "T", accessed_at: OLD, excerpt: "…" });
+
+  test("the injected clock, not the wall clock, dates every validator's sources", () => {
+    const options = { rules: freshness, now: THEN };
+    expect(validateSourcing(research([sourcedAt(OLD)]), "strict", options).warnings).toEqual([]);
+    const map = stakeholderMap([stakeholder({ position_evidence: old("https://a.example") })]);
+    expect(validateStakeholderSourcing(map, "strict", options).warnings).toEqual([]);
+    const risks = riskResult([risk({ likelihood_evidence: old("https://l.example"), impact_evidence: old("https://i.example") })]);
+    expect(validateRiskSourcing(risks, "strict", options).warnings).toEqual([]);
+  });
+
+  test("risk evidence is numbered likelihood, impact, likelihood, impact", () => {
+    const stale = riskResult([
+      risk({ likelihood_evidence: old("https://l.example") }),
+      risk({ id: "RISK-002", impact_evidence: old("https://i.example") }),
+    ]);
+    const report = validateRiskSourcing(stale, "permissive", { rules: freshness, now: NOW });
+    expect(report.warnings).toEqual([
+      expect.objectContaining({ kind: "stale_source", agent: "risk", item_index: 0 }),
+      expect.objectContaining({ kind: "stale_source", agent: "risk", item_index: 3 }),
+    ]);
+  });
+
+  test("a missing risk evidence names its risk and its field", () => {
+    const gap = riskResult([
+      risk(),
+      risk({ id: "RISK-002", impact_evidence: { status: "SOURCE_MISSING", searched_for: "q" } }),
+    ]);
+    expect(validateRiskSourcing(gap, "permissive").warnings).toEqual([
+      { kind: "missing_risk_evidence", risk_index: 1, risk_id: "RISK-002", evidence_field: "impact_evidence", searched_for: "q" },
+    ]);
+  });
+
+  test("an accumulator records sources even when this format does not dedupe", () => {
+    const accumulator = new InMemorySourcingAccumulator({ cross_agent: true, similarity_threshold: 0.9 });
+    validateSourcing(research([sourced("https://a.example/x", "A")]), "permissive", { accumulator });
+    expect(accumulator.entries()).toEqual([expect.objectContaining({ url: "https://a.example/x", agent: "research" })]);
+  });
+
+  test("without a cross-agent dedupe rule, a source seen by another agent is not a duplicate", () => {
+    const accumulator = new InMemorySourcingAccumulator({ cross_agent: true, similarity_threshold: 0.9 });
+    accumulator.record("https://a.example/x", "stakeholder", 0);
+    const report = validateSourcing(research([sourced("https://a.example/x", "A")]), "permissive", { accumulator });
+    expect(report.warnings).toEqual([]);
+  });
+
+  test("under strict, a missing source raises the base error even when other rules are set", () => {
+    const rules: SourcingRules = { ...freshness, domain_trust: { mode: "reputation-only" } };
+    let caught: unknown;
+    try {
+      validateSourcing(research([missing("q")]), "strict", { rules, now: NOW });
+    } catch (err) {
+      caught = err;
+    }
+    expect((caught as Error).constructor).toBe(SourcingValidationError);
+  });
+});
