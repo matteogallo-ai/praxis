@@ -6,6 +6,14 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
+import {
+  estimateBriefing,
+  type MockMetadata,
+  measuredCharsPerToken,
+  MOCK_CHARS_PER_TOKEN,
+  SCENARIOS,
+} from "../../benchmarks/estimate-cost.ts";
+import { CHARS_PER_TOKEN_FLOOR } from "../../src/llm/pricing.ts";
 
 interface Measured {
   requests: { stage: string; model: string; chars: number; tokens: number }[];
@@ -13,6 +21,33 @@ interface Measured {
 const measured = JSON.parse(
   readFileSync("benchmarks/token-counts/05-supply-chain-acquisition.json", "utf-8")
 ) as Measured;
+
+describe("measured token counts", () => {
+  test("every request of the measured briefing is at least the cap's floor of characters per token", () => {
+    const lowest = Math.min(...measured.requests.map((r) => r.chars / r.tokens));
+    expect(lowest).toBeGreaterThanOrEqual(CHARS_PER_TOKEN_FLOOR);
+  });
+
+  test("the estimate's ratio is the measured characters over the measured tokens", () => {
+    const chars = measured.requests.reduce((a, r) => a + r.chars, 0);
+    const tokens = measured.requests.reduce((a, r) => a + r.tokens, 0);
+    expect(measuredCharsPerToken(".")).toBeCloseTo(chars / tokens, 12);
+  });
+
+  test("the estimate reads mock prompts at that ratio, not the mock's 4 characters per token", () => {
+    const meta = JSON.parse(
+      readFileSync("benchmarks/outputs/mock/05-supply-chain-acquisition/metadata.json", "utf-8")
+    ) as MockMetadata;
+    const low = SCENARIOS.find((s) => s.name === "low") as (typeof SCENARIOS)[number];
+    const ratio = measuredCharsPerToken(".");
+    // Scaling the prompt by 4 / ratio is the same as growing it by that factor.
+    const rescaled = { ...low, upstreamGrowth: (low.upstreamGrowth * MOCK_CHARS_PER_TOKEN) / ratio };
+    expect(estimateBriefing(meta, false, low).total).toBeCloseTo(
+      estimateBriefing(meta, false, rescaled, undefined, MOCK_CHARS_PER_TOKEN).total,
+      10
+    );
+  });
+});
 
 describe("benchmarks/count-tokens.ts", () => {
   test("re-renders the committed measurement's requests and fetches only count_tokens", async () => {

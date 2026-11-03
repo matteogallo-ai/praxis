@@ -83,12 +83,26 @@ describe("docs/live-proof-protocol.md", () => {
     }
   });
 
-  test("under later caps, every question's high case completes through the reservations", () => {
+  test("under later caps, every question's high case yields a brief through the reservations", () => {
     for (const c of commands.slice(1)) {
       for (const id of c.ids) {
-        expect(capWalk(mock(id), STRICT.has(id), scenario("high"), c.cap).refusedAt).toBeNull();
+        const w = capWalk(mock(id), STRICT.has(id), scenario("high"), c.cap);
+        // A rerun the cap refuses leaves the complete pre-rerun brief.
+        expect([null, "synthesis-rerun"]).toContain(w.refusedAt);
+        if (w.refusedAt === "synthesis-rerun") expect(flat).toContain(`rerun skipped, at ${usd(w.spent)}`);
       }
     }
+  });
+
+  test("its API-overhead margin is what the measured counts leave under the floor", async () => {
+    const { CHARS_PER_TOKEN_FLOOR } = await import("../../src/llm/pricing.ts");
+    const { requests } = JSON.parse(readFileSync("benchmarks/token-counts/05-supply-chain-acquisition.json", "utf-8")) as {
+      requests: { stage: string; chars: number; tokens: number }[];
+    };
+    const margin = (stages: string[]) =>
+      Math.min(...requests.filter((r) => stages.includes(r.stage)).map((r) => Math.floor(r.chars / CHARS_PER_TOKEN_FLOOR - r.tokens)));
+    expect(flat).toContain(`at least ${margin(["scoping"])} tokens on the shortest`);
+    expect(flat).toContain(`and ${margin(["research", "stakeholder", "risk", "options", "adversarial"])} on the shortest search stage`);
   });
 
   test("step 0's estimate and ceiling are what estimate:cost computes", () => {

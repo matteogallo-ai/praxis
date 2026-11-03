@@ -4,7 +4,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { capWalk, estimateBriefing, estimateRun, type MockMetadata, type Scenario, SCENARIOS } from "../../benchmarks/estimate-cost.ts";
+import { capWalk, estimateBriefing, MOCK_CHARS_PER_TOKEN, estimateRun, type MockMetadata, type Scenario, SCENARIOS } from "../../benchmarks/estimate-cost.ts";
 import { DEFAULT_PRICE_TABLE } from "../../src/llm/pricing.ts";
 
 const scenario = (name: string) => SCENARIOS.find((s) => s.name === name) as Scenario;
@@ -28,12 +28,17 @@ describe("estimateBriefing", () => {
     // The output, spread over the 3 rounds, is re-read by the later ones: output·s/2.
     const input = 3 * 1000 + (3000 * 2 * 3) / 2 + (output * 2) / 2; // 16 000
     const expected = (input * 2 + output * 10) / 1e6 + (2 * 10) / 1000;
-    expect(estimateBriefing(meta, false, low).stages["research"]).toBeCloseTo(expected, 10);
+    // At the mock's own 4 characters per token, the 1000 mock tokens are 1000 prompt tokens.
+    expect(estimateBriefing(meta, false, low, undefined, MOCK_CHARS_PER_TOKEN).stages["research"]).toBeCloseTo(
+      expected,
+      10
+    );
   });
 
   test("counts the synthesis rerun only when the scenario does, with synthesis's limits", () => {
     expect(estimateBriefing(meta, false, scenario("central")).stages).not.toHaveProperty("synthesis-rerun");
-    const high = estimateBriefing(meta, false, scenario("high")).stages["synthesis-rerun"] ?? 0;
+    const high =
+      estimateBriefing(meta, false, scenario("high"), undefined, MOCK_CHARS_PER_TOKEN).stages["synthesis-rerun"] ?? 0;
     const perCall = (1000 * 3 * 2 + 8_000 * 10) / 1e6; // no searches, synthesis's 8 000 ceiling
     expect(high).toBeCloseTo(perCall * 6, 10);
   });
@@ -79,11 +84,11 @@ describe("estimateRun", () => {
 });
 
 describe("capWalk", () => {
-  // Research: Sonnet, prompt 1000 mock tokens = 4000 characters, 1334 tokens at
-  // the 3-character floor; 16 000 max_tokens, 5 searches of 15 000 tokens:
-  //   input = 6 × 1334 + 15 000 × 15 + 16 000 × 5 = 313 004 → $0.626008
+  // Research: Sonnet, prompt 1000 mock tokens = 4000 characters, 1600 tokens at
+  // the 2.5-character floor; 16 000 max_tokens, 5 searches of 15 000 tokens:
+  //   input = 6 × 1600 + 15 000 × 15 + 16 000 × 5 = 314 600 → $0.6292
   //   (all output before the first search, re-read by the 5 later rounds)
-  //   output $0.16, searches $0.05 → $0.836008 reserved, growth ×1 (low).
+  //   output $0.16, searches $0.05 → $0.8392 reserved, growth ×1 (low).
   const research: MockMetadata = {
     ...meta,
     usage: { stages: { research: { calls: 1, input_tokens: 1000, models: ["claude-sonnet-5-5"] } } },
@@ -91,14 +96,14 @@ describe("capWalk", () => {
   const low = scenario("low");
 
   test("a request reserves its whole max_tokens, every search and 15 000 tokens per search", () => {
-    expect(capWalk(research, false, low, 100).reservations["research"]).toBeCloseTo(0.836008, 6);
+    expect(capWalk(research, false, low, 100).reservations["research"]).toBeCloseTo(0.8392, 6);
   });
 
   test("a cap below the first request's worst case refuses it with nothing spent", () => {
-    expect(capWalk(research, false, low, 0.836)).toEqual(
+    expect(capWalk(research, false, low, 0.8391)).toEqual(
       expect.objectContaining({ spent: 0, refusedAt: "research" })
     );
-    expect(capWalk(research, false, low, 0.836008).refusedAt).toBeNull();
+    expect(capWalk(research, false, low, 0.8392).refusedAt).toBeNull();
   });
 
   test("synthesis sections start together, so all of them must fit at once", () => {

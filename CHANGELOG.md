@@ -70,10 +70,15 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The cost estimate reads prompt sizes at the 2.72 characters per token
+  Anthropic's count_tokens endpoint measured on question 05's prompts
+  (`benchmarks/token-counts/`, `benchmarks/count-tokens.ts`), not the mock's
+  4; 05's estimate rises to $1.33 / $5.76 / $12.57. The cap's floor drops
+  from 3 to 2.5 characters per token, below every measured request.
 - The budget cap is a limit. Under `--max-cost-usd` (or `maxCostUsd`),
   each request reserves its worst case before it is sent: its whole
   `max_tokens`, every search its `max_uses` allows with 15 000 tokens of
-  context each, its prompt at 3 characters per token. It is sent only if
+  context each, its prompt at 2.5 characters per token. It is sent only if
   the spend, the reservations of requests in flight and its worst case fit
   in the cap. A request that fails or reports no usage, a timeout included,
   stays charged at its worst case (`unreported_usd`); an HTTP error answer
