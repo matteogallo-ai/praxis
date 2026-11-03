@@ -74,11 +74,11 @@ adversarial $7.83. Walked through the reservations
 | High | stops before adversarial at $5.52 |
 
 In the high scenario the adversarial request (Opus, 5 searches, 16 000
-`max_tokens`) reserves $2.60 on top of $5.52 spent, more than $8 allows.
+`max_tokens`) reserves $2.76 on top of $5.52 spent, more than $8 allows.
 A run that stops leaves no brief: `error-*.json` records what each stage
 spent, which is the measurement step 1 is costed from. The high case would
-yield a brief from a cap of $8.12 (rerun skipped) and finish in full from
-$8.81, without a retry; with one stage retry, $10.43 and $11.11. A cap
+yield a brief from a cap of $8.28 (rerun skipped) and finish in full from
+$8.81, without a retry; with one stage retry, $10.59 and $11.11. A cap
 reached during the synthesis rerun keeps the complete pre-rerun brief,
 with `rerun.skipped` in its `metadata.json`.
 
@@ -273,7 +273,9 @@ Each request reserves its worst case before it is sent (`meter` and
 - its whole `max_tokens` of output, thinking included;
 - every search its `max_uses` allows, at $10 per 1000;
 - each search adding 15 000 tokens of context (`TOKENS_PER_SEARCH_CEILING`,
-  the high scenario's figure), the context re-read after each search;
+  the high scenario's figure), the context re-read after each search, and
+  all of the output, thinking included, written before the first search so
+  that every later round re-reads it;
 - its prompt at 3 characters per token (`CHARS_PER_TOKEN_FLOOR`);
 - a `pause_turn` re-send carrying back each earlier round's prompt,
   searches and output.
@@ -284,7 +286,10 @@ sections start together, so they must fit together. A request that
 answers is charged what it reports. A request that fails or reports no
 usage (a timeout, a dropped connection, a body that cannot be read) may
 have been billed, so it stays charged at its worst case, recorded as
-`unreported_usd` in `metadata.json`. A request that cannot be sized (a
+`unreported_usd` in `metadata.json`; an HTTP error answer (4xx, 429, 5xx)
+is not billed and not charged. When a synthesis section fails, the
+sections still in flight are awaited, so their usage is in
+`metadata.json` before a `--resume` reads it back. A request that cannot be sized (a
 model without a price, no `max_tokens`, a web search without `max_uses`)
 is not sent.
 
@@ -296,12 +301,21 @@ allowances hold**. They are assumptions, not bounds the API enforces:
   and the spend can pass the cap by that excess on the requests in flight;
   the next request is then refused.
 - Text that tokenizes below 3 characters per token (code, base64, CJK) is
-  sized low the same way.
+  sized low the same way. The tool definitions and message framing the API
+  adds are not counted apart: for a stage's prompt of several thousand
+  tokens, the margin between 3 and 4 characters per token covers them.
+- A run killed by a signal writes no `metadata.json`: what it spent since
+  its last stage is unknown to a `--resume`.
 - A 429 or 5xx is retried inside one reservation; such responses are not
   billed.
 
 The worst cases are conservative, so a capped run can be refused before it
-would really have reached its cap: that is the price of the limit. For all
+would really have reached its cap: that is the price of the limit. A
+`pause_turn` re-send reserves about 2.5 times its first request (it carries
+the first round back), so the walks above assume no stage pauses; a pause
+late in a briefing can be refused where the walk completes. To cost step 1
+from step 0, read `cost_usd` minus `unreported_usd`: the latter is charged
+worst cases, not measured spend. For all
 five at $14 the ceiling is $70.00 within the allowances.
 
 ### Judge

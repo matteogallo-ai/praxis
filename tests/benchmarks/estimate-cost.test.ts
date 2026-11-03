@@ -81,8 +81,9 @@ describe("estimateRun", () => {
 describe("capWalk", () => {
   // Research: Sonnet, prompt 1000 mock tokens = 4000 characters, 1334 tokens at
   // the 3-character floor; 16 000 max_tokens, 5 searches of 15 000 tokens:
-  //   input = 6 × 1334 + 15 000 × 15 + 16 000 × 5 / 2 = 273 004 → $0.546008
-  //   output $0.16, searches $0.05 → $0.756008 reserved, growth ×1 (low).
+  //   input = 6 × 1334 + 15 000 × 15 + 16 000 × 5 = 313 004 → $0.626008
+  //   (all output before the first search, re-read by the 5 later rounds)
+  //   output $0.16, searches $0.05 → $0.836008 reserved, growth ×1 (low).
   const research: MockMetadata = {
     ...meta,
     usage: { stages: { research: { calls: 1, input_tokens: 1000, models: ["claude-sonnet-5-5"] } } },
@@ -90,14 +91,14 @@ describe("capWalk", () => {
   const low = scenario("low");
 
   test("a request reserves its whole max_tokens, every search and 15 000 tokens per search", () => {
-    expect(capWalk(research, false, low, 100).reservations["research"]).toBeCloseTo(0.756008, 6);
+    expect(capWalk(research, false, low, 100).reservations["research"]).toBeCloseTo(0.836008, 6);
   });
 
   test("a cap below the first request's worst case refuses it with nothing spent", () => {
-    expect(capWalk(research, false, low, 0.756)).toEqual(
+    expect(capWalk(research, false, low, 0.836)).toEqual(
       expect.objectContaining({ spent: 0, refusedAt: "research" })
     );
-    expect(capWalk(research, false, low, 0.756008).refusedAt).toBeNull();
+    expect(capWalk(research, false, low, 0.836008).refusedAt).toBeNull();
   });
 
   test("synthesis sections start together, so all of them must fit at once", () => {

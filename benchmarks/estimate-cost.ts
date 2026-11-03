@@ -124,6 +124,7 @@ export function estimateBriefing(
         outputTokens: limits.maxTokens * scenario.outputShare,
         searches: Math.min(scenario.searches, limits.maxSearches),
         tokensPerSearch: scenario.tokensPerSearch,
+        outputRereadShare: 0.5,
       },
       model,
       prices
@@ -204,6 +205,7 @@ export function capWalk(
         outputTokens: limits.maxTokens,
         searches: limits.maxSearches,
         tokensPerSearch: TOKENS_PER_SEARCH_CEILING,
+        outputRereadShare: 1,
       },
       model,
       prices

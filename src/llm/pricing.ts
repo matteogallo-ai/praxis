@@ -110,17 +110,23 @@ export interface RequestShape {
   searches: number;
   /** Context tokens each search adds. */
   tokensPerSearch: number;
+  /**
+   * Share of the output each later round re-reads: 0.5 when the output is
+   * spread evenly over the rounds (an estimate), 1 when all of it, thinking
+   * included, comes before the first search (the worst case).
+   */
+  outputRereadShare: number;
 }
 
 /**
  * USD for one request, or `null` when `model` is not in the table. A
  * web-searching request re-reads its context after each search, so with `s`
- * searches of `r` tokens, prompt `P` and output `O` spread over the `s+1`
- * rounds, its input is (s+1)·P + r·s(s+1)/2 + O·s/2.
+ * searches of `r` tokens, prompt `P`, output `O` and a share `k` of it
+ * re-read by each later round, its input is (s+1)·P + r·s(s+1)/2 + k·O·s.
  */
 export function requestCostUsd(shape: RequestShape, model: string, table: PriceTable): number | null {
-  const { promptTokens: p, outputTokens: o, searches: s, tokensPerSearch: r } = shape;
-  const input = (s + 1) * p + (r * s * (s + 1)) / 2 + (o * s) / 2;
+  const { promptTokens: p, outputTokens: o, searches: s, tokensPerSearch: r, outputRereadShare: k } = shape;
+  const input = (s + 1) * p + (r * s * (s + 1)) / 2 + k * o * s;
   return costOf(
     {
       input_tokens: Math.round(input),

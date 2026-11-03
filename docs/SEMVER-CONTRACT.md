@@ -107,7 +107,9 @@ release without notice.
   can therefore be refused earlier than before, and a request without
   `max_tokens`, or with a web search without `max_uses`, is refused under a
   cap. There is no switch: spending past the cap is the defect fixed.
-  Without a cap nothing changes. `UsageLedger` gains `capped`,
+  A capped call whose model is not named in its options is refused too,
+  since its worst case cannot be priced before it is sent. Without a cap
+  nothing changes. `UsageLedger` gains `capped`,
   `worstCaseUsd`, `reserve`, `release`, `refusal` and `chargeUnreported`.
 
 ## What is acceptable in a PATCH bump

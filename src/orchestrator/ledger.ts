@@ -7,14 +7,16 @@
  * With a cap, each request (`pause_turn` re-sends included) reserves its
  * worst case before it is sent: its whole `max_tokens`, every search its
  * `max_uses` allows, each search adding `TOKENS_PER_SEARCH_CEILING` tokens,
- * the prompt at `CHARS_PER_TOKEN_FLOOR` characters per token
+ * all its output re-read by every later round, the prompt at
+ * `CHARS_PER_TOKEN_FLOOR` characters per token
  * (`requestCostUsd`). It is sent only if what is spent, what requests in
  * flight reserved and its own worst case fit in the cap, so concurrent
  * synthesis sections cannot all pass the check together. Once it answers it
  * is charged the usage it reports; a request that fails or reports no usage
  * (a timeout, a dropped connection, a body that cannot be read) may have been
  * billed, so it stays charged at its worst case, counted apart as
- * `unreported_usd`. The spend passes the cap only if a request costs more
+ * `unreported_usd`. An HTTP error answer (4xx, 429, 5xx) is not billed and
+ * not charged. The spend passes the cap only if a request costs more
  * than its worst case: searches that add more than the allowance, or text
  * that tokenizes below the floor. A request that cannot be sized (no price,
  * no `max_tokens`, a web search without `max_uses`) is not sent.
@@ -29,7 +31,12 @@ import {
   requestCostUsd,
   TOKENS_PER_SEARCH_CEILING,
 } from "../llm/pricing.ts";
-import { BudgetExceededError } from "../llm/errors.ts";
+import {
+  AnthropicAPIError,
+  AnthropicAuthenticationError,
+  AnthropicRateLimitError,
+  BudgetExceededError,
+} from "../llm/errors.ts";
 
 export interface StageUsage extends TokenUsage {
   calls: number;
@@ -198,6 +205,7 @@ export class UsageLedger {
         outputTokens: request.maxTokens,
         searches: request.maxSearches,
         tokensPerSearch: TOKENS_PER_SEARCH_CEILING,
+        outputRereadShare: 1,
       },
       model,
       this.prices
@@ -318,6 +326,12 @@ export class UsageLedger {
   }
 }
 
+/** Whether `err` is an HTTP error answer from the API, which is not billed. */
+function refusedByApi(err: unknown): boolean {
+  if (err instanceof AnthropicAPIError) return err.status !== 200;
+  return err instanceof AnthropicRateLimitError || err instanceof AnthropicAuthenticationError;
+}
+
 /** Total `max_uses` of the request's web searches; `undefined` when one has none. */
 function searchCap(tools: readonly Tool[]): number | undefined {
   let total = 0;
@@ -368,13 +382,19 @@ export function meter(inner: LLMProvider, ledger: UsageLedger, stage: string): L
       let text: string;
       try {
         text = await inner.complete(prompt, options);
-      } finally {
-        // Reports no usage, answered or not: under a cap it stays at its worst case.
+      } catch (err) {
         ledger.release(held);
-        if (held > 0) {
+        if (held > 0 && !refusedByApi(err)) {
           ledger.record(stage, model, undefined);
           ledger.chargeUnreported(stage, model, held);
         }
+        throw err;
+      }
+      // Reports no usage: under a cap it stays at its worst case.
+      ledger.release(held);
+      if (held > 0) {
+        ledger.record(stage, model, undefined);
+        ledger.chargeUnreported(stage, model, held);
       }
       if (held === 0) ledger.record(stage, model, undefined);
       return text;
@@ -415,14 +435,24 @@ export function meter(inner: LLMProvider, ledger: UsageLedger, stage: string): L
             // prompts, searches and outputs, sized by the same allowances.
             const perRound = TOKENS_PER_SEARCH_CEILING * (maxSearches ?? 0) + (maxTokens ?? 0);
             const resent = (round - 1) * perRound;
-            hold(worstCase(sentTo, promptChars, maxTokens, maxSearches, resent), ledger.costOf(soFar, sentTo));
+            let usd: number;
+            try {
+              usd = worstCase(sentTo, promptChars, maxTokens, maxSearches, resent);
+            } catch (err) {
+              // Nothing is sent: the request held for is not charged.
+              ledger.release(held);
+              held = 0;
+              throw err;
+            }
+            hold(usd, ledger.costOf(soFar, sentTo));
           },
         });
       } catch (err) {
         // The answered requests were billed at what they reported; the one in
         // flight may have been billed and reported nothing, so it stays at its
         // worst case. Then the error goes through unchanged.
-        const unreported = held;
+        // An HTTP error status means the API refused the request: not billed.
+        const unreported = refusedByApi(err) ? 0 : held;
         ledger.release(held);
         if (unreported > 0) {
           ledger.record(stage, model, answered);

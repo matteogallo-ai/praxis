@@ -19,8 +19,8 @@
  *   --mock-only      — mock only, ignore ANTHROPIC_API_KEY.
  *   --live-only      — live only; needs ANTHROPIC_API_KEY and
  *                      --max-cost-usd (except with --dry-run).
- *   --max-cost-usd n — per-briefing cap in USD: the ledger stops starting
- *                      calls once a briefing has spent it.
+ *   --max-cost-usd n — per-briefing cap in USD: a request is sent only if
+ *                      its worst case fits in what the briefing has left.
  *   --ids a,b        — only these questions (manifest order).
  *   --dry-run        — parse+select without spawning the pipeline
  *                      (used by the test suite).
