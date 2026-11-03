@@ -1,34 +1,44 @@
 /**
  * docs/THREAT_MODEL.md proves each mitigation with a test. Every test file
  * it names must exist, and every quoted name under a "Tests:" heading must be
- * the title (or part of the title) of a test or describe block.
+ * the title (or part of the title) of a test or describe block in the file
+ * cited in the same bullet.
  */
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
 
 const doc = readFileSync("docs/THREAT_MODEL.md", "utf-8");
 
-function testFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory() ? testFiles(join(dir, e.name)) : e.name.endsWith(".test.ts") ? [join(dir, e.name)] : []
+function titlesIn(file: string): string[] {
+  return [...readFileSync(file, "utf-8").matchAll(/(?:test|describe)(?:\.each\([^)]*\))?\(\s*"([^"]+)"/g)].map(
+    (m) => m[1] ?? ""
   );
 }
 
-const titles = testFiles("tests").flatMap((f) =>
-  [...readFileSync(f, "utf-8").matchAll(/(?:test|describe)(?:\.each\([^)]*\))?\(\s*"([^"]+)"/g)].map((m) => m[1] ?? "")
-);
+const fileIn = (text: string) => text.match(/`(tests\/[\w/.-]+\.test\.ts)`/)?.[1];
 
-/** Quoted names in the "Tests:" paragraphs, with wrapped lines joined. */
-const cited = doc
+/**
+ * Each bullet of a "Tests:" paragraph: its test file and the names quoted
+ * after it, wrapped lines joined. A file on the "Tests:" line itself applies
+ * to the bullets that name none.
+ */
+const citations = doc
   .split(/^Tests:/m)
   .slice(1)
-  .map((block) => (block.split(/^Remaining:/m)[0] ?? "").replace(/\s*\n\s*/g, " "))
-  .flatMap((block) => [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1] ?? ""));
+  .flatMap((block) => {
+    const [head = "", ...bullets] = (block.split(/^Remaining:/m)[0] ?? "").split(/^- /m);
+    return bullets.map((raw) => {
+      const bullet = raw.replace(/\s*\n\s*/g, " ");
+      return {
+        file: fileIn(bullet) ?? fileIn(head) ?? "",
+        names: [...bullet.matchAll(/"([^"]+)"/g)].map((m) => m[1] ?? ""),
+      };
+    });
+  });
 
 describe("docs/THREAT_MODEL.md", () => {
   test("cites tests by name", () => {
-    expect(cited.length).toBeGreaterThan(20);
+    expect(citations.flatMap((c) => c.names).length).toBeGreaterThan(20);
   });
 
   test("every cited test file exists", () => {
@@ -36,7 +46,15 @@ describe("docs/THREAT_MODEL.md", () => {
     expect(paths.filter((p) => !existsSync(p))).toEqual([]);
   });
 
-  test("every cited test name is a real test or describe title", () => {
-    expect(cited.filter((name) => !titles.some((t) => t.includes(name)))).toEqual([]);
+  test("every bullet that quotes test names says which file holds them", () => {
+    expect(citations.filter((c) => c.file === "" && c.names.length > 0).map((c) => c.names)).toEqual([]);
+  });
+
+  test("every cited name is a test or describe title in the file cited with it", () => {
+    const missing = citations.flatMap(({ file, names }) => {
+      const titles = existsSync(file) ? titlesIn(file) : [];
+      return names.filter((name) => !titles.some((t) => t.includes(name))).map((name) => `${file}: ${name}`);
+    });
+    expect(missing).toEqual([]);
   });
 });

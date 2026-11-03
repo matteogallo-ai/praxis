@@ -277,6 +277,7 @@ describe("terminal control characters in an answer (OWASP LLM05)", () => {
   ])("%s escapes parse to U+FFFD", async (_label, answer) => {
     const out = await callModel("demo", answering(answer), loaded(), { system: "SYS", user: "U" }, { tools: [] });
     const claim = (JSON.parse(out.text) as { claim: string }).claim;
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: the test asserts these characters are absent.
     expect(claim).not.toMatch(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/);
     expect(claim).toContain("�");
   });
