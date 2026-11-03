@@ -201,11 +201,16 @@ export async function executeSynthesis(
       final_attempt_number: acceptedAttempt,
     };
   };
-  const sections = await Promise.all(
+  // Settled, not raced: when one section fails, the others already sent are
+  // billed, so their usage must reach the ledger before the error does.
+  const settled = await Promise.allSettled(
     ctx.format.sections.map((section) =>
       withRetry(() => synthesizeSection(section), options.attempts ?? 1)
     )
   );
+  const failed = settled.find((r) => r.status === "rejected");
+  if (failed !== undefined) throw failed.reason;
+  const sections = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
 
   const totalWordCount = sections.reduce((acc, s) => acc + s.word_count, 0);
   const conformance = buildFormatConformance(ctx, sections, totalWordCount);
