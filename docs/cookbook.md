@@ -354,7 +354,7 @@ runner turns each entry into `brief.md` + `brief.pdf` +
 
 ```yaml
 # benchmarks/questions.yaml — add your entry to the list
-- id: "11-my-portfolio-review"
+- id: "13-my-portfolio-review"
   question: "Should we rebalance the Asia allocation?"
   format: "family-office-memo"
   tags:
@@ -371,10 +371,10 @@ bun run bench:live         # live provider — needs ANTHROPIC_API_KEY
 bun run bench              # both if the key is set
 ```
 
-**Notes.** The shipped v0.9 set is capped at 10 benchmarks for
-release-scope reasons. In your own fork you can grow it; if you
-want a schema check, mirror `tests/benchmarks/questions-schema.test.ts`
-against the new size.
+**Notes.** Adding an entry changes the manifest, so the test suite
+fails until `bun run bench:split` redraws `benchmarks/split.yaml`;
+`tests/benchmarks/questions-schema.test.ts` pins the number of
+entries.
 
 ---
 
