@@ -153,8 +153,12 @@ describe("step 1: the table is the records'", () => {
     );
   });
 
-  test("the #42 change is not described as merged", () => {
-    expect(flat).not.toContain("The quote now names the whole address");
+  // The record says #42 changed the quote; the code must hold that change.
+  test("the whole-address quote it cites is in the code", () => {
+    expect(flat).toContain("Since #42 the error quotes the whole address, cut at 200 characters");
+    const code = readFileSync("src/agents/synthesis.ts", "utf-8");
+    expect(code).toContain("const QUOTE_MAX = 200;");
+    expect(code).not.toContain('[/\\bwww\\./i, "a www. address');
   });
 
   // While the prompts are the run's, the frozen file must be what estimate:cost

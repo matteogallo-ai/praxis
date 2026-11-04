@@ -134,8 +134,8 @@ address in prose (`docs/THREAT_MODEL.md`, item 4), and the synthesis prompt
 says so. The format asks this section for its "source in parentheses at
 end of paragraph", which invites a host name such as `(www.example.com)`.
 The record cannot confirm it: the error quoted only `www.`, and a refused
-answer is not kept. Pull request #42, not merged when this record was
-written, makes the error quote the whole address. Nothing was rerun.
+answer is not kept. Since #42 the error quotes the whole address, cut at
+200 characters, so a second failure would name it. Nothing was rerun.
 
 ## Errata
 
