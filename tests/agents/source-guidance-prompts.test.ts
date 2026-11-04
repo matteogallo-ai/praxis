@@ -70,6 +70,9 @@ describe("sourcing guide in the search stages' prompts", () => {
       expect(p).toContain('"published_at"');
       expect(p).toContain("Never guess a date");
       expect(p).not.toContain("{{source_guidance}}");
+      // The system example lists the field the guide asks for, so the two agree.
+      expect(p).toContain('"published_at": "YYYY-MM-DD');
+      expect(p).not.toContain("these three fields");
     });
   }
 });

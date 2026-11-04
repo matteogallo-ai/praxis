@@ -42,11 +42,12 @@ prompt research(
 
     For every finding you produce, the `source` field must be EITHER:
 
-      (a) A real, verifiable source with these three fields:
+      (a) A real, verifiable source with these fields:
           {
             "url": "https://…",
             "title": "…",
-            "excerpt": "<the passage that supports the claim, ≤500 chars>"
+            "excerpt": "<the passage that supports the claim, ≤500 chars>",
+            "published_at": "YYYY-MM-DD, only if the page states it"
           }
 
       Do not write `accessed_at`: Praxis records when the search ran.
@@ -95,6 +96,7 @@ prompt research(
 
     Sourcing guide for this format:
     {{source_guidance}}
+
     Target briefing length: about {{target_words}} words.
 
     Scoping output (JSON):
