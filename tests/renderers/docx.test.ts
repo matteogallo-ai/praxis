@@ -311,6 +311,11 @@ describe("buildDocxParts — document.xml content", () => {
     expect(doc).toContain("Should we do the thing?");
   });
 
+  test("each source states its publication date or that it is unknown", () => {
+    const doc = buildDocxParts(makeBrief())[2]?.content;
+    expect(doc).toContain("publication date unknown, accessed");
+  });
+
   test("every synthesis section renders as Heading2", () => {
     const parts = buildDocxParts(makeBrief());
     const doc = parts[2]!.content;
@@ -372,6 +377,29 @@ describe("buildDocxParts — document.xml content", () => {
     const doc = parts[2]!.content;
     expect(doc).toContain("Sourcing Report</w:t>");
     expect(doc).toContain("Policy: strict");
+  });
+
+  test("the Sourcing Report counts the sources of unknown freshness", () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, freshness_unknown: 4 };
+    expect(buildDocxParts(brief, { include_sourcing_report: true })[2]?.content).toContain(
+      "Freshness unknown (no publication date): 4."
+    );
+  });
+
+  test("the Sourcing Report counts the requester-provided facts apart", () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, requester_provided: 3 };
+    expect(buildDocxParts(brief, { include_sourcing_report: true })[2]?.content).toContain(
+      "Requester-provided, not sourceable: 3."
+    );
+  });
+
+  test("the Sourcing Report lists the options and critique citations from untrusted domains", () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };
+    const doc = buildDocxParts(brief, { include_sourcing_report: true })[2]?.content;
+    expect(doc).toContain("[options] OPT-B cites an untrusted domain: https://x.example/a — not in any tier");
   });
 });
 

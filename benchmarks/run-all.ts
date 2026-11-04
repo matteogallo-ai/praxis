@@ -403,6 +403,15 @@ export function buildMetadata(
         result.sourcing_report.edited_after_critique === true,
       insufficiently_sourced:
         result.sourcing_report.insufficiently_sourced === true,
+      ...(result.sourcing_report.freshness_unknown === undefined
+        ? {}
+        : { freshness_unknown: result.sourcing_report.freshness_unknown }),
+      ...(result.sourcing_report.requester_provided === undefined
+        ? {}
+        : { requester_provided: result.sourcing_report.requester_provided }),
+      ...(result.sourcing_report.untrusted_citations === undefined
+        ? {}
+        : { untrusted_citations: result.sourcing_report.untrusted_citations }),
     },
   };
 }

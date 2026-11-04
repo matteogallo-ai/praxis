@@ -111,6 +111,32 @@ release without notice.
   since its worst case cannot be priced before it is sent. Without a cap
   nothing changes. `UsageLedger` gains `capped`,
   `worstCaseUsd`, `reserve`, `release`, `refusal` and `chargeUnreported`.
+- **Freshness on the publication date (a bug fix).** Freshness rules now
+  read `SourceReference.published_at`, a new optional field, instead of
+  `accessed_at`, the retrieval time, which made every live source fresh. A
+  source without a readable `published_at` gets no `stale_source` warning
+  and is counted in `SourcingReport.freshness_unknown`, a new optional
+  field set when the format has a freshness rule; a malformed date was
+  stale before. The `stale_source` warning gains an optional
+  `published_at`. A briefing whose sources carry no publication date can
+  therefore pass a strict freshness rule it failed before on malformed
+  timestamps, and is never reported as fresh. There is no switch:
+  judging age by the retrieval time is the defect fixed.
+- **Requester-provided facts.** `ScopingResult.requester_provided` and
+  `SourcingReport.requester_provided` are new optional fields. A briefing
+  whose scoping names such facts gains a code-written section,
+  `requester-provided`, after the model's sections (and before
+  "Insufficiently sourced"); category counts and `total_items` are
+  unchanged.
+- **Domain trust on options and critique citations (a bug fix).** Under a
+  format's `domain_trust` rule, an option citing an untrusted domain now
+  fails a strict briefing with `UntrustedDomainError` (or degrades it under
+  `onSourcingFailure: "degrade"`); before, options' citations were not
+  checked. Critiques' citations are reported, never blocking. Both are
+  listed in `SourcingReport.untrusted_citations`, a new optional field of
+  the new exported type `UntrustedCitation`; `counts` and `warnings` are
+  unchanged. There is no switch: a strict policy that let an untrusted
+  citation through is the defect fixed.
 
 ## What is acceptable in a PATCH bump
 

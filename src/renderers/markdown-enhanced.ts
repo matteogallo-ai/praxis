@@ -28,8 +28,10 @@ import {
   inert,
   linkTarget,
   renderSynthesisSections,
+  sourcingSummary,
   yamlString,
 } from "./markdown-text.ts";
+import { sourceDates } from "./source-dates.ts";
 
 /**
  * A `Renderer` returning a UTF-8 Buffer holding the enhanced
@@ -76,14 +78,7 @@ function renderFrontMatter(brief: BriefResult | BriefWithCritiqueResult): string
   parts.push(`generated_at: ${yamlString(brief.generated_at)}\n`);
   parts.push(`recommended_option: ${yamlString(brief.options.recommended_option_id)}\n`);
   parts.push(`aggregated_risk: ${yamlString(brief.risks.aggregated_risk_score.overall)}\n`);
-  parts.push(
-    `sourcing_summary: "total=${brief.sourcing_report.total_items} ` +
-      `ok=${brief.sourcing_report.counts.ok} ` +
-      `stale=${brief.sourcing_report.counts.stale} ` +
-      `untrusted=${brief.sourcing_report.counts.untrusted} ` +
-      `duplicated=${brief.sourcing_report.counts.duplicated} ` +
-      `missing=${brief.sourcing_report.counts.missing}"\n`
-  );
+  parts.push(sourcingSummary(brief.sourcing_report));
   if (hasCritique(brief)) {
     const a = brief.adversarial;
     parts.push(
@@ -244,7 +239,7 @@ function renderSourcesSection(
   for (const domain of domains) {
     parts.push(`### ${domain}\n\n`);
     for (const s of byDomain.get(domain)!.sort((a, b) => a.title.localeCompare(b.title))) {
-      parts.push(`- [${escapeMarkdownLinkText(s.title)}](${linkTarget(s.url)}) · accessed ${s.accessed_at}\n`);
+      parts.push(`- [${escapeMarkdownLinkText(s.title)}](${linkTarget(s.url)}) · ${sourceDates(s)}\n`);
     }
     parts.push("\n");
   }

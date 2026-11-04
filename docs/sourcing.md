@@ -106,8 +106,9 @@ sourcing_rules:
 
 ### Freshness
 
-`FreshnessRule` classifies each source's `accessed_at` age (relative
-to the pipeline's `now`) as `fresh`, `warn`, or `stale`:
+`FreshnessRule` classifies each source's publication date
+(`published_at`, relative to the pipeline's `now`) as `fresh`, `warn`, or
+`stale`:
 
 - `age <= warn_after_days` → **fresh** (no warning)
 - `warn_after_days < age <= max_source_age_days` → **warn** (soft
@@ -115,7 +116,14 @@ to the pipeline's `now`) as `fresh`, `warn`, or `stale`:
 - `age > max_source_age_days` → **stale** (blocking under strict,
   raises `StaleSourceError`)
 
-Malformed `accessed_at` timestamps are treated as `stale`. The
+A source without `published_at` has an **unknown** freshness: it gets no
+warning and is never called fresh; the report counts it in
+`freshness_unknown`, outside the five categories (an `ok` source is not a
+fresh one). The model's answer keeps `published_at` only when it starts
+with a `YYYY-MM-DD` date that parses, cut to that day; anything else is
+dropped, so the date is unknown rather than guessed. `accessed_at`, the
+retrieval time, is not used for freshness: a page read today can be ten
+years old. The
 `warn_after_days <= max_source_age_days` invariant is validated at
 format load time.
 
@@ -126,8 +134,19 @@ same freshness verdicts whatever day it runs; the test suite runs with it
 set (`bench:mock` passes the same date as the library option). A resumed
 run keeps the date its first attempt started at. `PRAXIS_NOW` also stamps
 the run id. It does not date retrieval: a source the model returns without
-`accessed_at` is stamped with the real time it was read, so it is fresh by
-construction whatever the clock.
+`accessed_at` is stamped with the real time it was read.
+
+### What the search stages are told
+
+The research, stakeholder and risk prompts receive a sourcing guide written
+by code from the format's rules (`src/sourcing/guidance.ts`): the trusted
+hosts by tier (or the allow- or deny-list), which tiers are accepted, the
+freshness limit, and the request to give `published_at` only as the page
+states it. Under `strict` it says that an untrusted citation fails the
+check like a missing source. It guides the search and filters nothing: web
+search gets no `allowed_domains`, a relevant page outside the list is still
+cited and judged by the domain check, and no list can name every company's
+own site.
 
 ### Domain trust
 
@@ -153,6 +172,26 @@ construction whatever the clock.
 
 Host comparison is case-insensitive. Blocking rules raise
 `UntrustedDomainError` under strict policy.
+
+The rule also covers the citations of the two later stages, which the
+per-item checks of stages 2–4 never see:
+
+- **Options** (`supporting_evidence`): an untrusted citation fails the
+  brief under strict like an untrusted research source
+  (`UntrustedDomainError`, or the "Insufficiently sourced" section under
+  `onSourcingFailure: "degrade"`), and is reported under permissive.
+- **Adversarial critique** (`counter_evidence`): reported, never blocking.
+  A weak counter-evidence weakens the critique, not the briefing it
+  criticises; a missing one is handled the same way.
+
+Both are listed in `SourcingReport.untrusted_citations` (stage, option or
+critique id, URL, reason), outside `counts` and `warnings`: a warning's
+`agent` names one of stages 2–4, and widening that public union would be a
+breaking change (`docs/SEMVER-CONTRACT.md`). The front-matter
+`sourcing_summary` shows their number (`untrusted_citations=N`), and every
+sourcing report (terminal, Markdown appendix, PDF, DOCX) lists them. An option
+citing the same untrusted page as a research finding appears in both places:
+once as the finding's item, once as the option's citation.
 
 ### Cross-agent dedupe
 
@@ -193,6 +232,9 @@ Every validator returns a report, regardless of policy:
   };
   warnings: SourcingWarning[];
   missing_sources_count: number;           // convenience alias (v0.4 compat)
+  freshness_unknown?: number;               // sources without a publication date; set when the format has a freshness rule
+  requester_provided?: number;               // facts only the requester can supply (scoping); in no category, not in total_items
+  untrusted_citations?: UntrustedCitation[]; // options and critique citations failing domain_trust; set when the format has that rule and one of those stages ran
 }
 ```
 
@@ -203,6 +245,27 @@ reconcile with `total_items`.
 Under `strict`, the report is bundled into
 `SourcingValidationError.report` (or a typed subclass). Under
 `permissive`, the caller receives the report directly.
+
+### Requester-provided facts
+
+Some facts a briefing needs concern only the requester: its own finances,
+strategy, board, shareholders or customers. No public source can establish
+them, and an anonymous question gives no company to search for. The scoping
+stage lists them in `ScopingResult.requester_provided`, and code:
+
+- appends a **Requester-provided, not sourceable** section to the briefing
+  listing them, in every renderer, after the critique's rerun too;
+- counts them in `SourcingReport.requester_provided`, in no category and
+  not in `total_items`, so they never raise the share of sourced items.
+
+The later stages see the list in the scoping output they receive. An item
+of theirs that rests on such a fact and has no source is still a
+`SOURCE_MISSING` item, counted as missing and blocking under `strict`: being
+on the list does not excuse it, because the list is the model's and code
+cannot tell a fact about the requester from one that could be researched.
+
+A run resumed from a scoping checkpoint written before scoping prompt 2.1.0
+has no such list: no section and no count, not a count of zero.
 
 ### Aggregating across agents
 

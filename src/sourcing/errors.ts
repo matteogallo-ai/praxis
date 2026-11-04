@@ -33,7 +33,7 @@ export class SourcingValidationError extends PraxisError {
 }
 
 /**
- * Raised when a source's `accessed_at` timestamp exceeds the format's
+ * Raised when a source's publication date (`published_at`) is older than the format's
  * `sourcing_rules.freshness.max_source_age_days` under `strict` policy.
  */
 export class StaleSourceError extends SourcingValidationError {

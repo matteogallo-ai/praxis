@@ -10,7 +10,7 @@
  */
 
 import type { SourceReference, SourceStatus } from "../sourcing/types.ts";
-import type { Format } from "../registry/schema.ts";
+import type { Format, SourcingRules } from "../registry/schema.ts";
 
 /**
  * Inputs the Scoping agent receives at execution time.
@@ -33,6 +33,13 @@ export interface ScopingResult {
   hidden_questions: string[];
   scope_boundaries: string[];
   assumptions_to_validate: string[];
+  /**
+   * Facts the briefing needs that concern only the requester (its own
+   * finances, strategy, board, shareholders or customers): no public source
+   * can establish them, so the requester supplies them. Listed in the
+   * briefing as not sourceable and counted apart, never as sourced.
+   */
+  requester_provided?: string[];
 }
 
 /**
@@ -44,6 +51,8 @@ export interface ResearchContext {
   formatId: string;
   sourcingPolicy: "strict" | "permissive";
   targetWords: number;
+  /** The format's rules, from which the prompt's sourcing guide is written. */
+  sourcingRules?: SourcingRules;
 }
 
 /**

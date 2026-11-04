@@ -65,6 +65,7 @@ export type {
   SourceMissing,
   SourceStatus,
   SourcingWarning,
+  UntrustedCitation,
   SourcingReport,
   SourcingPolicy,
 } from "./sourcing/types.ts";

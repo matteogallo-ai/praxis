@@ -28,6 +28,7 @@ import type {
 } from "../agents/types.ts";
 import type { Format } from "../registry/schema.ts";
 import type {
+  DomainTrustRule,
   SourcingReport,
   SourcingWarning,
 } from "../sourcing/types.ts";
@@ -50,6 +51,8 @@ import {
   levenshtein,
 } from "../sourcing/dedupe.ts";
 import { buildReport, mergeReports } from "../sourcing/report.ts";
+import { optionsCitationReport, untrustedCitations } from "../sourcing/citations.ts";
+import { buildRequesterProvidedSection } from "../sourcing/requester.ts";
 import { SourcingValidationError } from "../sourcing/errors.ts";
 import {
   buildInsufficientlySourcedSection,
@@ -474,6 +477,9 @@ export class Orchestrator {
       () => this.doScoping(question, format, options),
       parseScopingResult
     );
+    if (scoping.requester_provided !== undefined) {
+      reports.push({ ...buildReport(policy, 0, []), requester_provided: scoping.requester_provided.length });
+    }
     const run: PipelineRun = {
       scoping,
       generatedAt: now.toISOString(),
@@ -527,6 +533,10 @@ export class Orchestrator {
       (stored) => parseOptionsGenerationResult(stored, stakeholders, risks)
     );
     run.options = optionsResult;
+    const trust = format.sourcing_rules?.domain_trust;
+    if (trust !== undefined) {
+      check(() => optionsCitationReport(optionsResult.options, policy, trust));
+    }
     // Synthesis retries per section (see doSynthesize), not as a whole.
     run.synthesis = await this.stage(
       "synthesis",
@@ -536,9 +546,7 @@ export class Orchestrator {
         parseStoredSynthesis(stored, format, { scoping, research, stakeholders, risks, options: optionsResult }),
       1
     );
-    if (degraded) {
-      run.synthesis = withInsufficientlySourcedSection(run.synthesis, run.sourcingReport(), run);
-    }
+    run.synthesis = withCodeWrittenSections(run.synthesis, run.sourcingReport(), run);
     return run;
   }
 
@@ -581,7 +589,8 @@ export class Orchestrator {
 
     const sourcing_report = withCritiqueSources(
       brief.sourcing_report,
-      adversarial
+      adversarial,
+      format.sourcing_rules?.domain_trust
     );
 
     return { ...brief, adversarial, sourcing_report };
@@ -684,10 +693,7 @@ export class Orchestrator {
       };
     }
 
-    const rerunWithSection =
-      initial.sourcing_report.insufficiently_sourced === true
-        ? withInsufficientlySourcedSection(rerunSynthesis, initial.sourcing_report, initial)
-        : rerunSynthesis;
+    const rerunWithSection = withCodeWrittenSections(rerunSynthesis, initial.sourcing_report, initial);
 
     const deviations = computeReSynthesisDeviations(
       initial.synthesis,
@@ -781,6 +787,7 @@ export class Orchestrator {
       formatId: format.id,
       sourcingPolicy: format.sourcing_policy,
       targetWords: format.target_length.words,
+      ...(format.sourcing_rules === undefined ? {} : { sourcingRules: format.sourcing_rules }),
     };
     const execOpts: Parameters<typeof executeResearch>[2] = {};
     if (options.researchPromptPath !== undefined) {
@@ -910,16 +917,21 @@ function adversarialContext(brief: BriefResult, format: Format) {
   };
 }
 
-/** Appends the code-written "Insufficiently sourced" section to a synthesis. */
-function withInsufficientlySourcedSection(
+/**
+ * Appends the sections code writes after the model's: the requester-provided
+ * facts, then the "Insufficiently sourced" items. Both the first synthesis
+ * and the critique's rerun go through here, so neither can drop them.
+ */
+function withCodeWrittenSections(
   synthesis: SynthesisResult,
   report: SourcingReport,
-  artefacts: SourcedArtefacts
+  artefacts: SourcedArtefacts & { scoping: ScopingResult }
 ): SynthesisResult {
-  return {
-    ...synthesis,
-    sections: [...synthesis.sections, buildInsufficientlySourcedSection(report, artefacts)],
-  };
+  const facts = artefacts.scoping.requester_provided ?? [];
+  const sections = [...synthesis.sections];
+  if (facts.length > 0) sections.push(buildRequesterProvidedSection(facts));
+  if (report.insufficiently_sourced === true) sections.push(buildInsufficientlySourcedSection(report, artefacts));
+  return { ...synthesis, sections };
 }
 
 /**
@@ -935,7 +947,8 @@ function withInsufficientlySourcedSection(
  */
 function withCritiqueSources(
   baseReport: SourcingReport,
-  adversarial: AdversarialCritiqueResult
+  adversarial: AdversarialCritiqueResult,
+  trust: DomainTrustRule | undefined
 ): SourcingReport {
   const additionalWarnings: SourcingWarning[] = [];
   // A critique's counter_evidence lives in a "critique-N" slot; we
@@ -950,11 +963,20 @@ function withCritiqueSources(
       });
     }
   }
-  const critiqueReport = buildReport(
+  const critiqueReport: SourcingReport = buildReport(
     baseReport.policy,
     adversarial.critiques.length,
     additionalWarnings
   );
+  // Reported, never blocking: like a missing counter-evidence, a weak one
+  // weakens the critique, not the briefing it criticises.
+  if (trust !== undefined) {
+    critiqueReport.untrusted_citations = untrustedCitations(
+      "adversarial",
+      adversarial.critiques.map((c) => ({ id: c.id, evidence: c.counter_evidence })),
+      trust
+    );
+  }
   return mergeReports(baseReport.policy, [baseReport, critiqueReport]);
 }
 

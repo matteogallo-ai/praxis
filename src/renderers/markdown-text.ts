@@ -9,6 +9,7 @@
  * with a parenthesis would end its link early.
  */
 import type { SynthesizedSection } from "../agents/types.ts";
+import type { SourcingReport } from "../sourcing/types.ts";
 
 /**
  * Model text made inert: `<` as `&lt;`, `-->` and `--!>` (both end an HTML
@@ -22,6 +23,21 @@ export function inert(v: string): string {
 /** A URL as one Markdown link destination: `(`, `)`, `<`, `>` and whitespace would end it early. */
 export function linkTarget(url: string): string {
   return url.replace(/[()<>\s]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
+}
+
+/** The front-matter `sourcing_summary` line, shared by both Markdown outputs. */
+export function sourcingSummary(report: SourcingReport): string {
+  const unknown =
+    report.freshness_unknown === undefined ? "" : ` freshness_unknown=${report.freshness_unknown}`;
+  const requester =
+    report.requester_provided === undefined ? "" : ` requester_provided=${report.requester_provided}`;
+  const cited =
+    report.untrusted_citations === undefined ? "" : ` untrusted_citations=${report.untrusted_citations.length}`;
+  return (
+    `sourcing_summary: "total=${report.total_items} ok=${report.counts.ok} ` +
+    `stale=${report.counts.stale} untrusted=${report.counts.untrusted} ` +
+    `duplicated=${report.counts.duplicated} missing=${report.counts.missing}${unknown}${cited}${requester}"\n`
+  );
 }
 
 /** A YAML double-quoted scalar: escapes backslashes and quotes. */

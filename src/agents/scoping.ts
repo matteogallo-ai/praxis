@@ -35,12 +35,14 @@ const SCOPING_SCHEMA = {
     hidden_questions: STRING_LIST,
     scope_boundaries: STRING_LIST,
     assumptions_to_validate: STRING_LIST,
+    requester_provided: STRING_LIST,
   },
   required: [
     "reformulated_question",
     "hidden_questions",
     "scope_boundaries",
     "assumptions_to_validate",
+    "requester_provided",
   ],
   additionalProperties: false,
 };
@@ -102,12 +104,16 @@ export function parseScopingResult(raw: string): ScopingResult {
   const hidden = requireStringArray(obj, "hidden_questions", raw);
   const boundaries = requireStringArray(obj, "scope_boundaries", raw);
   const assumptions = requireStringArray(obj, "assumptions_to_validate", raw);
+  // Absent in checkpoints and fixtures written before the field existed.
+  const requester =
+    obj["requester_provided"] === undefined ? undefined : requireStringArray(obj, "requester_provided", raw);
 
   return {
     reformulated_question: reformulated,
     hidden_questions: hidden,
     scope_boundaries: boundaries,
     assumptions_to_validate: assumptions,
+    ...(requester === undefined ? {} : { requester_provided: requester }),
   };
 }
 

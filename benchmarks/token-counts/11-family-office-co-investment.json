@@ -1,32 +1,32 @@
 {
   "question": "11-family-office-co-investment",
-  "measured_at": "2026-11-03",
+  "measured_at": "2026-11-04",
   "endpoint": "POST /v1/messages/count_tokens (free; system and user text, no tools)",
   "source": "the mock run's rendered prompts (bun run benchmarks/count-tokens.ts)",
   "requests": [
     {
       "stage": "scoping",
       "model": "claude-opus-5-5",
-      "chars": 2385,
-      "tokens": 821
+      "chars": 3024,
+      "tokens": 995
     },
     {
       "stage": "research",
       "model": "claude-sonnet-5-5",
-      "chars": 5173,
-      "tokens": 1745
+      "chars": 6697,
+      "tokens": 2354
     },
     {
       "stage": "stakeholder",
       "model": "claude-sonnet-5-5",
-      "chars": 12577,
-      "tokens": 4373
+      "chars": 14100,
+      "tokens": 4982
     },
     {
       "stage": "risk",
       "model": "claude-sonnet-5-5",
-      "chars": 22946,
-      "tokens": 7958
+      "chars": 24469,
+      "tokens": 8567
     },
     {
       "stage": "options",

@@ -10,7 +10,7 @@ import type {
   StakeholderMapResult,
   SynthesizedSection,
 } from "../agents/types.ts";
-import { countWords } from "../agents/synthesis.ts";
+import { codeWrittenSection, oneLine } from "./code-written-section.ts";
 import { isBlockingUnderStrict } from "./errors.ts";
 import type { SourcingReport, SourcingWarning } from "./types.ts";
 
@@ -26,9 +26,13 @@ export function buildInsufficientlySourcedSection(
   report: SourcingReport,
   artefacts: SourcedArtefacts
 ): SynthesizedSection {
-  const lines = report.warnings
-    .filter(isBlockingUnderStrict)
-    .map((w) => `- ${describe(w, artefacts)}`);
+  const lines = [
+    ...report.warnings.filter(isBlockingUnderStrict).map((w) => `- ${oneLine(describe(w, artefacts))}`),
+    // Critique citations never block (orchestrator), so only options' are listed.
+    ...(report.untrusted_citations ?? [])
+      .filter((c) => c.stage === "options")
+      .map((c) => `- ${oneLine(`**Option ${c.id}**: ${c.url} is not a trusted domain (${c.reason}).`)}`),
+  ];
   const content_markdown = [
     `This format's sourcing policy is strict. The ${lines.length} item(s) below did not meet it.`,
     "They stayed in the analysis that produced this briefing; treat every statement",
@@ -37,16 +41,7 @@ export function buildInsufficientlySourcedSection(
     ...lines,
     "",
   ].join("\n");
-  return {
-    section_id: INSUFFICIENTLY_SOURCED_SECTION_ID,
-    title: "Insufficiently sourced",
-    content_markdown,
-    word_count: countWords(content_markdown),
-    sources_cited: [],
-    validation_issues: [],
-    editorial_attempts: [],
-    final_attempt_number: 1,
-  };
+  return codeWrittenSection(INSUFFICIENTLY_SOURCED_SECTION_ID, "Insufficiently sourced", content_markdown);
 }
 
 function describe(w: SourcingWarning, a: SourcedArtefacts): string {

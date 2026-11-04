@@ -453,9 +453,34 @@ export function outputReader(agentId: string): OutputReader {
       if (excerpt.length > 500) {
         return fail(`${path}.excerpt exceeds 500 characters`, raw);
       }
-      return { url, title, accessed_at: accessedAt, excerpt };
+      const day = calendarDay(obj["published_at"]);
+      return {
+        url,
+        title,
+        accessed_at: accessedAt,
+        ...(day === undefined ? {} : { published_at: day }),
+        excerpt,
+      };
     },
   };
+}
+
+const PUBLISHED_AT = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;
+
+/**
+ * The calendar day a stated publication date starts with, as written, or
+ * undefined. A date the reader cannot place on a day ("May 2026") or that
+ * does not exist (30 February, which `Date.parse` rolls into March) is
+ * dropped: freshness is then unknown, which is what it is. The day is not
+ * converted to UTC, which would move it by the offset or by the machine's
+ * time zone. Only the day is kept, so nothing else of the model's string is
+ * rendered.
+ */
+function calendarDay(value: unknown): string | undefined {
+  if (typeof value !== "string" || !PUBLISHED_AT.test(value)) return undefined;
+  const day = value.slice(0, 10);
+  const midnight = new Date(`${day}T00:00:00Z`);
+  return !Number.isNaN(midnight.getTime()) && midnight.toISOString().slice(0, 10) === day ? day : undefined;
 }
 
 /**
@@ -472,8 +497,8 @@ function isWebUrl(url: string): boolean {
 /**
  * Fills every empty `accessed_at` in a parsed stage result with the time the
  * stage's model call returned, which is when its searches ran. The model is
- * not asked for it: it has no clock, and a guessed or malformed date fails
- * the freshness check (`ageInDays`) under strict sourcing.
+ * not asked for it: it has no clock, so a date it states would be a guess.
+ * Freshness reads the publication date, not this one.
  */
 export function stampRetrievalTime<T>(result: T, retrievedAt: Date): T {
   const iso = retrievedAt.toISOString();

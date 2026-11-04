@@ -62,7 +62,7 @@ provider: "mock"
 generated_at: "2026-08-18T13:29:14.139Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
-sourcing_summary: "total=29 ok=28 stale=0 untrusted=0 duplicated=1 missing=0"
+sourcing_summary: "total=29 ok=28 stale=0 untrusted=0 duplicated=1 missing=0 freshness_unknown=29 untrusted_citations=0"
 total_word_count: 338
 target_word_count: 800
 word_deviation_pct: -57.8

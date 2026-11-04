@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { renderFullBrief, setColorEnabled } from "../../src/cli/output.ts";
+import { renderFullBrief, renderSourcingReport, setColorEnabled } from "../../src/cli/output.ts";
 import type { BriefResult } from "../../src/orchestrator/orchestrator.ts";
 
 beforeEach(() => {
@@ -126,6 +126,45 @@ describe("renderFullBrief — YAML front-matter", () => {
   test("sourcing_summary is a single quoted string with all count categories", () => {
     const md = renderFullBrief(makeBrief());
     expect(md).toContain('sourcing_summary: "total=5 ok=5 stale=0 untrusted=0 duplicated=0 missing=0"');
+  });
+
+  test("sourcing_summary counts the sources of unknown freshness when the format dates them", () => {
+    const base = makeBrief();
+    const md = renderFullBrief(makeBrief({ sourcing_report: { ...base.sourcing_report, freshness_unknown: 7 } }));
+    expect(md).toContain('sourcing_summary: "total=5 ok=5 stale=0 untrusted=0 duplicated=0 missing=0 freshness_unknown=7"');
+  });
+
+  test("sourcing_summary counts the options and critique citations from untrusted domains", () => {
+    const base = makeBrief();
+    const cited = { stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "r" };
+    const md = renderFullBrief(makeBrief({ sourcing_report: { ...base.sourcing_report, untrusted_citations: [cited] } }));
+    expect(md).toMatch(/sourcing_summary: "[^"]*missing=0 untrusted_citations=1"/);
+  });
+});
+
+describe("renderSourcingReport — citations", () => {
+  test("lists each untrusted citation with its stage and id, and does not claim every item passed", () => {
+    const base = makeBrief().sourcing_report;
+    const out = renderSourcingReport({
+      ...base,
+      untrusted_citations: [{ stage: "adversarial", id: "CRIT-2", url: "https://x.example/a", reason: "not in any tier" }],
+    });
+    expect(out).toContain("[adversarial] CRIT-2 cites an untrusted domain: https://x.example/a — not in any tier");
+    expect(out).not.toContain("every inspected item passed");
+  });
+});
+
+describe("renderSourcingReport — freshness", () => {
+  test("counts the sources of unknown freshness when the format dates them", () => {
+    const base = makeBrief().sourcing_report;
+    expect(renderSourcingReport({ ...base, freshness_unknown: 4 })).toContain("Freshness unknown (no publication date): 4");
+    expect(renderSourcingReport(base)).not.toContain("Freshness unknown");
+  });
+
+  test("counts the requester-provided facts apart", () => {
+    const base = makeBrief().sourcing_report;
+    expect(renderSourcingReport({ ...base, requester_provided: 3 })).toContain("Requester-provided, not sourceable: 3");
+    expect(renderSourcingReport(base)).not.toContain("Requester-provided");
   });
 });
 

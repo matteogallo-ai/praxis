@@ -15,13 +15,13 @@ too few briefings for any status.
 | --- | --- | --- | --- |
 | Latency | p95 ≤ 10 minutes per briefing | 7.8 min on n = 1 (step 0, 4 Nov 2026); n too small, no status | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
 | Error rate | ≤ 10% of started briefings end in an error | 1/2 since run records began (failed 3 Nov 2026, TruncatedOutputError; completed 4 Nov 2026); the five aborted runs of 1.2.1 predate the records; n too small, no status | `error-*.json` (budget stops excluded) against `metadata.json` under `benchmarks/outputs/live/` |
-| Cost | p95 ≤ $10.00 per briefing | $3.51 on n = 1 (step 0, 4 Nov 2026); n too small, no status; estimate for question 05, not a status: $1.37 low, $5.87 central, $12.78 high | `usage.total.cost_usd` in `metadata.json` |
+| Cost | p95 ≤ $10.00 per briefing | $3.51 on n = 1 (step 0, 4 Nov 2026); n too small, no status; estimate for question 05, not a status: $1.39 low, $5.92 central, $12.85 high | `usage.total.cost_usd` in `metadata.json` |
 
 The estimate comes from `bun run estimate:cost` (prompt sizes measured
 with count_tokens, `docs/live-proof-protocol.md`), and
 `tests/docs/slo.test.ts` fails if it moves without this page. The low and
 central cases fall under the target and the high case above it; the five
-protocol questions range from $5.80 to $6.02 central. An estimate rests on
+protocol questions range from $5.85 to $6.07 central. An estimate rests on
 assumed search sizes and output shares, so it decides no status. Step 0's
 measured $3.51 is below its central estimate; one briefing sets no p95.
 

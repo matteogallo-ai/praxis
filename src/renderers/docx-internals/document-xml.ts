@@ -22,6 +22,8 @@ import type {
 } from "../../orchestrator/orchestrator.ts";
 import { hasCritique, type RenderOptions } from "../types.ts";
 import { XML_PROLOG, elem, escapeXmlText } from "./xml-builder.ts";
+import { sourceDates, uncategorisedLines } from "../source-dates.ts";
+import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 
 const W_NS = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"`;
 
@@ -144,7 +146,7 @@ export function buildDocumentXml(
     body.push(paragraph("No sources cited."));
   } else {
     for (const s of allSources) {
-      body.push(bulletParagraph(`${s.title} — ${s.url} (accessed ${s.accessed_at})`));
+      body.push(bulletParagraph(`${s.title} — ${s.url} (${sourceDates(s)})`));
     }
   }
 
@@ -158,6 +160,10 @@ export function buildDocumentXml(
         `untrusted: ${sr.counts.untrusted}, duplicated: ${sr.counts.duplicated}, ` +
         `missing: ${sr.counts.missing}.`
     ));
+    for (const line of uncategorisedLines(sr)) body.push(paragraph(`${line}.`));
+    for (const c of sr.untrusted_citations ?? []) {
+      body.push(bulletParagraph(describeUntrustedCitation(c)));
+    }
   }
 
   return (
@@ -308,6 +314,7 @@ interface Src {
   url: string;
   title: string;
   accessed_at: string;
+  published_at?: string;
 }
 
 function collectSources(brief: BriefResult | BriefWithCritiqueResult): Src[] {

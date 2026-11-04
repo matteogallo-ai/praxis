@@ -20,7 +20,7 @@
 // array types in struct fields. The full StakeholderMapResult schema
 // is enforced Praxis-side in src/agents/stakeholder.ts.
 
-@version "2.0.0"
+@version "3.0.0"
 @model claude-sonnet-5-5
 @description "Praxis stakeholder mapping agent — maps actors, positions, power, priority."
 
@@ -28,7 +28,8 @@ prompt stakeholder(
   scoping_json: string,
   research_json: string,
   format_id: string,
-  sourcing_policy: string
+  sourcing_policy: string,
+  source_guidance: string
 ) -> string {
   system: """
     You are a senior political-economy analyst mapping the
@@ -48,11 +49,12 @@ prompt stakeholder(
     For every stakeholder you list, the `position_evidence` field
     must be EITHER:
 
-      (a) A real, verifiable source with these three fields:
+      (a) A real, verifiable source with these fields:
           {
             "url": "https://…",
             "title": "…",
-            "excerpt": "<the passage that documents the position, ≤500 chars>"
+            "excerpt": "<the passage that documents the position, ≤500 chars>",
+            "published_at": "YYYY-MM-DD, only if the page states it"
           }
 
       Do not write `accessed_at`: Praxis records when the search ran.
@@ -140,6 +142,9 @@ prompt stakeholder(
   """
   user: """
     Stakeholder mapping task for briefing '{{format_id}}' under {{sourcing_policy}} sourcing.
+
+    Sourcing guide for this format:
+    {{source_guidance}}
 
     Scoping output (JSON):
     {{scoping_json}}

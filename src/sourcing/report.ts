@@ -159,5 +159,14 @@ export function mergeReports(
   if (reports.some((r) => r.insufficiently_sourced === true)) {
     merged.insufficiently_sourced = true;
   }
+  if (reports.some((r) => r.freshness_unknown !== undefined)) {
+    merged.freshness_unknown = reports.reduce((acc, r) => acc + (r.freshness_unknown ?? 0), 0);
+  }
+  if (reports.some((r) => r.requester_provided !== undefined)) {
+    merged.requester_provided = reports.reduce((acc, r) => acc + (r.requester_provided ?? 0), 0);
+  }
+  if (reports.some((r) => r.untrusted_citations !== undefined)) {
+    merged.untrusted_citations = reports.flatMap((r) => r.untrusted_citations ?? []);
+  }
   return merged;
 }

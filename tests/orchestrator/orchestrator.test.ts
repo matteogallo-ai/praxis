@@ -9,6 +9,7 @@ import { SourcingValidationError } from "../../src/sourcing/errors.ts";
 import type { Format } from "../../src/registry/schema.ts";
 import { isSourceMissing } from "../../src/sourcing/types.ts";
 import { FIXTURE_CLOCK } from "../fixtures/clock.ts";
+import { datedMockFixtures } from "../helpers/dated-fixtures.ts";
 
 /** The fixtures' sources are fresh at this date, whatever the real one. */
 const FIXTURE_NOW = new Date(FIXTURE_CLOCK);
@@ -688,7 +689,7 @@ describe("Orchestrator.assessRisksAfterStakeholders", () => {
     // the strictest freshness window (mckinsey-style-note: 545 days).
     const registry = new FormatRegistry();
     registry.loadDirectory("formats");
-    const orch = new Orchestrator(registry, makeMockProvider());
+    const orch = new Orchestrator(registry, new MockLLMProvider({ fixturesDir: datedMockFixtures() }));
     await expect(
       orch.assessRisksAfterStakeholders(
         "Should we enter Germany?",

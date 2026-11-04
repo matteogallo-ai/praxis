@@ -233,6 +233,8 @@ import type {
 } from "../agents/types.ts";
 import type { SourcingReport } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
+import { uncategorisedLines } from "../renderers/source-dates.ts";
+import { describeUntrustedCitation } from "../sourcing/citations.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
   const parts: string[] = [];
@@ -491,8 +493,10 @@ export function renderSourcingReport(report: SourcingReport): string {
         `Missing: ${report.counts.missing}`
     )}\n\n`
   );
+  for (const line of uncategorisedLines(report)) parts.push(`${c.dim(line)}\n\n`);
 
-  if (report.warnings.length === 0) {
+  const cited = report.untrusted_citations ?? [];
+  if (report.warnings.length === 0 && cited.length === 0) {
     parts.push(`${c.green("✓")} No warnings — every inspected item passed.\n`);
     return parts.join("");
   }
@@ -500,6 +504,9 @@ export function renderSourcingReport(report: SourcingReport): string {
   parts.push(`${c.bold("Warnings")}\n`);
   for (const w of report.warnings) {
     parts.push(`  ${c.dim("-")} ${describeWarning(w)}\n`);
+  }
+  for (const u of cited) {
+    parts.push(`  ${c.dim("-")} ${describeUntrustedCitation(u)}\n`);
   }
   return parts.join("");
 }
@@ -530,6 +537,7 @@ import {
   escapeMarkdownHeading,
   inert,
   renderSynthesisSections,
+  sourcingSummary,
   yamlString,
 } from "../renderers/markdown-text.ts";
 
@@ -553,14 +561,7 @@ export function renderFullBrief(result: BriefResult): string {
   parts.push(`generated_at: ${yamlString(result.generated_at)}\n`);
   parts.push(`recommended_option: ${yamlString(result.options.recommended_option_id)}\n`);
   parts.push(`aggregated_risk: ${yamlString(result.risks.aggregated_risk_score.overall)}\n`);
-  parts.push(
-    `sourcing_summary: "total=${result.sourcing_report.total_items} ` +
-      `ok=${result.sourcing_report.counts.ok} ` +
-      `stale=${result.sourcing_report.counts.stale} ` +
-      `untrusted=${result.sourcing_report.counts.untrusted} ` +
-      `duplicated=${result.sourcing_report.counts.duplicated} ` +
-      `missing=${result.sourcing_report.counts.missing}"\n`
-  );
+  parts.push(sourcingSummary(result.sourcing_report));
   parts.push(`total_word_count: ${result.synthesis.total_word_count}\n`);
   parts.push(
     `target_word_count: ${result.synthesis.format_conformance.target_words}\n`

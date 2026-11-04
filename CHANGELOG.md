@@ -23,8 +23,33 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   computed from the run records (`tests/docs/live-records.ts`) and checked
   in `tests/docs/live-attempts.test.ts`. Live runs start from their own
   worktree (`docs/live-proof-protocol.md`).
+- Source freshness was measured on `accessed_at`, the retrieval time, so a
+  live source was always fresh, and question 05's run of 4 Nov 2026
+  reported `stale: 0` without knowing any publication date (erratum in
+  `benchmarks/outputs/live/README.md`; the record is unchanged). Freshness
+  is now judged on an optional `published_at`; a source without a readable
+  one is counted in the report's `freshness_unknown`, never as fresh.
+  Briefings list each source's publication date or "publication date
+  unknown".
+- The citations of the options and adversarial stages escaped the format's
+  domain-trust rule. Options' citations now follow it like stages 2–4
+  (strict fails or degrades, permissive reports); critiques' are reported
+  without blocking. Both are listed in `SourcingReport.untrusted_citations`.
 
 ### Added
+
+- The research, stakeholder and risk prompts (3.0.0: a new required
+  `source_guidance` parameter) name the format's trusted hosts by tier and
+  ask for each source's `published_at` as the page states it, never a
+  guess. The list guides the search; web search gets no `allowed_domains`.
+  Prompt token counts re-measured with count_tokens; the protocol's and the
+  SLO page's estimates follow (question 05: $1.39 / $5.92 / $12.85).
+
+- The scoping stage names the facts only the requester can supply
+  (`requester_provided`, scoping prompt 2.1.0). The briefing lists them under
+  "Requester-provided, not sourceable", written by code; the sourcing report
+  counts them apart (`requester_provided`), never as sourced (C24). Prompt
+  token counts re-measured with count_tokens.
 
 - The first completed live briefing: question 05, 4 Nov 2026, $3.51 and
   7.8 minutes of stages, committed under

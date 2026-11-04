@@ -74,7 +74,7 @@ export function validateSourcing(
   const rules = options.rules;
   const accumulator = options.accumulator ?? new NoopSourcingAccumulator();
   const now = options.now ?? new Date();
-  const rulesInfo: RulesInfo = { rules, accumulator, now };
+  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0 };
 
   for (const [i, finding] of result.findings.entries()) {
     inspectSource(
@@ -87,7 +87,7 @@ export function validateSourcing(
     );
   }
 
-  return finalize(policy, result.findings.length, warnings, rules);
+  return finalize(policy, result.findings.length, warnings, rulesInfo);
 }
 
 export function validateStakeholderSourcing(
@@ -99,7 +99,7 @@ export function validateStakeholderSourcing(
   const rules = options.rules;
   const accumulator = options.accumulator ?? new NoopSourcingAccumulator();
   const now = options.now ?? new Date();
-  const rulesInfo: RulesInfo = { rules, accumulator, now };
+  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0 };
 
   for (const [i, stakeholder] of result.stakeholders.entries()) {
     inspectSource(
@@ -115,7 +115,7 @@ export function validateStakeholderSourcing(
     );
   }
 
-  return finalize(policy, result.stakeholders.length, warnings, rules);
+  return finalize(policy, result.stakeholders.length, warnings, rulesInfo);
 }
 
 /**
@@ -133,7 +133,7 @@ export function validateRiskSourcing(
   const rules = options.rules;
   const accumulator = options.accumulator ?? new NoopSourcingAccumulator();
   const now = options.now ?? new Date();
-  const rulesInfo: RulesInfo = { rules, accumulator, now };
+  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0 };
 
   let itemIndex = 0;
   for (const [i, risk] of result.risks.entries()) {
@@ -165,7 +165,7 @@ export function validateRiskSourcing(
     itemIndex += 1;
   }
 
-  return finalize(policy, result.risks.length * 2, warnings, rules);
+  return finalize(policy, result.risks.length * 2, warnings, rulesInfo);
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +191,8 @@ interface RulesInfo {
   rules: SourcingRules | undefined;
   accumulator: SourcingAccumulator;
   now: Date;
+  /** Sources inspected under a freshness rule with no known publication date. */
+  unknownFreshness: number;
 }
 
 /**
@@ -213,15 +215,17 @@ function inspectSource(
   const { rules, accumulator, now } = info;
 
   if (rules?.freshness !== undefined) {
-    const result = classifyFreshness(source.accessed_at, rules.freshness, now);
-    if (result.classification === "stale" || result.classification === "warn") {
+    const result = classifyFreshness(source.published_at, rules.freshness, now);
+    if (result.classification === "unknown") info.unknownFreshness += 1;
+    else if (result.classification === "stale" || result.classification === "warn") {
       warnings.push({
         kind: "stale_source",
         agent,
         item_index: itemIndex,
         url: source.url,
         accessed_at: source.accessed_at,
-        age_days: result.age_days,
+        ...(source.published_at === undefined ? {} : { published_at: source.published_at }),
+        age_days: result.age_days ?? 0,
         exceeds_max: result.classification === "stale",
       });
     }
@@ -298,9 +302,12 @@ function finalize(
   policy: SourcingPolicy,
   totalItems: number,
   warnings: readonly SourcingWarning[],
-  rules: SourcingRules | undefined
+  info: RulesInfo
 ): SourcingReport {
+  const { rules } = info;
   const report = buildReport(policy, totalItems, warnings);
+  // Set before any throw: a strict failure carries this report too.
+  if (rules?.freshness !== undefined) report.freshness_unknown = info.unknownFreshness;
   if (policy !== "strict") return report;
 
   // Under strict, pick the first blocking warning (in emission order)

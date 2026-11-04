@@ -59,9 +59,13 @@ flowchart LR
 | 6 Synthesis | stages 1–5, format sections | one text per format section |
 | 7 Adversarial review | the assembled brief | critiques and whether to revise |
 
-The sourcing check after stages 2–4 enforces the format's `sourcing_policy`:
+The sourcing check after stages 2–4, and the domain check on the options'
+citations, enforce the format's `sourcing_policy`:
 under `strict` a missing, stale or untrusted source aborts the brief; under
-`permissive` it is reported. `docs/architecture.md` has the module map.
+`permissive` it is reported. A source is stale only by its publication date;
+without one its freshness is unknown and counted apart. The research,
+stakeholder and risk prompts ask for the date the page states and name the
+format's trusted hosts, as guidance, not as a search filter. `docs/architecture.md` has the module map.
 
 ## Quick start
 
@@ -102,6 +106,7 @@ paid, and in its current state it is expected to fail (see Status).
 - Untrusted content (earlier stages' output, web page excerpts) delimited in every prompt; answers that obey an injected instruction are rejected; tested on a simulated poisoned search result, not against a live model (C17).
 - The API key never reaches stderr, run files or a printed provider; home paths and e-mail addresses in stderr are masked (C20).
 - Installs and runs from a clean clone, with PromptLang from npm (C19).
+- Facts only the requester can supply are listed in the briefing as "Requester-provided, not sourceable" and counted apart, never as sourced (C24).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
 prove it; CI fails if one of them does not pass.
@@ -110,7 +115,7 @@ prove it; CI fails if one of them does not pass.
 
 - Live briefings that complete against Anthropic, with committed run artefacts (C14).
 - Live-output quality scored by a judge validated against human labels (C18).
-- Source freshness judged on each page's own age (`page_age`) (C21).
+- Source freshness checked against each page's own age (`page_age`) (C21).
 - Web search with dynamic filtering (`web_search_20260209`), evaluated against the basic tool (C22).
 - The judge's noise band and planted-error detection; today each briefing is judged once (C23).
 

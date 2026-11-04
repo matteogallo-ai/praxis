@@ -15,7 +15,7 @@
 // fields. The full ResearchResult schema is enforced Praxis-side in
 // src/agents/research.ts.
 
-@version "2.0.0"
+@version "3.0.0"
 @model claude-sonnet-5-5
 @description "Praxis research agent — gathers evidence with rigorous sourcing."
 
@@ -23,7 +23,8 @@ prompt research(
   scoping_json: string,
   format_id: string,
   sourcing_policy: string,
-  target_words: number
+  target_words: number,
+  source_guidance: string
 ) -> string {
   system: """
     You are the Research analyst for a Praxis briefing.
@@ -41,11 +42,12 @@ prompt research(
 
     For every finding you produce, the `source` field must be EITHER:
 
-      (a) A real, verifiable source with these three fields:
+      (a) A real, verifiable source with these fields:
           {
             "url": "https://…",
             "title": "…",
-            "excerpt": "<the passage that supports the claim, ≤500 chars>"
+            "excerpt": "<the passage that supports the claim, ≤500 chars>",
+            "published_at": "YYYY-MM-DD, only if the page states it"
           }
 
       Do not write `accessed_at`: Praxis records when the search ran.
@@ -91,6 +93,10 @@ prompt research(
   """
   user: """
     Research task for briefing '{{format_id}}' under {{sourcing_policy}} sourcing.
+
+    Sourcing guide for this format:
+    {{source_guidance}}
+
     Target briefing length: about {{target_words}} words.
 
     Scoping output (JSON):

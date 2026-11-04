@@ -76,25 +76,25 @@ $10 is a limit, not a fuse: before each request the ledger reserves that
 request's worst case and sends it only if what is spent, what requests in
 flight hold and that worst case fit in $10 ([§ Ceiling](#ceiling)). The
 estimator's stages, high scenario, cumulative: scoping $0.17, research
-$0.97, stakeholders $1.83, risks $3.06, options $5.33, synthesis $6.34,
-adversarial $9.05. Walked through the reservations
+$0.99, stakeholders $1.88, risks $3.12, options $5.39, synthesis $6.40,
+adversarial $9.11. Walked through the reservations
 (`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`):
 
 | Scenario | Under $10 |
 | --- | --- |
-| Low | completes at $1.37 |
-| Central | completes at $5.87 |
-| High | stops before adversarial at $9.05 |
+| Low | completes at $1.39 |
+| Central | completes at $5.92 |
+| High | stops before adversarial at $9.11 |
 
 The high scenario retries its costliest stage once, and that stage is
 adversarial (Opus, 5 searches, 16 000 `max_tokens`): the first attempt
-runs, then the retry reserves $2.99 on top of $9.05 spent, more than $10
+runs, then the retry reserves $2.99 on top of $9.11 spent, more than $10
 allows. Without that retry the high case yields a brief under $10, with
-its synthesis rerun skipped at $9.05.
+its synthesis rerun skipped at $9.11.
 A run that stops leaves no brief: `error-*.json` records what each stage
 spent, which is the measurement step 1 is costed from. The high case would
-yield a brief from a cap of $9.33 (rerun skipped) and finish in full from
-$10.13, without a retry; with one stage retry, $12.04 and $12.84. A cap
+yield a brief from a cap of $9.40 (rerun skipped) and finish in full from
+$10.19, without a retry; with one stage retry, $12.11 and $12.91. A cap
 reached during the synthesis rerun keeps the complete pre-rerun brief,
 with `rerun.skipped` in its `metadata.json`.
 
@@ -126,7 +126,7 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 - `--max-cost-usd 14` caps each briefing the same way. Walked through the
   reservations, every question's high case yields a brief under it;
   question 11, the costliest ($15.40 in full), does so with its rerun
-  skipped, at $13.35. `tests/benchmarks/live-protocol.test.ts` fails if
+  skipped, at $13.42. `tests/benchmarks/live-protocol.test.ts` fails if
   one would not.
 - Stop after step 0 if it failed for a systematic cause (authentication,
   model id, request shape) or if any stage timed out: fix it, free, before
@@ -273,12 +273,12 @@ built; neither result exists, and no published score depends on them.
 
 | Question | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| 02-cfo-buyback-briefing | $1.41 | $6.02 | $13.07 |
-| 05-supply-chain-acquisition | $1.37 | $5.87 | $12.78 |
-| 08-ai-regulation-position | $1.41 | $6.02 | $13.13 |
-| 11-family-office-co-investment | $1.44 | $5.80 | $15.40 |
-| 12-sodium-ion-plant-morocco | $1.37 | $5.87 | $12.79 |
-| **Total** | **$7.00** | **$29.59** | **$67.17** |
+| 02-cfo-buyback-briefing | $1.42 | $6.07 | $13.14 |
+| 05-supply-chain-acquisition | $1.39 | $5.92 | $12.85 |
+| 08-ai-regulation-position | $1.42 | $6.06 | $13.20 |
+| 11-family-office-co-investment | $1.45 | $5.85 | $15.47 |
+| 12-sodium-ion-plant-morocco | $1.39 | $5.92 | $12.85 |
+| **Total** | **$7.06** | **$29.81** | **$67.51** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -294,9 +294,10 @@ Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
 Prompt sizes are the mock run's, read at the 2.73 characters per token
 Anthropic's count_tokens endpoint measured on 66 rendered prompts of 4 questions,
-one per format: 02, 05, 08, 11 (`benchmarks/token-counts/`, 2026-11-03;
-2.63 to 3.01 per request). Every question, 12 included, is read at that
-one ratio. Each web-searching call re-reads its context after every search,
+one per format: 02, 05, 08, 11 (`benchmarks/token-counts/`, 2026-11-04;
+2.60 to 3.04 per request). Every question, 12 included, is read at that
+one ratio. The mock scoping answers name no requester-provided facts, so
+the later stages, which embed the scoping output, are measured without them. Each web-searching call re-reads its context after every search,
 model output included. Prices: Claude Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10 per
 million tokens, web search $10 per 1000 (`src/llm/pricing.ts`, 2026-11-02).
 No prompt caching is assumed.
@@ -307,11 +308,11 @@ No prompt caching is assumed.
 
 | | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| Estimate | $1.37 | $5.87 | $12.78 |
+| Estimate | $1.39 | $5.92 | $12.85 |
 
 - Ceiling: **$10.00**, timeouts included, within the allowances below. In
-  the high case the run stops before adversarial's retry at $9.05 rather than
-  reaching $12.78.
+  the high case the run stops before adversarial's retry at $9.11 rather than
+  reaching $12.85.
 
 The prompt sizes are measured; the search sizes, output shares and the
 growth of live upstream outputs over the fixtures stay assumptions:
@@ -358,8 +359,8 @@ allowances hold**. They are assumptions, not bounds the API enforces:
 - Text that tokenizes below 2.5 characters per token (base64, CJK) is
   sized low the same way. The tool definitions and message framing the API
   adds are not counted apart: on the measured prompts, the margin between
-  2.5 and the measured 2.63 or more is at least 122 tokens on the shortest
-  (scoping, which has no tools) and 224 on the shortest search stage
+  2.5 and the measured 2.60 or more is at least 204 tokens on the shortest
+  (scoping, which has no tools) and 191 on the shortest search stage
   (research).
 - A run killed by a signal writes no `metadata.json`: what it spent since
   its last stage is unknown to a `--resume`.
@@ -415,7 +416,7 @@ protocol's cost:
 ## What each GO authorizes
 
 1. **Step 0**: the one `bench:live` command for `05-supply-chain-acquisition`,
-   one attempt. Expected ≈ $5.87 (central); at most $10.00, timeouts included,
+   one attempt. Expected ≈ $5.92 (central); at most $10.00, timeouts included,
    within the allowances of [§ Ceiling](#ceiling).
 2. **Step 1**, after step 0 and a re-costing from its measured usage: the
    other four. Before that re-costing: at most $14 each, $56.00 for the

@@ -39,54 +39,56 @@
       "missing": 2
     },
     "edited_after_critique": false,
-    "insufficiently_sourced": false
+    "insufficiently_sourced": false,
+    "freshness_unknown": 22,
+    "untrusted_citations": []
   },
   "usage": {
     "stages": {
       "scoping": {
         "calls": 1,
-        "input_tokens": 598,
+        "input_tokens": 758,
         "output_tokens": 505,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 0,
-        "cost_usd": 0.012492,
+        "cost_usd": 0.013132,
         "models": [
           "claude-opus-5-5"
         ]
       },
       "research": {
         "calls": 1,
-        "input_tokens": 1295,
+        "input_tokens": 1676,
         "output_tokens": 1297,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 4,
-        "cost_usd": 0.05556,
+        "cost_usd": 0.056322,
         "models": [
           "claude-sonnet-5-5"
         ]
       },
       "stakeholder": {
         "calls": 1,
-        "input_tokens": 3146,
+        "input_tokens": 3527,
         "output_tokens": 1999,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 3,
-        "cost_usd": 0.056282,
+        "cost_usd": 0.057044,
         "models": [
           "claude-sonnet-5-5"
         ]
       },
       "risk": {
         "calls": 1,
-        "input_tokens": 5739,
+        "input_tokens": 6119,
         "output_tokens": 2182,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 3,
-        "cost_usd": 0.063298,
+        "cost_usd": 0.064058,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -130,12 +132,12 @@
     },
     "total": {
       "calls": 12,
-      "input_tokens": 94774,
+      "input_tokens": 96076,
       "output_tokens": 12255,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 13,
-      "cost_usd": 0.52952,
+      "cost_usd": 0.532444,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"
@@ -145,8 +147,8 @@
     "max_cost_usd": null
   },
   "artefacts": {
-    "brief.md": 19313,
-    "brief.pdf": 49293,
-    "brief.docx": 7876
+    "brief.md": 19720,
+    "brief.pdf": 51289,
+    "brief.docx": 7912
   }
 }
