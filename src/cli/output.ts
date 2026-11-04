@@ -233,6 +233,7 @@ import type {
 } from "../agents/types.ts";
 import type { SourcingReport } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
+import { freshnessUnknownLine } from "../renderers/source-dates.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
   const parts: string[] = [];
@@ -491,6 +492,8 @@ export function renderSourcingReport(report: SourcingReport): string {
         `Missing: ${report.counts.missing}`
     )}\n\n`
   );
+  const unknown = freshnessUnknownLine(report);
+  if (unknown !== undefined) parts.push(`${c.dim(unknown)}\n\n`);
 
   if (report.warnings.length === 0) {
     parts.push(`${c.green("✓")} No warnings — every inspected item passed.\n`);

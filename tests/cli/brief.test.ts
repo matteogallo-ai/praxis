@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { parseBriefArgs, runBriefCli } from "../../src/cli/commands/brief.ts";
+import { parseBriefArgs, renderSourcingReportMarkdown, runBriefCli } from "../../src/cli/commands/brief.ts";
 import { setColorEnabled } from "../../src/cli/output.ts";
 
 const CTX = {
@@ -1211,5 +1211,21 @@ describe("briefCommand — v0.8 --with-rerun", () => {
     expect(payload.rerun_metadata.critiques_addressed.length).toBeGreaterThan(0);
     expect(payload.original_synthesis).not.toBeNull();
     expect(payload.sourcing_report.edited_after_critique).toBe(true);
+  });
+});
+
+describe("renderSourcingReportMarkdown — freshness", () => {
+  test("counts the sources of unknown freshness when the format dates them", () => {
+    const report = {
+      policy: "strict" as const,
+      total_items: 1,
+      counts: { ok: 1, stale: 0, untrusted: 0, duplicated: 0, missing: 0 },
+      warnings: [],
+      missing_sources_count: 0,
+    };
+    expect(renderSourcingReportMarkdown({ ...report, freshness_unknown: 4 })).toContain(
+      "Freshness unknown (no publication date): 4"
+    );
+    expect(renderSourcingReportMarkdown(report)).not.toContain("Freshness unknown");
   });
 });

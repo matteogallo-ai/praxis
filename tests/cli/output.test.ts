@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { renderFullBrief, setColorEnabled } from "../../src/cli/output.ts";
+import { renderFullBrief, renderSourcingReport, setColorEnabled } from "../../src/cli/output.ts";
 import type { BriefResult } from "../../src/orchestrator/orchestrator.ts";
 
 beforeEach(() => {
@@ -132,6 +132,14 @@ describe("renderFullBrief — YAML front-matter", () => {
     const base = makeBrief();
     const md = renderFullBrief(makeBrief({ sourcing_report: { ...base.sourcing_report, freshness_unknown: 7 } }));
     expect(md).toContain('sourcing_summary: "total=5 ok=5 stale=0 untrusted=0 duplicated=0 missing=0 freshness_unknown=7"');
+  });
+});
+
+describe("renderSourcingReport — freshness", () => {
+  test("counts the sources of unknown freshness when the format dates them", () => {
+    const base = makeBrief().sourcing_report;
+    expect(renderSourcingReport({ ...base, freshness_unknown: 4 })).toContain("Freshness unknown (no publication date): 4");
+    expect(renderSourcingReport(base)).not.toContain("Freshness unknown");
   });
 });
 
