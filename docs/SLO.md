@@ -7,12 +7,12 @@ reader waits for, tolerates and pays for one briefing), not from what the
 pipeline happens to cost. A status of **met** or **not met** is published
 only from live measurements, never from an estimate; a target the
 measurement misses is published as not met, not moved to fit.
-**No live briefing has been measured yet** (`docs/CLAIMS.md` C14).
+**No live briefing has completed yet** (`docs/CLAIMS.md` C14).
 
 | Objective | Target | Status | Measured on |
 | --- | --- | --- | --- |
 | Latency | p95 ≤ 10 minutes per briefing | Not measured | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
-| Error rate | ≤ 10% of started briefings end in an error | Not measured | exit code of each run |
+| Error rate | ≤ 10% of started briefings end in an error | 1/1 (step 0, 3 Nov 2026, TruncatedOutputError); n too small, no status | exit code of each run |
 | Cost | p95 ≤ $10.00 per briefing | Not measured; estimate for question 05 (step 0), not a status: $1.37 low, $5.87 central, $12.78 high | `usage.total.cost_usd` in `metadata.json` |
 
 The estimate comes from `bun run estimate:cost` (prompt sizes measured

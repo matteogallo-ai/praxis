@@ -44,6 +44,25 @@ describe("docs/SLO.md", () => {
     expect(flat).not.toMatch(/\| Cost \|[^|]*\|[^|]*\b(not met|met)\b/i);
   });
 
+  test("reports the error rate from the committed live run records, with no status at this n", () => {
+    // Each started live briefing leaves metadata.json (completed) or an
+    // error-*.json (failed); the row must count exactly those records.
+    const live = "benchmarks/outputs/live";
+    const dirs = readdirSync(live, { withFileTypes: true }).filter((d) => d.isDirectory());
+    const failures = dirs.flatMap((d) =>
+      readdirSync(`${live}/${d.name}`)
+        .filter((f) => /^error-.*\.json$/.test(f))
+        .map((f) => JSON.parse(readFileSync(`${live}/${d.name}/${f}`, "utf-8")) as { error_type: string })
+    );
+    const completed = dirs.filter((d) => existsSync(`${live}/${d.name}/metadata.json`)).length;
+    expect(failures.map((f) => f.error_type)).toEqual(["TruncatedOutputError"]);
+    expect(completed).toBe(0);
+    expect(doc).toContain(
+      "| Error rate | ≤ 10% of started briefings end in an error | 1/1 (step 0, 3 Nov 2026, TruncatedOutputError); n too small, no status |"
+    );
+    expect(flat).toContain("No live briefing has completed yet");
+  });
+
   test("grounds the cost target in the analyst time a briefing replaces", () => {
     expect(flat).toContain("must cost less than 10 minutes of the time of the analyst it replaces");
     expect(COST_TARGET_USD * 6).toBe(ANALYST_USD_PER_HOUR);
