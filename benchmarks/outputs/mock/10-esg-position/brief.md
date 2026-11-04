@@ -126,7 +126,7 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 
 **Suggested revision:** Add a Länder-level stakeholder subsection covering Bavaria and Baden-Württemberg and pre-commit to engaging their DPAs within 90 days of launch.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: Land-level data protection authority interpretations vs BfDI foreign SaaS 2025-2026
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `Land-level data protection authority interpretations vs BfDI foreign SaaS 2025-2026`
 
 ### CRIT-005 — temporal-blind-spot (minor)
 
@@ -136,7 +136,7 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 
 **Suggested revision:** Add a pre-election contingency paragraph acknowledging cross-party consensus is contingent on the current coalition.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: durability of Bundestag cross-party consensus on digital sovereignty across electoral cycles
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `durability of Bundestag cross-party consensus on digital sovereignty across electoral cycles`
 
 ## Appendix A — Findings
 

@@ -110,7 +110,7 @@ SAP's likely bundled counter-offer is the largest strategic risk; the mitigation
 
 **Suggested revision:** Add a growth-rate scenario table (persist / halve / reverse) and anchor the recommendation to the middle case.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: SaaS growth-rate persistence in DACH beyond three-year windows
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `SaaS growth-rate persistence in DACH beyond three-year windows`
 
 ### CRIT-005 — temporal-blind-spot (minor)
 
@@ -120,7 +120,7 @@ SAP's likely bundled counter-offer is the largest strategic risk; the mitigation
 
 **Suggested revision:** Add a board-sentiment stability check as a Q4 2026 pre-approval gate before locking the €4-6m envelope.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: board sentiment stability in European SaaS expansion decisions 2023-2025
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `board sentiment stability in European SaaS expansion decisions 2023-2025`
 
 ## Appendix A — Findings
 

@@ -9,10 +9,17 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- The URLs, hosts and searched-for queries of the "Insufficiently
+  sourced" section and of the CLI's Markdown sourcing report are code spans.
+  A Markdown viewer turned them into links: in question 10's step 1
+  briefing, the untrusted host `www.bracewell.com` showed as a link in the
+  line that reports it as untrusted.
+
 - PDF: a table row is as tall as its longest wrapped cell, and the header
   is repeated after a page break. Rows were 20 points high whatever their
   text, so long option titles and stakeholder names ran over the next row
   (question 10's step 1 briefing, pages 14, 16 and 24).
+
 - PDF: the footer no longer opens pages of its own. It was drawn inside
   the bottom margin, so pdfkit opened a new page for each footer line:
   question 10's step 1 briefing has 96 pages, 32 of them with content.

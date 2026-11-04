@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { parseBriefArgs, renderSourcingReportMarkdown, runBriefCli } from "../../src/cli/commands/brief.ts";
 import { setColorEnabled } from "../../src/cli/output.ts";
+import { buildReport } from "../../src/sourcing/report.ts";
+import { autolinkable } from "../helpers/markdown-inert.ts";
 
 const CTX = {
   formatsDir: "formats",
@@ -1258,7 +1260,25 @@ describe("renderSourcingReportMarkdown — citations", () => {
       missing_sources_count: 0,
       untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }],
     });
-    expect(md).toContain("- [options] OPT-B cites an untrusted domain: https://x.example/a — not in any tier");
+    expect(md).toContain("- [options] OPT-B cites an untrusted domain: `https://x.example/a` — `not in any tier`");
     expect(md).not.toContain("every inspected item passed");
+  });
+});
+
+describe("renderSourcingReportMarkdown — URLs and hosts are inert text", () => {
+  test("no URL or www. host a viewer would turn into a link", () => {
+    const URL = "https://www.bracewell.com/resources/carb";
+    const report = {
+      ...buildReport("strict", 5, [
+        { kind: "untrusted_domain", agent: "risk", item_index: 16, url: URL, reason: "host 'www.bracewell.com' matches no entry in allow-list" },
+        { kind: "stale_source", agent: "research", item_index: 0, url: URL, accessed_at: "2026-11-04T00:00:00Z", age_days: 900, exceeds_max: true },
+        { kind: "duplicate_source", agent: "stakeholder", item_index: 1, url: URL, previous_agent: "research", previous_item_index: 0, previous_url: "http://www.x.example/a" },
+        { kind: "missing_source", finding_index: 0, searched_for: "see www.y.example" },
+        { kind: "missing_stakeholder_evidence", stakeholder_index: 0, stakeholder_name: "FCA", searched_for: "www.s.example" },
+        { kind: "missing_risk_evidence", risk_index: 0, risk_id: "RISK-001", evidence_field: "impact_evidence", searched_for: "www.r.example" },
+      ]),
+      untrusted_citations: [{ stage: "adversarial" as const, id: "CRIT-001", url: URL, reason: "host 'www.bracewell.com' matches no entry in allow-list" }],
+    };
+    expect(autolinkable(renderSourcingReportMarkdown(report))).toEqual([]);
   });
 });
