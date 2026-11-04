@@ -2,11 +2,17 @@
  * The record a live benchmark run leaves (`benchmarks/provenance.ts`).
  */
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { assertNoLiveRecord, provenance, recordLiveFailure } from "../../benchmarks/provenance.ts";
+import {
+  commitLiveRun,
+  completedLiveRuns,
+  provenance,
+  recordLiveFailure,
+  stageLiveRun,
+} from "../../benchmarks/provenance.ts";
 
 const dirs: string[] = [];
 function tempDir(): string {
@@ -38,14 +44,49 @@ describe("provenance", () => {
   });
 });
 
-describe("assertNoLiveRecord", () => {
-  test("refuses a directory that holds a completed run, accepts one with only failures", () => {
+describe("completed live runs", () => {
+  const at = new Date("2026-11-04T08:33:09.131Z");
+
+  test("each completed run gets its own directory named by its start time", () => {
     const dir = tempDir();
-    expect(() => assertNoLiveRecord(dir)).not.toThrow();
+    const staged = stageLiveRun(dir, at);
+    writeFileSync(join(staged, "metadata.json"), "{}");
+    const run = commitLiveRun(staged, dir, at);
+    expect(run).toBe(join(dir, "run-2026-11-04T08-33-09-131Z"));
+    expect(existsSync(staged)).toBe(false);
+    expect(completedLiveRuns(dir)).toEqual([run]);
+  });
+
+  test("a second completed run is kept beside the first, never over it", () => {
+    const dir = tempDir();
+    const later = new Date("2026-11-05T10:00:00.000Z");
+    for (const t of [at, later]) {
+      const staged = stageLiveRun(dir, t);
+      writeFileSync(join(staged, "metadata.json"), JSON.stringify({ t: t.toISOString() }));
+      commitLiveRun(staged, dir, t);
+    }
+    const runs = completedLiveRuns(dir);
+    expect(runs).toHaveLength(2);
+    expect(readFileSync(join(runs[0] as string, "metadata.json"), "utf-8")).toContain("2026-11-04");
+    expect(readFileSync(join(runs[1] as string, "metadata.json"), "utf-8")).toContain("2026-11-05");
+  });
+
+  test("refuses to commit over an existing run directory", () => {
+    const dir = tempDir();
+    mkdirSync(join(dir, "run-2026-11-04T08-33-09-131Z"));
+    writeFileSync(join(dir, "run-2026-11-04T08-33-09-131Z", "metadata.json"), "{}");
+    const staged = stageLiveRun(dir, at);
+    expect(() => commitLiveRun(staged, dir, at)).toThrow(/never overwritten/);
+    expect(readFileSync(join(dir, "run-2026-11-04T08-33-09-131Z", "metadata.json"), "utf-8")).toBe("{}");
+  });
+
+  test("ignores failures, staged runs and run directories without metadata", () => {
+    const dir = tempDir();
     writeFileSync(join(dir, "error-x.json"), "{}");
-    expect(() => assertNoLiveRecord(dir)).not.toThrow();
-    writeFileSync(join(dir, "metadata.json"), "{}");
-    expect(() => assertNoLiveRecord(dir)).toThrow(/never overwritten/);
+    stageLiveRun(dir, at);
+    mkdirSync(join(dir, "run-2026-11-01T00-00-00-000Z"));
+    expect(completedLiveRuns(dir)).toEqual([]);
+    expect(completedLiveRuns(join(dir, "absent"))).toEqual([]);
   });
 });
 

@@ -5,7 +5,7 @@
  * would break the byte-for-byte reproducibility of `bench:mock`.
  */
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { parse, tokenize } from "@promptlang/core";
@@ -57,14 +57,37 @@ export function provenance(root: string): Provenance {
   };
 }
 
+const stamp = (at: Date) => at.toISOString().replace(/[:.]/g, "-");
+const RUN_DIR = /^run-\d{4}-\d{2}-\d{2}T[\d-]+Z$/;
+
 /**
- * Refuses to run a question whose live directory already holds a completed
- * run: live artefacts are the record and are never overwritten.
+ * Where a live briefing renders before it is complete. Staging keeps a run
+ * that fails mid-render from looking like a completed one.
  */
-export function assertNoLiveRecord(outDir: string): void {
-  if (existsSync(join(outDir, "metadata.json"))) {
-    throw new Error(`${outDir} already holds a completed live run; live artefacts are never overwritten`);
-  }
+export function stageLiveRun(questionDir: string, startedAt: Date): string {
+  const staged = join(questionDir, `run-${stamp(startedAt)}.staging`);
+  mkdirSync(staged, { recursive: true });
+  return staged;
+}
+
+/**
+ * Turns a staged run into the record of a completed one, named by its start
+ * time so that a question run again keeps every completed run.
+ */
+export function commitLiveRun(staged: string, questionDir: string, startedAt: Date): string {
+  const run = join(questionDir, `run-${stamp(startedAt)}`);
+  if (existsSync(run)) throw new Error(`${run} already holds a completed live run; live artefacts are never overwritten`);
+  renameSync(staged, run);
+  return run;
+}
+
+/** The completed runs of one question, oldest first. */
+export function completedLiveRuns(questionDir: string): string[] {
+  if (!existsSync(questionDir)) return [];
+  return readdirSync(questionDir)
+    .filter((name) => RUN_DIR.test(name) && existsSync(join(questionDir, name, "metadata.json")))
+    .sort()
+    .map((name) => join(questionDir, name));
 }
 
 /**
@@ -75,7 +98,7 @@ export function assertNoLiveRecord(outDir: string): void {
  * request headers).
  */
 export function recordLiveFailure(outDir: string, failedAt: Date, record: Record<string, unknown>): string {
-  const path = join(outDir, `error-${failedAt.toISOString().replace(/[:.]/g, "-")}.json`);
+  const path = join(outDir, `error-${stamp(failedAt)}.json`);
   const tmp = `${path}.tmp`;
   const text = JSON.stringify({ failed_at: failedAt.toISOString(), ...record }, null, 2);
   writeFileSync(tmp, `${redactSecrets(text)}\n`);

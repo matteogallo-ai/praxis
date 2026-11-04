@@ -72,14 +72,15 @@ describe("run-all live guards", () => {
     expect(calls).toBe(0);
   });
 
-  test("an existing live record is not overwritten and costs no request", async () => {
-    mkdirSync(liveDir(), { recursive: true });
-    writeFileSync(join(liveDir(), "metadata.json"), "{}\n");
+  test("a question with a completed run can run again; the first run is left as it was", async () => {
+    const first = join(liveDir(), "run-2026-11-04T08-33-09-131Z");
+    mkdirSync(first, { recursive: true });
+    writeFileSync(join(first, "metadata.json"), "{}\n");
     const summary = await runAll({ ...live(), maxCostUsd: 5 });
+    expect(calls).toBeGreaterThan(0);
     expect(summary.outcomes[0]?.ok).toBe(false);
-    expect(summary.outcomes[0]?.error).toMatch(/never overwritten/);
-    expect(calls).toBe(0);
-    expect(readFileSync(join(liveDir(), "metadata.json"), "utf-8")).toBe("{}\n");
+    expect(readFileSync(join(first, "metadata.json"), "utf-8")).toBe("{}\n");
+    expect(readdirSync(liveDir()).filter((f) => f.startsWith("run-"))).toEqual(["run-2026-11-04T08-33-09-131Z"]);
   });
 
   test("a failed briefing leaves an error record carrying the cap, and no key", async () => {
@@ -94,6 +95,8 @@ describe("run-all live guards", () => {
     expect(record.provenance.git_dirty).toBe(false);
     expect(text).not.toContain("sk-ant-test-not-a-real-key");
     expect(existsSync(join(liveDir(), "metadata.json"))).toBe(false);
+    // A failed briefing leaves no partial run behind.
+    expect(readdirSync(liveDir()).filter((f) => f.startsWith("run-"))).toEqual([]);
   });
 });
 
