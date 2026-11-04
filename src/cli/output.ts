@@ -233,6 +233,7 @@ import type {
 } from "../agents/types.ts";
 import type { SourcingReport } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
+import { freshnessUnknownLine } from "../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../sourcing/citations.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
@@ -492,6 +493,8 @@ export function renderSourcingReport(report: SourcingReport): string {
         `Missing: ${report.counts.missing}`
     )}\n\n`
   );
+  const unknown = freshnessUnknownLine(report);
+  if (unknown !== undefined) parts.push(`${c.dim(unknown)}\n\n`);
 
   const cited = report.untrusted_citations ?? [];
   if (report.warnings.length === 0 && cited.length === 0) {

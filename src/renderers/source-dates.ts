@@ -8,3 +8,10 @@ export function sourceDates(s: { accessed_at: string; published_at?: string }): 
   const published = s.published_at === undefined ? "publication date unknown" : `published ${s.published_at}`;
   return `${published}, accessed ${s.accessed_at}`;
 }
+
+/** The sourcing reports' line for sources without a publication date; absent when the format has no freshness rule. */
+export function freshnessUnknownLine(report: { freshness_unknown?: number }): string | undefined {
+  return report.freshness_unknown === undefined
+    ? undefined
+    : `Freshness unknown (no publication date): ${report.freshness_unknown}`;
+}

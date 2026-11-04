@@ -33,7 +33,7 @@ import type {
 import type { Renderer, RenderOptions, RenderTheme } from "./types.ts";
 import { hasCritique } from "./types.ts";
 import { RenderError } from "./errors.ts";
-import { sourceDates } from "./source-dates.ts";
+import { freshnessUnknownLine, sourceDates } from "./source-dates.ts";
 import { describeUntrustedCitation } from "../sourcing/citations.ts";
 
 // ---------------------------------------------------------------------------
@@ -470,6 +470,8 @@ function renderSourcingReport(
     .text(`Policy: ${sr.policy}`)
     .text(`Total items: ${sr.total_items}`)
     .text(`OK: ${sr.counts.ok} · stale: ${sr.counts.stale} · untrusted: ${sr.counts.untrusted} · duplicated: ${sr.counts.duplicated} · missing: ${sr.counts.missing}`);
+  const unknown = freshnessUnknownLine(sr);
+  if (unknown !== undefined) doc.text(unknown);
   if (sr.warnings.length > 0) {
     doc.moveDown(0.5);
     doc.font(theme.bodyBold).text("Warnings:");

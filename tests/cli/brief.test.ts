@@ -1214,6 +1214,22 @@ describe("briefCommand — v0.8 --with-rerun", () => {
   });
 });
 
+describe("renderSourcingReportMarkdown — freshness", () => {
+  test("counts the sources of unknown freshness when the format dates them", () => {
+    const report = {
+      policy: "strict" as const,
+      total_items: 1,
+      counts: { ok: 1, stale: 0, untrusted: 0, duplicated: 0, missing: 0 },
+      warnings: [],
+      missing_sources_count: 0,
+    };
+    expect(renderSourcingReportMarkdown({ ...report, freshness_unknown: 4 })).toContain(
+      "Freshness unknown (no publication date): 4"
+    );
+    expect(renderSourcingReportMarkdown(report)).not.toContain("Freshness unknown");
+  });
+});
+
 describe("renderSourcingReportMarkdown — citations", () => {
   test("lists untrusted citations, and does not claim every item passed", () => {
     const md = renderSourcingReportMarkdown({

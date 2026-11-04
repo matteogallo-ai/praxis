@@ -379,6 +379,14 @@ describe("buildDocxParts — document.xml content", () => {
     expect(doc).toContain("Policy: strict");
   });
 
+  test("the Sourcing Report counts the sources of unknown freshness", () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, freshness_unknown: 4 };
+    expect(buildDocxParts(brief, { include_sourcing_report: true })[2]?.content).toContain(
+      "Freshness unknown (no publication date): 4."
+    );
+  });
+
   test("the Sourcing Report lists the options and critique citations from untrusted domains", () => {
     const brief = makeBrief();
     brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };

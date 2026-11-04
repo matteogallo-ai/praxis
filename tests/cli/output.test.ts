@@ -154,6 +154,14 @@ describe("renderSourcingReport — citations", () => {
   });
 });
 
+describe("renderSourcingReport — freshness", () => {
+  test("counts the sources of unknown freshness when the format dates them", () => {
+    const base = makeBrief().sourcing_report;
+    expect(renderSourcingReport({ ...base, freshness_unknown: 4 })).toContain("Freshness unknown (no publication date): 4");
+    expect(renderSourcingReport(base)).not.toContain("Freshness unknown");
+  });
+});
+
 describe("renderFullBrief — Markdown body", () => {
   test("question is rendered as H1", () => {
     const md = renderFullBrief(makeBrief());
