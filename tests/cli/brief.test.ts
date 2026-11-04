@@ -1227,6 +1227,9 @@ describe("renderSourcingReportMarkdown — freshness", () => {
       "Freshness unknown (no publication date): 4"
     );
     expect(renderSourcingReportMarkdown(report)).not.toContain("Freshness unknown");
+    expect(renderSourcingReportMarkdown({ ...report, requester_provided: 3 })).toContain(
+      "Requester-provided, not sourceable: 3"
+    );
   });
 });
 

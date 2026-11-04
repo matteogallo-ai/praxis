@@ -49,6 +49,16 @@ describe("buildMetadata", () => {
     expect(meta.sourcing.freshness_unknown).toBe(2);
   });
 
+  test("records how many facts only the requester can supply", () => {
+    const meta = buildMetadata(
+      { id: "05-x", question: "Q?", format: "f", tags: [] } as never,
+      "live",
+      { ...RESULT, sourcing_report: { total_items: 3, counts: {}, requester_provided: 3 } } as never,
+      1
+    ) as { sourcing: { requester_provided?: number } };
+    expect(meta.sourcing.requester_provided).toBe(3);
+  });
+
   test("records the options and critique citations from untrusted domains", () => {
     const cited = [{ stage: "options", id: "OPT-B", url: "https://x.example/a", reason: "r" }];
     const meta = buildMetadata(

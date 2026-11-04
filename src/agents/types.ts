@@ -33,6 +33,13 @@ export interface ScopingResult {
   hidden_questions: string[];
   scope_boundaries: string[];
   assumptions_to_validate: string[];
+  /**
+   * Facts the briefing needs that concern only the requester (its own
+   * finances, strategy, board, shareholders or customers): no public source
+   * can establish them, so the requester supplies them. Listed in the
+   * briefing as not sourceable and counted apart, never as sourced.
+   */
+  requester_provided?: string[];
 }
 
 /**

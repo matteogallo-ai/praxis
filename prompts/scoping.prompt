@@ -11,7 +11,7 @@
 // struct fields, so the full schema of `ScopingResult` is documented in the
 // `system:` block and enforced on the Praxis side in `src/agents/scoping.ts`.
 
-@version "2.0.0"
+@version "2.1.0"
 @model claude-opus-5-5
 @description "Praxis scoping agent — reformulates the brief, surfaces hidden questions, defines scope."
 
@@ -39,6 +39,12 @@ prompt scope(question: string, format_id: string, target_words: number) -> strin
       4. List assumptions that need validation before writing. These are
          the load-bearing beliefs that, if wrong, would invalidate the
          whole briefing.
+      5. List the facts the briefing needs that concern only the requester
+         and that the question does not state: its own finances, strategy,
+         board, shareholders, customers or internal capabilities. No public
+         source can establish them; the requester must supply them. Do not
+         list facts about markets, competitors, regulators or any other
+         party: those can be researched. An empty list is valid.
 
     Return valid JSON only. No prose, no markdown fences, no commentary.
 
@@ -47,7 +53,8 @@ prompt scope(question: string, format_id: string, target_words: number) -> strin
       "reformulated_question": "<one clear sentence>",
       "hidden_questions": ["<question 1>", "<question 2>", ...],
       "scope_boundaries": ["<boundary 1>", "<boundary 2>", ...],
-      "assumptions_to_validate": ["<assumption 1>", "<assumption 2>", ...]
+      "assumptions_to_validate": ["<assumption 1>", "<assumption 2>", ...],
+      "requester_provided": ["<fact only the requester can supply>", ...]
     }
   """
   user: """
