@@ -18,6 +18,7 @@ interface Sourcing {
 }
 interface Meta {
   sourcing: Sourcing;
+  provenance: { git_sha: string };
   usage: { total: { cost_usd: number }; stages: Record<string, { duration_ms: number }> };
 }
 const meta = (run: string) => JSON.parse(readFileSync(`${DIR}/${run}/metadata.json`, "utf-8")) as Meta;
@@ -34,20 +35,34 @@ describe("question 05: step 0 and its rerun", () => {
     expect(doc).toContain(row("From an untrusted domain", a.counts.untrusted, b.counts.untrusted));
     expect(doc).toContain(row("Without a source (`missing`)", a.counts.missing, b.counts.missing));
     expect(doc).toContain(row("Duplicated", a.counts.duplicated, b.counts.duplicated));
-    expect(doc).toContain(`| Stale or aging (\`stale\`) | ${a.counts.stale}, not measured (see Errata) | ${b.counts.stale}:`);
+    // An item takes its most severe category (src/sourcing/report.ts): the
+    // one source past the limit is also untrusted, so it is counted there.
+    expect(doc).toContain(
+      `| Stale or aging (\`stale\`) | ${a.counts.stale}, not measured (see Errata) | ${b.counts.stale}, all past the format's warning age; the one source past the limit is counted as untrusted |`
+    );
     expect(doc).toContain(row("Freshness unknown (no publication date)", "not recorded", b.freshness_unknown ?? -1));
     expect(doc).toContain(row("Requester-provided, not sourceable", "not recorded", b.requester_provided ?? -1));
     const by = (stage: string) => (b.untrusted_citations ?? []).filter((c) => c.stage === stage).length;
     expect(doc).toContain(
       row("Options' and critique's untrusted citations", "not checked", `${by("options")} options, ${by("adversarial")} critique`)
     );
-    expect([a.insufficiently_sourced, b.insufficiently_sourced]).toEqual([true, true]);
+    const flag = (x: Sourcing) => (x.insufficiently_sourced ? "yes" : "no");
+    expect(doc).toContain(row("Flagged insufficiently sourced", flag(a), flag(b)));
   });
 
   test("cost and time are the records'", () => {
     const usd = (m: Meta) => `$${m.usage.total.cost_usd.toFixed(2)}`;
     expect(doc).toContain(row("Cost", usd(step0), usd(rerun)));
     expect(doc).toContain(row("Stages' wall time", minutes(step0), minutes(rerun)));
+  });
+
+  test("the rerun's commit is the one its record names", () => {
+    expect(doc).toContain(`rerun at \`${rerun.provenance.git_sha.slice(0, 7)}\` (the sourcing fixes, #31 to #35)`);
+    expect(doc).not.toContain("#31 to #36");
+  });
+
+  test("the caveat names the rows measured under different rules", () => {
+    expect(doc.replace(/\s+/g, " ")).toContain("The `ok` and `stale` rows were measured under different rules");
   });
 
   test("step 0 recorded none of the fields the fixes added", () => {

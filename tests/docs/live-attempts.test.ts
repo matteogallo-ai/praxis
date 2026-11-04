@@ -44,6 +44,7 @@ describe("live attempt count", () => {
 
     test("system card: each one's flag, and the cost and latency row", () => {
       const card = flat("docs/SYSTEM_CARD.md");
+      expect(card).toContain(`**Status: ${count} briefings have completed against a real model**`);
       for (const c of completions) expect(card).toContain(sourcingFlag(c));
       const each = completions.map((c) => `${usd(c.cost_usd)}, ${minutes(c.stages_ms)} of stages`).join("; ");
       expect(card).toContain(`| Live cost and latency per briefing | ${completions.length} | ${each};`);
