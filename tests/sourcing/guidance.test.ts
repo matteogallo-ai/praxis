@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import { FormatRegistry } from "../../src/registry/registry.ts";
 import type { SourcingRules } from "../../src/registry/schema.ts";
-import { sourceGuidance } from "../../src/sourcing/guidance.ts";
+import { firstPartyGuidance, sourceGuidance } from "../../src/sourcing/guidance.ts";
+import { FIRST_PARTY_ORGANISATIONS } from "../../src/sourcing/first-party-organisations.ts";
 
 const TIERS: SourcingRules = {
   domain_trust: {
@@ -74,6 +75,15 @@ describe("sourceGuidance", () => {
     expect(g).not.toContain("older than 730 days");
     expect(g).toContain("published_at");
     expect(g).toContain("Tier 1 (accepted)");
+  });
+
+  test("the first-party rule names every listed organisation and its domains, for its own facts only", () => {
+    const g = firstPartyGuidance();
+    for (const o of FIRST_PARTY_ORGANISATIONS) expect(g).toContain(`${o.name} (${o.domains.join(", ")})`);
+    expect(g).toContain('"first_party_for"');
+    expect(g).toContain("only for that organisation's own facts");
+    expect(sourceGuidance(TIERS, "strict", { firstParty: true })).toContain(g);
+    expect(sourceGuidance(TIERS, "strict")).not.toContain('"first_party_for"');
   });
 
   test("a format without rules still asks for the publication date, and names no list", () => {

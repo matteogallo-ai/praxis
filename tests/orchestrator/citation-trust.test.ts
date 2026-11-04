@@ -91,7 +91,7 @@ describe("domain trust on critique citations", () => {
       { url: "https://www.fca.org.uk/markets/listing-rules", first_party_for: "Financial Conduct Authority" }
     );
     const result = await orchestrator(dir).briefWithCritique(QUESTION, FORMAT, { now: NOW });
-    const id = result.adversarial.critiques[0]?.id;
+    const id = result.adversarial.critiques[0]?.id ?? "no critique";
     expect(result.sourcing_report.untrusted_citations).toEqual([]);
     expect(result.sourcing_report.first_party_sources).toEqual([
       { stage: "adversarial", item: id, organisation: "Financial Conduct Authority", url: "https://www.fca.org.uk/markets/listing-rules" },

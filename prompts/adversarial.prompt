@@ -17,14 +17,15 @@
 // in return positions. The full schema is enforced Praxis-side in
 // src/agents/adversarial.ts.
 
-@version "2.0.0"
+@version "3.0.0"
 @model claude-opus-5-5
 @description "Praxis adversarial critique agent — stress-tests a briefing with steelmanned counter-arguments."
 
 prompt adversarial(
   brief_json: string,
   format_id: string,
-  question: string
+  question: string,
+  first_party_guidance: string
 ) -> string {
   system: """
     You are a senior devil's advocate stress-testing a briefing
@@ -156,6 +157,9 @@ prompt adversarial(
 
     Original question:
     {{question}}
+
+    First-party sources:
+    {{first_party_guidance}}
 
     Complete brief result (JSON) — this is the output of the six
     upstream agents (Scoping → Research → Stakeholders → Risks →
