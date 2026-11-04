@@ -7,15 +7,15 @@ reader waits for, tolerates and pays for one briefing), not from what the
 pipeline happens to cost. A status of **met** or **not met** is published
 only from live measurements, never from an estimate; a target the
 measurement misses is published as not met, not moved to fit.
-**One live briefing has completed** (question 05, 4 Nov 2026; `docs/CLAIMS.md` C14),
-flagged insufficiently sourced, a success with a flag ("What counts"):
+**Two live briefings have completed** (question 05, 4 Nov 2026; `docs/CLAIMS.md` C14),
+both flagged insufficiently sourced, a success with a flag ("What counts"):
 too few briefings for any status.
 
 | Objective | Target | Status | Measured on |
 | --- | --- | --- | --- |
-| Latency | p95 ≤ 10 minutes per briefing | 7.8 min on n = 1 (step 0, 4 Nov 2026); n too small, no status | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
-| Error rate | ≤ 10% of started briefings end in an error | 1/2 since run records began (failed 3 Nov 2026, TruncatedOutputError; completed 4 Nov 2026); the five aborted runs of 1.2.1 predate the records; n too small, no status | `error-*.json` (budget stops excluded) against `metadata.json` under `benchmarks/outputs/live/` |
-| Cost | p95 ≤ $10.00 per briefing | $3.51 on n = 1 (step 0, 4 Nov 2026); n too small, no status; estimate for question 05, not a status: $1.39 low, $5.92 central, $12.85 high | `usage.total.cost_usd` in `metadata.json` |
+| Latency | p95 ≤ 10 minutes per briefing | 7.8 and 8.4 min on n = 2 (4 Nov 2026); n too small, no status | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
+| Error rate | ≤ 10% of started briefings end in an error | 1/3 since run records began (failed 3 Nov 2026, TruncatedOutputError; completed 4 Nov 2026); the five aborted runs of 1.2.1 predate the records; n too small, no status | `error-*.json` (budget stops excluded) against `metadata.json` under `benchmarks/outputs/live/` |
+| Cost | p95 ≤ $10.00 per briefing | $3.51 and $3.69 on n = 2 (4 Nov 2026); n too small, no status; estimate for question 05, not a status: $1.39 low, $5.92 central, $12.85 high | `usage.total.cost_usd` in `metadata.json` |
 
 The estimate comes from `bun run estimate:cost` (prompt sizes measured
 with count_tokens, `docs/live-proof-protocol.md`), and

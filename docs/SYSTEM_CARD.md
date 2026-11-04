@@ -12,10 +12,10 @@ the question, research it on the web, map stakeholders, assess risks,
 generate options, write each section (one call per section) and critique the
 result. Output: Markdown, PDF, DOCX.
 
-**Status: one briefing has completed against a real model** (question 05,
-4 Nov 2026), flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains; its quality is not yet reviewed. 7 live attempts: 6 failed
-(5 in 1.2.1 without committed records, 1 on 3 Nov 2026), 1 completed
-(4 Nov 2026). Every other result on this page comes from the mock provider,
+**Status: two briefings have completed against a real model** (question 05,
+4 Nov 2026): step 0, flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains; its rerun after the sourcing fixes, flagged insufficiently sourced: 8 of 47 items without a source, 17 from untrusted domains; their
+quality is not yet reviewed. 8 live attempts: 6 failed (5 in 1.2.1 without
+committed records, 1 on 3 Nov 2026), 2 completed (4 Nov 2026). Every other result on this page comes from the mock provider,
 which replays hand-written fixtures.
 
 ## Owner
@@ -65,9 +65,9 @@ provider sends no sampling parameter.
 
 | What | n | Result | 95% interval |
 | --- | --- | --- | --- |
-| Live briefings completed | 7 attempts | 1 of 7 | 3%–51% (Wilson) |
+| Live briefings completed | 8 attempts | 2 of 8 | 7%–59% (Wilson) |
 | Live briefing quality | 0 | not measured | — |
-| Live cost and latency per briefing | 1 | $3.51, 7.8 min of stages; n too small for the targets in [`docs/SLO.md`](SLO.md) | — |
+| Live cost and latency per briefing | 2 | $3.51, 7.8 min of stages; $3.69, 8.4 min of stages; n too small for the targets in [`docs/SLO.md`](SLO.md) | — |
 | Mock pipeline end to end | 12 benchmark questions | completes; outputs committed under `benchmarks/outputs/mock/` | not a quality measure |
 
 The mock row proves the wiring: stage order, validation, rendering,

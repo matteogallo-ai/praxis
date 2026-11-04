@@ -1,0 +1,263 @@
+{
+  "id": "05-supply-chain-acquisition",
+  "question": "Should we pursue the acquisition of a European supply-chain competitor?",
+  "format": "mckinsey-style-note",
+  "tags": [
+    "acquisition",
+    "supply-chain"
+  ],
+  "mode": "live",
+  "duration_ms": 505886,
+  "generated_at": "2026-11-04T10:52:05.823Z",
+  "provider_name": "anthropic",
+  "synthesis": {
+    "total_word_count": 960,
+    "target_words": 1200,
+    "deviation_pct": -20,
+    "sections_over_length": 1,
+    "sections_over_length_ids": [
+      "situation"
+    ],
+    "forbidden_terms_found": 1
+  },
+  "adversarial": {
+    "critical_count": 1,
+    "material_count": 4,
+    "minor_count": 1,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 5,
+    "re_synthesis_deviations": [
+      "situation",
+      "complication",
+      "key-question",
+      "answer",
+      "supporting-arguments",
+      "so-what"
+    ]
+  },
+  "sourcing": {
+    "total_items": 47,
+    "counts": {
+      "ok": 15,
+      "stale": 5,
+      "untrusted": 17,
+      "duplicated": 2,
+      "missing": 8
+    },
+    "edited_after_critique": true,
+    "insufficiently_sourced": true,
+    "freshness_unknown": 23,
+    "requester_provided": 7,
+    "untrusted_citations": [
+      {
+        "stage": "options",
+        "id": "OPT-A",
+        "url": "https://gfmag.com/features/mckinsey-says-multiple-smaller-deals-work-best/",
+        "reason": "host 'gfmag.com' matches no reputation tier"
+      },
+      {
+        "stage": "options",
+        "id": "OPT-B",
+        "url": "https://www.trenvista.net/en/freight/ec-clears-dsv-acquisition-db-schenker/",
+        "reason": "host 'www.trenvista.net' matches no reputation tier"
+      },
+      {
+        "stage": "options",
+        "id": "OPT-C",
+        "url": "https://helixr.com/joint-ventures-rarely-fail-launch-fail-eighteen-months-in/",
+        "reason": "host 'helixr.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-003",
+        "url": "https://antitrust.weil.com/catch-me-if-you-can-part-ii-below-threshold-merger-enforcement-in-the-eu-continues-to-evolve/",
+        "reason": "host 'antitrust.weil.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-004",
+        "url": "https://proventis.com/wp-content/uploads/2026/02/2026-02-02_MA-Facts_Logistics_H2-final.pdf",
+        "reason": "host 'proventis.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-006",
+        "url": "https://investor.dsv.com/static-files/230e1334-a09f-4ca3-8a3e-0ac0c16e57a5",
+        "reason": "host 'investor.dsv.com' matches no reputation tier"
+      }
+    ]
+  },
+  "usage": {
+    "stages": {
+      "scoping": {
+        "calls": 1,
+        "input_tokens": 1380,
+        "output_tokens": 1307,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.03166,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 16724
+      },
+      "research": {
+        "calls": 1,
+        "input_tokens": 49536,
+        "output_tokens": 6241,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.211482,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 45080
+      },
+      "stakeholder": {
+        "calls": 1,
+        "input_tokens": 101810,
+        "output_tokens": 8523,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.33885,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 85653
+      },
+      "risk": {
+        "calls": 1,
+        "input_tokens": 71582,
+        "output_tokens": 16488,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.358044,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 116292
+      },
+      "options": {
+        "calls": 1,
+        "input_tokens": 123326,
+        "output_tokens": 9891,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 4,
+        "cost_usd": 0.731124,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 98548
+      },
+      "synthesis": {
+        "calls": 6,
+        "input_tokens": 173126,
+        "output_tokens": 18680,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.5330520000000001,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 35986
+      },
+      "adversarial": {
+        "calls": 1,
+        "input_tokens": 190388,
+        "output_tokens": 7287,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 4,
+        "cost_usd": 0.947292,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 71206
+      },
+      "synthesis-rerun": {
+        "calls": 6,
+        "input_tokens": 181711,
+        "output_tokens": 17050,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.533922,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 36197
+      }
+    },
+    "total": {
+      "calls": 18,
+      "input_tokens": 892859,
+      "output_tokens": 85467,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 23,
+      "cost_usd": 3.685426,
+      "models": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "duration_ms": 505686
+    },
+    "simulated": false,
+    "max_cost_usd": 13
+  },
+  "artefacts": {
+    "brief.md": 52358,
+    "brief.pdf": 91113,
+    "brief.docx": 16580
+  },
+  "provenance": {
+    "git_sha": "3a7ca6abc7f965290fc1a5459e95424b72e77f55",
+    "git_dirty": false,
+    "prompts": {
+      "adversarial.prompt": {
+        "version": "2.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "1dc888c1b653a946b4d8be63c09831f28729d216367dd3ad2efd7de8f3a28ec2"
+      },
+      "options.prompt": {
+        "version": "2.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "c9ca58b6d6bc62bf78d96be8a4ebe402f8f4001fa97a0e1b428119055797a87e"
+      },
+      "research.prompt": {
+        "version": "3.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "5570ea9f336dcc7f5f2744337711c3a499186d6e27a82e8cddf999044c233a1f"
+      },
+      "risk.prompt": {
+        "version": "3.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "47ab8a77df01c9714507f2e0c88f1251097e79f9df98277e62428bb3670a9e35"
+      },
+      "scoping.prompt": {
+        "version": "2.1.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b652767f30813ac6bc57a095a36d2ee80e67f2da2c3ae6dae93113a02cbedf86"
+      },
+      "stakeholder.prompt": {
+        "version": "3.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "b366dfa558258d4b6bf5ed015e21f7c82fb4ce8599a22cc0926a0ce8f7bfe485"
+      },
+      "synthesis.prompt": {
+        "version": "2.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "be7ac673a02f9d0b5f75544714edb3157f1deace536db8ae39c50c0246473f9f"
+      }
+    }
+  }
+}

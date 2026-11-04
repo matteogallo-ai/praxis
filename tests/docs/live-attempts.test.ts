@@ -7,7 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { days, liveRecords, sourcingFlag, UNRECORDED_FAILURES, wilson } from "./live-records.ts";
+import { countWord, days, liveRecords, sourcingFlag, UNRECORDED_FAILURES, wilson } from "./live-records.ts";
 
 const flat = (path: string) => readFileSync(path, "utf-8").replace(/\s+/g, " ");
 
@@ -31,37 +31,39 @@ describe("live attempt count", () => {
     );
   });
 
-  describe("the one completed briefing, wherever it is described", () => {
-    const [c] = completions;
+  describe("the completed briefings, wherever they are described", () => {
     const usd = (n: number) => `$${n.toFixed(2)}`;
-    // These sentences describe a single completion; a second must rewrite them.
-    test("there is exactly one", () => expect(completions).toHaveLength(1));
+    const minutes = (ms: number) => `${(ms / 60_000).toFixed(1)} min`;
+    const [step0] = completions;
+    const count = countWord(completions.length);
 
-    test("README: cost, day and its sourcing flag", () => {
-      expect(flat("README.md")).toContain(`question 05, ${days(completions)}, ${usd(c?.cost_usd ?? 0)}`);
-      expect(flat("README.md")).toContain(sourcingFlag(c as NonNullable<typeof c>));
+    test("README: each one's cost and sourcing flag", () => {
+      expect(flat("README.md")).toContain(`Praxis has completed **${count} briefings against a real model**`);
+      for (const c of completions) expect(flat("README.md")).toContain(`${usd(c.cost_usd)}, ${sourcingFlag(c)}`);
     });
 
-    test("system card: status flag and the cost and latency row", () => {
-      expect(flat("docs/SYSTEM_CARD.md")).toContain(sourcingFlag(c as NonNullable<typeof c>));
-      expect(flat("docs/SYSTEM_CARD.md")).toContain(
-        `| Live cost and latency per briefing | 1 | ${usd(c?.cost_usd ?? 0)}, ${((c?.stages_ms ?? 0) / 60_000).toFixed(1)} min of stages;`
-      );
+    test("system card: each one's flag, and the cost and latency row", () => {
+      const card = flat("docs/SYSTEM_CARD.md");
+      expect(card).toContain(`**Status: ${count} briefings have completed against a real model**`);
+      for (const c of completions) expect(card).toContain(sourcingFlag(c));
+      const each = completions.map((c) => `${usd(c.cost_usd)}, ${minutes(c.stages_ms)} of stages`).join("; ");
+      expect(card).toContain(`| Live cost and latency per briefing | ${completions.length} | ${each};`);
     });
 
     test("protocol: what step 0's completed attempt measured", () => {
-      const a = c?.adversarial;
+      const a = step0?.adversarial;
       const p = flat("docs/live-proof-protocol.md");
       expect(p).toContain(
-        `${usd(c?.cost_usd ?? 0)} under the $10 cap, ${Math.round((c?.stages_ms ?? 0) / 1000)} s of stages, ${c?.searches} web searches`
+        `${usd(step0?.cost_usd ?? 0)} under the $10 cap, ${Math.round((step0?.stages_ms ?? 0) / 1000)} s of stages, ${step0?.searches} web searches`
       );
       expect(p).toContain(`${a?.critical_count} critical, ${a?.material_count} material and ${a?.minor_count} minor`);
-      expect(p).toContain(sourcingFlag(c as NonNullable<typeof c>));
+      expect(p).toContain(sourcingFlag(step0 as NonNullable<typeof step0>));
     });
 
-    test("CLAUDE.md and the SLO name it", () => {
-      expect(flat("CLAUDE.md")).toContain(`one briefing has completed against a real model (question 05, ${days(completions)}`);
-      expect(flat("docs/SLO.md")).toContain(`**One live briefing has completed** (question 05, ${days(completions)}`);
+    test("CLAUDE.md and the SLO name them", () => {
+      expect(flat("CLAUDE.md")).toContain(`${count} briefings have completed against a real model (question 05, ${days(completions)}`);
+      const capital = count.charAt(0).toUpperCase() + count.slice(1);
+      expect(flat("docs/SLO.md")).toContain(`**${capital} live briefings have completed** (question 05, ${days(completions)}`);
     });
   });
 });
