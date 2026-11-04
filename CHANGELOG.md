@@ -38,12 +38,14 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- The research, stakeholder and risk prompts (3.0.0: a new required
-  `source_guidance` parameter) name the format's trusted hosts by tier and
-  ask for each source's `published_at` as the page states it, never a
-  guess. The list guides the search; web search gets no `allowed_domains`.
-  Prompt token counts re-measured with count_tokens; the protocol's and the
-  SLO page's estimates follow (question 05: $1.39 / $5.92 / $12.85).
+- The research, stakeholder, risk and options prompts (3.0.0: a new
+  required `source_guidance` parameter) name the format's trusted hosts by
+  tier and ask for each source's `published_at` as the page states it,
+  never a guess. The options' citations are judged by the same domain
+  check, so their stage gets the same guide. The list guides the search;
+  web search gets no `allowed_domains`. Prompt token counts re-measured
+  with count_tokens; the protocol's and the SLO page's estimates follow
+  (question 05: $1.39 / $5.94 / $12.89).
 
 - The scoping stage names the facts only the requester can supply
   (`requester_provided`, scoping prompt 2.1.0). The briefing lists them under

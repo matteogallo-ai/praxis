@@ -67,8 +67,8 @@ citations, enforce the format's `sourcing_policy`:
 under `strict` a missing, stale or untrusted source aborts the brief; under
 `permissive` it is reported. A source is stale only by its publication date;
 without one its freshness is unknown and counted apart. The research,
-stakeholder and risk prompts ask for the date the page states and name the
-format's trusted hosts, as guidance, not as a search filter. `docs/architecture.md` has the module map.
+stakeholder, risk and options prompts ask for the date the page states and
+name the format's trusted hosts, as guidance, not as a search filter. `docs/architecture.md` has the module map.
 
 ## Quick start
 

@@ -138,7 +138,7 @@ the run id. It does not date retrieval: a source the model returns without
 
 ### What the search stages are told
 
-The research, stakeholder and risk prompts receive a sourcing guide written
+The research, stakeholder, risk and options prompts receive a sourcing guide written
 by code from the format's rules (`src/sourcing/guidance.ts`): the trusted
 hosts by tier (or the allow- or deny-list), which tiers are accepted, the
 freshness limit, and the request to give `published_at` only as the page
