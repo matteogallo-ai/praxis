@@ -20,7 +20,7 @@ function root(withLive: string[]): string {
     mkdirSync(out, { recursive: true });
     writeFileSync(join(out, "brief.md"), `# Brief ${id}\n\nText.\n`);
     writeFileSync(join(out, "metadata.json"), "{}");
-    writeFileSync(join(out, "scores.json"), JSON.stringify({ total: 31 }));
+    writeFileSync(join(out, "scores.json"), JSON.stringify({ total: 31, weakest_aspect: "judge-sentinel" }));
   }
   return dir;
 }
@@ -42,7 +42,8 @@ describe("annotationRecords", () => {
 
   test("blind: nothing but the brief's own text leaves the run directory", () => {
     const line = toJsonl(annotationRecords(root(["05-supply-chain-acquisition"]), ["05-supply-chain-acquisition"]));
-    expect(line).not.toContain("31");
+    expect(line).not.toContain("judge-sentinel");
+    expect(line).not.toContain('"total"');
     expect(line.endsWith("\n")).toBe(true);
     expect(line.trim().split("\n")).toHaveLength(1);
   });
@@ -59,6 +60,7 @@ describe("annotationRecords", () => {
     writeFileSync(join(later, "metadata.json"), "{}");
     const [r] = annotationRecords(dir, ["05-supply-chain-acquisition"]);
     expect(r?.brief_markdown).toBe("# Second run\n");
+    expect(r?.run).toBe("run-2026-11-05T10-00-00-000Z");
   });
 
   test("refuses an id named twice", () => {
