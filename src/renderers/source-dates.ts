@@ -9,9 +9,18 @@ export function sourceDates(s: { accessed_at: string; published_at?: string }): 
   return `${published}, accessed ${s.accessed_at}`;
 }
 
-/** The sourcing reports' line for sources without a publication date; absent when the format has no freshness rule. */
-export function freshnessUnknownLine(report: { freshness_unknown?: number }): string | undefined {
-  return report.freshness_unknown === undefined
-    ? undefined
-    : `Freshness unknown (no publication date): ${report.freshness_unknown}`;
+/**
+ * The sourcing reports' lines for what the five categories leave out: sources
+ * without a publication date, and facts only the requester can supply. Each
+ * is absent when the run did not count it.
+ */
+export function uncategorisedLines(report: { freshness_unknown?: number; requester_provided?: number }): string[] {
+  const lines: string[] = [];
+  if (report.freshness_unknown !== undefined) {
+    lines.push(`Freshness unknown (no publication date): ${report.freshness_unknown}`);
+  }
+  if (report.requester_provided !== undefined) {
+    lines.push(`Requester-provided, not sourceable: ${report.requester_provided}`);
+  }
+  return lines;
 }

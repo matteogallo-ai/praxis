@@ -93,7 +93,7 @@ import type {
   RiskAnalysisResult,
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
-import { freshnessUnknownLine } from "../../renderers/source-dates.ts";
+import { uncategorisedLines } from "../../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 import { render as dispatchRender } from "../../renderers/index.ts";
 import { RENDER_THEMES, type RenderOptions, type RenderTheme } from "../../renderers/types.ts";
@@ -791,8 +791,7 @@ export function renderSourcingReportMarkdown(report: SourcingReport): string {
       `untrusted ${report.counts.untrusted} · duplicated ${report.counts.duplicated} · ` +
       `missing ${report.counts.missing}\n\n`
   );
-  const unknown = freshnessUnknownLine(report);
-  if (unknown !== undefined) parts.push(`${unknown}\n\n`);
+  for (const line of uncategorisedLines(report)) parts.push(`${line}\n\n`);
   const cited = report.untrusted_citations ?? [];
   if (report.warnings.length === 0 && cited.length === 0) {
     parts.push("_No warnings — every inspected item passed._\n");

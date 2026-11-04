@@ -122,6 +122,12 @@ release without notice.
   therefore pass a strict freshness rule it failed before on malformed
   timestamps, and is never reported as fresh. There is no switch:
   judging age by the retrieval time is the defect fixed.
+- **Requester-provided facts.** `ScopingResult.requester_provided` and
+  `SourcingReport.requester_provided` are new optional fields. A briefing
+  whose scoping names such facts gains a code-written section,
+  `requester-provided`, after the model's sections (and before
+  "Insufficiently sourced"); category counts and `total_items` are
+  unchanged.
 - **Domain trust on options and critique citations (a bug fix).** Under a
   format's `domain_trust` rule, an option citing an untrusted domain now
   fails a strict briefing with `UntrustedDomainError` (or degrades it under

@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { executeScoping } from "../../src/agents/scoping.ts";
+import { executeScoping, parseScopingResult } from "../../src/agents/scoping.ts";
 import {
   AgentExecutionError,
   InvalidAgentOutputError,
@@ -275,5 +275,32 @@ describe("executeScoping — prompt file errors", () => {
     await expect(
       executeScoping(CTX, fixedProvider(VALID_RESPONSE), { promptPath: p })
     ).rejects.toBeInstanceOf(PromptFileError);
+  });
+});
+
+describe("parseScopingResult — requester-provided facts", () => {
+  const base = {
+    reformulated_question: "Should we buy a European logistics competitor?",
+    hidden_questions: ["At what price?"],
+    scope_boundaries: ["Europe"],
+    assumptions_to_validate: ["Financing is available"],
+  };
+
+  test("keeps the facts only the requester can supply", () => {
+    const facts = ["The acquirer's balance sheet and leverage headroom", "The acquirer's board appetite for a deal"];
+    expect(parseScopingResult(JSON.stringify({ ...base, requester_provided: facts })).requester_provided).toEqual(facts);
+  });
+
+  test("an empty list is kept; an absent field stays absent (earlier checkpoints and fixtures)", () => {
+    expect(parseScopingResult(JSON.stringify({ ...base, requester_provided: [] })).requester_provided).toEqual([]);
+    expect(parseScopingResult(JSON.stringify(base))).not.toHaveProperty("requester_provided");
+  });
+
+  test("refuses a list that is not of non-empty strings", () => {
+    for (const bad of ["one fact", [""], [3], null]) {
+      expect(() => parseScopingResult(JSON.stringify({ ...base, requester_provided: bad }))).toThrow(
+        InvalidAgentOutputError
+      );
+    }
   });
 });

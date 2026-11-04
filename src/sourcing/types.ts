@@ -215,6 +215,13 @@ export interface SourcingReport {
    * those stages ran; outside `counts` and `warnings`.
    */
   untrusted_citations?: UntrustedCitation[];
+
+  /**
+   * How many facts the scoping stage found to concern only the requester
+   * (`ScopingResult.requester_provided`). They are in no category and not in
+   * `total_items`: no source can exist for them, and none is claimed.
+   */
+  requester_provided?: number;
 }
 
 /** An options or critique citation from a domain the format does not trust. */

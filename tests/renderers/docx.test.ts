@@ -387,6 +387,14 @@ describe("buildDocxParts — document.xml content", () => {
     );
   });
 
+  test("the Sourcing Report counts the requester-provided facts apart", () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, requester_provided: 3 };
+    expect(buildDocxParts(brief, { include_sourcing_report: true })[2]?.content).toContain(
+      "Requester-provided, not sourceable: 3."
+    );
+  });
+
   test("the Sourcing Report lists the options and critique citations from untrusted domains", () => {
     const brief = makeBrief();
     brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };

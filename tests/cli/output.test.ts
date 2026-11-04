@@ -160,6 +160,12 @@ describe("renderSourcingReport — freshness", () => {
     expect(renderSourcingReport({ ...base, freshness_unknown: 4 })).toContain("Freshness unknown (no publication date): 4");
     expect(renderSourcingReport(base)).not.toContain("Freshness unknown");
   });
+
+  test("counts the requester-provided facts apart", () => {
+    const base = makeBrief().sourcing_report;
+    expect(renderSourcingReport({ ...base, requester_provided: 3 })).toContain("Requester-provided, not sourceable: 3");
+    expect(renderSourcingReport(base)).not.toContain("Requester-provided");
+  });
 });
 
 describe("renderFullBrief — Markdown body", () => {

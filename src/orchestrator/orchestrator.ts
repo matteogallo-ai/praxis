@@ -52,6 +52,7 @@ import {
 } from "../sourcing/dedupe.ts";
 import { buildReport, mergeReports } from "../sourcing/report.ts";
 import { optionsCitationReport, untrustedCitations } from "../sourcing/citations.ts";
+import { buildRequesterProvidedSection } from "../sourcing/requester.ts";
 import { SourcingValidationError } from "../sourcing/errors.ts";
 import {
   buildInsufficientlySourcedSection,
@@ -476,6 +477,9 @@ export class Orchestrator {
       () => this.doScoping(question, format, options),
       parseScopingResult
     );
+    if (scoping.requester_provided !== undefined) {
+      reports.push({ ...buildReport(policy, 0, []), requester_provided: scoping.requester_provided.length });
+    }
     const run: PipelineRun = {
       scoping,
       generatedAt: now.toISOString(),
@@ -542,9 +546,7 @@ export class Orchestrator {
         parseStoredSynthesis(stored, format, { scoping, research, stakeholders, risks, options: optionsResult }),
       1
     );
-    if (degraded) {
-      run.synthesis = withInsufficientlySourcedSection(run.synthesis, run.sourcingReport(), run);
-    }
+    run.synthesis = withCodeWrittenSections(run.synthesis, run.sourcingReport(), run);
     return run;
   }
 
@@ -691,10 +693,7 @@ export class Orchestrator {
       };
     }
 
-    const rerunWithSection =
-      initial.sourcing_report.insufficiently_sourced === true
-        ? withInsufficientlySourcedSection(rerunSynthesis, initial.sourcing_report, initial)
-        : rerunSynthesis;
+    const rerunWithSection = withCodeWrittenSections(rerunSynthesis, initial.sourcing_report, initial);
 
     const deviations = computeReSynthesisDeviations(
       initial.synthesis,
@@ -917,16 +916,21 @@ function adversarialContext(brief: BriefResult, format: Format) {
   };
 }
 
-/** Appends the code-written "Insufficiently sourced" section to a synthesis. */
-function withInsufficientlySourcedSection(
+/**
+ * Appends the sections code writes after the model's: the requester-provided
+ * facts, then the "Insufficiently sourced" items. Both the first synthesis
+ * and the critique's rerun go through here, so neither can drop them.
+ */
+function withCodeWrittenSections(
   synthesis: SynthesisResult,
   report: SourcingReport,
-  artefacts: SourcedArtefacts
+  artefacts: SourcedArtefacts & { scoping: ScopingResult }
 ): SynthesisResult {
-  return {
-    ...synthesis,
-    sections: [...synthesis.sections, buildInsufficientlySourcedSection(report, artefacts)],
-  };
+  const facts = artefacts.scoping.requester_provided ?? [];
+  const sections = [...synthesis.sections];
+  if (facts.length > 0) sections.push(buildRequesterProvidedSection(facts));
+  if (report.insufficiently_sourced === true) sections.push(buildInsufficientlySourcedSection(report, artefacts));
+  return { ...synthesis, sections };
 }
 
 /**
