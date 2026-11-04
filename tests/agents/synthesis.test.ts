@@ -788,3 +788,70 @@ describe("executeSynthesis — failure fixtures via MockLLMProvider", () => {
     expect(result.format_conformance.sections_over_length).toContain("test-section");
   });
 });
+
+// ---------------------------------------------------------------------------
+// executeSynthesis — citation markers [n]
+// ---------------------------------------------------------------------------
+
+describe("executeSynthesis — citation markers [n]", () => {
+  // A marker cites the n-th entry of the section's sources_cited; one that
+  // points at no entry is a citation the reader cannot follow.
+  async function synthesize(prose: string, sources = [SOURCE_A], rules?: string[]): Promise<unknown> {
+    const base = makeFormat();
+    const format = makeFormat({
+      sections: base.sections.map((s) => (s.id === "intro" && rules !== undefined ? { ...s, validation_rules: rules } : s)),
+    });
+    const provider = fakeLLM({ intro: { content_markdown: prose, sources_cited: sources }, body: { content_markdown: "Body." } });
+    return executeSynthesis({ ...CTX_BASE, format }, provider).catch((e: unknown) => e);
+  }
+
+  test.each([
+    ["past the last source", "Margins held [2].", "citation marker [2] that points at no entry of sources_cited (1 listed)"],
+    ["zero", "Margins held [0].", "citation marker [0] that points at no entry of sources_cited (1 listed)"],
+    ["with no source listed", "Margins held [1].", "citation marker [1] that points at no entry of sources_cited (0 listed)"],
+  ])("refuses a marker %s", async (label, prose, reason) => {
+    const err = await synthesize(prose, label === "with no source listed" ? [] : [SOURCE_A]);
+    expect(err).toBeInstanceOf(InvalidAgentOutputError);
+    expect((err as Error).message).toContain(`section 'intro': content_markdown has a ${reason}`);
+  });
+
+  test("keeps markers that point at listed sources, and bracketed text that is not a marker", async () => {
+    const prose = "Margins held [1]. Costs fell [2].\n\nSee [table 1] and [1, 2].";
+    const result = (await synthesize(prose, [SOURCE_A, SOURCE_B])) as { sections: { content_markdown: string }[] };
+    expect(result.sections[0]?.content_markdown).toBe(prose);
+  });
+
+  const RULE = "every_paragraph_ends_with_citation: true";
+  test("a paragraph without a closing marker fails 'every_paragraph_ends_with_citation', checked by code", async () => {
+    const result = (await synthesize("Margins held [1].\n\nCosts fell sharply.", [SOURCE_A], [RULE])) as {
+      sections: { validation_issues: string[] }[];
+      format_conformance: { failed_validation_rules: { section_id: string; rule: string }[] };
+    };
+    expect(result.format_conformance.failed_validation_rules).toEqual([{ section_id: "intro", rule: RULE }]);
+    expect(result.sections[0]?.validation_issues).toEqual([
+      `validation_rule not honoured: '${RULE}' (checked by code: paragraph 2 does not end with a citation marker [n])`,
+    ]);
+  });
+
+  test("paragraphs that each end with a marker pass the rule, the full stop before or after it", async () => {
+    const result = (await synthesize("Margins held [1].\n\nCosts fell sharply. [2]", [SOURCE_A, SOURCE_B], [RULE])) as {
+      format_conformance: { failed_validation_rules: unknown[] };
+    };
+    expect(result.format_conformance.failed_validation_rules).toEqual([]);
+  });
+
+  test("a host name in parentheses is not a marker", async () => {
+    const result = (await synthesize("Margins held (Reuters, June 2026).", [SOURCE_A], [RULE])) as {
+      format_conformance: { failed_validation_rules: unknown[] };
+    };
+    expect(result.format_conformance.failed_validation_rules).toEqual([{ section_id: "intro", rule: RULE }]);
+  });
+});
+
+describe("synthesis prompt — citation markers", () => {
+  test("defines [n] as the n-th entry of sources_cited, and forbids a site name in its place", async () => {
+    const text = (await Bun.file("prompts/synthesis.prompt").text()).replace(/\s+/g, " ");
+    expect(text).toContain("A citation marker `[n]` cites the n-th entry (from 1) of your `sources_cited`");
+    expect(text).toContain("never a site name, host or URL in its place");
+  });
+});
