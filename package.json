@@ -42,6 +42,7 @@
     "estimate:cost": "bun run benchmarks/estimate-cost.ts",
     "export:annotation": "bun run benchmarks/export-annotation.ts",
     "agreement": "bun run benchmarks/agreement.ts",
+    "results": "bun run benchmarks/results.ts",
     "bench:split": "bun run benchmarks/split.ts",
     "score": "bun run benchmarks/score-all.ts",
     "score:live": "bun run benchmarks/score-all.ts --live-only",
