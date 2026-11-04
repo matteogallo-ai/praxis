@@ -178,5 +178,5 @@ Sonnet-class models. Do NOT commit the key.
   `src/index.ts` (the v1.0 SemVer contract).
 - `docs/troubleshooting.md` — the ten most common errors and how
   to fix them without opening the source.
-- `benchmarks/RESULTS.md` — the 10 calibrated benchmarks and the
-  automated + human review scores.
+- `benchmarks/RESULTS.md` — the live runs, their cost and sourcing
+  counts, and the judged scores once committed; written by `bun run results`.

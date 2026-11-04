@@ -210,7 +210,7 @@ published as *unvalidated*, with the numbers that failed.
   11, 12 in id order that completes; if 05 does not complete, the first two
   of those that do. `bun run export:annotation -- --ids
   <the two> > review.jsonl` writes them for an annotation tool, one JSON
-  object per line: question, format, the brief's Markdown, and the seven
+  object per line: question, the run reviewed, format, the brief's Markdown, and the seven
   criteria with their definitions and an empty `score` (1–5) and `note`.
   Nothing the judge wrote is in the file. The brief is model output built
   on web excerpts: the annotation tool renders it as plain text, not as
@@ -220,7 +220,10 @@ published as *unvalidated*, with the numbers that failed.
   while applying the stop rule; that is said next to the agreement. The maintainer knows the pipeline:
   one informed rater, published as such. Agreement over the 14 criterion
   pairs: exact and within-one agreement, and quadratic-weighted Cohen's
-  kappa. **Threshold: kappa ≥ 0.6.** The 14 pairs come from one rater and
+  kappa (`bun run agreement -- --human review.jsonl --judge
+  benchmarks/.scoring-cache`, which pairs each review only with the judgment
+  of the run it reviewed, and refuses an unscored criterion, a briefing
+  reviewed twice and an empty review). **Threshold: kappa ≥ 0.6.** The 14 pairs come from one rater and
   two briefings, are not independent, and support no interval; kappa is
   unstable when scores bunch at 3–4. Passing this check makes the judge's
   scores *indicative*, never *validated*, and CLAIMS C18 stays on the
@@ -257,13 +260,6 @@ built; neither result exists, and no published score depends on them.
   at most 1 of 15 neutral criterion readings (the same three criteria, five
   briefings) 1 or more below the unchanged median**, each published as k/15
   with its Wilson interval. It needs a perturbation generator.
-
-## Not built yet (free, before the judge's GO)
-
-- Reading the maintainer's scores back from the annotation file, and the
-  agreement computation.
-- The script that writes `RESULTS.md` from the artefacts and its `--check`
-  in CI (methodology point 4).
 
 ## Cost
 
