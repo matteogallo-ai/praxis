@@ -412,6 +412,9 @@ export function buildMetadata(
       ...(result.sourcing_report.untrusted_citations === undefined
         ? {}
         : { untrusted_citations: result.sourcing_report.untrusted_citations }),
+      ...(result.sourcing_report.first_party_sources === undefined
+        ? {}
+        : { first_party_sources: result.sourcing_report.first_party_sources }),
     },
   };
 }

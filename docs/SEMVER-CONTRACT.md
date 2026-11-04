@@ -128,6 +128,11 @@ release without notice.
   `requester-provided`, after the model's sections (and before
   "Insufficiently sourced"); category counts and `total_items` are
   unchanged.
+- **First-party sources (ADR 0003).** `SourceReference.first_party_for` and
+  `SourcingReport.first_party_sources` are new optional fields, and
+  `FirstPartySource` a new exported type. A source the reviewed list
+  confirms is no longer untrusted, so a strict briefing that failed only on
+  such a source now completes; no other source changes category.
 - **Domain trust on options and critique citations (a bug fix).** Under a
   format's `domain_trust` rule, an option citing an untrusted domain now
   fails a strict briefing with `UntrustedDomainError` (or degrades it under

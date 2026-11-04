@@ -233,7 +233,7 @@ import type {
 } from "../agents/types.ts";
 import type { SourcingReport } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
-import { uncategorisedLines } from "../renderers/source-dates.ts";
+import { describeFirstParty, uncategorisedLines } from "../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../sourcing/citations.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
@@ -494,6 +494,7 @@ export function renderSourcingReport(report: SourcingReport): string {
     )}\n\n`
   );
   for (const line of uncategorisedLines(report)) parts.push(`${c.dim(line)}\n\n`);
+  for (const f of report.first_party_sources ?? []) parts.push(`  ${c.dim(describeFirstParty(f))}\n`);
 
   const cited = report.untrusted_citations ?? [];
   if (report.warnings.length === 0 && cited.length === 0) {

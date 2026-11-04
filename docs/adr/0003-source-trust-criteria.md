@@ -132,16 +132,36 @@ and the pipeline cannot tell a fair page from a slanted one
 - **Strict `allowed_domains` on web search.** It would hide the sources
   instead of judging them, and would also exclude first-party sites.
 
+## Implementation (4 Nov 2026)
+
+Decision 1 is implemented; Decision 2 is not (no specialist-press host has
+been checked against the six criteria).
+
+- The list is `src/sourcing/first-party-organisations.ts`. Its entries are
+  the organisations whose own decisions or publications a benchmark question
+  is about, each tied to that question; a host a format already trusts
+  needs no entry. `tests/sourcing/first-party.test.ts` fails on an entry
+  without domains, with a domain that is not written out, or with ownership
+  evidence on a host it does not list.
+- The rule judges the research, stakeholder and risk sources and, beyond
+  what Decision 1 first named, the critique's counter-evidence: a critique
+  that cites an organisation's own site for that organisation's own facts is
+  as well sourced as a research finding that does. The critique's subject
+  text is its steelmanned position. Options' citations are not judged by it.
+- Accepted items are listed in `SourcingReport.first_party_sources`, in a
+  "First-party sources" section of every briefing, and in every sourcing
+  report.
+
 ## Consequences
 
-- This record changes no list and no code. Implementing it takes:
+- When accepted, this record changed no list and no code. Implementing it took:
   - the organisation-to-domains file, and a test that fails when an entry
     has no ownership evidence;
   - a `CODEOWNERS` entry naming the maintainer for that file, with the
     ruleset on `main` requiring the code owner's review. Until both exist,
     the review is a manual rule;
   - `first_party_for` in the research, stakeholder and risk output
-    contracts, with an `@version` bump;
+    contracts (and the critique's), with an `@version` bump;
   - the publisher and subject checks;
   - a first-party count in `SourcingReport` (a new optional field) and a
     first-party list in the briefing;

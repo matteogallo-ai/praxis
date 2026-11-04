@@ -365,6 +365,16 @@ describe("output reader refusals name the field and the rule", () => {
     expect(reader.parseSource(source, "s", "raw")).not.toHaveProperty("published_at");
   });
 
+  test("parseSource keeps a first-party mark as a proposal, and drops one that is not a name", () => {
+    // Code checks the mark against the reviewed list; a bad one only means no mark.
+    expect(reader.parseSource({ ...source, first_party_for: " OECD " }, "s", "raw")).toEqual(
+      expect.objectContaining({ first_party_for: "OECD" })
+    );
+    for (const bad of ["", "   ", 5, null, ["OECD"], "x".repeat(121)]) {
+      expect(reader.parseSource({ ...source, first_party_for: bad }, "s", "raw")).not.toHaveProperty("first_party_for");
+    }
+  });
+
   test("parseSource keeps the day as written: no calendar roll-over, no time-zone shift", () => {
     // Date.parse rolls 30 Feb over to 2 March; the source never said 2 March.
     for (const impossible of ["2026-02-30", "2026-02-31", "2026-04-31", "2026-02-29T10:00:00Z"]) {

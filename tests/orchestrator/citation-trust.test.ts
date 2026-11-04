@@ -23,16 +23,17 @@ const UNTRUSTED = "https://growth-hacks.example.net/expansion";
  * The shipped fixtures, with one citation moved to an untrusted host: OPT-B's,
  * the one option citation no synthesis section repeats, or the first critique's.
  */
-function fixtures(stage: "options" | "adversarial"): string {
+function fixtures(stage: "options" | "adversarial", patch: Record<string, unknown> = {}, evidence: Record<string, unknown> = {}): string {
   const dir = mkdtempSync(join(tmpdir(), "praxis-citations-"));
   cpSync("tests/fixtures/mock-llm", dir, { recursive: true });
   const path = join(dir, `${stage}-${FORMAT}.json`);
   const fixture = JSON.parse(readFileSync(path, "utf-8")) as { response: string };
-  const body = JSON.parse(fixture.response) as Record<string, Array<Record<string, { url?: string }>>>;
+  const body = JSON.parse(fixture.response) as Record<string, Array<Record<string, unknown>>>;
   const [list, field] = stage === "options" ? ["options", "supporting_evidence"] : ["critiques", "counter_evidence"];
   const item = body[list]?.[stage === "options" ? 1 : 0];
   if (item === undefined) throw new Error(`fixture has no ${list} to edit`);
-  item[field] = { ...item[field], url: UNTRUSTED };
+  Object.assign(item, patch);
+  item[field] = { ...(item[field] as object), url: UNTRUSTED, ...evidence };
   fixture.response = JSON.stringify(body);
   writeFileSync(path, JSON.stringify(fixture));
   return dir;
@@ -81,6 +82,20 @@ describe("domain trust on critique citations", () => {
       expect.objectContaining({ stage: "adversarial", id, url: UNTRUSTED }),
     ]);
     expect(result.sourcing_report.insufficiently_sourced).toBeUndefined();
+  });
+
+  test("a counter-evidence from the organisation's own site, about it, is listed as first-party", async () => {
+    const dir = fixtures(
+      "adversarial",
+      { steelmanned_position: "The FCA's own listing rules make a UK dual listing slower and costlier than the brief assumes, which changes its timing." },
+      { url: "https://www.fca.org.uk/markets/listing-rules", first_party_for: "Financial Conduct Authority" }
+    );
+    const result = await orchestrator(dir).briefWithCritique(QUESTION, FORMAT, { now: NOW });
+    const id = result.adversarial.critiques[0]?.id ?? "no critique";
+    expect(result.sourcing_report.untrusted_citations).toEqual([]);
+    expect(result.sourcing_report.first_party_sources).toEqual([
+      { stage: "adversarial", item: id, organisation: "Financial Conduct Authority", url: "https://www.fca.org.uk/markets/listing-rules" },
+    ]);
   });
 
   test("after the rerun, each untrusted citation is listed once", async () => {

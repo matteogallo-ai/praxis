@@ -101,7 +101,7 @@ export async function executeStakeholderMapping(
     research_json: untrustedJson("research", ctx.research),
     format_id: ctx.format.id,
     sourcing_policy: ctx.format.sourcing_policy,
-    source_guidance: sourceGuidance(ctx.format.sourcing_rules, ctx.format.sourcing_policy),
+    source_guidance: sourceGuidance(ctx.format.sourcing_rules, ctx.format.sourcing_policy, { firstParty: true }),
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);

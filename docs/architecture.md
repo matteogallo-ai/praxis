@@ -16,6 +16,7 @@ src/
   agents/         one module per stage: load its .prompt file, render it, call the
                   provider, parse and validate the JSON answer into a typed result
   sourcing/       source checks: SOURCE_MISSING markers, freshness, domain trust,
+                  first-party sources (reviewed organisation list, ADR 0003),
                   cross-stage duplicates; strict policy throws, permissive reports
   registry/       format schema, YAML loader, validator, in-memory registry
   renderers/      Markdown, PDF (pdfkit) and DOCX (hand-written OPC parts) renderers

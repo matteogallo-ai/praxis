@@ -5,7 +5,9 @@
  */
 import { describe, expect, test } from "bun:test";
 
+import { executeAdversarialCritique } from "../../src/agents/adversarial.ts";
 import { executeOptionsGeneration } from "../../src/agents/options.ts";
+import { firstPartyGuidance } from "../../src/sourcing/guidance.ts";
 import { executeResearch } from "../../src/agents/research.ts";
 import { executeRiskAnalysis } from "../../src/agents/risk.ts";
 import { executeStakeholderMapping } from "../../src/agents/stakeholder.ts";
@@ -85,8 +87,20 @@ describe("sourcing guide in the search stages' prompts", () => {
       // The system example lists the field the guide asks for, so the two agree.
       expect(p).toContain('"published_at": "YYYY-MM-DD');
       expect(p).not.toContain("these three fields");
+      // Options' citations are not judged by the first-party rule (ADR 0003).
+      expect(p.includes('"first_party_for"')).toBe(stage !== "options");
       // Only the research stages' sources are freshness-checked.
       expect(p.includes("treats sources older than")).toBe(stage !== "options");
     });
   }
+
+  test("adversarial: the critique is told the first-party rule its counter-evidence is judged by", async () => {
+    const p = await promptOf((llm) =>
+      executeAdversarialCritique({ brief_result: { question: "Should we list in London?" } as never, format: FORMAT }, llm)
+    );
+    expect(p).toContain(firstPartyGuidance());
+    // The mark's place in the answer is shown, not only described.
+    expect(p).toMatch(/"counter_evidence": [^\n]*"first_party_for"/);
+    expect(p).not.toContain("{{first_party_guidance}}");
+  });
 });

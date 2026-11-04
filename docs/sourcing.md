@@ -246,6 +246,30 @@ Under `strict`, the report is bundled into
 `SourcingValidationError.report` (or a typed subclass). Under
 `permissive`, the caller receives the report directly.
 
+### First-party sources
+
+An organisation's own site is the primary source for that organisation's
+own facts (ADR 0003). A research, stakeholder or risk source, or a
+critique's counter-evidence, on a host the format does not trust is
+accepted when all three hold:
+
+1. the stage marked it `first_party_for` an organisation in the reviewed
+   list `src/sourcing/first-party-organisations.ts`;
+2. the URL's host is one of that organisation's domains or a subdomain of
+   one, compared label by label (`fca.org.uk.evil.net` never matches);
+3. the item's text names the organisation, as a whole word with its case:
+   a finding's claim, a stakeholder's name, a risk's description, a
+   critique's steelmanned position.
+
+An accepted source is not untrusted and does not block under `strict`; its
+item takes whatever category its other checks give (`ok` when nothing else
+fails). It is listed in `SourcingReport.first_party_sources`, in the
+briefing's "First-party sources" section and in every sourcing report,
+because whether the sentence states the organisation's own fact is the
+model's judgment, which code cannot check. A mark the list refuses changes
+nothing. The stages are told the rule and the list in their prompt; the
+options stage is not, and its citations are not judged by it.
+
 ### Requester-provided facts
 
 Some facts a briefing needs concern only the requester: its own finances,

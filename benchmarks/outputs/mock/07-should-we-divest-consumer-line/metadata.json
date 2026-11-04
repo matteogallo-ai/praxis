@@ -58,36 +58,36 @@
       },
       "research": {
         "calls": 1,
-        "input_tokens": 1477,
+        "input_tokens": 1637,
         "output_tokens": 719,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 3,
-        "cost_usd": 0.040144,
+        "cost_usd": 0.040464,
         "models": [
           "claude-sonnet-5-5"
         ]
       },
       "stakeholder": {
         "calls": 1,
-        "input_tokens": 2749,
+        "input_tokens": 2909,
         "output_tokens": 1704,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 3,
-        "cost_usd": 0.052538,
+        "cost_usd": 0.052858,
         "models": [
           "claude-sonnet-5-5"
         ]
       },
       "risk": {
         "calls": 1,
-        "input_tokens": 5046,
+        "input_tokens": 5206,
         "output_tokens": 3196,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 2,
-        "cost_usd": 0.062051999999999996,
+        "cost_usd": 0.062372,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -118,12 +118,12 @@
       },
       "adversarial": {
         "calls": 1,
-        "input_tokens": 12141,
+        "input_tokens": 12307,
         "output_tokens": 1531,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 1,
-        "cost_usd": 0.089184,
+        "cost_usd": 0.089848,
         "models": [
           "claude-opus-5-5"
         ]
@@ -143,12 +143,12 @@
     },
     "total": {
       "calls": 18,
-      "input_tokens": 152263,
+      "input_tokens": 152909,
       "output_tokens": 12135,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 10,
-      "cost_usd": 0.6098439999999999,
+      "cost_usd": 0.611468,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"

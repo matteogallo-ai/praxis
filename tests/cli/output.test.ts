@@ -154,6 +154,21 @@ describe("renderSourcingReport — citations", () => {
   });
 });
 
+describe("renderSourcingReport — first-party", () => {
+  test("counts and lists the first-party sources", () => {
+    const base = makeBrief().sourcing_report;
+    const out = renderSourcingReport({ ...base, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }] });
+    expect(out).toContain("First-party (an organisation's own site, for its own facts): 1");
+    expect(out).toContain("[research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x");
+  });
+
+  test("sourcing_summary counts the first-party sources", () => {
+    const base = makeBrief();
+    const md = renderFullBrief(makeBrief({ sourcing_report: { ...base.sourcing_report, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }] } }));
+    expect(md).toMatch(/sourcing_summary: "[^"]* first_party=1[^"]*"/);
+  });
+});
+
 describe("renderSourcingReport — freshness", () => {
   test("counts the sources of unknown freshness when the format dates them", () => {
     const base = makeBrief().sourcing_report;
