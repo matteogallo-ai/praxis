@@ -43,6 +43,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Step 1 live records (4 Nov 2026, `8df678f`): questions 08, 10, 11 and 12
+  completed, all flagged insufficiently sourced; question 02 failed in
+  synthesis. $17.96 spent against a $30.24 central estimate. Compared in
+  `benchmarks/outputs/live/README.md`, with the estimate frozen in
+  `benchmarks/estimates/step-1.json`; `SHA256SUMS` lists every record.
+
 - First-party sources (ADR 0003, now implemented for its first decision).
   A research, stakeholder or risk source, or a critique's counter-evidence,
   on an untrusted host counts as the organisation's own source when the
