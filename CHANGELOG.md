@@ -38,6 +38,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- The scoping stage names the facts only the requester can supply
+  (`requester_provided`, scoping prompt 2.1.0). The briefing lists them under
+  "Requester-provided, not sourceable", written by code; the sourcing report
+  counts them apart (`requester_provided`), never as sourced (C24). Prompt
+  token counts re-measured with count_tokens.
+
 - The first completed live briefing: question 05, 4 Nov 2026, $3.51 and
   7.8 minutes of stages, committed under
   `benchmarks/outputs/live/05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/`.

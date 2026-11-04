@@ -221,6 +221,7 @@ Every validator returns a report, regardless of policy:
   warnings: SourcingWarning[];
   missing_sources_count: number;           // convenience alias (v0.4 compat)
   freshness_unknown?: number;               // sources without a publication date; set when the format has a freshness rule
+  requester_provided?: number;               // facts only the requester can supply (scoping); in no category, not in total_items
   untrusted_citations?: UntrustedCitation[]; // options and critique citations failing domain_trust; set when the format has that rule and one of those stages ran
 }
 ```
@@ -232,6 +233,24 @@ reconcile with `total_items`.
 Under `strict`, the report is bundled into
 `SourcingValidationError.report` (or a typed subclass). Under
 `permissive`, the caller receives the report directly.
+
+### Requester-provided facts
+
+Some facts a briefing needs concern only the requester: its own finances,
+strategy, board, shareholders or customers. No public source can establish
+them, and an anonymous question gives no company to search for. The scoping
+stage lists them in `ScopingResult.requester_provided`, and code:
+
+- appends a **Requester-provided, not sourceable** section to the briefing
+  listing them, in every renderer, after the critique's rerun too;
+- counts them in `SourcingReport.requester_provided`, in no category and
+  not in `total_items`, so they never raise the share of sourced items.
+
+The later stages see the list in the scoping output they receive. An item
+of theirs that rests on such a fact and has no source is still a
+`SOURCE_MISSING` item, counted as missing and blocking under `strict`: being
+on the list does not excuse it, because the list is the model's and code
+cannot tell a fact about the requester from one that could be researched.
 
 ### Aggregating across agents
 

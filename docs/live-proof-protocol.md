@@ -358,7 +358,7 @@ allowances hold**. They are assumptions, not bounds the API enforces:
 - Text that tokenizes below 2.5 characters per token (base64, CJK) is
   sized low the same way. The tool definitions and message framing the API
   adds are not counted apart: on the measured prompts, the margin between
-  2.5 and the measured 2.63 or more is at least 122 tokens on the shortest
+  2.5 and the measured 2.63 or more is at least 185 tokens on the shortest
   (scoping, which has no tools) and 224 on the shortest search stage
   (research).
 - A run killed by a signal writes no `metadata.json`: what it spent since

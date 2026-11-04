@@ -105,6 +105,7 @@ paid, and in its current state it is expected to fail (see Status).
 - Untrusted content (earlier stages' output, web page excerpts) delimited in every prompt; answers that obey an injected instruction are rejected; tested on a simulated poisoned search result, not against a live model (C17).
 - The API key never reaches stderr, run files or a printed provider; home paths and e-mail addresses in stderr are masked (C20).
 - Installs and runs from a clean clone, with PromptLang from npm (C19).
+- Facts only the requester can supply are listed in the briefing as "Requester-provided, not sourceable" and counted apart, never as sourced (C24).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
 prove it; CI fails if one of them does not pass.
