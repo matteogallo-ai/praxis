@@ -12,13 +12,13 @@ estimate, misses is published as **not met**; it is not moved to fit.
 | --- | --- | --- | --- |
 | Latency | p95 ≤ 10 minutes per briefing | Not measured | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
 | Error rate | ≤ 10% of started briefings end in an error | Not measured | exit code of each run |
-| Cost | p95 ≤ $2.50 per briefing | **Not met**, on the estimate: question 05 (step 0), $1.33 low, $5.75 central, $12.54 high | `usage.total.cost_usd` in `metadata.json` |
+| Cost | p95 ≤ $2.50 per briefing | **Not met**, on the estimate: question 05 (step 0), $1.37 low, $5.87 central, $12.78 high | `usage.total.cost_usd` in `metadata.json` |
 
 The cost status comes from `bun run estimate:cost` (prompt sizes measured
 with count_tokens, `docs/live-proof-protocol.md`), and
 `tests/docs/slo.test.ts` fails if the estimate moves without it. Only the
 low case meets the target; the central and high cases miss it, and the five
-protocol questions range from $5.68 to $5.90 central. The first live
+protocol questions range from $5.80 to $6.02 central. The first live
 measurements replace the estimate here.
 
 ## What counts
@@ -44,12 +44,12 @@ each continuation a new request with its own limits
 (`DEFAULT_MAX_TOOL_ROUNDS`). The ceilings below are therefore per round, and
 per briefing in the worst case.
 
-- **Output tokens**: one round per stage costs at most $1.44 (8 000 tokens
-  on Opus for scoping, $0.16; 16 000 on Sonnet for each of research,
-  stakeholders and risks, $0.48; 16 000 on Opus for options, $0.32; 8 000 on
-  Sonnet for each of six sections, $0.48). With every search stage using its
-  five rounds, the ceiling is $4.64; a retried stage or section pays its
-  ceiling again.
+- **Output tokens**: one round per stage costs at most $1.60 (8 000 tokens
+  on Opus for scoping, $0.16; 16 000 on Sonnet for each of research and
+  stakeholders, $0.32; 32 000 on Sonnet for risks, $0.32; 16 000 on Opus
+  for options, $0.32; 8 000 on Sonnet for each of six sections, $0.48).
+  With every search stage using its five rounds, the ceiling is $5.44; a
+  retried stage or section pays its ceiling again.
 - **Web search**: five searches per request, so 20 with one round per
   search stage ($0.20) and 100 with five ($1.00).
 - **Input tokens** have no ceiling in code: search results enter the
@@ -63,10 +63,12 @@ per briefing in the worst case.
   before it is sent, timeouts are charged at it, and a run passes the cap
   only when a request costs more than its worst case, through searches
   that add more than 15 000 tokens each (`src/orchestrator/ledger.ts`).
-- **Latency**: the request timeouts add up to 40 minutes with one round
-  per stage, 168 minutes with five rounds per search stage; they are sized
-  for a request using its whole output ceiling at a slow 40 tokens per
-  second. Ten minutes is what a reader waiting for a briefing tolerates, and
+- **Latency**: the request timeouts add up to 47 minutes with one round
+  per stage, 203 minutes with five rounds per search stage (adversarial
+  aside); they are sized for a request using its whole output ceiling at a
+  slow 40 tokens per second. Risk's alone, 15 minutes, is above the
+  10-minute target: a timeout bounds a hung request, it is not the
+  expected duration. Ten minutes is what a reader waiting for a briefing tolerates, and
   assumes stages use a fraction of their ceilings and rounds, which only a
   live measurement can confirm.
 - **Cost**: a briefing must cost less than 10 minutes of the time of the

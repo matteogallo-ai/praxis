@@ -70,6 +70,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The risk stage's `max_tokens` rises from 16 000 to 32 000 (timeout
+  15 minutes). The first live run cut its answer at 16 000; a cut answer
+  gives only a lower bound, so the ceiling is twice it. Question 05's
+  estimate moves to $1.37 / $5.87 / $12.78. The run record is committed
+  under `benchmarks/outputs/live/05-supply-chain-acquisition/`.
 - `docs/SLO.md` publishes each target's status. The cost target, set from
   intended use, stays at p95 ≤ $2.50 per briefing and is **not met** on the
   estimate (question 05: $5.75 central; only its low case meets it), pinned

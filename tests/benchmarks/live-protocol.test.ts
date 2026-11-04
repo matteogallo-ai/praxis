@@ -148,6 +148,14 @@ describe("docs/live-proof-protocol.md", () => {
     const full = (r: string | null) => r === null;
     expect(flat).toContain(`from a cap of ${usd(smallestCap(once, brief))} (rerun skipped)`);
     expect(flat).toContain(`finish in full from ${usd(smallestCap(once, full))}`);
+    const step0 = commands[0] as { cap: number; ids: string[] };
+    const noRetry = capWalk(mock(PROBE), false, once, step0.cap);
+    if (noRetry.refusedAt === "synthesis-rerun") {
+      expect(flat).toContain(`Without that retry the high case yields a brief under ${usd(step0.cap).replace(".00", "")}, with its synthesis rerun skipped at ${usd(noRetry.spent)}`);
+    } else {
+      expect(noRetry.refusedAt).toBeNull();
+      expect(flat).toContain(`Without that retry the high case completes under ${usd(step0.cap).replace(".00", "")}`);
+    }
     expect(flat).toContain(`with one stage retry, ${usd(smallestCap(high, brief))} and ${usd(smallestCap(high, full))}`);
   });
 

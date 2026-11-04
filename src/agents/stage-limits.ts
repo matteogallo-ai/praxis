@@ -40,7 +40,9 @@ const STAGE_LIMITS: Readonly<Record<string, StageLimits>> = {
   scoping: limits(8_000, 0),
   research: limits(16_000, 5),
   stakeholder: limits(16_000, 5),
-  risk: limits(16_000, 5),
+  // A live run cut risk's answer at 16 000
+  // (benchmarks/outputs/live/05-supply-chain-acquisition/): twice that.
+  risk: limits(32_000, 5),
   options: limits(16_000, 5),
   synthesis: limits(8_000, 0),
   adversarial: limits(16_000, 5),

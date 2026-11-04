@@ -57,32 +57,42 @@ its format, `mckinsey-style-note`, is the one two of the five use (the hard
 case included), and it is not `strict_editorial`. Question 12 costs
 within a cent of it but is the hard case, built to stress sourcing, not to represent.
 Question 11 is $0.07 cheaper in the central case but atypical (synthesis
-regenerated under `strict_editorial`, $15.16 in the high case).
+regenerated under `strict_editorial`, $15.40 in the high case).
 
 $10 is a limit, not a fuse: before each request the ledger reserves that
 request's worst case and sends it only if what is spent, what requests in
 flight hold and that worst case fit in $10 ([§ Ceiling](#ceiling)). The
 estimator's stages, high scenario, cumulative: scoping $0.17, research
-$0.97, stakeholders $1.83, risks $2.82, options $5.09, synthesis $6.10,
-adversarial $8.81. Walked through the reservations
+$0.97, stakeholders $1.83, risks $3.06, options $5.33, synthesis $6.34,
+adversarial $9.05. Walked through the reservations
 (`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`):
 
 | Scenario | Under $10 |
 | --- | --- |
-| Low | completes at $1.33 |
-| Central | completes at $5.75 |
-| High | stops before adversarial at $8.81 |
+| Low | completes at $1.37 |
+| Central | completes at $5.87 |
+| High | stops before adversarial at $9.05 |
 
 The high scenario retries its costliest stage once, and that stage is
 adversarial (Opus, 5 searches, 16 000 `max_tokens`): the first attempt
-runs, then the retry reserves $2.99 on top of $8.81 spent, more than $10
-allows. Without that retry the high case completes under $10.
+runs, then the retry reserves $2.99 on top of $9.05 spent, more than $10
+allows. Without that retry the high case yields a brief under $10, with
+its synthesis rerun skipped at $9.05.
 A run that stops leaves no brief: `error-*.json` records what each stage
 spent, which is the measurement step 1 is costed from. The high case would
-yield a brief from a cap of $9.09 (rerun skipped) and finish in full from
-$9.89, without a retry; with one stage retry, $11.80 and $12.60. A cap
+yield a brief from a cap of $9.33 (rerun skipped) and finish in full from
+$10.13, without a retry; with one stage retry, $12.04 and $12.84. A cap
 reached during the synthesis rerun keeps the complete pre-rerun brief,
 with `rerun.skipped` in its `metadata.json`.
+
+**First attempt, 2026-11-03.** It stopped at risk: the answer was cut at
+its 16 000 `max_tokens` (`TruncatedOutputError`, not retried). It spent
+$0.92: scoping $0.03, research $0.20, stakeholders $0.24, risks $0.44
+(`benchmarks/outputs/live/05-supply-chain-acquisition/error-2026-11-03T14-47-43-035Z.json`).
+Risk's ceiling is now 32 000, twice the one its answer was cut at
+(`src/agents/stage-limits.ts`), and the figures above include it. The
+second attempt is the same command: `bench:live` keeps no checkpoints, so
+it is a new run that pays the first three stages again.
 
 ### Step 1: the other four, capped at $14 each
 
@@ -95,8 +105,8 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 
 - `--max-cost-usd 14` caps each briefing the same way. Walked through the
   reservations, every question's high case yields a brief under it;
-  question 11, the costliest ($15.16 in full), does so with its rerun
-  skipped, at $13.11. `tests/benchmarks/live-protocol.test.ts` fails if
+  question 11, the costliest ($15.40 in full), does so with its rerun
+  skipped, at $13.35. `tests/benchmarks/live-protocol.test.ts` fails if
   one would not.
 - Stop after step 0 if it failed for a systematic cause (authentication,
   model id, request shape) or if any stage timed out: fix it, free, before
@@ -241,12 +251,12 @@ built; neither result exists, and no published score depends on them.
 
 | Question | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| 02-cfo-buyback-briefing | $1.36 | $5.90 | $12.83 |
-| 05-supply-chain-acquisition | $1.33 | $5.75 | $12.54 |
-| 08-ai-regulation-position | $1.36 | $5.90 | $12.89 |
-| 11-family-office-co-investment | $1.39 | $5.68 | $15.16 |
-| 12-sodium-ion-plant-morocco | $1.33 | $5.75 | $12.55 |
-| **Total** | **$6.76** | **$28.99** | **$65.97** |
+| 02-cfo-buyback-briefing | $1.41 | $6.02 | $13.07 |
+| 05-supply-chain-acquisition | $1.37 | $5.87 | $12.78 |
+| 08-ai-regulation-position | $1.41 | $6.02 | $13.13 |
+| 11-family-office-co-investment | $1.44 | $5.80 | $15.40 |
+| 12-sodium-ion-plant-morocco | $1.37 | $5.87 | $12.79 |
+| **Total** | **$7.00** | **$29.59** | **$67.17** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -275,11 +285,11 @@ No prompt caching is assumed.
 
 | | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| Estimate | $1.33 | $5.75 | $12.54 |
+| Estimate | $1.37 | $5.87 | $12.78 |
 
 - Ceiling: **$10.00**, timeouts included, within the allowances below. In
-  the high case the run stops before adversarial's retry at $8.81 rather than
-  reaching $12.54.
+  the high case the run stops before adversarial's retry at $9.05 rather than
+  reaching $12.78.
 
 The prompt sizes are measured; the search sizes, output shares and the
 growth of live upstream outputs over the fixtures stay assumptions:
@@ -383,7 +393,7 @@ protocol's cost:
 ## What each GO authorizes
 
 1. **Step 0**: the one `bench:live` command for `05-supply-chain-acquisition`,
-   one attempt. Expected ≈ $5.75 (central); at most $10.00, timeouts included,
+   one attempt. Expected ≈ $5.87 (central); at most $10.00, timeouts included,
    within the allowances of [§ Ceiling](#ceiling).
 2. **Step 1**, after step 0 and a re-costing from its measured usage: the
    other four. Before that re-costing: at most $14 each, $56.00 for the
