@@ -17,6 +17,12 @@ describe("live attempt count", () => {
   const attempts = failed + completions.length;
   const sentence = `${attempts} live attempts: ${failed} failed (${UNRECORDED_FAILURES} in 1.2.1 without committed records, ${failures.length} on ${days(failures)}), ${completions.length} completed (${days(completions)})`;
 
+  test("failures and completions are listed oldest first, whatever the directory order", () => {
+    const sorted = (xs: readonly { at: string }[]) => xs.every((x, i) => i === 0 || (xs[i - 1] as { at: string }).at <= x.at);
+    expect(sorted(failures)).toBe(true);
+    expect(sorted(completions)).toBe(true);
+  });
+
   for (const path of ["README.md", "docs/SYSTEM_CARD.md"]) {
     test(`${path} states it from the run records`, () => {
       expect(flat(path)).toContain(sentence);

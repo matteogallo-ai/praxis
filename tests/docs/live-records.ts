@@ -55,7 +55,9 @@ export function liveRecords(): { failures: { type: string; at: string }[]; compl
       stages_ms: Object.values(meta.usage.stages).reduce((a, s) => a + s.duration_ms, 0),
     };
   });
-  // Oldest first: step 0 is the first completion wherever it is described.
+  // Oldest first, both: directory order differs between filesystems, and
+  // step 0 is the first completion wherever it is described.
+  failures.sort((a, b) => a.at.localeCompare(b.at));
   completions.sort((a, b) => a.at.localeCompare(b.at));
   return { failures, completions };
 }
