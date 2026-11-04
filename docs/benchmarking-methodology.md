@@ -40,7 +40,7 @@ A score is published only when all of the following hold. Point 1 is in
 under this method is planned in [`live-proof-protocol.md`](live-proof-protocol.md).
 
 1. **Only live output is scored.** Each scored briefing has a committed run
-   artefact under `benchmarks/outputs/live/<id>/`, never overwritten: the
+   artefact under `benchmarks/outputs/live/<id>/run-<start time>/`, never overwritten: the
    briefing, and a `metadata.json` with the model IDs, tokens, cost and
    duration per stage, and the git SHA and each prompt's version, model and
    hash (`provenance`). Failed runs are committed with their cause
