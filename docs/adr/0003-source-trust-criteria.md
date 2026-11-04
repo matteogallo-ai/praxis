@@ -152,6 +152,27 @@ been checked against the six criteria).
   "First-party sources" section of every briefing, and in every sourcing
   report.
 
+## Amendments
+
+### 4 Nov 2026: a risk's likelihood and impact are not first-party
+
+- **Found by:** the human review of question 10's step 1 briefing (rows 7
+  and 8 of its "First-party sources"). `RISK-003 likelihood` on
+  ghgprotocol.org and `RISK-008 likelihood` (very-high) on ifrs.org had
+  passed all three checks.
+- **Why the checks passed:** the host was the organisation's and the risk's
+  description named it. But a likelihood or an impact is the model's
+  judgement of what may happen, not a decision, rule, publication or figure
+  of the organisation. Decision 1 already excluded "forecasts"; the code
+  did not apply that to estimates.
+- **Change:** a risk's `likelihood_evidence` and `impact_evidence` are never
+  first-party. The risk prompt no longer receives the rule or shows
+  `first_party_for` in its example (risk.prompt 3.1.1). Research findings,
+  stakeholder positions and critique counter-evidence keep the rule.
+- **Effect on records:** none is rewritten. Question 10's two items would
+  now be counted untrusted; the human review is recorded in
+  `benchmarks/outputs/live/README.md`.
+
 ## Consequences
 
 - When accepted, this record changed no list and no code. Implementing it took:

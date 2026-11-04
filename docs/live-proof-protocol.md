@@ -76,25 +76,25 @@ $10 is a limit, not a fuse: before each request the ledger reserves that
 request's worst case and sends it only if what is spent, what requests in
 flight hold and that worst case fit in $10 ([§ Ceiling](#ceiling)). The
 estimator's stages, high scenario, cumulative: scoping $0.17, research
-$1.00, stakeholders $1.89, risks $3.15, options $5.46, synthesis $6.47,
-adversarial $9.20. Walked through the reservations
+$1.00, stakeholders $1.89, risks $3.14, options $5.45, synthesis $6.46,
+adversarial $9.19. Walked through the reservations
 (`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`):
 
 | Scenario | Under $10 |
 | --- | --- |
 | Low | completes at $1.40 |
 | Central | completes at $5.97 |
-| High | stops before adversarial at $9.20 |
+| High | stops before adversarial at $9.19 |
 
 The high scenario retries its costliest stage once, and that stage is
 adversarial (Opus, 5 searches, 16 000 `max_tokens`): the first attempt
-runs, then the retry reserves $3.01 on top of $9.20 spent, more than $10
+runs, then the retry reserves $3.01 on top of $9.19 spent, more than $10
 allows. Without that retry the high case yields a brief under $10, with
-its synthesis rerun skipped at $9.20.
+its synthesis rerun skipped at $9.19.
 A run that stops leaves no brief: `error-*.json` records what each stage
 spent, which is the measurement step 1 is costed from. The high case would
-yield a brief from a cap of $9.48 (rerun skipped) and finish in full from
-$10.28, without a retry; with one stage retry, $12.21 and $13.01. A cap
+yield a brief from a cap of $9.47 (rerun skipped) and finish in full from
+$10.27, without a retry; with one stage retry, $12.20 and $13.00. A cap
 reached during the synthesis rerun keeps the complete pre-rerun brief,
 with `rerun.skipped` in its `metadata.json`.
 
@@ -126,7 +126,7 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 - `--max-cost-usd 14` caps each briefing the same way. Walked through the
   reservations, every question's high case yields a brief under it;
   question 11, the costliest ($15.40 in full), does so with its rerun
-  skipped, at $13.52. `tests/benchmarks/live-protocol.test.ts` fails if
+  skipped, at $13.51. `tests/benchmarks/live-protocol.test.ts` fails if
   one would not.
 - Stop after step 0 if it failed for a systematic cause (authentication,
   model id, request shape) or if any stage timed out: fix it, free, before
@@ -275,12 +275,12 @@ built; neither result exists, and no published score depends on them.
 
 | Question | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| 02-cfo-buyback-briefing | $1.44 | $6.13 | $13.25 |
-| 05-supply-chain-acquisition | $1.40 | $5.97 | $12.95 |
-| 08-ai-regulation-position | $1.43 | $6.12 | $13.30 |
-| 11-family-office-co-investment | $1.46 | $5.90 | $15.57 |
+| 02-cfo-buyback-briefing | $1.43 | $6.12 | $13.24 |
+| 05-supply-chain-acquisition | $1.40 | $5.97 | $12.94 |
+| 08-ai-regulation-position | $1.43 | $6.11 | $13.29 |
+| 11-family-office-co-investment | $1.46 | $5.90 | $15.56 |
 | 12-sodium-ion-plant-morocco | $1.40 | $5.97 | $12.95 |
-| **Total** | **$7.13** | **$30.09** | **$68.02** |
+| **Total** | **$7.12** | **$30.06** | **$67.97** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -297,7 +297,7 @@ Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 Prompt sizes are the mock run's, read at the 2.73 characters per token
 Anthropic's count_tokens endpoint measured on 66 rendered prompts of 4 questions,
 one per format: 02, 05, 08, 11 (`benchmarks/token-counts/`, 2026-11-04;
-2.61 to 3.04 per request). Every question, 12 included, is read at that
+2.60 to 3.04 per request). Every question, 12 included, is read at that
 one ratio. The mock scoping answers name no requester-provided facts, so
 the later stages, which embed the scoping output, are measured without them. Each web-searching call re-reads its context after every search,
 model output included. Prices: Claude Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10 per
@@ -310,7 +310,7 @@ No prompt caching is assumed.
 
 | | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| Estimate | $1.40 | $5.97 | $12.95 |
+| Estimate | $1.40 | $5.97 | $12.94 |
 
 - Ceiling: **$10.00**, timeouts included, within the allowances below. In
   the high case the run stops before adversarial's retry at $9.20 rather than

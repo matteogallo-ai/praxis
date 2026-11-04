@@ -102,7 +102,7 @@ export async function executeRiskAnalysis(
     stakeholders_json: untrustedJson("stakeholders", ctx.stakeholders),
     format_id: ctx.format.id,
     sourcing_policy: ctx.format.sourcing_policy,
-    source_guidance: sourceGuidance(ctx.format.sourcing_rules, ctx.format.sourcing_policy, { firstParty: true }),
+    source_guidance: sourceGuidance(ctx.format.sourcing_rules, ctx.format.sourcing_policy),
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);

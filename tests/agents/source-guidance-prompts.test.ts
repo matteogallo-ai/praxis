@@ -87,8 +87,9 @@ describe("sourcing guide in the search stages' prompts", () => {
       // The system example lists the field the guide asks for, so the two agree.
       expect(p).toContain('"published_at": "YYYY-MM-DD');
       expect(p).not.toContain("these three fields");
-      // Options' citations are not judged by the first-party rule (ADR 0003).
-      expect(p.includes('"first_party_for"')).toBe(stage !== "options");
+      // Options' citations are not judged by the first-party rule (ADR 0003), nor
+      // are risks', whose sources back an estimate (amendment of 4 Nov 2026).
+      expect(p.includes('"first_party_for"')).toBe(stage !== "options" && stage !== "risk");
       // Only the research stages' sources are freshness-checked.
       expect(p.includes("treats sources older than")).toBe(stage !== "options");
     });

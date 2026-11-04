@@ -9,6 +9,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- A risk's likelihood and impact evidence is never accepted as a
+  first-party source: an estimate is a judgement, not the organisation's own
+  fact (ADR 0003, amendment of 4 Nov 2026). The human review of question
+  10's step 1 briefing refused the two it had accepted. `risk.prompt` 3.1.1
+  no longer receives the first-party rule; token counts re-measured.
+
 - A refused `www.` address in a synthesis section is quoted whole in the
   error, cut at 200 characters (it was quoted as `'www.'`, which left
   question 02's step 1 failure undiagnosable). Every refused text the prose

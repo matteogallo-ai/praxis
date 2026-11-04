@@ -25,8 +25,8 @@
     {
       "stage": "risk",
       "model": "claude-sonnet-5-5",
-      "chars": 25108,
-      "tokens": 8794
+      "chars": 24469,
+      "tokens": 8567
     },
     {
       "stage": "options",

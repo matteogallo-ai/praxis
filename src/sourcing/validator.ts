@@ -84,7 +84,7 @@ export function validateSourcing(
       i,
       "research",
       { finding_index: i, missing_searched_for: null },
-      { subject: finding.claim, label: `finding ${i + 1}` },
+      { subject: finding.claim, label: `finding ${i + 1}`, estimate: false },
       rulesInfo,
       warnings
     );
@@ -113,7 +113,7 @@ export function validateStakeholderSourcing(
         stakeholder_index: i,
         stakeholder_name: stakeholder.name,
       },
-      { subject: stakeholder.name, label: stakeholder.name },
+      { subject: stakeholder.name, label: stakeholder.name, estimate: false },
       rulesInfo,
       warnings
     );
@@ -150,7 +150,7 @@ export function validateRiskSourcing(
         risk_id: risk.id,
         evidence_field: "likelihood_evidence" as const,
       },
-      { subject: risk.description, label: `${risk.id} likelihood` },
+      { subject: risk.description, label: `${risk.id} likelihood`, estimate: true },
       rulesInfo,
       warnings
     );
@@ -164,7 +164,7 @@ export function validateRiskSourcing(
         risk_id: risk.id,
         evidence_field: "impact_evidence" as const,
       },
-      { subject: risk.description, label: `${risk.id} impact` },
+      { subject: risk.description, label: `${risk.id} impact`, estimate: true },
       rulesInfo,
       warnings
     );
@@ -207,6 +207,12 @@ interface RulesInfo {
 interface ItemText {
   subject: string;
   label: string;
+  /**
+   * The source backs an estimate (a risk's likelihood or impact). An
+   * estimate is a judgement, not the organisation's own fact, so its source
+   * is never first-party (ADR 0003, amendment of 4 Nov 2026).
+   */
+  estimate: boolean;
 }
 
 /**
@@ -248,7 +254,8 @@ function inspectSource(
 
   if (rules?.domain_trust !== undefined) {
     const trust = evaluateDomainTrust(source.url, rules.domain_trust);
-    const organisation = trust.classification === "untrusted" ? firstPartyOrganisation(source, item.subject) : null;
+    const organisation =
+      trust.classification === "untrusted" && !item.estimate ? firstPartyOrganisation(source, item.subject) : null;
     if (organisation !== null) {
       info.firstParty.push({ stage: agent, item: item.label, organisation, url: source.url });
     } else if (trust.classification === "untrusted") {
