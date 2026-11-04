@@ -10,8 +10,9 @@ Read this first. `docs/ENGINEERING_STANDARDS.md` is the full standard;
 2. The briefing follows a format declared in YAML (`formats/`): sections, lengths, tone, sourcing policy.
 3. Each stage is a PromptLang `.prompt` file (`prompts/`) plus a TypeScript module that renders it, calls the provider and validates the JSON answer.
 4. Output: Markdown, PDF (pdfkit) and DOCX; surfaces: the `praxis` CLI and a library entry point (`src/index.ts`).
-5. Status: the mock provider path is tested end to end; two briefings have completed against a real model
-   (question 05, 4 Nov 2026, `benchmarks/outputs/live/`), their quality not yet reviewed.
+5. Status: the mock provider path is tested end to end; six briefings have completed against a real model
+   (questions 05, 08, 10, 11 and 12, 4 Nov 2026, `benchmarks/outputs/live/`), their quality not yet reviewed;
+   question 02 failed in synthesis.
 
 ## Pipeline
 

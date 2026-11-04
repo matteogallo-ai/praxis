@@ -65,6 +65,13 @@ export function countWord(n: number): string {
   return ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][n] ?? String(n);
 }
 
+/** "question 05", or "questions 05, 08 and 10": the questions the records cover, by number. */
+export function questionsOf(records: readonly { id: string }[]): string {
+  const n = [...new Set(records.map((r) => r.id.slice(0, 2)))].sort();
+  if (n.length === 1) return `question ${n[0]}`;
+  return `questions ${n.slice(0, -1).join(", ")} and ${n[n.length - 1]}`;
+}
+
 /** "3 Nov 2026"; several distinct days are joined with commas. */
 export function days(records: readonly { at: string }[]): string {
   const fmt = (at: string) =>

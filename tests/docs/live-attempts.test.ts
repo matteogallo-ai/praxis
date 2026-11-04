@@ -7,7 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { countWord, days, liveRecords, sourcingFlag, UNRECORDED_FAILURES, wilson } from "./live-records.ts";
+import { countWord, days, liveRecords, questionsOf, sourcingFlag, UNRECORDED_FAILURES, wilson } from "./live-records.ts";
 
 const flat = (path: string) => readFileSync(path, "utf-8").replace(/\s+/g, " ");
 
@@ -61,9 +61,11 @@ describe("live attempt count", () => {
     });
 
     test("CLAUDE.md and the SLO name them", () => {
-      expect(flat("CLAUDE.md")).toContain(`${count} briefings have completed against a real model (question 05, ${days(completions)}`);
+      expect(flat("CLAUDE.md")).toContain(
+        `${count} briefings have completed against a real model (${questionsOf(completions)}, ${days(completions)}`
+      );
       const capital = count.charAt(0).toUpperCase() + count.slice(1);
-      expect(flat("docs/SLO.md")).toContain(`**${capital} live briefings have completed** (question 05, ${days(completions)}`);
+      expect(flat("docs/SLO.md")).toContain(`**${capital} live briefings have completed** (${questionsOf(completions)}, ${days(completions)}`);
     });
   });
 });

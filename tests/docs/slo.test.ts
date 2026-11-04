@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { estimateRun } from "../../benchmarks/estimate-cost.ts";
 import { stageLimits } from "../../src/agents/stage-limits.ts";
 import { DEFAULT_PRICE_TABLE } from "../../src/llm/pricing.ts";
-import { countWord, days, liveRecords } from "./live-records.ts";
+import { countWord, days, liveRecords, questionsOf } from "./live-records.ts";
 import { protocolParts } from "../benchmarks/protocol-plan.ts";
 
 const doc = readFileSync("docs/SLO.md", "utf-8");
@@ -34,7 +34,10 @@ describe("docs/SLO.md", () => {
 
   describe("measurements, from the committed live run records", () => {
     const { failures, completions } = liveRecords();
-    const listed = (f: (c: (typeof completions)[number]) => string) => completions.map(f).join(" and ");
+    const listed = (f: (c: (typeof completions)[number]) => string) => {
+      const all = completions.map(f);
+      return all.length < 2 ? all.join("") : `${all.slice(0, -1).join(", ")} and ${all[all.length - 1]}`;
+    };
     const nSmall = `on n = ${completions.length} (${days(completions)}); n too small, no status`;
     const count = countWord(completions.length);
 
@@ -43,7 +46,7 @@ describe("docs/SLO.md", () => {
     test("the completed briefings are named, and too few for a p95", () => {
       expect(completions.length).toBeLessThan(20);
       const capital = count.charAt(0).toUpperCase() + count.slice(1);
-      expect(flat).toContain(`**${capital} live briefings have completed** (question 05, ${days(completions)};`);
+      expect(flat).toContain(`**${capital} live briefings have completed** (${questionsOf(completions)}, ${days(completions)};`);
     });
 
     test("cost: the measurements, no status, the estimate beside them", () => {
