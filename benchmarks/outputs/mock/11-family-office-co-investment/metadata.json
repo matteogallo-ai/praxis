@@ -83,12 +83,12 @@
       },
       "risk": {
         "calls": 1,
-        "input_tokens": 6279,
+        "input_tokens": 6119,
         "output_tokens": 2182,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 3,
-        "cost_usd": 0.06437799999999999,
+        "cost_usd": 0.064058,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -132,12 +132,12 @@
     },
     "total": {
       "calls": 12,
-      "input_tokens": 97083,
+      "input_tokens": 96923,
       "output_tokens": 12255,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 13,
-      "cost_usd": 0.535512,
+      "cost_usd": 0.535192,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"
