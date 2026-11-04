@@ -1,11 +1,12 @@
 # ADR 0003 — Criteria for trusting a source: first-party facts and specialist press
 
 Status: accepted, 2026-11-04, on one condition: the organisation-to-domains
-mapping (Decision 1) is explicit, reviewed and versioned. It is a committed
-file, each entry names its domains and the evidence of ownership, and an
-entry is added or changed only through a pull request the maintainer has
-read. Until that file exists on those terms, no item is accepted as
-first-party.
+mapping (Decision 1) is explicit, reviewed and versioned. Explicit: each
+entry names its domains and the evidence of ownership. Reviewed: an entry is
+added or changed only through a pull request the maintainer has read.
+Versioned: the file is committed, so git holds every past state; it carries
+no version number of its own. Until that file exists on those terms, no item
+is accepted as first-party.
 
 ## Context
 
@@ -136,6 +137,9 @@ and the pipeline cannot tell a fair page from a slanted one
 - This record changes no list and no code. Implementing it takes:
   - the organisation-to-domains file, and a test that fails when an entry
     has no ownership evidence;
+  - a `CODEOWNERS` entry naming the maintainer for that file, with the
+    ruleset on `main` requiring the code owner's review. Until both exist,
+    the review is a manual rule;
   - `first_party_for` in the research, stakeholder and risk output
     contracts, with an `@version` bump;
   - the publisher and subject checks;
