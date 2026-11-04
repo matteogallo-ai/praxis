@@ -440,7 +440,7 @@ else.
 
 | Date | Step | Change | Reason |
 | --- | --- | --- | --- |
-| 2026-11-04 | 1 | `10-esg-position` added, before the run | the only question covered by the first-party list (ADR 0003) |
+| 2026-11-04 | 1 | `10-esg-position` added, before the run | the only test question covered by the first-party list (ADR 0003) |
 
 Step 1 as amended, five briefings under the same cap:
 
@@ -448,7 +448,8 @@ Step 1 as amended, five briefings under the same cap:
 bun run bench:live -- --max-cost-usd 14 --ids 02-cfo-buyback-briefing,08-ai-regulation-position,10-esg-position,11-family-office-co-investment,12-sodium-ion-plant-morocco
 ```
 
-Its GO covers at most $14.00 each, $70.00 for the 5. Question 10 is in
+Its GO covers at most $14.00 each, $70.00 for the 5, and the judge: ≈ $0.84
+for the 6; `<n>` at most $1.68. Question 10 is in
 the test split, so running it spends it as held-out evidence, and "What
 the five consume" no longer holds for it.
 Held-out test questions left: `03-executive-succession-planning` and `07-should-we-divest-consumer-line`.

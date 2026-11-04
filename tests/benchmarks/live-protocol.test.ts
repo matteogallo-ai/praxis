@@ -103,9 +103,10 @@ describe("docs/live-proof-protocol.md", () => {
 
   test("an amended command runs its step's questions plus the ones declared for it, nothing else", () => {
     const amended = parseCommands(amendments);
-    const steps = [...new Set(declared.map((d) => d.step))].sort();
+    const steps = [...new Set(declared.map((d) => d.step))].sort((a, b) => a - b);
     expect(amended.length).toBe(steps.length);
     for (const [i, step] of steps.entries()) {
+      // Step N's command is the plan's Nth: step 0, then step 1.
       const original = commands[step] as { cap: number; ids: string[] };
       const added = declared.filter((d) => d.step === step).map((d) => d.id);
       expect(amended[i]?.cap).toBe(original.cap);
@@ -128,9 +129,30 @@ describe("docs/live-proof-protocol.md", () => {
         date: "2026-11-04",
         step: 1,
         id: "10-esg-position",
-        reason: "the only question covered by the first-party list (ADR 0003)",
+        reason: "the only test question covered by the first-party list (ADR 0003)",
       },
     ]);
+  });
+
+  test("every live-run command, in the plan or an amendment, is in the one form the checks read", () => {
+    const runs = [...doc.matchAll(/bun run (?:bench:live|benchmarks\/run-all\.ts[^\n`]*--live)[^\n`]*/g)].map((m) => m[0].trim());
+    expect(runs.length).toBe(parseCommands(doc).length);
+    for (const r of runs) expect(r).toMatch(/^bun run bench:live -- --max-cost-usd \d+(?:\.\d+)? --ids [^\s,]+(?:,[^\s,]+)*$/);
+  });
+
+  test("every dated row of the amendments table is a declared amendment", () => {
+    expect([...amendments.matchAll(/^\| \d{4}-\d{2}-\d{2} \|/gm)].length).toBe(declared.length);
+  });
+
+  test("an amendment that adds briefings scales the judge's estimate with them", () => {
+    const m = /Expected ≈ \$(\d+\.\d{2}) for the five; `<n>` at most \$(\d+\.\d{2})/.exec(plan);
+    const [expected, most] = [Number(m?.[1]), Number(m?.[2])];
+    const n = new Set([...commands, ...parseCommands(amendments)].flatMap((c) => c.ids)).size;
+    if (n > 5) {
+      expect(amendments.replace(/\s+/g, " ")).toContain(
+        `the judge: ≈ ${usd((expected * n) / 5)} for the ${n}; \`<n>\` at most ${usd((most * n) / 5)}`
+      );
+    }
   });
 
   test("the held-out test questions left are the test split less every question run", () => {

@@ -30,6 +30,10 @@ describe("held-out questions", () => {
     });
   }
 
+  test("the system card points to the protocol's amendments for the held-out questions left", () => {
+    expect(read("docs/SYSTEM_CARD.md").replace(/\s+/g, " ")).toContain('("Amendments")');
+  });
+
   test("the step 0 / rerun comparison table carries it as a row", () => {
     expect(read("benchmarks/outputs/live/README.md")).toContain(`| Held-out (test split) | yes | no: ${NOTE} |`);
   });
