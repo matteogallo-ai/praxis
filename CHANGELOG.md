@@ -9,6 +9,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- A synthesis section whose link to an upstream source is labelled with a
+  `www.` address (`[www.reuters.com](<upstream URL>)`) is no longer
+  refused; viewers do not make a second link inside a link. A refused
+  `www.` address is now quoted whole in the error (it was quoted as
+  `'www.'`, which left question 02's step 1 failure undiagnosable).
+
 - Question 05 is no longer held-out. It is in the test split, but the
   sourcing fixes (#31 to #39) were designed from its step 0 failures; the
   benchmark README, the system card and the live comparison table say so,
