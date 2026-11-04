@@ -65,6 +65,14 @@ describe("step 1: the table is the records'", () => {
     expect(doc).toContain(`all five at \`${frozen.git_sha.slice(0, 7)}\``);
   });
 
+  test("the amendment's commit time precedes q10's run start by the seconds stated", () => {
+    const run = readdirSync(join(LIVE, "10-esg-position")).find((f) => f.startsWith("run-2026-11-04T1")) ?? "";
+    expect(run).toMatch(/^run-2026-11-04T\d\d-\d\d-\d\d-\d+Z$/);
+    const started = Date.parse(run.slice(4).replace(/T(\d\d)-(\d\d)-(\d\d)-(\d+)Z$/, "T$1:$2:$3.$4Z"));
+    const seconds = Math.floor((started - Date.parse("2026-11-04T13:02:53Z")) / 1000);
+    expect(flat).toContain(`(commit 0417613, 13:02:53Z), ${seconds} s before q10 itself ran`);
+  });
+
   test("outcome and sourcing counts", () => {
     expect(doc).toContain(row("Format", records.map((r) => `\`${r.format}\``)));
     expect(doc).toContain(row("Outcome", records.map((r) => (r.error_type === undefined ? "completed" : `failed: \`${r.error_type}\``))));

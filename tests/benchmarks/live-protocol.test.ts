@@ -40,8 +40,8 @@ const COMMAND = /bun run bench:live -- --max-cost-usd (\d+(?:\.\d+)?) --ids (\S+
 const parseCommands = (text: string) =>
   [...text.matchAll(COMMAND)].map((m) => ({ cap: Number(m[1]), ids: (m[2] ?? "").split(",") }));
 const commands = parseCommands(plan);
-/** A declared amendment: `| <date> | <step> | \`<id>\` added, before the run | <reason> |`. */
-const declared = [...amendments.matchAll(/^\| (\d{4}-\d{2}-\d{2}) \| (\d+) \| `([^`]+)` added, before the run \| ([^|]+) \|$/gm)].map(
+/** A declared amendment: `| <date> | <step> | \`<id>\` added by the operator's GO before step <step> started | <reason> |`. */
+const declared = [...amendments.matchAll(/^\| (\d{4}-\d{2}-\d{2}) \| (\d+) \| `([^`]+)` added by the operator's GO before step \2 started \| ([^|]+) \|$/gm)].map(
   (m) => ({ date: m[1] ?? "", step: Number(m[2]), id: m[3] ?? "", reason: (m[4] ?? "").trim() })
 );
 const usd = (n: number) => `$${n.toFixed(2)}`;
@@ -132,6 +132,18 @@ describe("docs/live-proof-protocol.md", () => {
         reason: "the only test question covered by the first-party list (ADR 0003)",
       },
     ]);
+  });
+
+  // The step 1 records carry git_sha 8df678f, which lacks 0417613, and q10 started at 13:04:11Z:
+  // the amendment was decided before step 1 but written down during it, and the docs say so.
+  test("question 10's chronology is stated exactly, and nowhere as recorded before the run", () => {
+    const CHRONOLOGY =
+      "q10 added by the operator's GO before step 1 started; the amendment was written down after step 1 had started (commit 0417613, 13:02:53Z), 78 s before q10 itself ran.";
+    for (const path of ["docs/live-proof-protocol.md", "benchmarks/outputs/live/README.md"]) {
+      const text = readFileSync(path, "utf-8").replace(/\s+/g, " ");
+      expect(text).toContain(CHRONOLOGY);
+      expect(text).not.toContain("before the run");
+    }
   });
 
   test("every live-run command, in the plan or an amendment, is in the one form the checks read", () => {
