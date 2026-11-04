@@ -93,6 +93,7 @@ import type {
   RiskAnalysisResult,
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
+import { inert, linkTarget } from "../../renderers/markdown-text.ts";
 import { describeFirstParty, uncategorisedLines } from "../../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 import { codeSpan } from "../../sourcing/code-written-section.ts";
@@ -793,7 +794,8 @@ export function renderSourcingReportMarkdown(report: SourcingReport): string {
       `missing ${report.counts.missing}\n\n`
   );
   for (const line of uncategorisedLines(report)) parts.push(`${line}\n\n`);
-  for (const f of report.first_party_sources ?? []) parts.push(`- ${describeFirstParty(f)}\n`);
+  // The claim and the label are model text, and this appendix joins a Markdown file.
+  for (const f of report.first_party_sources ?? []) parts.push(`- ${describeFirstParty(f, (u) => `<${linkTarget(u)}>`, inert)}\n`);
   if ((report.first_party_sources ?? []).length > 0) parts.push("\n");
   const cited = report.untrusted_citations ?? [];
   if (report.warnings.length === 0 && cited.length === 0) {

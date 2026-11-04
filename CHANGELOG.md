@@ -68,6 +68,15 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Every listing of a first-party source (Markdown, PDF, DOCX, CLI report)
+  shows the claim it was accepted for, cut at 160 characters on a word
+  boundary: a finding's claim, or a stakeholder's position and interest
+  (only those two stages can cite first-party sources). Without it the human review of question 10's step 1
+  briefing could not check whether each sentence states the organisation's
+  own fact. `FirstPartySource.claim` is a new optional field; a report
+  stored without it reads "claim not recorded". In the CLI's Markdown
+  sourcing report the claim and label are made inert, as in the brief.
+
 - Step 1 live records (4 Nov 2026, `8df678f`): questions 08, 10, 11 and 12
   completed, all flagged insufficiently sourced; question 02 failed in
   synthesis. $17.96 spent against a $30.23 central estimate. Compared in

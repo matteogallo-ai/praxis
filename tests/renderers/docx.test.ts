@@ -397,10 +397,10 @@ describe("buildDocxParts — document.xml content", () => {
 
   test("the Sourcing Report counts and lists the first-party sources", () => {
     const brief = makeBrief();
-    brief.sourcing_report = { ...brief.sourcing_report, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }] };
+    brief.sourcing_report = { ...brief.sourcing_report, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x", claim: "The OECD revised its model rules in 2026." }] };
     const doc = buildDocxParts(brief, { include_sourcing_report: true })[2]?.content;
     expect(doc).toContain("First-party (an organisation&apos;s own site, for its own facts): 1.");
-    expect(doc).toContain("[research] finding 2 — OECD&apos;s own site, for its own facts: https://www.oecd.org/x");
+    expect(doc).toContain("[research] finding 2 — OECD&apos;s own site, for its own facts: https://www.oecd.org/x — claim: “The OECD revised its model rules in 2026.”");
   });
 
   test("a section's sources are numbered [n], as the prose's markers cite them", () => {

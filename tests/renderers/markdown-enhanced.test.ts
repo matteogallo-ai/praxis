@@ -225,14 +225,22 @@ describe("renderMarkdownEnhanced — first-party sources", () => {
         sourcing_report: {
           ...base.sourcing_report,
           first_party_sources: [
-            { stage: "stakeholder", item: "OECD\n\n## Injected", organisation: "OECD", url: "https://www.oecd.org/a_(b)" },
+            {
+              stage: "stakeholder",
+              item: "OECD\n\n## Injected",
+              organisation: "OECD",
+              url: "https://www.oecd.org/a_(b)",
+              claim: "position: supportive.\n\n![x](https://evil.example/p.png)",
+            },
           ],
         },
       })
     );
     expect(md).toContain("## First-party sources");
     expect(md.indexOf("## First-party sources")).toBeLessThan(md.indexOf("## Sources"));
-    expect(md).toContain("- [stakeholder] OECD ## Injected — OECD's own site, for its own facts: <https://www.oecd.org/a_%28b%29>");
+    expect(md).toContain(
+      "- [stakeholder] OECD ## Injected — OECD's own site, for its own facts: <https://www.oecd.org/a_%28b%29> — claim: “position: supportive. !\\[x](https://evil.example/p.png)”"
+    );
     expect(md).not.toMatch(/^## Injected/m);
     expect(md).toMatch(/sourcing_summary: "[^"]* first_party=1[^"]*"/);
     const toc = renderMarkdownEnhanced(makeBrief({ sourcing_report: { ...base.sourcing_report, first_party_sources: [] } }), { include_toc: true });

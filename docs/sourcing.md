@@ -266,10 +266,11 @@ judgements, not the organisation's own facts (ADR 0003, amendments of
 
 An accepted source is not untrusted and does not block under `strict`; its
 item takes whatever category its other checks give (`ok` when nothing else
-fails). It is listed in `SourcingReport.first_party_sources`, in the
-briefing's "First-party sources" section and in every sourcing report,
-because whether the sentence states the organisation's own fact is the
-model's judgment, which code cannot check. A mark the list refuses changes
+fails). It is listed in `SourcingReport.first_party_sources` (with the
+whole claim it was accepted for), in the briefing's "First-party sources"
+section and in every sourcing report (the claim cut at 160 characters on
+a word boundary), because whether the sentence states the organisation's own
+fact is the model's judgment, which code cannot check: a human reads it. A mark the list refuses changes
 nothing. The stages are told the rule and the list in their prompt; the
 risk, options and adversarial stages are not, and their citations are not
 judged by it.

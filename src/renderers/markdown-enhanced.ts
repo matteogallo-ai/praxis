@@ -211,7 +211,7 @@ function renderFirstPartySection(brief: BriefResult | BriefWithCritiqueResult): 
   const parts = ["## First-party sources\n\n"];
   for (const f of firstParty) {
     // The label can be model text; the URL is an autolink linkTarget keeps whole.
-    parts.push(`- ${describeFirstParty({ ...f, item: inert(f.item) }, (u) => `<${linkTarget(u)}>`)}\n`);
+    parts.push(`- ${describeFirstParty(f, (u) => `<${linkTarget(u)}>`, inert)}\n`);
   }
   parts.push("\n");
   return parts.join("");

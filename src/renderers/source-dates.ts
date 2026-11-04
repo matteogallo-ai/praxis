@@ -35,11 +35,37 @@ export function uncategorisedLines(report: {
   return lines;
 }
 
+/** The longest claim a first-party line quotes, before its ellipsis. */
+export const CLAIM_MAX = 160;
+
 /**
- * One line per first-party source, the same in every sourcing report. The
- * item label can be model text (a stakeholder's name), so it is kept on one
- * line; `link` lets the Markdown brief write the URL as a safe autolink.
+ * One line per first-party source, the same in every sourcing report, with
+ * the claim it was accepted for: whether that claim states the
+ * organisation's own fact is a human's call (ADR 0003). The label and the
+ * claim can be model text, so they are kept on one line; `link` lets the
+ * Markdown brief write the URL as a safe autolink, and `text` makes model
+ * text inert there.
  */
-export function describeFirstParty(f: FirstPartySource, link: (url: string) => string = (u) => u): string {
-  return `[${f.stage}] ${oneLine(f.item)} — ${f.organisation}'s own site, for its own facts: ${link(f.url)}`;
+export function describeFirstParty(
+  f: FirstPartySource,
+  link: (url: string) => string = (u) => u,
+  text: (s: string) => string = (s) => s
+): string {
+  const claim = f.claim === undefined ? " — claim not recorded" : ` — claim: “${text(cut(oneLine(f.claim)))}”`;
+  return `[${f.stage}] ${text(oneLine(f.item))} — ${f.organisation}'s own site, for its own facts: ${link(f.url)}${claim}`;
+}
+
+/**
+ * Cut at the last word boundary within the limit, counted in characters so
+ * a two-unit character (an emoji) is never split. A boundary that keeps
+ * under half the limit ("See https://…") is no clean cut: the text is cut
+ * inside the word instead.
+ */
+function cut(s: string): string {
+  const chars = Array.from(s);
+  if (chars.length <= CLAIM_MAX) return s;
+  const head = chars.slice(0, CLAIM_MAX + 1).join("");
+  const space = head.lastIndexOf(" ");
+  const kept = space >= CLAIM_MAX / 2 ? head.slice(0, space) : chars.slice(0, CLAIM_MAX).join("");
+  return `${kept.replace(/[.,;:]+$/, "")}…`;
 }

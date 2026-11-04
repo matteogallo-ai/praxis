@@ -84,7 +84,7 @@ export function validateSourcing(
       i,
       "research",
       { finding_index: i, missing_searched_for: null },
-      { subject: finding.claim, label: `finding ${i + 1}`, estimate: false },
+      { subject: finding.claim, label: `finding ${i + 1}`, estimate: false, claim: finding.claim },
       rulesInfo,
       warnings
     );
@@ -113,7 +113,12 @@ export function validateStakeholderSourcing(
         stakeholder_index: i,
         stakeholder_name: stakeholder.name,
       },
-      { subject: stakeholder.name, label: stakeholder.name, estimate: false },
+      {
+        subject: stakeholder.name,
+        label: stakeholder.name,
+        estimate: false,
+        claim: `position: ${stakeholder.position}; interest: ${stakeholder.interest}`,
+      },
       rulesInfo,
       warnings
     );
@@ -213,6 +218,8 @@ interface ItemText {
    * is never first-party (ADR 0003, amendment of 4 Nov 2026).
    */
   estimate: boolean;
+  /** What the source is cited for, shown beside an accepted first-party source; an estimate has none. */
+  claim?: string;
 }
 
 /**
@@ -257,7 +264,7 @@ function inspectSource(
     const organisation =
       trust.classification === "untrusted" && !item.estimate ? firstPartyOrganisation(source, item.subject) : null;
     if (organisation !== null) {
-      info.firstParty.push({ stage: agent, item: item.label, organisation, url: source.url });
+      info.firstParty.push({ stage: agent, item: item.label, organisation, url: source.url, ...(item.claim === undefined ? {} : { claim: item.claim }) });
     } else if (trust.classification === "untrusted") {
       warnings.push({
         kind: "untrusted_domain",

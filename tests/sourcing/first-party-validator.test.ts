@@ -40,7 +40,13 @@ describe("first-party sources in the research validators", () => {
     expect(r.counts.untrusted).toBe(0);
     expect(r.counts.ok).toBe(1);
     expect(r.first_party_sources).toEqual([
-      { stage: "research", item: "finding 1", organisation: "Financial Conduct Authority", url: "https://www.fca.org.uk/rules" },
+      {
+        stage: "research",
+        item: "finding 1",
+        organisation: "Financial Conduct Authority",
+        url: "https://www.fca.org.uk/rules",
+        claim: "The FCA's listing rules allow a secondary listing.",
+      },
     ]);
   });
 
@@ -60,11 +66,20 @@ describe("first-party sources in the research validators", () => {
 
   test("stakeholders are judged on their name", () => {
     const stakeholders = {
-      stakeholders: [{ name: "Financial Conduct Authority (FCA)", position_evidence: source("https://www.fca.org.uk/p", "Financial Conduct Authority") }],
+      stakeholders: [
+        {
+          name: "Financial Conduct Authority (FCA)",
+          position: "neutral",
+          interest: "Orderly markets.",
+          position_evidence: source("https://www.fca.org.uk/p", "Financial Conduct Authority"),
+        },
+      ],
       key_dynamics: [],
     } as unknown as StakeholderMapResult;
     const s = validateStakeholderSourcing(stakeholders, "strict", { rules: RULES, now: NOW });
     expect(s.first_party_sources?.[0]?.item).toBe("Financial Conduct Authority (FCA)");
+    // The source backs the stakeholder's position, so that is the claim a reviewer checks.
+    expect(s.first_party_sources?.[0]?.claim).toBe("position: neutral; interest: Orderly markets.");
   });
 
   // Question 10, step 1: "RISK-003 likelihood" and "RISK-008 likelihood" were
@@ -75,6 +90,8 @@ describe("first-party sources in the research validators", () => {
         {
           id: "RISK-001",
           description: "LSEG may change its listing fees.",
+          likelihood: "medium",
+          impact: "major",
           likelihood_evidence: source("https://www.lseg.com/fees", "London Stock Exchange Group"),
           impact_evidence: source("https://www.lseg.com/fees", "London Stock Exchange Group"),
         },
