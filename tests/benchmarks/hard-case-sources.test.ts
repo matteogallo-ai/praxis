@@ -24,6 +24,13 @@ describe("chemistry", () => {
     ["LMFP and NCM cathodes", "other"],
     ["NCA cells in premium EVs", "other"],
     ["Solid-state pilot line", "other"],
+    // A generic "sodium battery" names no chemistry: a named other one wins over it.
+    ["Sodium battery maker Altech (sodium-nickel chloride)", "other"],
+    ["Sodium batteries for the grid: NAS explained", "other"],
+    ["Sodium battery storage: NaS units in Abu Dhabi", "other"],
+    ["Sodium ion-exchange resin water treatment", "none"],
+    ["Sodium-sulfur vs sodium-ion for storage", "sodium-ion"],
+    ["U.S. sodium battery market", "sodium-ion"],
   ] as const)("%s → %s", (text, expected) => {
     expect(chemistry(text)).toBe(expected);
   });

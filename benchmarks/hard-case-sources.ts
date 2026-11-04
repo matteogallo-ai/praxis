@@ -21,14 +21,20 @@ export type Verdict = "on sodium-ion" | "another chemistry" | "unclear: read the
 
 // Bare "sodium" is not enough: sodium-sulfur and sodium-nickel chloride are
 // other chemistries, and a source on them passing as sodium-ion is the
-// failure this check exists to catch.
-const SODIUM = /sodium[- ]ion|sodium[- ]batter(?:y|ies)|\bna[- ]?ion\b|naxtra|\bnibs?\b|\bsibs?\b|\bhina\b/i;
-const OTHER =
-  /lithium|\bli[- ]?ion\b|\bl?m?fp\b|\bnmc\b|\bncm\b|\bnca\b|\blifepo4\b|solid[- ]state|sodium[- ](?:sulfur|sulphur|nickel)|\bzebra\b/i;
+// failure this check exists to catch. So a named sodium-ion term wins, then a
+// named other chemistry, and only then a generic "sodium battery".
+const SODIUM_ION = /sodium[- ]ion(?![- ]exchange)|\bna[- ]?ion\b|naxtra|\bnibs?\b|\bsibs?\b|\bhina\b/i;
+const OTHER_SODIUM = /sodium[- ](?:sulfur|sulphur|nickel)|\bzebra\b/i;
+// Case-sensitive: "nas" is a common word fragment, NaS / NAS the sodium-sulfur battery.
+const NAS = /\bNaS\b|\bNAS\b/;
+const GENERIC_SODIUM = /sodium[- ]batter(?:y|ies)/i;
+const OTHER = /lithium|\bli[- ]?ion\b|\bl?m?fp\b|\bnmc\b|\bncm\b|\bnca\b|\blifepo4\b|solid[- ]state/i;
 
 /** Sodium-ion wins: a page comparing LFP with sodium-ion is about sodium-ion too. */
 export function chemistry(text: string): Chemistry {
-  if (SODIUM.test(text)) return "sodium-ion";
+  if (SODIUM_ION.test(text)) return "sodium-ion";
+  if (OTHER_SODIUM.test(text) || NAS.test(text)) return "other";
+  if (GENERIC_SODIUM.test(text)) return "sodium-ion";
   return OTHER.test(text) ? "other" : "none";
 }
 
