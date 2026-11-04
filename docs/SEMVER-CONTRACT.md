@@ -131,7 +131,8 @@ release without notice.
 - **First-party sources (ADR 0003).** `SourceReference.first_party_for` and
   `SourcingReport.first_party_sources` are new optional fields, and
   `FirstPartySource` a new exported type. A source the reviewed list
-  confirms is no longer untrusted, so a strict briefing that failed only on
+  confirms, other than a risk's likelihood or impact evidence, is no longer
+  untrusted, so a strict briefing that failed only on
   such a source now completes; no other source changes category.
 - **Domain trust on options and critique citations (a bug fix).** Under a
   format's `domain_trust` rule, an option citing an untrusted domain now

@@ -69,7 +69,8 @@ What code checks, and what it cannot:
   list is needed, because every domain is written out.
 - **The subject, by name.** The organisation must be the item's subject:
   the stakeholder's `name`, or a name the file lists for it appearing in the
-  finding's claim or the risk's text.
+  finding's claim or the risk's text. (Superseded on this point: a risk's
+  evidence is never first-party; see Amendments, 4 Nov 2026.)
 - **Not the kind of claim.** Whether a sentence states the company's own
   fact (DSV's reported revenue) or something else (DSV's view of DHL;
   a regulator's decision about a DHL joint venture reported on
@@ -143,7 +144,8 @@ been checked against the six criteria).
   needs no entry. `tests/sourcing/first-party.test.ts` fails on an entry
   without domains, with a domain that is not written out, or with ownership
   evidence on a host it does not list.
-- The rule judges the research, stakeholder and risk sources and, beyond
+- The rule judges the research, stakeholder and risk sources (risk withdrawn
+  since: see Amendments, 4 Nov 2026) and, beyond
   what Decision 1 first named, the critique's counter-evidence: a critique
   that cites an organisation's own site for that organisation's own facts is
   as well sourced as a research finding that does. The critique's subject

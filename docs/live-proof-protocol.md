@@ -313,8 +313,8 @@ No prompt caching is assumed.
 | Estimate | $1.40 | $5.97 | $12.94 |
 
 - Ceiling: **$10.00**, timeouts included, within the allowances below. In
-  the high case the run stops before adversarial's retry at $9.20 rather than
-  reaching $12.95.
+  the high case the run stops before adversarial's retry at $9.19 rather than
+  reaching $12.94.
 
 The prompt sizes are measured; the search sizes, output shares and the
 growth of live upstream outputs over the fixtures stay assumptions:

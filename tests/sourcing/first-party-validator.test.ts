@@ -69,7 +69,7 @@ describe("first-party sources in the research validators", () => {
 
   // Question 10, step 1: "RISK-003 likelihood" and "RISK-008 likelihood" were
   // accepted on ghgprotocol.org and ifrs.org; the human review refused both.
-  test("a risk's likelihood and impact evidence stays untrusted, mark or not", () => {
+  test("a risk's likelihood and impact evidence stays untrusted, even marked", () => {
     const risks = {
       risks: [
         {
