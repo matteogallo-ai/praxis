@@ -82,4 +82,10 @@ describe("domain trust on critique citations", () => {
     ]);
     expect(result.sourcing_report.insufficiently_sourced).toBeUndefined();
   });
+
+  test("after the rerun, each untrusted citation is listed once", async () => {
+    const result = await orchestrator(fixtures("adversarial")).briefWithCritiqueAndRerun(QUESTION, FORMAT, { now: NOW });
+    expect(result.rerun_performed).toBe(true);
+    expect(result.sourcing_report.untrusted_citations?.map((c) => c.url)).toEqual([UNTRUSTED]);
+  });
 });

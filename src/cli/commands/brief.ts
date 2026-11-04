@@ -93,6 +93,7 @@ import type {
   RiskAnalysisResult,
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
+import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 import { render as dispatchRender } from "../../renderers/index.ts";
 import { RENDER_THEMES, type RenderOptions, type RenderTheme } from "../../renderers/types.ts";
 
@@ -780,7 +781,7 @@ function writeOrEmit(content: string, path: string | null): void {
  * ANSI-free markdown rendering of the sourcing report, used as an
  * appendix under `--full --with-sourcing-report`.
  */
-function renderSourcingReportMarkdown(report: SourcingReport): string {
+export function renderSourcingReportMarkdown(report: SourcingReport): string {
   const parts: string[] = [];
   parts.push(`**Policy:** ${report.policy}  \n`);
   parts.push(`**Total items:** ${report.total_items}  \n`);
@@ -789,13 +790,17 @@ function renderSourcingReportMarkdown(report: SourcingReport): string {
       `untrusted ${report.counts.untrusted} · duplicated ${report.counts.duplicated} · ` +
       `missing ${report.counts.missing}\n\n`
   );
-  if (report.warnings.length === 0) {
+  const cited = report.untrusted_citations ?? [];
+  if (report.warnings.length === 0 && cited.length === 0) {
     parts.push("_No warnings — every inspected item passed._\n");
     return parts.join("");
   }
   parts.push("**Warnings:**\n\n");
   for (const w of report.warnings) {
     parts.push(`- ${describeWarningMarkdown(w)}\n`);
+  }
+  for (const u of cited) {
+    parts.push(`- ${describeUntrustedCitation(u)}\n`);
   }
   return parts.join("");
 }

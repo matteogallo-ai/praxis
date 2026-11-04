@@ -23,6 +23,7 @@ import type {
 import { hasCritique, type RenderOptions } from "../types.ts";
 import { XML_PROLOG, elem, escapeXmlText } from "./xml-builder.ts";
 import { sourceDates } from "../source-dates.ts";
+import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 
 const W_NS = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"`;
 
@@ -159,6 +160,9 @@ export function buildDocumentXml(
         `untrusted: ${sr.counts.untrusted}, duplicated: ${sr.counts.duplicated}, ` +
         `missing: ${sr.counts.missing}.`
     ));
+    for (const c of sr.untrusted_citations ?? []) {
+      body.push(bulletParagraph(describeUntrustedCitation(c)));
+    }
   }
 
   return (

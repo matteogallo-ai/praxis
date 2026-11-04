@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { parseBriefArgs, runBriefCli } from "../../src/cli/commands/brief.ts";
+import { parseBriefArgs, renderSourcingReportMarkdown, runBriefCli } from "../../src/cli/commands/brief.ts";
 import { setColorEnabled } from "../../src/cli/output.ts";
 
 const CTX = {
@@ -1211,5 +1211,20 @@ describe("briefCommand — v0.8 --with-rerun", () => {
     expect(payload.rerun_metadata.critiques_addressed.length).toBeGreaterThan(0);
     expect(payload.original_synthesis).not.toBeNull();
     expect(payload.sourcing_report.edited_after_critique).toBe(true);
+  });
+});
+
+describe("renderSourcingReportMarkdown — citations", () => {
+  test("lists untrusted citations, and does not claim every item passed", () => {
+    const md = renderSourcingReportMarkdown({
+      policy: "permissive",
+      total_items: 1,
+      counts: { ok: 1, stale: 0, untrusted: 0, duplicated: 0, missing: 0 },
+      warnings: [],
+      missing_sources_count: 0,
+      untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }],
+    });
+    expect(md).toContain("- [options] OPT-B cites an untrusted domain: https://x.example/a — not in any tier");
+    expect(md).not.toContain("every inspected item passed");
   });
 });

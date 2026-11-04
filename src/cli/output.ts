@@ -233,6 +233,7 @@ import type {
 } from "../agents/types.ts";
 import type { SourcingReport } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
+import { describeUntrustedCitation } from "../sourcing/citations.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
   const parts: string[] = [];
@@ -503,7 +504,7 @@ export function renderSourcingReport(report: SourcingReport): string {
     parts.push(`  ${c.dim("-")} ${describeWarning(w)}\n`);
   }
   for (const u of cited) {
-    parts.push(`  ${c.dim("-")} [${u.stage}] ${u.id} cites an untrusted domain: ${u.url} — ${u.reason}\n`);
+    parts.push(`  ${c.dim("-")} ${describeUntrustedCitation(u)}\n`);
   }
   return parts.join("");
 }

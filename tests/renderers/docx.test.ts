@@ -378,6 +378,13 @@ describe("buildDocxParts — document.xml content", () => {
     expect(doc).toContain("Sourcing Report</w:t>");
     expect(doc).toContain("Policy: strict");
   });
+
+  test("the Sourcing Report lists the options and critique citations from untrusted domains", () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };
+    const doc = buildDocxParts(brief, { include_sourcing_report: true })[2]?.content;
+    expect(doc).toContain("[options] OPT-B cites an untrusted domain: https://x.example/a — not in any tier");
+  });
 });
 
 // ---------------------------------------------------------------------------

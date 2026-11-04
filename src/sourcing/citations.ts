@@ -20,6 +20,11 @@ import type {
 } from "./types.ts";
 import { isSourceMissing } from "./types.ts";
 
+/** One line per untrusted citation, the same in every sourcing report. */
+export function describeUntrustedCitation(c: UntrustedCitation): string {
+  return `[${c.stage}] ${c.id} cites an untrusted domain: ${c.url} — ${c.reason}`;
+}
+
 export function untrustedCitations(
   stage: UntrustedCitation["stage"],
   cited: readonly { id: string; evidence: SourceStatus }[],

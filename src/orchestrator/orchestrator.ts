@@ -530,7 +530,7 @@ export class Orchestrator {
     );
     run.options = optionsResult;
     const trust = format.sourcing_rules?.domain_trust;
-    if (hardened && trust !== undefined) {
+    if (trust !== undefined) {
       check(() => optionsCitationReport(optionsResult.options, policy, trust));
     }
     // Synthesis retries per section (see doSynthesize), not as a whole.
