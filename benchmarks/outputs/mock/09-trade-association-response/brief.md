@@ -204,27 +204,27 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 
 - [Entering the German Policy Environment — 2025 Handbook](https://pac.org/handbook/germany-entry-2025) · publication date unknown, accessed 2026-08-17T11:33:00Z
 
-### www.bfdi.bund.de
+### www\.bfdi.bund.de
 
 - [BfDI Tätigkeitsbericht 2026 — Kapitel 4](https://www.bfdi.bund.de/DE/Fachthemen/Inhalte/TB-2026/Kapitel-4.html) · publication date unknown, accessed 2026-08-17T11:12:00Z
 
-### www.bloomberg.com
+### www\.bloomberg.com
 
 - [EU data residency costs bite SaaS providers](https://www.bloomberg.com/news/saas-eu-data-residency-costs-2025) · publication date unknown, accessed 2026-08-09T09:17:00Z
 
-### www.bmdv.bund.de
+### www\.bmdv.bund.de
 
 - [Bundesministerium für Digitales — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang) · publication date unknown, accessed 2026-08-17T11:04:00Z
 
-### www.bundestag.de
+### www\.bundestag.de
 
 - [Plenarprotokoll 20/187 — Debatte Digitale Souveränität](https://www.bundestag.de/protokolle/20-187-digital-sovereignty) · publication date unknown, accessed 2026-08-17T11:20:00Z
 
-### www.eco.de
+### www\.eco.de
 
 - [eco — Presseerklärung Wettbewerb im SaaS-Markt 2026](https://www.eco.de/presse/2026/eco-begruesst-wettbewerb-im-saas-markt) · publication date unknown, accessed 2026-08-17T13:45:00Z
 
-### www.ft.com
+### www\.ft.com
 
 - [Bavarian and Baden-Württemberg data protection stances diverge from BfDI](https://www.ft.com/content/bayern-baden-wuerttemberg-data-protection-2026) · publication date unknown, accessed 2026-08-10T14:18:00Z
 - [BMDV reversals of prior welcome — past cases](https://www.ft.com/content/bmdv-reversals-past-cases-2024) · publication date unknown, accessed 2026-08-12T15:19:00Z
@@ -237,21 +237,21 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 - [Verdi industrial action against tech employers in Germany](https://www.ft.com/content/verdi-industrial-action-tech-employers-2024) · publication date unknown, accessed 2026-08-13T09:56:00Z
 - [When EU public procurement excludes foreign SaaS — sizing the impact](https://www.ft.com/content/eu-public-procurement-saas-exclusion-2025) · publication date unknown, accessed 2026-08-15T11:09:00Z
 
-### www.handelsblatt.com
+### www\.handelsblatt.com
 
 - [Corporate Affairs 2026 Ambitions Memo](https://www.handelsblatt.com/technik/it-internet/example-corp-corporate-affairs-2026-ambitions) · publication date unknown, accessed 2026-08-17T13:04:00Z
 - [Handelsblatt — Ausländische SaaS-Anbieter drängen nach Deutschland](https://www.handelsblatt.com/technik/it-internet/saas-markteintritt-auslaendisch-2026) · publication date unknown, accessed 2026-08-17T13:29:00Z
 - [Verdi hiring thresholds have drifted downward](https://www.handelsblatt.com/critique-verdi-threshold-drift) · publication date unknown, accessed 2026-08-13T15:00:00Z
 
-### www.idc.com
+### www\.idc.com
 
 - [IDC Germany Mid-Market SaaS Tracker — Q1 2026](https://www.idc.com/getdoc.jsp?containerId=DE-MidMarket-SaaS-Q1-2026) · publication date unknown, accessed 2026-08-17T13:53:00Z
 
-### www.pac.org
+### www\.pac.org
 
 - [Entering the German Policy Environment — 2025 Handbook](https://www.pac.org/handbook/germany-entry-2025) · publication date unknown, accessed 2026-08-14T14:01:00Z
 
-### www.reuters.com
+### www\.reuters.com
 
 - [BMDV welcome statements — consistency track record](https://www.reuters.com/critique-bmdv-consistency) · publication date unknown, accessed 2026-08-14T13:00:00Z
 - [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026) · publication date unknown, accessed 2026-08-12T15:15:00Z
@@ -262,7 +262,7 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 - [Peer networks and corporate affairs effectiveness](https://www.reuters.com/world/europe/corporate-affairs-peer-networks-effect-2024) · publication date unknown, accessed 2026-08-08T16:08:00Z
 - [Verdi sharpens rhetoric on foreign digital employers](https://www.reuters.com/world/europe/verdi-foreign-digital-employers-2026) · publication date unknown, accessed 2026-08-13T09:52:00Z
 
-### www.verdi.de
+### www\.verdi.de
 
 - [Verdi — Positionen zur Digitalisierung 2026](https://www.verdi.de/themen/digitalisierung/positionen-2026) · publication date unknown, accessed 2026-08-17T13:38:00Z
 
