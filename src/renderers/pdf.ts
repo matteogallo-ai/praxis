@@ -195,10 +195,12 @@ function addFooters(
       .fontSize(9)
       .font(theme.bodyFont)
       .fillColor(theme.subtle)
+      // pdfkit wraps to `width` whatever `lineBreak` says; one line, cut.
       .text(`Praxis briefing · ${q}`, doc.page.margins.left, y, {
         width: width - 60,
+        height: doc.currentLineHeight(),
+        ellipsis: true,
         align: "left",
-        lineBreak: false,
       })
       .text(`p. ${i + 1} / ${range.count}`, doc.page.margins.left, y, {
         width,
@@ -534,13 +536,17 @@ function table(
   const pageWidth = doc.page.width - left - doc.page.margins.right;
   const colWidth = pageWidth / headers.length;
   const PAD = 6;
+  // A cell taller than a page would be continued by pdfkit on pages of its
+  // own, away from the rest of its row: it is cut, with an ellipsis, to what
+  // a page holds under the header. The full text is in the appendices.
+  const maxCell = doc.page.maxY() - doc.page.margins.top - 4 * PAD - 2 * doc.currentLineHeight(true);
   // pdfkit wraps a cell to its width whatever `lineBreak` says, so a row is
   // as tall as its tallest wrapped cell, or its lines run into the next row.
   const heightOf = (cells: string[]): number =>
-    Math.max(...cells.map((c) => doc.heightOfString(c, { width: colWidth - 8 }))) + 2 * PAD;
+    Math.max(...cells.map((c) => Math.min(maxCell, doc.heightOfString(c, { width: colWidth - 8 })))) + 2 * PAD;
   const drawRow = (cells: string[], y: number, height: number): void => {
     cells.forEach((cell, i) => {
-      doc.text(cell, left + i * colWidth + 4, y + PAD, { width: colWidth - 8 });
+      doc.text(cell, left + i * colWidth + 4, y + PAD, { width: colWidth - 8, height: maxCell, ellipsis: true });
     });
     doc.y = y + height;
   };

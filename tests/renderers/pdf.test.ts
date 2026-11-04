@@ -380,6 +380,28 @@ describe("pdfRenderer — layout", () => {
     expect(low.map((r) => r.text)).toEqual([]);
   });
 
+  // A cell taller than a page would be continued by pdfkit on pages of its
+  // own, leaving the row's other cells pages away from it.
+  test("a cell taller than a page is cut, and its row stays on one page", async () => {
+    const b = makeBrief();
+    const holder = b.stakeholders.stakeholders[0] as BriefResult["stakeholders"]["stakeholders"][number];
+    b.stakeholders.stakeholders = [{ ...holder, name: "word ".repeat(470).trim(), position: "supportive" }];
+    const pages = pdfPages(await pdfRenderer.render(b, { compress_pdf_streams: false }));
+    const at = (pred: (r: TextRun) => boolean) => pages.findIndex((p) => p.some(pred));
+    const name = at((r) => r.text.startsWith("word"));
+    expect(name).toBeGreaterThan(-1);
+    expect(at((r) => r.text === "supportive")).toBe(name);
+    expect(pages.filter((p) => p.some((r) => r.text.startsWith("word"))).length).toBe(1);
+    expect(pages.flatMap((p) => p.filter((r) => !footer(r) && r.y < 72)).map((r) => r.text)).toEqual([]);
+  });
+
+  test("a long question keeps the footer on one line", async () => {
+    const b = makeBrief();
+    b.question = "W".repeat(300);
+    const pages = pdfPages(await pdfRenderer.render(b, { compress_pdf_streams: false }));
+    for (const p of pages) expect(p.filter((r) => r.y < 72).length).toBe(2);
+  });
+
   test("every page carries more than its footer, and the footer counts the pages", async () => {
     const buf = await pdfRenderer.render(longBrief(30), { include_sourcing_report: true, include_appendices: true, compress_pdf_streams: false });
     const pages = pdfPages(buf);
