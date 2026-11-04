@@ -220,7 +220,9 @@ published as *unvalidated*, with the numbers that failed.
   while applying the stop rule; that is said next to the agreement. The maintainer knows the pipeline:
   one informed rater, published as such. Agreement over the 14 criterion
   pairs: exact and within-one agreement, and quadratic-weighted Cohen's
-  kappa. **Threshold: kappa ≥ 0.6.** The 14 pairs come from one rater and
+  kappa (`bun run agreement -- --human review.jsonl --judge
+  benchmarks/.scoring-cache`, which refuses an unscored criterion and a
+  briefing judged twice). **Threshold: kappa ≥ 0.6.** The 14 pairs come from one rater and
   two briefings, are not independent, and support no interval; kappa is
   unstable when scores bunch at 3–4. Passing this check makes the judge's
   scores *indicative*, never *validated*, and CLAIMS C18 stays on the
@@ -260,8 +262,6 @@ built; neither result exists, and no published score depends on them.
 
 ## Not built yet (free, before the judge's GO)
 
-- Reading the maintainer's scores back from the annotation file, and the
-  agreement computation.
 - The script that writes `RESULTS.md` from the artefacts and its `--check`
   in CI (methodology point 4).
 - For the hard case, a per-source check of whether each cited source is
