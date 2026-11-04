@@ -15,7 +15,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   images and reference definitions are escaped outside code spans, so
   nothing the model wrote is fetched or clickable when the briefing is
   opened. A citation marker shows as `[1]`, written `\[1\]`; a host heading
-  of the Sources section is no longer an autolink. PDF and DOCX unchanged.
+  of the Sources section is no longer an autolink. A backtick that may not
+  pair as a viewer pairs it is text, so a span across lines or in a table
+  row cannot hide a link. The model's own escapes (`\*`), task lists and
+  footnotes now show as text. PDF and DOCX unchanged.
 - Position paper 1.1.0: the rationale's strands end with the citation
   marker `[n]` of each source, with no site name, host or URL in the text.
   "Citations at the end of each strand" named no form and invited a host

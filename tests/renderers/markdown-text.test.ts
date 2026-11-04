@@ -36,6 +36,27 @@ describe("plainText — no link, image or autolink outside code spans", () => {
     expect(plainText("``a` www.x.example")).toBe("``a` www\\.x.example");
   });
 
+  // Found by review against micromark, marked and markdown-it: each paired a
+  // backtick the viewer does not, and left a link live.
+  test.each([
+    ["a span that crosses a line", "`a\nb` www.x.example `c`", "`a\nb` www\\.x.example `c`"],
+    ["a link after a span that crosses a line", "`a\nb` [x](https://x.example) `c`", "`a\nb` \\[x\\](https\\://x.example) `c`"],
+    ["in a list item", "- `a\n  b` www.x.example `c`", "- `a\n  b` www\\.x.example `c`"],
+    ["in a block quote", "> `a\n> b` www.x.example `c`", "> `a\n> b` www\\.x.example `c`"],
+    ["in a table row, where cells split first", "| `a | www.x.example` |", "| `a | www\\.x.example` |"],
+    ["after a lone CR, which ends a line", "`a\r\r www.x.example `", "`a\n\n www\\.x.example `"],
+  ])("a backtick the viewer may not pair is text: %s", (_, input, expected) => {
+    expect(plainText(input)).toBe(expected);
+  });
+
+  test("a line of no-break spaces is not blank: the doubt goes on", () => {
+    expect(plainText("`a\n\u00a0\nb` www.x.example `c`")).toBe("`a\n\u00a0\nb` www\\.x.example `c`");
+  });
+
+  test("a span after a blank line is a span again", () => {
+    expect(plainText("`a\n\n`www.x.example`")).toBe("`a\n\n`www.x.example`");
+  });
+
   test("a backslash before a backtick is escaped, so the span the scan sees is the viewer's", () => {
     expect(plainText("\\`www.x.example`")).toBe("\\\\`www.x.example`");
   });

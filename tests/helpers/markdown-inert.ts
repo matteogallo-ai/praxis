@@ -16,19 +16,20 @@ export function autolinkable(markdown: string): string[] {
 /**
  * Where `needle` (a host) could become a link or an image in Markdown that a
  * GFM viewer renders: a link or image destination, a reference definition,
- * an angle autolink, a `www.`, scheme or e-mail autolink, outside code
- * spans. The YAML front matter is skipped: its values are quoted YAML,
- * not Markdown. A pattern check, not a parser: it errs towards reporting.
+ * an angle autolink, a `www.`, scheme or e-mail autolink, in text and in
+ * code spans alike. Code spans are not skipped: finding them is what the
+ * renderer can get wrong, so a needle in one is reported. The YAML front
+ * matter is skipped: its values are quoted YAML, not Markdown. A pattern
+ * check, not a parser: it errs towards reporting.
  */
 export function liveTargets(document: string, needle: string): string[] {
-  const markdown = document.replace(/^---\n[\s\S]*?\n---\n/, "");
-  const text = markdown.replace(/\\`/g, "").replace(/(?<!`)(`+)(?!`)[^\n]*?(?<!`)\1(?!`)/g, "");
+  const text = document.replace(/^---\n[\s\S]*?\n---\n/, "");
   const found = [
     ...(text.match(/(?<!\\)\]\([^)\n]*/g) ?? []),
-    ...(text.match(/^[ \t]*(?<!\\)\[[^\]\n]*(?<!\\)\]:.*$/gm) ?? []),
+    ...(text.match(/^[ \t>-]*(?<!\\)\[[^\]\n]*(?<!\\)\]:.*$/gm) ?? []),
     ...(text.match(/<[a-z][a-z0-9+.-]*:[^>\n]*>?/gi) ?? []),
     ...(text.match(/(?<!\\)@[a-z0-9.-]+/gi) ?? []),
-    ...autolinkable(markdown),
+    ...(text.match(/\bwww\.\S*|\b[a-z][a-z0-9+.-]*:\/\/\S*/gi) ?? []),
   ];
   return found.filter((f) => f.includes(needle));
 }
@@ -36,4 +37,6 @@ export function liveTargets(document: string, needle: string): string[] {
 /** Every way GFM turns text into a link or an image, all to one host. */
 export const HOSTILE =
   "![i](https://img.attacker.example/p.png) [l](https://l.attacker.example) www.attacker.example " +
-  "https://bare.attacker.example/x ceo@attacker.example <https://angle.attacker.example>\n[r]: https://ref.attacker.example";
+  "https://bare.attacker.example/x ceo@attacker.example <https://angle.attacker.example>\n[r]: https://ref.attacker.example\n" +
+  // Backticks a renderer could pair where the viewer does not (review of the fix).
+  "`a\nb` [x](https://cross.attacker.example) `c`\n\n| h | k |\n|---|---|\n| `a | www.cell.attacker.example` |\n\n`a\r\r www.cr.attacker.example `";

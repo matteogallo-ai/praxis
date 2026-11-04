@@ -27,37 +27,52 @@ export function inert(v: string): string {
  * nothing the model wrote is fetched or clickable when the briefing is
  * opened. Emphasis, lists and headings stay Markdown.
  *
- * A code span is found as CommonMark finds it, but only on one line: text
- * misread as code would be left live, while code misread as text only shows
- * a backslash. Every backslash outside a span is escaped first, so no
- * backtick is escaped and the spans seen here are the viewer's.
+ * Text misread as code would be left live; code misread as text only shows
+ * a backslash. So a span is kept only where the viewer must see one: a pair
+ * on one line, in a block where no earlier backtick went unpaired and no
+ * line is a table row (GFM splits cells before it looks for spans). From
+ * the first doubt to the next blank line, backticks are text. Every
+ * backslash outside a span is escaped, so no backtick is escaped either.
  */
 export function plainText(v: string): string {
+  let sure = true;
+  return v
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => {
+      // CommonMark's blank line: spaces and tabs only (trim() would count a no-break space).
+      if (/^[ \t]*$/.test(line)) sure = true;
+      if (!sure || line.includes("|")) {
+        sure = sure && !/[|`]/.test(line);
+        return escapeLinks(line);
+      }
+      const { text, paired } = lineSpans(line);
+      sure = paired;
+      return text;
+    })
+    .join("\n");
+}
+
+/** One line: its spans kept, the rest escaped; `paired` is false from the first unpaired run on. */
+function lineSpans(line: string): { text: string; paired: boolean } {
   let out = "";
   let i = 0;
-  while (i < v.length) {
-    const open = v.indexOf("`", i);
-    if (open === -1) return out + escapeLinks(v.slice(i));
-    out += escapeLinks(v.slice(i, open));
-    const fence = /^`+/.exec(v.slice(open))?.[0] ?? "`";
-    const close = closingFence(v, open + fence.length, fence.length);
-    const end = close === -1 ? open + fence.length : close + fence.length;
-    out += v.slice(open, end);
-    i = end;
+  while (i < line.length) {
+    const open = line.indexOf("`", i);
+    if (open === -1) return { text: out + escapeLinks(line.slice(i)), paired: true };
+    out += escapeLinks(line.slice(i, open));
+    const fence = /^`+/.exec(line.slice(open))?.[0] ?? "`";
+    const close = closingFence(line, open + fence.length, fence.length);
+    if (close === -1) return { text: out + escapeLinks(line.slice(open)), paired: false };
+    out += line.slice(open, close + fence.length);
+    i = close + fence.length;
   }
-  return out;
+  return { text: out, paired: true };
 }
 
-/** One model field, inert and plain: for text written outside a block `inert` already covers. */
-export function modelText(v: string): string {
-  return inert(plainText(v));
-}
-
-/** The start of the next run of exactly `n` backticks on the same line, or -1. */
-function closingFence(v: string, from: number, n: number): number {
-  const lineEnd = v.indexOf("\n", from);
-  const line = v.slice(from, lineEnd === -1 ? v.length : lineEnd);
-  for (const m of line.matchAll(/`+/g)) if (m[0].length === n) return from + m.index;
+/** The start of the next run of exactly `n` backticks in `line` from `from`, or -1. */
+function closingFence(line: string, from: number, n: number): number {
+  for (const m of line.slice(from).matchAll(/`+/g)) if (m[0].length === n) return from + m.index;
   return -1;
 }
 
@@ -66,6 +81,11 @@ function escapeLinks(v: string): string {
     .replace(/[\\[\]@]/g, "\\$&")
     .replace(/(www)\./gi, "$1\\.")
     .replace(/:\/\//g, "\\://");
+}
+
+/** One model field, inert and plain: for text written outside a block `inert` already covers. */
+export function modelText(v: string): string {
+  return inert(plainText(v));
 }
 
 /** A URL as one Markdown link destination: `(`, `)`, `<`, `>` and whitespace would end it early. */

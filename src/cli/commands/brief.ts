@@ -93,7 +93,7 @@ import type {
   RiskAnalysisResult,
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
-import { linkTarget, modelText, plainText } from "../../renderers/markdown-text.ts";
+import { linkTarget, modelText } from "../../renderers/markdown-text.ts";
 import { describeFirstParty, uncategorisedLines } from "../../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 import { codeSpan } from "../../sourcing/code-written-section.ts";
@@ -819,7 +819,7 @@ function describeWarningMarkdown(w: SourcingReport["warnings"][number]): string 
     case "missing_stakeholder_evidence":
       return `[stakeholder] '${modelText(w.stakeholder_name)}' (index ${w.stakeholder_index}) SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
     case "missing_risk_evidence":
-      return `[risk] ${plainText(w.risk_id)} .${w.evidence_field} SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
+      return `[risk] ${modelText(w.risk_id)} .${w.evidence_field} SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
     case "stale_source":
       return `[${w.agent}] stale source (${w.age_days} days${w.exceeds_max ? "; past max" : ""}): ${codeSpan(w.url)}`;
     case "untrusted_domain":
