@@ -40,6 +40,7 @@ import {
   InvalidAgentOutputError,
   StakeholderMappingError,
 } from "./errors.ts";
+import { sourceGuidance } from "../sourcing/guidance.ts";
 
 const AGENT_ID = "stakeholder";
 const PROMPT_NAME = "stakeholder";
@@ -100,6 +101,7 @@ export async function executeStakeholderMapping(
     research_json: untrustedJson("research", ctx.research),
     format_id: ctx.format.id,
     sourcing_policy: ctx.format.sourcing_policy,
+    source_guidance: sourceGuidance(ctx.format.sourcing_rules),
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);

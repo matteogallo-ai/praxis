@@ -13,20 +13,20 @@
     {
       "stage": "research",
       "model": "claude-sonnet-5-5",
-      "chars": 4383,
-      "tokens": 1512
+      "chars": 5602,
+      "tokens": 2049
     },
     {
       "stage": "stakeholder",
       "model": "claude-sonnet-5-5",
-      "chars": 9530,
-      "tokens": 3526
+      "chars": 10749,
+      "tokens": 4063
     },
     {
       "stage": "risk",
       "model": "claude-sonnet-5-5",
-      "chars": 19635,
-      "tokens": 7433
+      "chars": 20854,
+      "tokens": 7970
     },
     {
       "stage": "options",

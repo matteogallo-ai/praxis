@@ -787,6 +787,7 @@ export class Orchestrator {
       formatId: format.id,
       sourcingPolicy: format.sourcing_policy,
       targetWords: format.target_length.words,
+      ...(format.sourcing_rules === undefined ? {} : { sourcingRules: format.sourcing_rules }),
     };
     const execOpts: Parameters<typeof executeResearch>[2] = {};
     if (options.researchPromptPath !== undefined) {
