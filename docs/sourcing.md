@@ -176,8 +176,10 @@ Both are listed in `SourcingReport.untrusted_citations` (stage, option or
 critique id, URL, reason), outside `counts` and `warnings`: a warning's
 `agent` names one of stages 2–4, and widening that public union would be a
 breaking change (`docs/SEMVER-CONTRACT.md`). The front-matter
-`sourcing_summary` shows their number (`untrusted_citations=N`), and
-`--sourcing-report` lists them.
+`sourcing_summary` shows their number (`untrusted_citations=N`), and every
+sourcing report (terminal, Markdown appendix, PDF, DOCX) lists them. An option
+citing the same untrusted page as a research finding appears in both places:
+once as the finding's item, once as the option's citation.
 
 ### Cross-agent dedupe
 
@@ -219,7 +221,7 @@ Every validator returns a report, regardless of policy:
   warnings: SourcingWarning[];
   missing_sources_count: number;           // convenience alias (v0.4 compat)
   freshness_unknown?: number;               // sources without a publication date; set when the format has a freshness rule
-  untrusted_citations?: UntrustedCitation[]; // options and critique citations failing domain_trust; set when the format has that rule
+  untrusted_citations?: UntrustedCitation[]; // options and critique citations failing domain_trust; set when the format has that rule and one of those stages ran
 }
 ```
 
