@@ -430,3 +430,25 @@ protocol's cost:
 
 Anything else, a second attempt at a question included, needs a new
 estimate.
+
+## Amendments
+
+The plan above is kept as first written. A change to it is recorded here,
+dated, before the run it changes; `tests/benchmarks/live-protocol.test.ts`
+accepts the original commands plus the changes declared below, nothing
+else.
+
+| Date | Step | Change | Reason |
+| --- | --- | --- | --- |
+| 2026-11-04 | 1 | `10-esg-position` added, before the run | the only question covered by the first-party list (ADR 0003) |
+
+Step 1 as amended, five briefings under the same cap:
+
+```bash
+bun run bench:live -- --max-cost-usd 14 --ids 02-cfo-buyback-briefing,08-ai-regulation-position,10-esg-position,11-family-office-co-investment,12-sodium-ion-plant-morocco
+```
+
+Its GO covers at most $14.00 each, $70.00 for the 5. Question 10 is in
+the test split, so running it spends it as held-out evidence, and "What
+the five consume" no longer holds for it.
+Held-out test questions left: `03-executive-succession-planning` and `07-should-we-divest-consumer-line`.

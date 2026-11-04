@@ -9,6 +9,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- The live-proof protocol has a dated "Amendments" section: question 10
+  was added to step 1 before the run (2026-11-04), as the only question the
+  first-party list covers. The original plan is unchanged; its test accepts
+  the original commands plus declared amendments only. Held-out test
+  questions left: 03 and 07.
+
 - Question 05 is no longer held-out. It is in the test split, but the
   sourcing fixes (#31 to #39) were designed from its step 0 failures; the
   benchmark README, the system card and the live comparison table say so,

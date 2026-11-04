@@ -18,6 +18,10 @@ import { loadManifest } from "../../benchmarks/manifest.ts";
 import { loadSplit, MANIFEST_PATH } from "../../benchmarks/split.ts";
 
 const doc = readFileSync("docs/live-proof-protocol.md", "utf-8");
+/** The plan as first written; changes to it live only in "## Amendments", dated and declared. */
+const AMENDMENTS_AT = doc.indexOf("\n## Amendments\n");
+const plan = AMENDMENTS_AT === -1 ? doc : doc.slice(0, AMENDMENTS_AT);
+const amendments = AMENDMENTS_AT === -1 ? "" : doc.slice(AMENDMENTS_AT);
 
 /** The first test question of each format in id order, then the hard case. */
 function selected(): string[] {
@@ -35,10 +39,14 @@ function selected(): string[] {
 
 /** Step 0's single briefing and its cap, as the doc's first command runs them. */
 const PROBE = "05-supply-chain-acquisition";
-const commands = [...doc.matchAll(/bun run bench:live -- --max-cost-usd (\d+(?:\.\d+)?) --ids (\S+)/g)].map((m) => ({
-  cap: Number(m[1]),
-  ids: (m[2] ?? "").split(","),
-}));
+const COMMAND = /bun run bench:live -- --max-cost-usd (\d+(?:\.\d+)?) --ids (\S+)/g;
+const parseCommands = (text: string) =>
+  [...text.matchAll(COMMAND)].map((m) => ({ cap: Number(m[1]), ids: (m[2] ?? "").split(",") }));
+const commands = parseCommands(plan);
+/** A declared amendment: `| <date> | <step> | \`<id>\` added, before the run | <reason> |`. */
+const declared = [...amendments.matchAll(/^\| (\d{4}-\d{2}-\d{2}) \| (\d+) \| `([^`]+)` added, before the run \| ([^|]+) \|$/gm)].map(
+  (m) => ({ date: m[1] ?? "", step: Number(m[2]), id: m[3] ?? "", reason: (m[4] ?? "").trim() })
+);
 const usd = (n: number) => `$${n.toFixed(2)}`;
 const flat = doc.replace(/\s+/g, " ");
 const mock = (id: string) =>
@@ -68,7 +76,7 @@ function measuredRequests(): { stage: string; chars: number; tokens: number }[] 
 
 describe("docs/live-proof-protocol.md", () => {
   test("its bench:live commands run exactly the questions the rule selects", () => {
-    const ids = [...doc.matchAll(/bun run bench:live -- [^\n]*--ids (\S+)/g)].flatMap((m) => (m[1] ?? "").split(","));
+    const ids = [...plan.matchAll(/bun run bench:live -- [^\n]*--ids (\S+)/g)].flatMap((m) => (m[1] ?? "").split(","));
     expect(ids.sort()).toEqual(selected());
   });
 
@@ -96,8 +104,46 @@ describe("docs/live-proof-protocol.md", () => {
     }
   });
 
+  test("an amended command runs its step's questions plus the ones declared for it, nothing else", () => {
+    const amended = parseCommands(amendments);
+    const steps = [...new Set(declared.map((d) => d.step))].sort();
+    expect(amended.length).toBe(steps.length);
+    for (const [i, step] of steps.entries()) {
+      const original = commands[step] as { cap: number; ids: string[] };
+      const added = declared.filter((d) => d.step === step).map((d) => d.id);
+      expect(amended[i]?.cap).toBe(original.cap);
+      expect([...(amended[i]?.ids ?? [])].sort()).toEqual([...original.ids, ...added].sort());
+      expect(amendments.replace(/\s+/g, " ")).toContain(
+        `at most ${usd(original.cap)} each, ${usd(original.cap * (original.ids.length + added.length))} for the ${original.ids.length + added.length}`
+      );
+    }
+    const testIds = new Set(loadSplit(".").test);
+    for (const d of declared) {
+      expect(testIds.has(d.id)).toBe(true);
+      expect(selected()).not.toContain(d.id);
+      expect(d.reason.length).toBeGreaterThan(0);
+    }
+  });
+
+  test("question 10 was added to step 1 on 4 Nov 2026, for the first-party list", () => {
+    expect(declared).toEqual([
+      {
+        date: "2026-11-04",
+        step: 1,
+        id: "10-esg-position",
+        reason: "the only question covered by the first-party list (ADR 0003)",
+      },
+    ]);
+  });
+
+  test("the held-out test questions left are the test split less every question run", () => {
+    const run = new Set([...commands, ...parseCommands(amendments)].flatMap((c) => c.ids));
+    const left = loadSplit(".").test.filter((id) => !run.has(id));
+    expect(amendments).toContain(`Held-out test questions left: ${left.map((id) => `\`${id}\``).join(" and ")}.`);
+  });
+
   test("under later caps, every question's high case yields a brief through the reservations", () => {
-    for (const c of commands.slice(1)) {
+    for (const c of [...commands.slice(1), ...parseCommands(amendments)]) {
       for (const id of c.ids) {
         const w = capWalk(mock(id), STRICT.has(id), scenario("high"), c.cap);
         // A rerun the cap refuses leaves the complete pre-rerun brief.
