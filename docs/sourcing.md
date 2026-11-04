@@ -252,6 +252,9 @@ of theirs that rests on such a fact and has no source is still a
 on the list does not excuse it, because the list is the model's and code
 cannot tell a fact about the requester from one that could be researched.
 
+A run resumed from a scoping checkpoint written before scoping prompt 2.1.0
+has no such list: no section and no count, not a count of zero.
+
 ### Aggregating across agents
 
 The Orchestrator's `assessRisksAfterStakeholders` runs three

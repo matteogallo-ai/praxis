@@ -7,8 +7,8 @@
     {
       "stage": "scoping",
       "model": "claude-opus-5-5",
-      "chars": 2845,
-      "tokens": 953
+      "chars": 2971,
+      "tokens": 984
     },
     {
       "stage": "research",

@@ -41,10 +41,12 @@ prompt scope(question: string, format_id: string, target_words: number) -> strin
          whole briefing.
       5. List the facts the briefing needs that concern only the requester
          and that the question does not state: its own finances, strategy,
-         board, shareholders, customers or internal capabilities. No public
-         source can establish them; the requester must supply them. Do not
-         list facts about markets, competitors, regulators or any other
-         party: those can be researched. An empty list is valid.
+         board, shareholders, customers or internal capabilities, when no
+         public source can establish them, so the requester must supply
+         them. A requester the question names may have public figures
+         (filings, annual reports): those can be researched, so leave them
+         out. Never list facts about markets, competitors, regulators or
+         any other party. An empty list is valid.
 
     Return valid JSON only. No prose, no markdown fences, no commentary.
 

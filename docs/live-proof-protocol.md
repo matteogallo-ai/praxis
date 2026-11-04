@@ -76,7 +76,7 @@ $10 is a limit, not a fuse: before each request the ledger reserves that
 request's worst case and sends it only if what is spent, what requests in
 flight hold and that worst case fit in $10 ([§ Ceiling](#ceiling)). The
 estimator's stages, high scenario, cumulative: scoping $0.17, research
-$0.97, stakeholders $1.83, risks $3.06, options $5.33, synthesis $6.34,
+$0.97, stakeholders $1.84, risks $3.06, options $5.33, synthesis $6.34,
 adversarial $9.05. Walked through the reservations
 (`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`):
 
@@ -277,8 +277,8 @@ built; neither result exists, and no published score depends on them.
 | 05-supply-chain-acquisition | $1.37 | $5.87 | $12.78 |
 | 08-ai-regulation-position | $1.41 | $6.02 | $13.13 |
 | 11-family-office-co-investment | $1.44 | $5.80 | $15.40 |
-| 12-sodium-ion-plant-morocco | $1.37 | $5.87 | $12.79 |
-| **Total** | **$7.00** | **$29.59** | **$67.17** |
+| 12-sodium-ion-plant-morocco | $1.38 | $5.87 | $12.79 |
+| **Total** | **$7.01** | **$29.59** | **$67.17** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -294,9 +294,10 @@ Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
 Prompt sizes are the mock run's, read at the 2.73 characters per token
 Anthropic's count_tokens endpoint measured on 66 rendered prompts of 4 questions,
-one per format: 02, 05, 08, 11 (`benchmarks/token-counts/`, 2026-11-03;
-2.63 to 3.01 per request). Every question, 12 included, is read at that
-one ratio. Each web-searching call re-reads its context after every search,
+one per format: 02, 05, 08, 11 (`benchmarks/token-counts/`, 2026-11-04;
+2.63 to 3.04 per request). Every question, 12 included, is read at that
+one ratio. The mock scoping answers name no requester-provided facts, so
+the later stages, which embed the scoping output, are measured without them. Each web-searching call re-reads its context after every search,
 model output included. Prices: Claude Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10 per
 million tokens, web search $10 per 1000 (`src/llm/pricing.ts`, 2026-11-02).
 No prompt caching is assumed.
@@ -358,7 +359,7 @@ allowances hold**. They are assumptions, not bounds the API enforces:
 - Text that tokenizes below 2.5 characters per token (base64, CJK) is
   sized low the same way. The tool definitions and message framing the API
   adds are not counted apart: on the measured prompts, the margin between
-  2.5 and the measured 2.63 or more is at least 185 tokens on the shortest
+  2.5 and the measured 2.63 or more is at least 204 tokens on the shortest
   (scoping, which has no tools) and 224 on the shortest search stage
   (research).
 - A run killed by a signal writes no `metadata.json`: what it spent since
