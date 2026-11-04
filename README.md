@@ -9,21 +9,27 @@
 > note, position paper, family-office memo), with sourcing checks, an
 > adversarial review and Markdown / PDF / DOCX output.
 
-## Status: two live briefings completed, not yet reviewed
+## Status: six live briefings completed, not yet reviewed
 
-Praxis has completed **two briefings against a real model**, both on
-question 05, 4 Nov 2026
-(`benchmarks/outputs/live/05-supply-chain-acquisition/`): step 0, $3.51, flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains;
-its rerun after the sourcing fixes, $3.69, flagged insufficiently sourced: 8 of 47 items without a source, 17 from untrusted domains
-(compared in [`benchmarks/outputs/live/README.md`](benchmarks/outputs/live/README.md)).
-Their quality is not yet checked or reviewed. 8 live attempts: 6 failed (5
-in 1.2.1 without committed records, 1 on 3 Nov 2026), 2 completed (4 Nov
-2026). In
+Praxis has completed **six briefings against a real model**, on questions
+05, 08, 10, 11 and 12, 4 Nov 2026 (`benchmarks/outputs/live/`):
+
+- question 05, step 0: $3.51, flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains;
+- question 05, rerun after the sourcing fixes: $3.69, flagged insufficiently sourced: 8 of 47 items without a source, 17 from untrusted domains;
+- question 08 (step 1): $3.66, flagged insufficiently sourced: 15 of 47 items without a source, 16 from untrusted domains;
+- question 10 (step 1): $3.92, flagged insufficiently sourced: 6 of 46 items without a source, 19 from untrusted domains;
+- question 11 (step 1): $3.29, flagged insufficiently sourced: 13 of 41 items without a source, 23 from untrusted domains;
+- question 12 (step 1): $4.75, flagged insufficiently sourced: 6 of 49 items without a source, 32 from untrusted domains.
+
+Every one is flagged insufficiently sourced; the runs are compared in
+[`benchmarks/outputs/live/README.md`](benchmarks/outputs/live/README.md).
+Their quality is not yet checked or reviewed. 13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026 and 4 Nov 2026), 6 completed (4 Nov 2026). In
 [`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the
 `strict` sourcing policy because the model returned findings without
 source URLs, one on prose before the JSON, one on a 60 s timeout during
 web search. On 3 Nov 2026 the risk stage's answer was cut at its
-`max_tokens`. Everything listed under [Features](#features) is
+`max_tokens`; on 4 Nov 2026 question 02's synthesis section was refused
+and its retry too, the last time for a `www.` address in its prose. Everything listed under [Features](#features) is
 proven on the mock provider, which replays hand-written fixtures; that proves
 the wiring, not the quality of a model's output.
 

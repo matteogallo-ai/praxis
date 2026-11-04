@@ -1,0 +1,282 @@
+{
+  "id": "12-sodium-ion-plant-morocco",
+  "question": "Should we build a sodium-ion battery cell plant in Morocco to supply European carmakers?",
+  "format": "mckinsey-style-note",
+  "tags": [
+    "hard",
+    "manufacturing",
+    "thin-sources"
+  ],
+  "mode": "live",
+  "duration_ms": 715971,
+  "generated_at": "2026-11-04T13:20:16.572Z",
+  "provider_name": "anthropic",
+  "synthesis": {
+    "total_word_count": 958,
+    "target_words": 1200,
+    "deviation_pct": -20.2,
+    "sections_over_length": 1,
+    "sections_over_length_ids": [
+      "situation"
+    ],
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 1,
+    "material_count": 6,
+    "minor_count": 1,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 7,
+    "re_synthesis_deviations": [
+      "situation",
+      "complication",
+      "key-question",
+      "answer",
+      "supporting-arguments",
+      "so-what"
+    ]
+  },
+  "sourcing": {
+    "total_items": 49,
+    "counts": {
+      "ok": 10,
+      "stale": 0,
+      "untrusted": 32,
+      "duplicated": 1,
+      "missing": 6
+    },
+    "edited_after_critique": true,
+    "insufficiently_sourced": true,
+    "freshness_unknown": 30,
+    "requester_provided": 6,
+    "untrusted_citations": [
+      {
+        "stage": "options",
+        "id": "OPT-B",
+        "url": "https://www.investing.com/news/economy-news/northvolt-ceo-steps-down-after-company-files-for-bankruptcy-3736651",
+        "reason": "host 'www.investing.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-001",
+        "url": "https://www.usinenouvelle.com/energie/stockage/batteries/lusine-devait-creer-jusqua-2000-emplois-incapable-de-reunir-les-fonds-necessaires-la-start-up-tiamat-abandonne-son-projet-de-gigafactory-de-batteries-sodium-ion-dans-la-somme.5JECNCELKRGRJNAJDEY2C5LX7M.html",
+        "reason": "host 'www.usinenouvelle.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-002",
+        "url": "https://www.pv-magazine.com/2026/10/13/catl-intilion-target-up-to-3-gwh-of-sodium-ion-storage-in-europe/",
+        "reason": "host 'www.pv-magazine.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-003",
+        "url": "https://bravenewcoin.com/insights/lithium-prices-analysis-retreat-as-chinese-carbonate-falls-from-its-2026-peak",
+        "reason": "host 'bravenewcoin.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-004",
+        "url": "https://www.generation-nt.com/actualites/tiamat-batterie-sodium-ion-gigafactory-report-2081353",
+        "reason": "host 'www.generation-nt.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-005",
+        "url": "https://table.media/assets/entwurf-iaa-proposal.pdf",
+        "reason": "host 'table.media' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-006",
+        "url": "https://www.mobilityinthecity.com/f/tiamat-energy/",
+        "reason": "host 'www.mobilityinthecity.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-007",
+        "url": "https://www.electrive.com/2026/09/29/industrial-accelerator-act-industry-may-fail-to-meet-battery-demand-in-eu/",
+        "reason": "host 'www.electrive.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-008",
+        "url": "https://carboncredits.com/catls-multi-country-expansion-redefines-europes-battery-supply-chain-and-workforce/",
+        "reason": "host 'carboncredits.com' matches no reputation tier"
+      }
+    ]
+  },
+  "usage": {
+    "stages": {
+      "scoping": {
+        "calls": 1,
+        "input_tokens": 1388,
+        "output_tokens": 1539,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.036332,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 22623
+      },
+      "research": {
+        "calls": 2,
+        "input_tokens": 110191,
+        "output_tokens": 11344,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 10,
+        "cost_usd": 0.43382200000000004,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 81946
+      },
+      "stakeholder": {
+        "calls": 1,
+        "input_tokens": 54806,
+        "output_tokens": 9399,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 4,
+        "cost_usd": 0.243602,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 68694
+      },
+      "risk": {
+        "calls": 2,
+        "input_tokens": 256996,
+        "output_tokens": 35501,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 10,
+        "cost_usd": 0.9690019999999999,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 247771
+      },
+      "options": {
+        "calls": 1,
+        "input_tokens": 146610,
+        "output_tokens": 11847,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.87338,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 108729
+      },
+      "synthesis": {
+        "calls": 6,
+        "input_tokens": 188438,
+        "output_tokens": 15059,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.527466,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 27238
+      },
+      "adversarial": {
+        "calls": 1,
+        "input_tokens": 201696,
+        "output_tokens": 9628,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 4,
+        "cost_usd": 1.039344,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 102873
+      },
+      "synthesis-rerun": {
+        "calls": 6,
+        "input_tokens": 205695,
+        "output_tokens": 21858,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.6299699999999999,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 55990
+      }
+    },
+    "total": {
+      "calls": 20,
+      "input_tokens": 1165820,
+      "output_tokens": 116175,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 33,
+      "cost_usd": 4.752918,
+      "models": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "duration_ms": 715864
+    },
+    "simulated": false,
+    "max_cost_usd": 14
+  },
+  "artefacts": {
+    "brief.md": 58065,
+    "brief.pdf": 103831,
+    "brief.docx": 18516
+  },
+  "provenance": {
+    "git_sha": "8df678f514814a6705332a2ffad822bd35ad2b25",
+    "git_dirty": false,
+    "prompts": {
+      "adversarial.prompt": {
+        "version": "3.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "f1e9385b149eb3b052b956232ee3254632fccbf9b09489f01c432471f2eb627d"
+      },
+      "options.prompt": {
+        "version": "3.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b45b994c42501a6a444976302944dd78eff58acc451c935ae1f91a0b913c1418"
+      },
+      "research.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "779e15013283913004526623ecc7218045320cbfe3b09f14b12187b90a2a9513"
+      },
+      "risk.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "69d90328a32e96a2b336a29f03596081c8c8b19b37f7973a785cb4fac99f7a32"
+      },
+      "scoping.prompt": {
+        "version": "2.1.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b652767f30813ac6bc57a095a36d2ee80e67f2da2c3ae6dae93113a02cbedf86"
+      },
+      "stakeholder.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "ee69e7fb205854c4a29c20ecb5dc8afde1968261f8b824cbed9a47c054c95380"
+      },
+      "synthesis.prompt": {
+        "version": "2.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "be7ac673a02f9d0b5f75544714edb3157f1deace536db8ae39c50c0246473f9f"
+      }
+    }
+  }
+}

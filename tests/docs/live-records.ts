@@ -55,7 +55,9 @@ export function liveRecords(): { failures: { type: string; at: string }[]; compl
       stages_ms: Object.values(meta.usage.stages).reduce((a, s) => a + s.duration_ms, 0),
     };
   });
-  // Oldest first: step 0 is the first completion wherever it is described.
+  // Oldest first, both: directory order differs between filesystems, and
+  // step 0 is the first completion wherever it is described.
+  failures.sort((a, b) => a.at.localeCompare(b.at));
   completions.sort((a, b) => a.at.localeCompare(b.at));
   return { failures, completions };
 }
@@ -65,11 +67,19 @@ export function countWord(n: number): string {
   return ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][n] ?? String(n);
 }
 
-/** "3 Nov 2026"; several distinct days are joined with commas. */
+/** "question 05", or "questions 05, 08 and 10": the questions the records cover, by number. */
+export function questionsOf(records: readonly { id: string }[]): string {
+  const n = [...new Set(records.map((r) => r.id.slice(0, 2)))].sort();
+  if (n.length === 1) return `question ${n[0]}`;
+  return `questions ${n.slice(0, -1).join(", ")} and ${n[n.length - 1]}`;
+}
+
+/** "3 Nov 2026"; several distinct days read "3 Nov 2026 and 4 Nov 2026". */
 export function days(records: readonly { at: string }[]): string {
   const fmt = (at: string) =>
     new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  return [...new Set(records.map((r) => fmt(r.at)))].join(", ");
+  const all = [...new Set(records.map((r) => fmt(r.at)))];
+  return all.length < 2 ? all.join("") : `${all.slice(0, -1).join(", ")} and ${all[all.length - 1]}`;
 }
 
 /** Wilson score interval at 95%, in whole percent. */

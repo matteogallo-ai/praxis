@@ -21,7 +21,10 @@ The first live record is `05-supply-chain-acquisition/error-*.json` (3 Nov
 2026); the first completed briefing is
 `05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/` (step 0). The
 same question was rerun at `3a7ca6a` (the sourcing fixes, #31 to #35) as
-`05-supply-chain-acquisition/run-2026-11-04T10-52-05-822Z/`.
+`05-supply-chain-acquisition/run-2026-11-04T10-52-05-822Z/`. Step 1 (4 Nov
+2026) left one failure, `02-cfo-buyback-briefing/error-*.json`, and four
+completed runs, for questions 08, 10, 11 and 12. `SHA256SUMS` lists every
+record file's SHA-256.
 What a live briefing costs is estimated by `bun run estimate:cost`, not
 stated here.
 
@@ -69,6 +72,70 @@ What the rerun shows that step 0 could not:
   judges the critique, but DSV is not in the reviewed list
   (`src/sourcing/first-party-organisations.ts`), so this citation would
   stay untrusted.
+
+## Step 1: questions 02, 08, 10, 11 and 12
+
+Step 1 of `docs/live-proof-protocol.md`, as amended (question 10 added
+before the run), ran on 4 Nov 2026, all five at `8df678f`, each capped at $14. One attempt per question. Counts are items, read from each run's
+`metadata.json` (`sourcing`); question 02 stopped before any sourcing
+report. The estimate is `estimate:cost` at that commit, frozen in
+`benchmarks/estimates/step-1.json`. These are five questions, each run
+once, so a difference between columns is not an effect of anything.
+
+| | 02 | 08 | 10 | 11 | 12 |
+| --- | --- | --- | --- | --- | --- |
+| Format | `executive-pre-read` | `position-paper-corporate` | `position-paper-corporate` | `family-office-memo` | `mckinsey-style-note` |
+| Outcome | failed: `InvalidAgentOutputError` | completed | completed | completed | completed |
+| Items | — | 47 | 46 | 41 | 49 |
+| Sourced from a trusted domain (`ok`) | — | 14 | 16 | 4 | 10 |
+| From an untrusted domain | — | 16 | 19 | 23 | 32 |
+| Without a source (`missing`) | — | 15 | 6 | 13 | 6 |
+| Duplicated | — | 2 | 5 | 1 | 1 |
+| Stale or aging (`stale`) | — | 0 | 0 | 0 | 0 |
+| Freshness unknown (no publication date) | — | 24 | 26 | 24 | 30 |
+| Requester-provided, not sourceable | — | 7 | 6 | 7 | 6 |
+| First-party sources (ADR 0003) | — | 0 | 8 | 0 | 0 |
+| Options' and critique's untrusted citations | — | 1 options, 2 critique | 1 options, 7 critique | 3 options, 3 critique | 1 options, 8 critique |
+| Held-out (test split) | yes, spent by this run | yes, spent by this run | yes, spent by this run | yes, spent by this run | yes, spent by this run |
+| Flagged insufficiently sourced | — | yes | yes | yes | yes |
+| Cost | $2.33 | $3.66 | $3.92 | $3.29 | $4.75 |
+| Estimate: low / central / high | $1.44 / $6.13 / $13.25 | $1.43 / $6.12 / $13.30 | $1.43 / $6.12 / $13.30 | $1.46 / $5.90 / $15.57 | $1.40 / $5.97 / $12.95 |
+| Cost / central estimate | 0.38 | 0.60 | 0.64 | 0.56 | 0.80 |
+| Stages' wall time | 5.3 min to the failure | 7.9 min | 8.4 min | 7.7 min | 11.9 min |
+
+Step 1 spent $17.96 in all, against a central estimate of $30.23 and a
+cap of $70. Every completed briefing cost between 0.56 and 0.80 of its
+central estimate: in step 1 every completed run ran below its central
+case. Question 12 took 11.9 min of stages, above the
+10-minute latency target (`docs/SLO.md`; six briefings set no p95).
+
+What step 1 shows:
+
+- Every completed briefing is flagged insufficiently sourced, as both of
+  question 05's were.
+- Question 10, the only test question the first-party list covers, cites
+  eight first-party sources: IFRS Foundation, GHG Protocol and EFRAG for
+  their own standards, and the FCA for its own policy statement. They are
+  listed in its briefing's "First-party sources" section; whether each
+  sentence states the organisation's own fact is not checked by code.
+- No source is stale; 24 to 30 cited items per briefing have no
+  publication date, so their freshness is unknown.
+
+### Question 02: why it failed
+
+The synthesis section `supporting-evidence` was refused, and so was its one
+retry (`src/agents/retry.ts`, per section): 7 synthesis calls for 6 sections,
+in a format with no strict editorial pass. The record keeps only the last
+refusal: `content_markdown contains a www. address, which viewers turn into
+a link: 'www.'`; the first one's reason is not recorded. (Question 11's 8
+calls come from its format's strict editorial regenerations, not from
+retries.) The check is right to refuse a `www.`
+address in prose (`docs/THREAT_MODEL.md`, item 4), and the synthesis prompt
+says so. The format asks this section for its "source in parentheses at
+end of paragraph", which invites a host name such as `(www.example.com)`.
+The record cannot confirm it: the error quoted only `www.`, and a refused
+answer is not kept. Since #42 the error quotes the whole address, cut at
+200 characters, so a second failure would name it. Nothing was rerun.
 
 ## Errata
 

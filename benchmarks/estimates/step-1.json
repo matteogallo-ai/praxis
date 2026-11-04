@@ -1,0 +1,41 @@
+{
+  "note": "estimate:cost for step 1, frozen at the commit the run used; the live records hold what was spent",
+  "git_sha": "8df678f514814a6705332a2ffad822bd35ad2b25",
+  "rows": [
+    {
+      "id": "02-cfo-buyback-briefing",
+      "low": 1.44,
+      "central": 6.13,
+      "high": 13.25
+    },
+    {
+      "id": "08-ai-regulation-position",
+      "low": 1.43,
+      "central": 6.12,
+      "high": 13.3
+    },
+    {
+      "id": "10-esg-position",
+      "low": 1.43,
+      "central": 6.12,
+      "high": 13.3
+    },
+    {
+      "id": "11-family-office-co-investment",
+      "low": 1.46,
+      "central": 5.9,
+      "high": 15.57
+    },
+    {
+      "id": "12-sodium-ion-plant-morocco",
+      "low": 1.4,
+      "central": 5.97,
+      "high": 12.95
+    }
+  ],
+  "total": {
+    "low": 7.16,
+    "central": 30.23,
+    "high": 68.36
+  }
+}

@@ -7,7 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { countWord, days, liveRecords, sourcingFlag, UNRECORDED_FAILURES, wilson } from "./live-records.ts";
+import { countWord, days, liveRecords, questionsOf, sourcingFlag, UNRECORDED_FAILURES, wilson } from "./live-records.ts";
 
 const flat = (path: string) => readFileSync(path, "utf-8").replace(/\s+/g, " ");
 
@@ -16,6 +16,12 @@ describe("live attempt count", () => {
   const failed = UNRECORDED_FAILURES + failures.length;
   const attempts = failed + completions.length;
   const sentence = `${attempts} live attempts: ${failed} failed (${UNRECORDED_FAILURES} in 1.2.1 without committed records, ${failures.length} on ${days(failures)}), ${completions.length} completed (${days(completions)})`;
+
+  test("failures and completions are listed oldest first, whatever the directory order", () => {
+    const sorted = (xs: readonly { at: string }[]) => xs.every((x, i) => i === 0 || (xs[i - 1] as { at: string }).at <= x.at);
+    expect(sorted(failures)).toBe(true);
+    expect(sorted(completions)).toBe(true);
+  });
 
   for (const path of ["README.md", "docs/SYSTEM_CARD.md"]) {
     test(`${path} states it from the run records`, () => {
@@ -39,13 +45,17 @@ describe("live attempt count", () => {
 
     test("README: each one's cost and sourcing flag", () => {
       expect(flat("README.md")).toContain(`Praxis has completed **${count} briefings against a real model**`);
-      for (const c of completions) expect(flat("README.md")).toContain(`${usd(c.cost_usd)}, ${sourcingFlag(c)}`);
+      const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\$]/g, "\\$&");
+      for (const c of completions) {
+        expect(flat("README.md")).toMatch(new RegExp(`question ${c.id.slice(0, 2)}[^:;]*: ${esc(`${usd(c.cost_usd)}, ${sourcingFlag(c)}`)}`));
+      }
     });
 
     test("system card: each one's flag, and the cost and latency row", () => {
       const card = flat("docs/SYSTEM_CARD.md");
       expect(card).toContain(`**Status: ${count} briefings have completed against a real model**`);
-      for (const c of completions) expect(card).toContain(sourcingFlag(c));
+      const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\$]/g, "\\$&");
+      for (const c of completions) expect(card).toMatch(new RegExp(`question ${c.id.slice(0, 2)}[^;]*?, ${esc(sourcingFlag(c))}`));
       const each = completions.map((c) => `${usd(c.cost_usd)}, ${minutes(c.stages_ms)} of stages`).join("; ");
       expect(card).toContain(`| Live cost and latency per briefing | ${completions.length} | ${each};`);
     });
@@ -61,9 +71,11 @@ describe("live attempt count", () => {
     });
 
     test("CLAUDE.md and the SLO name them", () => {
-      expect(flat("CLAUDE.md")).toContain(`${count} briefings have completed against a real model (question 05, ${days(completions)}`);
+      expect(flat("CLAUDE.md")).toContain(
+        `${count} briefings have completed against a real model (${questionsOf(completions)}, ${days(completions)}`
+      );
       const capital = count.charAt(0).toUpperCase() + count.slice(1);
-      expect(flat("docs/SLO.md")).toContain(`**${capital} live briefings have completed** (question 05, ${days(completions)}`);
+      expect(flat("docs/SLO.md")).toContain(`**${capital} live briefings have completed** (${questionsOf(completions)}, ${days(completions)}`);
     });
   });
 });

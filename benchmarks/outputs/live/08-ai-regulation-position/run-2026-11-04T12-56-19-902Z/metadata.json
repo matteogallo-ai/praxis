@@ -1,0 +1,247 @@
+{
+  "id": "08-ai-regulation-position",
+  "question": "Draft our corporate position on the incoming AI regulatory framework.",
+  "format": "position-paper-corporate",
+  "tags": [
+    "regulatory",
+    "policy",
+    "ai-governance"
+  ],
+  "mode": "live",
+  "duration_ms": 471928,
+  "generated_at": "2026-11-04T12:56:19.903Z",
+  "provider_name": "anthropic",
+  "synthesis": {
+    "total_word_count": 1597,
+    "target_words": 1600,
+    "deviation_pct": -0.2,
+    "sections_over_length": 2,
+    "sections_over_length_ids": [
+      "issue-framing",
+      "counter-arguments-addressed"
+    ],
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 1,
+    "material_count": 4,
+    "minor_count": 2,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 5,
+    "re_synthesis_deviations": [
+      "issue-framing",
+      "stakeholder-landscape",
+      "our-position",
+      "rationale",
+      "counter-arguments-addressed",
+      "recommended-actions"
+    ]
+  },
+  "sourcing": {
+    "total_items": 47,
+    "counts": {
+      "ok": 14,
+      "stale": 0,
+      "untrusted": 16,
+      "duplicated": 2,
+      "missing": 15
+    },
+    "edited_after_critique": true,
+    "insufficiently_sourced": true,
+    "freshness_unknown": 24,
+    "requester_provided": 7,
+    "untrusted_citations": [
+      {
+        "stage": "options",
+        "id": "OPT-B",
+        "url": "https://srnnews.com/artificial-intelligence-rules-to-go-ahead-no-pause-eu-commission-says/",
+        "reason": "host 'srnnews.com' matches no entry in allow-list"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-002",
+        "url": "https://jtc21.eu/en-18286-becomes-the-first-harmonised-standard-under-the-eu-ai-act/",
+        "reason": "host 'jtc21.eu' matches no entry in allow-list"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-006",
+        "url": "https://kla.digital/blog/jtc-21-standards-tracker",
+        "reason": "host 'kla.digital' matches no entry in allow-list"
+      }
+    ]
+  },
+  "usage": {
+    "stages": {
+      "scoping": {
+        "calls": 1,
+        "input_tokens": 1378,
+        "output_tokens": 1260,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.030712,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 14086
+      },
+      "research": {
+        "calls": 1,
+        "input_tokens": 90397,
+        "output_tokens": 5977,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.290564,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 42965
+      },
+      "stakeholder": {
+        "calls": 1,
+        "input_tokens": 66380,
+        "output_tokens": 9599,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.27875,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 67546
+      },
+      "risk": {
+        "calls": 1,
+        "input_tokens": 75684,
+        "output_tokens": 14884,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.35020799999999996,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 103860
+      },
+      "options": {
+        "calls": 1,
+        "input_tokens": 127081,
+        "output_tokens": 10595,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.770224,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 96900
+      },
+      "synthesis": {
+        "calls": 6,
+        "input_tokens": 164873,
+        "output_tokens": 17576,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.505506,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 34732
+      },
+      "adversarial": {
+        "calls": 1,
+        "input_tokens": 172753,
+        "output_tokens": 7233,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 3,
+        "cost_usd": 0.865672,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 74595
+      },
+      "synthesis-rerun": {
+        "calls": 6,
+        "input_tokens": 173174,
+        "output_tokens": 22627,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.572618,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 37061
+      }
+    },
+    "total": {
+      "calls": 18,
+      "input_tokens": 871720,
+      "output_tokens": 89751,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 23,
+      "cost_usd": 3.6642539999999997,
+      "models": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "duration_ms": 471745
+    },
+    "simulated": false,
+    "max_cost_usd": 14
+  },
+  "artefacts": {
+    "brief.md": 58319,
+    "brief.pdf": 92074,
+    "brief.docx": 17160
+  },
+  "provenance": {
+    "git_sha": "8df678f514814a6705332a2ffad822bd35ad2b25",
+    "git_dirty": false,
+    "prompts": {
+      "adversarial.prompt": {
+        "version": "3.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "f1e9385b149eb3b052b956232ee3254632fccbf9b09489f01c432471f2eb627d"
+      },
+      "options.prompt": {
+        "version": "3.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b45b994c42501a6a444976302944dd78eff58acc451c935ae1f91a0b913c1418"
+      },
+      "research.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "779e15013283913004526623ecc7218045320cbfe3b09f14b12187b90a2a9513"
+      },
+      "risk.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "69d90328a32e96a2b336a29f03596081c8c8b19b37f7973a785cb4fac99f7a32"
+      },
+      "scoping.prompt": {
+        "version": "2.1.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b652767f30813ac6bc57a095a36d2ee80e67f2da2c3ae6dae93113a02cbedf86"
+      },
+      "stakeholder.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "ee69e7fb205854c4a29c20ecb5dc8afde1968261f8b824cbed9a47c054c95380"
+      },
+      "synthesis.prompt": {
+        "version": "2.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "be7ac673a02f9d0b5f75544714edb3157f1deace536db8ae39c50c0246473f9f"
+      }
+    }
+  }
+}
