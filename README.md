@@ -59,7 +59,8 @@ flowchart LR
 | 6 Synthesis | stages 1–5, format sections | one text per format section |
 | 7 Adversarial review | the assembled brief | critiques and whether to revise |
 
-The sourcing check after stages 2–4 enforces the format's `sourcing_policy`:
+The sourcing check after stages 2–4, and the domain check on the options'
+citations, enforce the format's `sourcing_policy`:
 under `strict` a missing, stale or untrusted source aborts the brief; under
 `permissive` it is reported. A source is stale only by its publication date;
 without one its freshness is unknown and counted apart, and the stage

@@ -122,6 +122,15 @@ release without notice.
   therefore pass a strict freshness rule it failed before on malformed
   timestamps, and is never reported as fresh. There is no switch:
   judging age by the retrieval time is the defect fixed.
+- **Domain trust on options and critique citations (a bug fix).** Under a
+  format's `domain_trust` rule, an option citing an untrusted domain now
+  fails a strict briefing with `UntrustedDomainError` (or degrades it under
+  `onSourcingFailure: "degrade"`); before, options' citations were not
+  checked. Critiques' citations are reported, never blocking. Both are
+  listed in `SourcingReport.untrusted_citations`, a new optional field of
+  the new exported type `UntrustedCitation`; `counts` and `warnings` are
+  unchanged. There is no switch: a strict policy that let an untrusted
+  citation through is the defect fixed.
 
 ## What is acceptable in a PATCH bump
 
