@@ -77,4 +77,15 @@ describe("classifyFreshness", () => {
       expect(r.age_days).toBeNull();
     }
   });
+
+  test("a publication date after the run's clock is unknown, never fresh", () => {
+    // A model can state a date that has not happened; it proves nothing about age.
+    const tomorrowPlus = new Date(NOW.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    for (const published of [tomorrowPlus, "2099-01-01"]) {
+      expect(classifyFreshness(published, RULE, NOW)).toEqual({ classification: "unknown", age_days: null });
+    }
+    // The run's own day is not the future, whatever the time zone it was written in.
+    const today = NOW.toISOString().slice(0, 10);
+    expect(classifyFreshness(today, RULE, NOW).classification).toBe("fresh");
+  });
 });

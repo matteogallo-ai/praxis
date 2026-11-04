@@ -11,7 +11,7 @@
     "src/sourcing/validator.ts",
     "src/sourcing/freshness.ts",
     "src/sourcing/domain-trust.ts",
-    "src/agents/prompt-runtime.ts:304-473",
+    "src/agents/prompt-runtime.ts:304-484",
     "src/agents/synthesis.ts:697-781"
   ],
   "reporters": ["clear-text", "progress", "json"],

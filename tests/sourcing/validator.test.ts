@@ -311,6 +311,17 @@ describe("validateSourcing — freshness rule", () => {
     }
   });
 
+  test("a strict failure's report still counts the sources of unknown freshness", () => {
+    let caught: unknown;
+    try {
+      validateSourcing(research([retrievedOnly(NOW.toISOString()), missing("q")]), "strict", { rules, now: NOW });
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SourcingValidationError);
+    expect((caught as SourcingValidationError).report.freshness_unknown).toBe(1);
+  });
+
   test("a dated source is not counted as unknown", () => {
     const r = validateSourcing(research([sourcedAt("2026-08-01")]), "permissive", { rules, now: NOW });
     expect(r.freshness_unknown).toBe(0);
