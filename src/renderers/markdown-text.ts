@@ -29,10 +29,12 @@ export function linkTarget(url: string): string {
 export function sourcingSummary(report: SourcingReport): string {
   const unknown =
     report.freshness_unknown === undefined ? "" : ` freshness_unknown=${report.freshness_unknown}`;
+  const cited =
+    report.untrusted_citations === undefined ? "" : ` untrusted_citations=${report.untrusted_citations.length}`;
   return (
     `sourcing_summary: "total=${report.total_items} ok=${report.counts.ok} ` +
     `stale=${report.counts.stale} untrusted=${report.counts.untrusted} ` +
-    `duplicated=${report.counts.duplicated} missing=${report.counts.missing}${unknown}"\n`
+    `duplicated=${report.counts.duplicated} missing=${report.counts.missing}${unknown}${cited}"\n`
   );
 }
 

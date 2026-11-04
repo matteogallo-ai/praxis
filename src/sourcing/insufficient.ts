@@ -26,9 +26,13 @@ export function buildInsufficientlySourcedSection(
   report: SourcingReport,
   artefacts: SourcedArtefacts
 ): SynthesizedSection {
-  const lines = report.warnings
-    .filter(isBlockingUnderStrict)
-    .map((w) => `- ${describe(w, artefacts)}`);
+  const lines = [
+    ...report.warnings.filter(isBlockingUnderStrict).map((w) => `- ${describe(w, artefacts)}`),
+    // Critique citations never block (orchestrator), so only options' are listed.
+    ...(report.untrusted_citations ?? [])
+      .filter((c) => c.stage === "options")
+      .map((c) => `- **Option ${c.id}**: ${c.url} is not a trusted domain (${c.reason}).`),
+  ];
   const content_markdown = [
     `This format's sourcing policy is strict. The ${lines.length} item(s) below did not meet it.`,
     "They stayed in the analysis that produced this briefing; treat every statement",

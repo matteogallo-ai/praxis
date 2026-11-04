@@ -492,7 +492,8 @@ export function renderSourcingReport(report: SourcingReport): string {
     )}\n\n`
   );
 
-  if (report.warnings.length === 0) {
+  const cited = report.untrusted_citations ?? [];
+  if (report.warnings.length === 0 && cited.length === 0) {
     parts.push(`${c.green("✓")} No warnings — every inspected item passed.\n`);
     return parts.join("");
   }
@@ -500,6 +501,9 @@ export function renderSourcingReport(report: SourcingReport): string {
   parts.push(`${c.bold("Warnings")}\n`);
   for (const w of report.warnings) {
     parts.push(`  ${c.dim("-")} ${describeWarning(w)}\n`);
+  }
+  for (const u of cited) {
+    parts.push(`  ${c.dim("-")} [${u.stage}] ${u.id} cites an untrusted domain: ${u.url} — ${u.reason}\n`);
   }
   return parts.join("");
 }

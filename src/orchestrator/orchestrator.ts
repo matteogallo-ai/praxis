@@ -28,6 +28,7 @@ import type {
 } from "../agents/types.ts";
 import type { Format } from "../registry/schema.ts";
 import type {
+  DomainTrustRule,
   SourcingReport,
   SourcingWarning,
 } from "../sourcing/types.ts";
@@ -50,6 +51,7 @@ import {
   levenshtein,
 } from "../sourcing/dedupe.ts";
 import { buildReport, mergeReports } from "../sourcing/report.ts";
+import { optionsCitationReport, untrustedCitations } from "../sourcing/citations.ts";
 import { SourcingValidationError } from "../sourcing/errors.ts";
 import {
   buildInsufficientlySourcedSection,
@@ -527,6 +529,10 @@ export class Orchestrator {
       (stored) => parseOptionsGenerationResult(stored, stakeholders, risks)
     );
     run.options = optionsResult;
+    const trust = format.sourcing_rules?.domain_trust;
+    if (hardened && trust !== undefined) {
+      check(() => optionsCitationReport(optionsResult.options, policy, trust));
+    }
     // Synthesis retries per section (see doSynthesize), not as a whole.
     run.synthesis = await this.stage(
       "synthesis",
@@ -581,7 +587,8 @@ export class Orchestrator {
 
     const sourcing_report = withCritiqueSources(
       brief.sourcing_report,
-      adversarial
+      adversarial,
+      format.sourcing_rules?.domain_trust
     );
 
     return { ...brief, adversarial, sourcing_report };
@@ -935,7 +942,8 @@ function withInsufficientlySourcedSection(
  */
 function withCritiqueSources(
   baseReport: SourcingReport,
-  adversarial: AdversarialCritiqueResult
+  adversarial: AdversarialCritiqueResult,
+  trust: DomainTrustRule | undefined
 ): SourcingReport {
   const additionalWarnings: SourcingWarning[] = [];
   // A critique's counter_evidence lives in a "critique-N" slot; we
@@ -950,11 +958,20 @@ function withCritiqueSources(
       });
     }
   }
-  const critiqueReport = buildReport(
+  const critiqueReport: SourcingReport = buildReport(
     baseReport.policy,
     adversarial.critiques.length,
     additionalWarnings
   );
+  // Reported, never blocking: like a missing counter-evidence, a weak one
+  // weakens the critique, not the briefing it criticises.
+  if (trust !== undefined) {
+    critiqueReport.untrusted_citations = untrustedCitations(
+      "adversarial",
+      adversarial.critiques.map((c) => ({ id: c.id, evidence: c.counter_evidence })),
+      trust
+    );
+  }
   return mergeReports(baseReport.policy, [baseReport, critiqueReport]);
 }
 
