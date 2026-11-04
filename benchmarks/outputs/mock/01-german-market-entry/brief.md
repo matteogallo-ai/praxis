@@ -34,8 +34,8 @@ Enter Germany via a majority partnership by Q3 2026, or lose the mid-market SaaS
 
 **Sources:**
 
-- [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
-- [SaaS-Markt Deutschland 2026](https://www.bitkom.org/publikationen/saas-markt-deutschland-2026)
+- [1] [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
+- [2] [SaaS-Markt Deutschland 2026](https://www.bitkom.org/publikationen/saas-markt-deutschland-2026)
 
 ## Complication
 
@@ -43,8 +43,8 @@ Board sentiment on German entry has cooled: only 34% of European SaaS board chai
 
 **Sources:**
 
-- [HBR — European SaaS Board Sentiment Index 2025](https://hbr.org/2025/12/european-saas-board-sentiment-index-2025)
-- [Partnership vs Greenfield — European SaaS Market Entry](https://www.bcg.com/publications/2025/saas-market-entry-europe-partnership-vs-greenfield)
+- [1] [HBR — European SaaS Board Sentiment Index 2025](https://hbr.org/2025/12/european-saas-board-sentiment-index-2025)
+- [2] [Partnership vs Greenfield — European SaaS Market Entry](https://www.bcg.com/publications/2025/saas-market-entry-europe-partnership-vs-greenfield)
 
 ## Key Question
 
@@ -56,7 +56,7 @@ Enter Germany in Q1 2027 via a partnership with a mid-size German integrator, al
 
 **Sources:**
 
-- [Partnership vs Greenfield — European SaaS Market Entry](https://www.bcg.com/publications/2025/saas-market-entry-europe-partnership-vs-greenfield)
+- [1] [Partnership vs Greenfield — European SaaS Market Entry](https://www.bcg.com/publications/2025/saas-market-entry-europe-partnership-vs-greenfield)
 
 ## Supporting Arguments
 
@@ -64,8 +64,8 @@ The partnership option sits inside the CFO's 18-month payback discipline; only 2
 
 **Sources:**
 
-- [Why international SaaS expansion misses payback targets](https://hbr.org/2026/02/international-expansion-payback-realities)
-- [Partnership vs Greenfield — European SaaS Market Entry](https://www.bcg.com/publications/2025/saas-market-entry-europe-partnership-vs-greenfield)
+- [1] [Why international SaaS expansion misses payback targets](https://hbr.org/2026/02/international-expansion-payback-realities)
+- [2] [Partnership vs Greenfield — European SaaS Market Entry](https://www.bcg.com/publications/2025/saas-market-entry-europe-partnership-vs-greenfield)
 
 ## So What
 
@@ -115,7 +115,7 @@ The Head of EMEA Sales must secure a partner shortlist and complete due diligenc
 
 **Suggested revision:** Re-classify RISK-005 as high likelihood and add a pre-board mitigation that resolves the trade-off with Head of Product BEFORE the board meeting rather than after.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: board Q&A internal opposition rate for strategic decisions over 10m euros
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `board Q&A internal opposition rate for strategic decisions over 10m euros`
 
 ### CRIT-005 — missing-perspective (minor)
 
@@ -125,7 +125,7 @@ The Head of EMEA Sales must secure a partner shortlist and complete due diligenc
 
 **Suggested revision:** Add a supporting argument surfacing the Head of Engineering's capacity view and its impact on time-to-first-reference under both options.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: head of engineering perspective in cross-border SaaS market entry decisions
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `head of engineering perspective in cross-border SaaS market entry decisions`
 
 ## Appendix A — Findings
 

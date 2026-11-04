@@ -260,6 +260,7 @@ export function parseStoredSynthesis(
       if (!Array.isArray(s[key])) fail(`sections[${i}].${key} must be an array`);
     }
     checkProse(s["content_markdown"] as string, `sections[${i}]`, knownSources, stored);
+    checkMarkers(s["content_markdown"] as string, `sections[${i}]`, (s["sources_cited"] as unknown[]).length, stored);
     for (const [j, source] of (s["sources_cited"] as unknown[]).entries()) {
       parseCitedSource(source, `sections[${i}].sources_cited[${j}]`, knownSources, stored);
     }
@@ -536,6 +537,7 @@ function parseSectionResponse(
   const sources = rawSources.map((s, i) =>
     parseCitedSource(s, `section '${section.id}': sources_cited[${i}]`, knownSources, raw)
   );
+  checkMarkers(content, `section '${section.id}'`, sources.length, raw);
 
   const issuesRaw = obj["validation_issues"];
   if (!Array.isArray(issuesRaw)) {
@@ -555,6 +557,16 @@ function parseSectionResponse(
       );
     }
     issues.push(e);
+  }
+  const unmarked = unmarkedParagraph(content);
+  if (
+    section.validation_rules?.some((r) => r.trim() === PARAGRAPH_END_RULE) === true &&
+    unmarked !== null &&
+    !issues.some((i) => i.includes(PARAGRAPH_END_RULE))
+  ) {
+    issues.push(
+      `validation_rule not honoured: '${PARAGRAPH_END_RULE}' (checked by code: paragraph ${unmarked} does not end with a citation marker [n])`
+    );
   }
 
   return {
@@ -608,7 +620,9 @@ function postValidate(
       const isAck = [...acknowledged].some((issue) =>
         issue.includes(key.toLowerCase())
       );
-      if (isAck) {
+      // A rule the code already reported in this form is not reported again.
+      const reported = parsed.validation_issues.some((i) => i.startsWith(`validation_rule not honoured: '${rule}'`));
+      if (isAck && !reported) {
         extraIssues.push(
           `validation_rule not honoured: '${rule}' (agent flagged it in validation_issues)`
         );
@@ -699,6 +713,8 @@ const PROSE_POINTERS: readonly [RegExp, string][] = [
   [/!\[/, "an image (a Markdown viewer fetches it on open)"],
   [/\b(?:src|href)\s*=/i, "an HTML element that loads or links a URL"],
   [/^\s*\[[^\]]+\]:\s*\S/m, "a reference link to a URL no upstream stage returned"],
+  // Checked even for an upstream URL: the definition would link every [n] of the briefing to it.
+  [/^\s*\[\d+\]:/m, "a reference definition for a citation marker"],
   [/<[a-z][a-z0-9+.-]{1,31}:[^\s>]*>/i, "an autolink to a URL no upstream stage returned"],
   [/\b[a-z][a-z0-9+.-]*:\/\//i, "a URL no upstream stage returned"],
   [/(?:^|[\s("'=])\/\/[^\s/]/, "a protocol-relative URL"],
@@ -708,6 +724,31 @@ const PROSE_POINTERS: readonly [RegExp, string][] = [
 
 /** A link destination left empty once its upstream URL is taken out: `()`, `(<>)`, with an optional title. */
 const EMPTIED_DESTINATION = /^\]\(\s*(?:<>)?\s*(?:"[^"]*"|'[^']*')?\s*\)/;
+
+/** A citation marker: `[n]` cites the n-th entry (1-based) of the section's `sources_cited`. */
+const CITATION_MARKER = /\[(\d+)\]/g;
+const PARAGRAPH_END_RULE = "every_paragraph_ends_with_citation: true";
+
+/** A marker that points at no listed source is a citation the reader cannot follow. */
+function checkMarkers(content: string, where: string, count: number, raw: string): void {
+  for (const m of content.matchAll(CITATION_MARKER)) {
+    const n = Number(m[1]);
+    if (n < 1 || n > count) {
+      throw new InvalidAgentOutputError(
+        AGENT_ID,
+        `${where}: content_markdown has a citation marker [${n}] that points at no entry of sources_cited (${count} listed)`,
+        raw
+      );
+    }
+  }
+}
+
+/** The 1-based number of the first paragraph that does not end with a marker, or null. */
+function unmarkedParagraph(content: string): number | null {
+  const paragraphs = content.split(/\n\s*\n/).map((p) => p.trim()).filter((p) => p.length > 0);
+  const at = paragraphs.findIndex((p) => !/\[\d+\][.)]?$/.test(p));
+  return at === -1 ? null : at + 1;
+}
 
 /** The longest refused text an error quotes. */
 const QUOTE_MAX = 200;

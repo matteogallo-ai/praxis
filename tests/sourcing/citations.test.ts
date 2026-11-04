@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { optionsCitationReport, untrustedCitations, critiqueCitations } from "../../src/sourcing/citations.ts";
+import { optionsCitationReport, untrustedCitations } from "../../src/sourcing/citations.ts";
 import { UntrustedDomainError } from "../../src/sourcing/errors.ts";
 import { buildReport, mergeReports } from "../../src/sourcing/report.ts";
 import type { DomainTrustRule, SourceStatus } from "../../src/sourcing/types.ts";
@@ -88,45 +88,3 @@ describe("mergeReports — untrusted citations", () => {
   });
 });
 
-describe("critiqueCitations", () => {
-  const critique = (id: string, position: string, url: string, mark?: string) => ({
-    id,
-    steelmanned_position: position,
-    counter_evidence: { ...src(url), ...(mark === undefined ? {} : { first_party_for: mark }) },
-  });
-
-  test("a confirmed first-party counter-evidence is listed apart, not as untrusted", () => {
-    const out = critiqueCitations(
-      [critique("CRIT-001", "The FCA's own rules make the dual listing slower than the brief assumes.", "https://www.fca.org.uk/r", "Financial Conduct Authority")],
-      RULE
-    );
-    expect(out.untrusted).toEqual([]);
-    expect(out.firstParty).toEqual([
-      {
-        stage: "adversarial",
-        item: "CRIT-001",
-        organisation: "Financial Conduct Authority",
-        url: "https://www.fca.org.uk/r",
-        claim: "The FCA's own rules make the dual listing slower than the brief assumes.",
-      },
-    ]);
-  });
-
-  test("a refused mark, or none, stays an untrusted citation", () => {
-    const out = critiqueCitations(
-      [
-        critique("CRIT-001", "Exchanges compete on fees.", "https://www.fca.org.uk/r", "Financial Conduct Authority"),
-        critique("CRIT-002", "The FCA may object.", "https://blog.example.com/b"),
-      ],
-      RULE
-    );
-    expect(out.untrusted.map((c) => c.id)).toEqual(["CRIT-001", "CRIT-002"]);
-    expect(out.firstParty).toEqual([]);
-  });
-
-  test("a trusted or missing counter-evidence is neither", () => {
-    const missing = { id: "CRIT-003", steelmanned_position: "x", counter_evidence: { status: "SOURCE_MISSING" as const, searched_for: "y" } };
-    const out = critiqueCitations([critique("CRIT-001", "FCA", "https://reuters.com/a", "Financial Conduct Authority"), missing], RULE);
-    expect(out).toEqual({ untrusted: [], firstParty: [] });
-  });
-});

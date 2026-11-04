@@ -203,6 +203,15 @@ describe("renderFullBrief — Markdown body", () => {
     expect(md).toContain(`[Example](${SOURCE.url})`);
   });
 
+  // The prose cites a source by its marker [n]; the list carries the same n.
+  test("cited sources are numbered [n], in the order the markers count them", () => {
+    const brief = makeBrief();
+    const intro = brief.synthesis.sections[0] as (typeof brief.synthesis.sections)[number];
+    intro.sources_cited = [SOURCE, { ...SOURCE, url: "https://reuters.com/other", title: "Other" }];
+    const md = renderFullBrief(brief);
+    expect(md).toContain(`- [1] [Example](${SOURCE.url})\n- [2] [Other](https://reuters.com/other)\n`);
+  });
+
   test("sections without sources omit the Sources heading", () => {
     const md = renderFullBrief(makeBrief());
     // The 'body' section has no sources — the H2 "Body" and its content

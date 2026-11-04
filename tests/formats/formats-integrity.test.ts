@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { loadFormatFile } from "../../src/registry/loader.ts";
@@ -365,4 +366,27 @@ describe("family-office-memo — mock-llm fixture coverage", () => {
       expect(_existsSync(resolve(FIXTURES_DIR, fname))).toBe(true);
     });
   }
+});
+
+// A format that asks for "the source in parentheses" invites a host name in
+// the prose, which the synthesis refuses (question 02, step 1): a source is
+// cited by its marker [n] instead.
+describe("in-text citations", () => {
+  const FORMATS_DIR = resolve(import.meta.dir, "../../formats");
+  const all = readdirSync(FORMATS_DIR)
+    .filter((f) => f.endsWith(".yaml"))
+    .map((f) => loadFormatFile(resolve(FORMATS_DIR, f)));
+
+  test("no section asks for a source in parentheses", () => {
+    for (const f of all) for (const s of f.sections) expect(`${f.id}/${s.id}: ${s.tone_directives}`).not.toMatch(/source in parenthes/i);
+  });
+
+  test("a section whose paragraphs must end with a citation asks for the marker [n], and no site name or URL", () => {
+    const ruled = all.flatMap((f) => f.sections.filter((s) => (s.validation_rules ?? []).includes("every_paragraph_ends_with_citation: true")));
+    expect(ruled.length).toBeGreaterThan(0);
+    for (const s of ruled) {
+      expect(s.tone_directives).toContain("citation marker [n]");
+      expect(s.tone_directives).toContain("no site name, host or URL in the text");
+    }
+  });
 });

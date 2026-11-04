@@ -244,17 +244,21 @@ export interface SourcingReport {
  * (ADR 0003, `src/sourcing/first-party.ts`).
  */
 export interface FirstPartySource {
+  /**
+   * The rule accepts only research and stakeholder sources: a risk's and a
+   * critique's back a judgement (ADR 0003, amendment of 4 Nov 2026). The
+   * wider union is the validators' stage type, kept for stored reports.
+   */
   stage: "research" | "stakeholder" | "risk" | "adversarial";
-  /** `finding 3`, a stakeholder's name, `RISK-004 impact`, `CRIT-006`. */
+  /** `finding 3`, or a stakeholder's name. */
   item: string;
   organisation: string;
   url: string;
   /**
-   * The item's own text the source was accepted for: a finding's claim, a
-   * stakeholder's position (with its interest), a risk's likelihood or
-   * impact level (with its description), a critique's steelmanned position. Whether it states the organisation's own fact is the human
-   * reviewer's call, so every listing shows it. Absent from reports stored
-   * before the field existed.
+   * The item's own text the source was accepted for: a finding's claim or
+   * a stakeholder's position (with its interest). Whether it states the
+   * organisation's own fact is the human reviewer's call, so every listing
+   * shows it. Absent from reports stored before the field existed.
    */
   claim?: string;
 }

@@ -9,6 +9,7 @@
 
 import { describe, expect, setSystemTime, test } from "bun:test";
 import { restoreSystemTime } from "../helpers/clock.ts";
+import { overlappingRuns, pdfPages, type TextRun } from "../helpers/pdf-text.ts";
 
 import { pdfRenderer } from "../../src/renderers/pdf.ts";
 import type {
@@ -300,6 +301,11 @@ describe("pdfRenderer — optional sections", () => {
     expect(pdfContainsText(buf, "The OECD revised its model rules in 2026.")).toBe(true);
   });
 
+  test("a section's sources are numbered [n], as the prose's markers cite them", async () => {
+    const buf = await pdfRenderer.render(makeBrief(), { compress_pdf_streams: false });
+    expect(pdfContainsText(buf, "[1]  Reuters PDF piece")).toBe(true);
+  });
+
   test("the Sourcing Report lists the options and critique citations from untrusted domains", async () => {
     const brief = makeBrief();
     brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };
@@ -351,5 +357,62 @@ describe("pdfRenderer — links (OWASP LLM05)", () => {
     const pdf = buf.toString("latin1");
     expect(pdf).toContain("/Type /Page");
     expect(pdf).not.toMatch(/\/Annots|\/URI|\/Launch|\/JavaScript/);
+  });
+});
+
+describe("pdfRenderer — layout", () => {
+  // Cells as long as a live briefing's (question 10, step 1): the table rows
+  // must grow with their text, and the footer must not open pages of its own.
+  const LONG = "Conditional support for mandatory Scope 3, anchored on IFRS S2 interoperability and phased assurance";
+  function longBrief(rows: number): BriefResult {
+    const b = makeBrief();
+    const option = b.options.options[0] as BriefResult["options"]["options"][number];
+    b.options.options = Array.from({ length: rows }, (_, i) => ({ ...option, id: `OPT-${i}`, title: LONG }));
+    const holder = b.stakeholders.stakeholders[0] as BriefResult["stakeholders"]["stakeholders"][number];
+    b.stakeholders.stakeholders = Array.from({ length: rows }, (_, i) => ({ ...holder, name: `${LONG} ${i}` }));
+    return b;
+  }
+  const footer = (r: TextRun) => r.text.startsWith("Praxis briefing") || /^p\. \d+ \/ \d+$/.test(r.text);
+
+  test("no text in a table is drawn over another line", async () => {
+    const pages = pdfPages(await pdfRenderer.render(longBrief(4), { compress_pdf_streams: false }));
+    const overlaps = pages.flatMap((p) => overlappingRuns(p.filter((r) => !footer(r))));
+    expect(overlaps.map(([a, b]) => `${a.text} / ${b.text}`)).toEqual([]);
+  });
+
+  test("a table that runs over a page keeps its rows above the bottom margin", async () => {
+    const pages = pdfPages(await pdfRenderer.render(longBrief(30), { compress_pdf_streams: false }));
+    const low = pages.flatMap((p) => p.filter((r) => !footer(r) && r.y < 72));
+    expect(low.map((r) => r.text)).toEqual([]);
+  });
+
+  // A cell taller than a page would be continued by pdfkit on pages of its
+  // own, leaving the row's other cells pages away from it.
+  test("a cell taller than a page is cut, and its row stays on one page", async () => {
+    const b = makeBrief();
+    const holder = b.stakeholders.stakeholders[0] as BriefResult["stakeholders"]["stakeholders"][number];
+    b.stakeholders.stakeholders = [{ ...holder, name: "word ".repeat(470).trim(), position: "supportive" }];
+    const pages = pdfPages(await pdfRenderer.render(b, { compress_pdf_streams: false }));
+    const at = (pred: (r: TextRun) => boolean) => pages.findIndex((p) => p.some(pred));
+    const name = at((r) => r.text.startsWith("word"));
+    expect(name).toBeGreaterThan(-1);
+    expect(at((r) => r.text === "supportive")).toBe(name);
+    expect(pages.filter((p) => p.some((r) => r.text.startsWith("word"))).length).toBe(1);
+    expect(pages.flatMap((p) => p.filter((r) => !footer(r) && r.y < 72)).map((r) => r.text)).toEqual([]);
+  });
+
+  test("a long question keeps the footer on one line", async () => {
+    const b = makeBrief();
+    b.question = "W".repeat(300);
+    const pages = pdfPages(await pdfRenderer.render(b, { compress_pdf_streams: false }));
+    for (const p of pages) expect(p.filter((r) => r.y < 72).length).toBe(2);
+  });
+
+  test("every page carries more than its footer, and the footer counts the pages", async () => {
+    const buf = await pdfRenderer.render(longBrief(30), { include_sourcing_report: true, include_appendices: true, compress_pdf_streams: false });
+    const pages = pdfPages(buf);
+    expect(pages.filter((p) => p.every(footer)).length).toBe(0);
+    const numbers = pages.map((p) => p.find((r) => /^p\. \d+ \/ \d+$/.test(r.text))?.text);
+    expect(numbers).toEqual(pages.map((_, i) => `p. ${i + 1} / ${pages.length}`));
   });
 });

@@ -29,7 +29,6 @@
  */
 
 import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
-import { firstPartyGuidance } from "../sourcing/guidance.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -101,7 +100,6 @@ export async function executeAdversarialCritique(
     brief_json: untrustedJson("brief", ctx.brief_result),
     format_id: ctx.format.id,
     question: ctx.brief_result.question,
-    first_party_guidance: firstPartyGuidance(),
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);
