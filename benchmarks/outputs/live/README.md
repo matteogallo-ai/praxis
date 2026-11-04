@@ -22,3 +22,16 @@ The first live record is `05-supply-chain-acquisition/error-*.json` (3 Nov
 `05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/`.
 What a live briefing costs is estimated by `bun run estimate:cost`, not
 stated here.
+
+## Errata
+
+Records are never rewritten; corrections to what they say are listed here.
+
+- **`stale: 0` in question 05's run of 4 Nov 2026** (`metadata.json`
+  `sourcing.counts.stale`, `brief.md` `sourcing_summary`) does not mean its
+  sources were recent. Freshness was then measured on `accessed_at`, the time
+  the page was retrieved during the run, so every source was a day old or
+  less by construction. No publication date was recorded, so the freshness
+  of that run's sources is unknown. Freshness is now judged on the
+  publication date (`published_at`), and a source without one is counted as
+  freshness unknown, never as fresh (`docs/sourcing.md`).

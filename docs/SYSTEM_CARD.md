@@ -93,5 +93,7 @@ matter, and they are empty or failing.
 - **Injection resistance is structural, not measured.** Code refuses
   references to things that do not exist and links to sources that were not
   returned; it cannot tell a slanted claim from a fair one.
-- **Freshness uses the retrieval time**, not the page's own date (C21).
+- **Freshness rests on the publication date the model reports** (`published_at`),
+  not checked against the page's own date (C21). A source without one is
+  counted as freshness unknown, never as fresh.
 - **English only** in prompts, formats and tests.
