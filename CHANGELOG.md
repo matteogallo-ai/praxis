@@ -84,7 +84,7 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   and are listed apart (`SourcingReport.first_party_sources`, a
   "First-party sources" section, every sourcing report). Prompts:
   research and stakeholder 3.1.0, risk 3.1.1, adversarial 4.0.0; token
-  counts re-measured with count_tokens (question 05: $1.40 / $5.97 / $12.94).
+  counts re-measured with count_tokens (question 05: $1.40 / $5.96 / $12.92).
 
 - The research, stakeholder, risk and options prompts (3.0.0: a new
   required `source_guidance` parameter) name the format's trusted hosts by

@@ -116,7 +116,7 @@ either points at something real or it does not exist.
 
 ---
 
-## Counter-evidence follows the same sourcing rule as Research
+## Counter-evidence is a source or SOURCE_MISSING, as in Research
 
 `counter_evidence` is either a real `SourceReference`:
 

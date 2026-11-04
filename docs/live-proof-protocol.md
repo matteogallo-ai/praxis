@@ -70,7 +70,7 @@ its format, `mckinsey-style-note`, is the one two of the five use (the hard
 case included), and it is not `strict_editorial`. Question 12 costs
 within a cent of it but is the hard case, built to stress sourcing, not to represent.
 Question 11 is $0.07 cheaper in the central case but atypical (synthesis
-regenerated under `strict_editorial`, $15.40 in the high case).
+regenerated under `strict_editorial`, $15.54 in the high case).
 
 $10 is a limit, not a fuse: before each request the ledger reserves that
 request's worst case and sends it only if what is spent, what requests in
@@ -125,7 +125,7 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 
 - `--max-cost-usd 14` caps each briefing the same way. Walked through the
   reservations, every question's high case yields a brief under it;
-  question 11, the costliest ($15.40 in full), does so with its rerun
+  question 11, the costliest ($15.54 in full), does so with its rerun
   skipped, at $13.48. `tests/benchmarks/live-protocol.test.ts` fails if
   one would not.
 - Stop after step 0 if it failed for a systematic cause (authentication,
