@@ -69,7 +69,8 @@ What code checks, and what it cannot:
   list is needed, because every domain is written out.
 - **The subject, by name.** The organisation must be the item's subject:
   the stakeholder's `name`, or a name the file lists for it appearing in the
-  finding's claim or the risk's text.
+  finding's claim or the risk's text. (Superseded on this point: a risk's
+  evidence is never first-party; see Amendments, 4 Nov 2026.)
 - **Not the kind of claim.** Whether a sentence states the company's own
   fact (DSV's reported revenue) or something else (DSV's view of DHL;
   a regulator's decision about a DHL joint venture reported on
@@ -143,14 +144,53 @@ been checked against the six criteria).
   needs no entry. `tests/sourcing/first-party.test.ts` fails on an entry
   without domains, with a domain that is not written out, or with ownership
   evidence on a host it does not list.
-- The rule judges the research, stakeholder and risk sources and, beyond
+- The rule judges the research, stakeholder and risk sources (risk withdrawn
+  since: see Amendments, 4 Nov 2026) and, beyond
   what Decision 1 first named, the critique's counter-evidence: a critique
   that cites an organisation's own site for that organisation's own facts is
   as well sourced as a research finding that does. The critique's subject
   text is its steelmanned position. Options' citations are not judged by it.
+  (Superseded on this point: a critique's counter-evidence is never
+  first-party; see Amendments, 4 Nov 2026.)
 - Accepted items are listed in `SourcingReport.first_party_sources`, in a
   "First-party sources" section of every briefing, and in every sourcing
   report.
+
+## Amendments
+
+### 4 Nov 2026: a risk's likelihood and impact are not first-party
+
+- **Found by:** the human review of question 10's step 1 briefing (rows 7
+  and 8 of its "First-party sources"). `RISK-003 likelihood` on
+  ghgprotocol.org and `RISK-008 likelihood` (very-high) on ifrs.org had
+  passed all three checks.
+- **Why the checks passed:** the host was the organisation's and the risk's
+  description named it. But a likelihood or an impact is the model's
+  judgement of what may happen, not a decision, rule, publication or figure
+  of the organisation. Decision 1 already excluded "forecasts"; the code
+  did not apply that to estimates.
+- **Change:** a risk's `likelihood_evidence` and `impact_evidence` are never
+  first-party. The risk prompt no longer receives the rule or shows
+  `first_party_for` in its example (risk.prompt 3.1.1). Research findings
+  and stakeholder positions keep the rule.
+- **Effect on records:** none is rewritten. Question 10's two items would
+  now be counted untrusted; the human review is recorded in
+  `benchmarks/outputs/live/README.md`.
+
+### 4 Nov 2026: a critique's counter-evidence is not first-party
+
+- **Decided by:** the maintainer, after the amendment above.
+- **Why:** a critique's subject text is its steelmanned position, an
+  argument: a judgement, like a likelihood. A source that backs an argument
+  is not the organisation's own fact, whatever site it is on. The extension
+  of the rule to critiques in the Implementation section is withdrawn.
+- **Change:** the critique's counter-evidence is judged only by the
+  format's domain trust and listed as an untrusted citation when it fails,
+  never blocking. The adversarial prompt no longer receives the rule or
+  shows `first_party_for` (adversarial.prompt 4.0.0: the
+  `first_party_guidance` parameter is removed).
+- **Effect on records:** none. No recorded briefing has a critique among
+  its first-party sources.
 
 ## Consequences
 

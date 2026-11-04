@@ -15,6 +15,7 @@
  * depends on the CLI colour helpers.
  */
 
+import { codeSpan } from "../sourcing/code-written-section.ts";
 import type {
   BriefResult,
   BriefWithCritiqueResult,
@@ -148,7 +149,7 @@ function renderCritiqueSection(brief: BriefWithCritiqueResult): string {
       );
     } else {
       parts.push(
-        `**Counter-evidence:** _SOURCE_MISSING_ — searched for: ${c.counter_evidence.searched_for}\n\n`
+        `**Counter-evidence:** _SOURCE_MISSING_ — searched for: ${codeSpan(c.counter_evidence.searched_for)}\n\n`
       );
     }
   }
@@ -170,7 +171,7 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
       );
     } else {
       parts.push(
-        `**Source:** _SOURCE_MISSING_ — searched for: ${f.source.searched_for}\n\n`
+        `**Source:** _SOURCE_MISSING_ — searched for: ${codeSpan(f.source.searched_for)}\n\n`
       );
     }
   }
@@ -210,7 +211,7 @@ function renderFirstPartySection(brief: BriefResult | BriefWithCritiqueResult): 
   const parts = ["## First-party sources\n\n"];
   for (const f of firstParty) {
     // The label can be model text; the URL is an autolink linkTarget keeps whole.
-    parts.push(`- ${describeFirstParty({ ...f, item: inert(f.item) }, (u) => `<${linkTarget(u)}>`)}\n`);
+    parts.push(`- ${describeFirstParty(f, (u) => `<${linkTarget(u)}>`, inert)}\n`);
   }
   parts.push("\n");
   return parts.join("");

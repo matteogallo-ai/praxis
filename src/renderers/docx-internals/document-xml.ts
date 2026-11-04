@@ -69,8 +69,9 @@ export function buildDocumentXml(
     }
     if (section.sources_cited.length > 0) {
       body.push(paragraph("Sources:", { bold: true }));
-      for (const src of section.sources_cited) {
-        body.push(bulletParagraph(`${src.title} — ${src.url}`));
+      // Numbered as the prose's markers [n] cite them.
+      for (const [i, src] of section.sources_cited.entries()) {
+        body.push(paragraph(`[${i + 1}] ${src.title} — ${src.url}`));
       }
     }
   }

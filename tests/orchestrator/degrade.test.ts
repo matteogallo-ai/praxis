@@ -62,7 +62,7 @@ describe("strict sourcing failure", () => {
     expect(last?.title).toBe("Insufficiently sourced");
     expect(last?.content_markdown).toContain("**Research finding 1**");
     expect(last?.content_markdown).toContain(`“${result.research.findings[0]!.claim}”`);
-    expect(last?.content_markdown).toContain("searched for: German SaaS churn by segment");
+    expect(last?.content_markdown).toContain("searched for: `German SaaS churn by segment`");
   });
 
   test("degrade: the section survives the critique and the rerun", async () => {

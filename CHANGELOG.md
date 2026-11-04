@@ -9,6 +9,26 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- The human review of question 10's step 1 first-party sources is
+  published in `benchmarks/outputs/live/README.md`: 8 reviewed, 6 accepted,
+  2 refused (both a risk's likelihood). The rule now excludes a risk's
+  evidence and, by the maintainer's decision, a critique's counter-evidence,
+  which backs an argument (ADR 0003, amendments of 4 Nov 2026; see Added).
+- The URLs, hosts and searched-for queries of the "Insufficiently
+  sourced" section and of the CLI's Markdown sourcing report are code spans.
+  A Markdown viewer turned them into links: in question 10's step 1
+  briefing, the untrusted host `www.bracewell.com` showed as a link in the
+  line that reports it as untrusted.
+
+- PDF: a table row is as tall as its longest wrapped cell, and the header
+  is repeated after a page break. Rows were 20 points high whatever their
+  text, so long option titles and stakeholder names ran over the next row
+  (question 10's step 1 briefing, pages 14, 16 and 24).
+
+- PDF: the footer no longer opens pages of its own. It was drawn inside
+  the bottom margin, so pdfkit opened a new page for each footer line:
+  question 10's step 1 briefing has 96 pages, 32 of them with content.
+
 - A refused `www.` address in a synthesis section is quoted whole in the
   error, cut at 200 characters (it was quoted as `'www.'`, which left
   question 02's step 1 failure undiagnosable). Every refused text the prose
@@ -48,6 +68,15 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Every listing of a first-party source (Markdown, PDF, DOCX, CLI report)
+  shows the claim it was accepted for, cut at 160 characters on a word
+  boundary: a finding's claim, or a stakeholder's position and interest
+  (only those two stages can cite first-party sources). Without it the human review of question 10's step 1
+  briefing could not check whether each sentence states the organisation's
+  own fact. `FirstPartySource.claim` is a new optional field; a report
+  stored without it reads "claim not recorded". In the CLI's Markdown
+  sourcing report the claim and label are made inert, as in the brief.
+
 - Step 1 live records (4 Nov 2026, `8df678f`): questions 08, 10, 11 and 12
   completed, all flagged insufficiently sourced; question 02 failed in
   synthesis. $17.96 spent against a $30.23 central estimate. Compared in
@@ -55,15 +84,16 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   `benchmarks/estimates/step-1.json`; `SHA256SUMS` lists every record.
 
 - First-party sources (ADR 0003, now implemented for its first decision).
-  A research, stakeholder or risk source, or a critique's counter-evidence,
-  on an untrusted host counts as the organisation's own source when the
+  A research or stakeholder source on an untrusted host (never a risk's or
+  a critique's: they back a judgement) counts as the organisation's own
+  source when the
   stage marks it `first_party_for` an organisation of the reviewed list
   `src/sourcing/first-party-organisations.ts`, the host is one of its
   domains and the item names it. Such sources do not block under `strict`
   and are listed apart (`SourcingReport.first_party_sources`, a
   "First-party sources" section, every sourcing report). Prompts:
-  research, stakeholder and risk 3.1.0, adversarial 3.0.0; token counts
-  re-measured with count_tokens (question 05: $1.40 / $5.97 / $12.95).
+  research and stakeholder 3.1.0, risk 3.1.1, adversarial 4.0.0; token
+  counts re-measured with count_tokens (question 05: $1.40 / $5.96 / $12.92).
 
 - The research, stakeholder, risk and options prompts (3.0.0: a new
   required `source_guidance` parameter) name the format's trusted hosts by
@@ -135,6 +165,16 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - CI job `prompt-semver` running `promptlang semver-check`.
 
 ### Changed
+
+- A synthesis section cites a source in its text by the marker `[n]`, the
+  n-th entry of its `sources_cited`; each section's source list is numbered
+  `[n]` in Markdown, PDF and DOCX. `executive-pre-read` 1.1.0 asks its
+  supporting-evidence paragraphs to end with that marker, with no site name,
+  host or URL, where it asked for the "source in parentheses" (the likely
+  cause of question 02's step 1 failure). A marker pointing at no listed
+  source is refused; `every_paragraph_ends_with_citation` is checked by
+  code. Synthesis prompt 2.2.0; token counts re-measured (question 05:
+  $1.40 / $5.97 / $12.96).
 
 - The live-proof protocol has a dated "Amendments" section: question 10
   was added to step 1 before the run (2026-11-04), as the only test

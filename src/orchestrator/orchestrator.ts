@@ -51,7 +51,7 @@ import {
   levenshtein,
 } from "../sourcing/dedupe.ts";
 import { buildReport, mergeReports } from "../sourcing/report.ts";
-import { critiqueCitations, optionsCitationReport } from "../sourcing/citations.ts";
+import { optionsCitationReport, untrustedCitations } from "../sourcing/citations.ts";
 import { buildRequesterProvidedSection } from "../sourcing/requester.ts";
 import { SourcingValidationError } from "../sourcing/errors.ts";
 import {
@@ -969,11 +969,14 @@ function withCritiqueSources(
     additionalWarnings
   );
   // Reported, never blocking: like a missing counter-evidence, a weak one
-  // weakens the critique, not the briefing it criticises.
+  // weakens the critique, not the briefing it criticises. Never first-party:
+  // a steelmanned position is an argument (ADR 0003, amendment of 4 Nov 2026).
   if (trust !== undefined) {
-    const { untrusted, firstParty } = critiqueCitations(adversarial.critiques, trust);
-    critiqueReport.untrusted_citations = untrusted;
-    if (firstParty.length > 0) critiqueReport.first_party_sources = firstParty;
+    critiqueReport.untrusted_citations = untrustedCitations(
+      "adversarial",
+      adversarial.critiques.map((c) => ({ id: c.id, evidence: c.counter_evidence })),
+      trust
+    );
   }
   return mergeReports(baseReport.policy, [baseReport, critiqueReport]);
 }

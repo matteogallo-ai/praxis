@@ -157,9 +157,9 @@ describe("renderSourcingReport — citations", () => {
 describe("renderSourcingReport — first-party", () => {
   test("counts and lists the first-party sources", () => {
     const base = makeBrief().sourcing_report;
-    const out = renderSourcingReport({ ...base, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }] });
+    const out = renderSourcingReport({ ...base, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x", claim: "The OECD revised its model rules in 2026." }] });
     expect(out).toContain("First-party (an organisation's own site, for its own facts): 1");
-    expect(out).toContain("[research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x");
+    expect(out).toContain("[research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x — claim: “The OECD revised its model rules in 2026.”");
   });
 
   test("sourcing_summary counts the first-party sources", () => {
@@ -201,6 +201,15 @@ describe("renderFullBrief — Markdown body", () => {
     const md = renderFullBrief(makeBrief());
     expect(md).toContain("**Sources:**");
     expect(md).toContain(`[Example](${SOURCE.url})`);
+  });
+
+  // The prose cites a source by its marker [n]; the list carries the same n.
+  test("cited sources are numbered [n], in the order the markers count them", () => {
+    const brief = makeBrief();
+    const intro = brief.synthesis.sections[0] as (typeof brief.synthesis.sections)[number];
+    intro.sources_cited = [SOURCE, { ...SOURCE, url: "https://reuters.com/other", title: "Other" }];
+    const md = renderFullBrief(brief);
+    expect(md).toContain(`- [1] [Example](${SOURCE.url})\n- [2] [Other](https://reuters.com/other)\n`);
   });
 
   test("sections without sources omit the Sources heading", () => {

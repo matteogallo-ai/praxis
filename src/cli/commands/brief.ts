@@ -93,8 +93,10 @@ import type {
   RiskAnalysisResult,
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
+import { inert, linkTarget } from "../../renderers/markdown-text.ts";
 import { describeFirstParty, uncategorisedLines } from "../../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
+import { codeSpan } from "../../sourcing/code-written-section.ts";
 import { render as dispatchRender } from "../../renderers/index.ts";
 import { RENDER_THEMES, type RenderOptions, type RenderTheme } from "../../renderers/types.ts";
 
@@ -792,7 +794,8 @@ export function renderSourcingReportMarkdown(report: SourcingReport): string {
       `missing ${report.counts.missing}\n\n`
   );
   for (const line of uncategorisedLines(report)) parts.push(`${line}\n\n`);
-  for (const f of report.first_party_sources ?? []) parts.push(`- ${describeFirstParty(f)}\n`);
+  // The claim and the label are model text, and this appendix joins a Markdown file.
+  for (const f of report.first_party_sources ?? []) parts.push(`- ${describeFirstParty(f, (u) => `<${linkTarget(u)}>`, inert)}\n`);
   if ((report.first_party_sources ?? []).length > 0) parts.push("\n");
   const cited = report.untrusted_citations ?? [];
   if (report.warnings.length === 0 && cited.length === 0) {
@@ -804,7 +807,7 @@ export function renderSourcingReportMarkdown(report: SourcingReport): string {
     parts.push(`- ${describeWarningMarkdown(w)}\n`);
   }
   for (const u of cited) {
-    parts.push(`- ${describeUntrustedCitation(u)}\n`);
+    parts.push(`- ${describeUntrustedCitation(u, codeSpan)}\n`);
   }
   return parts.join("");
 }
@@ -812,17 +815,17 @@ export function renderSourcingReportMarkdown(report: SourcingReport): string {
 function describeWarningMarkdown(w: SourcingReport["warnings"][number]): string {
   switch (w.kind) {
     case "missing_source":
-      return `[research] finding[${w.finding_index}] SOURCE_MISSING — ${w.searched_for}`;
+      return `[research] finding[${w.finding_index}] SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
     case "missing_stakeholder_evidence":
-      return `[stakeholder] '${w.stakeholder_name}' (index ${w.stakeholder_index}) SOURCE_MISSING — ${w.searched_for}`;
+      return `[stakeholder] '${w.stakeholder_name}' (index ${w.stakeholder_index}) SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
     case "missing_risk_evidence":
-      return `[risk] ${w.risk_id} .${w.evidence_field} SOURCE_MISSING — ${w.searched_for}`;
+      return `[risk] ${w.risk_id} .${w.evidence_field} SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
     case "stale_source":
-      return `[${w.agent}] stale source (${w.age_days} days${w.exceeds_max ? "; past max" : ""}): ${w.url}`;
+      return `[${w.agent}] stale source (${w.age_days} days${w.exceeds_max ? "; past max" : ""}): ${codeSpan(w.url)}`;
     case "untrusted_domain":
-      return `[${w.agent}] untrusted domain: ${w.url} — ${w.reason}`;
+      return `[${w.agent}] untrusted domain: ${codeSpan(w.url)} — ${codeSpan(w.reason)}`;
     case "duplicate_source":
-      return `[${w.agent}] duplicate source: ${w.url} collides with [${w.previous_agent}] ${w.previous_url}`;
+      return `[${w.agent}] duplicate source: ${codeSpan(w.url)} collides with [${w.previous_agent}] ${codeSpan(w.previous_url)}`;
   }
 }
 

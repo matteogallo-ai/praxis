@@ -83,12 +83,12 @@
       },
       "risk": {
         "calls": 1,
-        "input_tokens": 6279,
+        "input_tokens": 6119,
         "output_tokens": 2182,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 3,
-        "cost_usd": 0.06437799999999999,
+        "cost_usd": 0.064058,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -107,24 +107,24 @@
       },
       "synthesis": {
         "calls": 6,
-        "input_tokens": 61748,
+        "input_tokens": 62286,
         "output_tokens": 2604,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 0,
-        "cost_usd": 0.149536,
+        "cost_usd": 0.150612,
         "models": [
           "claude-sonnet-5-5"
         ]
       },
       "adversarial": {
         "calls": 1,
-        "input_tokens": 14390,
+        "input_tokens": 14224,
         "output_tokens": 1177,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 1,
-        "cost_usd": 0.0911,
+        "cost_usd": 0.09043599999999999,
         "models": [
           "claude-opus-5-5"
         ]
@@ -132,12 +132,12 @@
     },
     "total": {
       "calls": 12,
-      "input_tokens": 97083,
+      "input_tokens": 97295,
       "output_tokens": 12255,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 13,
-      "cost_usd": 0.535512,
+      "cost_usd": 0.535604,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"
@@ -147,8 +147,8 @@
     "max_cost_usd": null
   },
   "artefacts": {
-    "brief.md": 19720,
-    "brief.pdf": 51289,
-    "brief.docx": 7912
+    "brief.md": 19784,
+    "brief.pdf": 31600,
+    "brief.docx": 7928
   }
 }

@@ -35,7 +35,7 @@ describe("praxis formats inspect", () => {
     const out = output();
     expect(out).toContain("Executive Pre-Read");
     expect(out).toContain("executive-pre-read");
-    expect(out).toContain("v1.0.0");
+    expect(out).toContain("v1.1.0");
     expect(out).toContain("Metadata");
     expect(out).toContain("Target Length");
     expect(out).toContain("Sections");
