@@ -61,7 +61,9 @@ flowchart LR
 
 The sourcing check after stages 2–4 enforces the format's `sourcing_policy`:
 under `strict` a missing, stale or untrusted source aborts the brief; under
-`permissive` it is reported. `docs/architecture.md` has the module map.
+`permissive` it is reported. A source is stale only by its publication date;
+without one its freshness is unknown and counted apart, and the stage
+prompts do not ask for that date. `docs/architecture.md` has the module map.
 
 ## Quick start
 
@@ -110,7 +112,7 @@ prove it; CI fails if one of them does not pass.
 
 - Live briefings that complete against Anthropic, with committed run artefacts (C14).
 - Live-output quality scored by a judge validated against human labels (C18).
-- Source freshness judged on each page's own age (`page_age`) (C21).
+- Source freshness checked against each page's own age (`page_age`) (C21).
 - Web search with dynamic filtering (`web_search_20260209`), evaluated against the basic tool (C22).
 - The judge's noise band and planted-error detection; today each briefing is judged once (C23).
 

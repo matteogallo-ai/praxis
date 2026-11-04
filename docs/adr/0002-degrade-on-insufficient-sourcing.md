@@ -54,3 +54,6 @@ not guarantee every item gets a source.
   flag.
 - Freshness still reads `accessed_at`, which is now the retrieval time; the
   page's own age (`page_age` in web search results) is not used yet.
+  (Superseded on this point: freshness reads the publication date,
+  `published_at`, and a source without one is counted as freshness unknown;
+  see `docs/sourcing.md`.)
