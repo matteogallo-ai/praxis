@@ -250,7 +250,8 @@ Tests:
   in any upstream artefact".
 
 Remaining: whether a cited page supports the claim is not checked, and live
-briefing quality is unmeasured: no validated judge (C18), no live run (C14).
+briefing quality is unmeasured: no validated judge (C18), one completed
+live briefing, not yet reviewed (C14).
 
 ## LLM10 — Unbounded consumption
 

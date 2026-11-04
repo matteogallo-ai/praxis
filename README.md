@@ -9,13 +9,18 @@
 > note, position paper, family-office memo), with sourcing checks, an
 > adversarial review and Markdown / PDF / DOCX output.
 
-## Status: live execution under repair
+## Status: one live briefing completed, not yet reviewed
 
-Praxis has **not yet produced a briefing against a real model**. Every
-recorded live run failed (5 of 5, see [`CHANGELOG.md` § 1.2.1](CHANGELOG.md)):
-three aborted on the `strict` sourcing policy because the model returned
-findings without source URLs, one on prose before the JSON, one on a 60 s
-timeout during web search. Everything listed under [Features](#features) is
+Praxis has completed **one briefing against a real model**: question 05,
+4 Nov 2026, $3.51
+(`benchmarks/outputs/live/05-supply-chain-acquisition/`), flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains. Its quality is not
+yet checked or reviewed. 7 live attempts: 6 failed (5 in 1.2.1 without
+committed records, 1 on 3 Nov 2026), 1 completed (4 Nov 2026). In
+[`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the
+`strict` sourcing policy because the model returned findings without
+source URLs, one on prose before the JSON, one on a 60 s timeout during
+web search. On 3 Nov 2026 the risk stage's answer was cut at its
+`max_tokens`. Everything listed under [Features](#features) is
 proven on the mock provider, which replays hand-written fixtures; that proves
 the wiring, not the quality of a model's output.
 

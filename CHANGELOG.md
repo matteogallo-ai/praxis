@@ -12,14 +12,26 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - The judge prompt embedded the briefing bare, and expanded `$&`-style
   patterns in it; the briefing is now delimited as untrusted content.
 - The project was described as feature-complete and as running live against
-  Anthropic. It has never completed a live briefing (5 of 5 aborted, see 1.2.1).
-  README, ROADMAP and `docs/architecture.md` now say so.
+  Anthropic. Until 4 Nov 2026 it had never completed a live briefing (5 of
+  5 aborted, see 1.2.1). README, ROADMAP and `docs/architecture.md` now say so.
 - The "AI-assisted qualitative scoring" of mock briefings is withdrawn: mock text
   is fixture output chosen by format, so the scores graded the fixtures. The
   v1.3.1 re-scoring plan is abandoned (`docs/benchmarking-methodology.md`).
+- README and the system card said every live run failed "5 of 5". There
+  have been 7 live attempts: 6 failed (5 in 1.2.1 without committed
+  records, 1 on 3 Nov 2026), 1 completed (4 Nov 2026). The count is
+  computed from the run records (`tests/docs/live-records.ts`) and checked
+  in `tests/docs/live-attempts.test.ts`. Live runs start from their own
+  worktree (`docs/live-proof-protocol.md`).
 
 ### Added
 
+- The first completed live briefing: question 05, 4 Nov 2026, $3.51 and
+  7.8 minutes of stages, committed under
+  `benchmarks/outputs/live/05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/`.
+  It is flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains.
+  `docs/SLO.md` reports cost, latency and the error rate (1/2 since the
+  records began) on n = 1, with no status. Its quality is not yet reviewed.
 - Part C preparation: `docs/live-proof-protocol.md` (five test-split
   briefings, deterministic checks, a judge on a Claude model no stage uses
   with its same-family limitation, the maintainer's blind review of two
@@ -70,6 +82,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- A question run live again is no longer refused once it has a completed
+  run: each completed run is kept in `live/<id>/run-<start time>/`, never
+  over an earlier one, and a failed run leaves no partial directory.
+  Scoring and `export:annotation` read a question's latest completed run;
+  a cached score is keyed by the run it scored.
 - The risk stage's `max_tokens` rises from 16 000 to 32 000 (timeout
   15 minutes). The first live run cut its answer at 16 000; a cut answer
   gives only a lower bound, so the ceiling is twice it. Question 05's
@@ -81,9 +98,6 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   (the earlier $2.50 assumed $15 an hour). Question 05's estimate ($5.87
   central, $12.78 high) is shown beside it, not as a status, pinned by
   `tests/docs/slo.test.ts`.
-  The error rate is 1/1 since live run records began (step 0, 3 Nov 2026,
-  TruncatedOutputError at risk); the five aborted runs of 1.2.1 predate
-  the records. n is too small for a status.
   The advice to run with `--max-cost-usd 5`, below that estimate, is gone.
 - The judge is Claude Opus 5 (`claude-opus-5`), sent as one Message Batch
   at half price (`benchmarks/judge-batch.ts`). A paid scoring run needs

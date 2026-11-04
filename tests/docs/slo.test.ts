@@ -3,11 +3,12 @@
  * published only from live measurements; an estimate is shown, never a status.
  */
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { estimateRun } from "../../benchmarks/estimate-cost.ts";
 import { stageLimits } from "../../src/agents/stage-limits.ts";
 import { DEFAULT_PRICE_TABLE } from "../../src/llm/pricing.ts";
+import { days, liveRecords } from "./live-records.ts";
 
 const doc = readFileSync("docs/SLO.md", "utf-8");
 const flat = doc.replace(/\s+/g, " ");
@@ -30,41 +31,37 @@ describe("docs/SLO.md", () => {
   const [q05] = estimateRun(".", ["05-supply-chain-acquisition"]).rows;
   const five = estimateRun(".", FIVE).rows;
 
-  test("publishes no cost status while no live briefing has completed", () => {
-    // A completed live briefing writes metadata.json; once one exists this
-    // test fails and must be replaced by one checking the row against it.
-    const live = "benchmarks/outputs/live";
-    const measured = readdirSync(live, { withFileTypes: true }).some(
-      (d) => d.isDirectory() && existsSync(`${live}/${d.name}/metadata.json`)
-    );
-    expect(measured).toBe(false);
-    expect(doc).toContain(
-      `| Cost | p95 ≤ ${usd(COST_TARGET_USD)} per briefing | Not measured; estimate for question 05 (step 0), not a status: ${usd(q05?.low ?? 0)} low, ${usd(q05?.central ?? 0)} central, ${usd(q05?.high ?? 0)} high |`
-    );
-    expect(flat).not.toMatch(/\| Cost \|[^|]*\|[^|]*\b(not met|met)\b/i);
-  });
+  describe("measurements, from the committed live run records", () => {
+    const { failures, completions } = liveRecords();
+    const [only] = completions;
+    const n1 = `on n = 1 (step 0, ${days(completions)}); n too small, no status`;
 
-  test("reports the error rate from the committed live run records, with no status at this n", () => {
-    // Each started live briefing leaves metadata.json (completed) or an
-    // error-*.json (failed). A stop at the operator's own cap is not an error
-    // of the service ("What counts"), so it is left out of both counts.
-    const live = "benchmarks/outputs/live";
-    const dirs = readdirSync(live, { withFileTypes: true }).filter((d) => d.isDirectory());
-    const failures = dirs
-      .flatMap((d) =>
-        readdirSync(`${live}/${d.name}`)
-          .filter((f) => /^error-.*\.json$/.test(f))
-          .map((f) => JSON.parse(readFileSync(`${live}/${d.name}/${f}`, "utf-8")) as { error_type: string })
-      )
-      .filter((f) => f.error_type !== "BudgetExceededError");
-    const completed = dirs.filter((d) => existsSync(`${live}/${d.name}/metadata.json`)).length;
-    // The row names the one failure; any new record must change it.
-    expect(failures.map((f) => f.error_type)).toEqual(["TruncatedOutputError"]);
-    expect(completed).toBe(0);
-    expect(doc).toContain(
-      `| Error rate | ≤ 10% of started briefings end in an error | ${failures.length}/${failures.length + completed} since run records began (step 0, 3 Nov 2026, TruncatedOutputError); the five aborted runs of 1.2.1 predate the records; n too small, no status |`
-    );
-    expect(flat).toContain("No live briefing has completed yet");
+    // The rows below state one measurement; a second completed run must
+    // turn them into a p95 over n, not just update a figure.
+    test("one briefing has completed", () => {
+      expect(completions).toHaveLength(1);
+      expect(flat).toContain(`**One live briefing has completed** (question 05, ${days(completions)};`);
+    });
+
+    test("cost: the measurement, no status, the estimate beside it", () => {
+      expect(doc).toContain(
+        `| Cost | p95 ≤ ${usd(COST_TARGET_USD)} per briefing | ${usd(only?.cost_usd ?? 0)} ${n1}; estimate for question 05, not a status: ${usd(q05?.low ?? 0)} low, ${usd(q05?.central ?? 0)} central, ${usd(q05?.high ?? 0)} high |`
+      );
+      expect(flat).not.toMatch(/\| Cost \|[^|]*\|[^|]*\b(not met|met)\b/i);
+    });
+
+    test("latency: the measurement, no status", () => {
+      expect(doc).toContain(
+        `| Latency | p95 ≤ 10 minutes per briefing | ${((only?.stages_ms ?? 0) / 60_000).toFixed(1)} min ${n1} |`
+      );
+    });
+
+    test("error rate: failures over started briefings since the records began", () => {
+      const started = failures.length + completions.length;
+      expect(doc).toContain(
+        `| Error rate | ≤ 10% of started briefings end in an error | ${failures.length}/${started} since run records began (failed ${days(failures)}, ${failures.map((f) => f.type).join(", ")}; completed ${days(completions)}); the five aborted runs of 1.2.1 predate the records; n too small, no status |`
+      );
+    });
   });
 
   test("grounds the cost target in the analyst time a briefing replaces", () => {

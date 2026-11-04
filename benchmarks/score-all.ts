@@ -46,12 +46,13 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 import { parseUsd } from "../src/cli/run-args.ts";
 import type { FetchLike } from "../src/llm/anthropic-provider.ts";
 import { DEFAULT_PRICE_TABLE } from "../src/llm/pricing.ts";
 import { batchWorstCaseUsd, clearPendingBatch, type JudgeRequest, runJudgeBatch } from "./judge-batch.ts";
+import { completedLiveRuns } from "./provenance.ts";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -213,9 +214,13 @@ export function enumerateBriefings(
     const parent = join(root, "benchmarks", "outputs", mode);
     if (!existsSync(parent) || !statSync(parent).isDirectory()) continue;
     for (const slug of readdirSync(parent).sort()) {
-      const dir = join(parent, slug);
+      const questionDir = join(parent, slug);
       // Skip stray files at the top level (e.g. README.md, .gitkeep).
-      if (!statSync(dir).isDirectory()) continue;
+      if (!statSync(questionDir).isDirectory()) continue;
+      // A live question keeps every completed run; the latest is the one
+      // scored, so a question is judged once.
+      const dir = mode === "live" ? completedLiveRuns(questionDir).at(-1) : questionDir;
+      if (dir === undefined) continue;
       const briefPath = join(dir, "brief.md");
       const metaPath = join(dir, "metadata.json");
       if (!existsSync(briefPath) || !existsSync(metaPath)) continue;
@@ -652,6 +657,14 @@ function deltaCell(d: number | null): string {
 // Cache
 // ---------------------------------------------------------------------------
 
+/**
+ * A live question keeps every completed run, so its cached score is keyed by
+ * the run it scored: a later run is never given the earlier run's score.
+ */
+export function cacheKey(ref: BriefingRef): string {
+  return ref.mode === "live" ? `${ref.slug}-${basename(ref.dir)}` : ref.slug;
+}
+
 function cachePath(root: string, slug: string, mode: ScoringMode): string {
   return join(root, "benchmarks", ".scoring-cache", `${slug}-${mode}.json`);
 }
@@ -820,7 +833,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
   for (const ref of refs) {
     const shouldRefresh = opts.refresh !== null && opts.refresh === ref.slug;
     if (!shouldRefresh) {
-      const cached = readCache(opts.root, ref.slug, ref.mode, opts.cacheTtlMs);
+      const cached = readCache(opts.root, cacheKey(ref), ref.mode, opts.cacheTtlMs);
       if (cached !== null) {
         scorings.push(cached);
         fromCache += 1;
@@ -857,7 +870,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
         if (outcome === undefined || outcome.text === null) throw new Error(outcome?.error ?? "no outcome");
         const parsed = parseScoringPayload(JSON.parse(extractJsonBody(outcome.text)));
         scorings.push(parsed);
-        writeCache(opts.root, ref.slug, ref.mode, parsed);
+        writeCache(opts.root, cacheKey(ref), ref.mode, parsed);
         scored += 1;
         process.stderr.write(`  ✓ [${ref.mode}] ${ref.slug} (score=${parsed.total}/35)\n`);
       } catch (err) {

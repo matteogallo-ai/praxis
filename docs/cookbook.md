@@ -384,7 +384,8 @@ entries.
 `benchmarks/outputs/live/` on the 7-criterion rubric in
 `benchmarks/scoring-prompt.txt`, with Claude Opus 5, a model no
 pipeline stage uses. Mock briefings are refused: their text is fixture
-output. No live briefing has completed yet, so there is nothing to score.
+output. One live briefing has completed (question 05); a question run
+again is scored on its latest completed run.
 A paid run sends one Message Batch and needs `--max-cost-usd`: the batch
 is sent only if its worst case fits (`docs/live-proof-protocol.md`). Method and judge validation:
 [`docs/benchmarking-methodology.md`](benchmarking-methodology.md).

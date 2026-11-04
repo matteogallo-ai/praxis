@@ -33,11 +33,11 @@
  * code is 1 if any benchmark failed.
  */
 
-import { writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { writeFileSync, mkdirSync, existsSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { type BenchmarkEntry, loadManifest } from "./manifest.ts";
-import { assertNoLiveRecord, provenance, recordLiveFailure } from "./provenance.ts";
+import { commitLiveRun, provenance, recordLiveFailure, stageLiveRun } from "./provenance.ts";
 import { loadSplit } from "./split.ts";
 import { FormatRegistry } from "../src/registry/registry.ts";
 import { Orchestrator } from "../src/orchestrator/orchestrator.ts";
@@ -219,13 +219,15 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
           ? new UsageLedger({ simulated: true })
           : liveLedger(maxCostUsd ?? 0);
       let briefingStarted = false;
+      // Live renders go to a staged directory, committed once complete.
+      let writeDir = outDir;
       try {
         // Validate format exists before spawning the orchestrator so
         // an unknown format surfaces as a clean per-benchmark failure
         // rather than a mid-pipeline throw.
         registry.get(b.format);
-        if (mode === "live") assertNoLiveRecord(outDir);
         mkdirSync(outDir, { recursive: true });
+        if (mode === "live") writeDir = stageLiveRun(outDir, new Date(started));
         briefingStarted = true;
         const result = await orchestrator.briefWithCritiqueAndRerun(
           b.question,
@@ -256,15 +258,15 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
         } as const;
 
         const md = await markdownEnhancedRenderer.render(result, renderOpts);
-        writeFileSync(join(outDir, "brief.md"), md);
+        writeFileSync(join(writeDir, "brief.md"), md);
         artefacts["brief.md"] = md.length;
 
         const pdf = await pdfRenderer.render(result, renderOpts);
-        writeFileSync(join(outDir, "brief.pdf"), pdf);
+        writeFileSync(join(writeDir, "brief.pdf"), pdf);
         artefacts["brief.pdf"] = pdf.length;
 
         const docx = await docxRenderer.render(result, renderOpts);
-        writeFileSync(join(outDir, "brief.docx"), docx);
+        writeFileSync(join(writeDir, "brief.docx"), docx);
         artefacts["brief.docx"] = docx.length;
 
         const meta = {
@@ -278,8 +280,9 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
           artefacts,
           ...(runProvenance === undefined ? {} : { provenance: runProvenance }),
         };
-        const metadataPath = join(outDir, "metadata.json");
-        writeFileSync(metadataPath, `${JSON.stringify(meta, null, 2)}\n`);
+        writeFileSync(join(writeDir, "metadata.json"), `${JSON.stringify(meta, null, 2)}\n`);
+        const runDir = mode === "live" ? commitLiveRun(writeDir, outDir, new Date(started)) : outDir;
+        const metadataPath = join(runDir, "metadata.json");
 
         outcomes.push({
           id: b.id,
@@ -293,6 +296,8 @@ export async function runAll(opts: RunAllOptions): Promise<RunSummary> {
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
+        // A partial render is not a record; the error file below is.
+        if (writeDir !== outDir) rmSync(writeDir, { recursive: true, force: true });
         if (mode === "live" && briefingStarted) {
           recordLiveFailure(outDir, new Date(), {
             id: b.id,

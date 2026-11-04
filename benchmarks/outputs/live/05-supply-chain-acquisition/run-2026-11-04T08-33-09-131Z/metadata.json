@@ -1,0 +1,220 @@
+{
+  "id": "05-supply-chain-acquisition",
+  "question": "Should we pursue the acquisition of a European supply-chain competitor?",
+  "format": "mckinsey-style-note",
+  "tags": [
+    "acquisition",
+    "supply-chain"
+  ],
+  "mode": "live",
+  "duration_ms": 469577,
+  "generated_at": "2026-11-04T08:33:09.131Z",
+  "provider_name": "anthropic",
+  "synthesis": {
+    "total_word_count": 954,
+    "target_words": 1200,
+    "deviation_pct": -20.5,
+    "sections_over_length": 1,
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 0,
+    "material_count": 3,
+    "minor_count": 4,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 3,
+    "re_synthesis_deviations": [
+      "situation",
+      "complication",
+      "key-question",
+      "answer",
+      "supporting-arguments",
+      "so-what"
+    ]
+  },
+  "sourcing": {
+    "total_items": 44,
+    "counts": {
+      "ok": 9,
+      "stale": 0,
+      "untrusted": 24,
+      "duplicated": 0,
+      "missing": 11
+    },
+    "edited_after_critique": true,
+    "insufficiently_sourced": true
+  },
+  "usage": {
+    "stages": {
+      "scoping": {
+        "calls": 1,
+        "input_tokens": 1159,
+        "output_tokens": 1226,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.029156,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 16622
+      },
+      "research": {
+        "calls": 1,
+        "input_tokens": 47877,
+        "output_tokens": 5045,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.196204,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 36311
+      },
+      "stakeholder": {
+        "calls": 1,
+        "input_tokens": 49818,
+        "output_tokens": 5377,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 4,
+        "cost_usd": 0.193406,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 40974
+      },
+      "risk": {
+        "calls": 1,
+        "input_tokens": 67307,
+        "output_tokens": 13880,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.323414,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 92596
+      },
+      "options": {
+        "calls": 1,
+        "input_tokens": 119863,
+        "output_tokens": 10661,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 4,
+        "cost_usd": 0.732672,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 99596
+      },
+      "synthesis": {
+        "calls": 6,
+        "input_tokens": 157712,
+        "output_tokens": 15013,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.46555399999999997,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 31113
+      },
+      "adversarial": {
+        "calls": 1,
+        "input_tokens": 198843,
+        "output_tokens": 10847,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 1.0623120000000001,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 116515
+      },
+      "synthesis-rerun": {
+        "calls": 6,
+        "input_tokens": 162859,
+        "output_tokens": 17926,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.504978,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 35767
+      }
+    },
+    "total": {
+      "calls": 18,
+      "input_tokens": 805438,
+      "output_tokens": 79975,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 23,
+      "cost_usd": 3.5076959999999997,
+      "models": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "duration_ms": 469494
+    },
+    "simulated": false,
+    "max_cost_usd": 10
+  },
+  "artefacts": {
+    "brief.md": 52581,
+    "brief.pdf": 92168,
+    "brief.docx": 16703
+  },
+  "provenance": {
+    "git_sha": "7c75a0647af5f879cb604ca998619934d3703a3d",
+    "git_dirty": false,
+    "prompts": {
+      "adversarial.prompt": {
+        "version": "2.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "1dc888c1b653a946b4d8be63c09831f28729d216367dd3ad2efd7de8f3a28ec2"
+      },
+      "options.prompt": {
+        "version": "2.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "c9ca58b6d6bc62bf78d96be8a4ebe402f8f4001fa97a0e1b428119055797a87e"
+      },
+      "research.prompt": {
+        "version": "2.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "b636fc407cb8f57cd8c7f2954809a83351004b74b377fc8ab9246b4d930fb654"
+      },
+      "risk.prompt": {
+        "version": "2.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "09d91fbe3654db2a38cabe26ac0037bf1db7e005e273be8f912cee0224ecd260"
+      },
+      "scoping.prompt": {
+        "version": "2.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "f327371f9f3c065a8ceac3f1e2e1ac7dda6f3fb96fb6c09fb2769cdea684f737"
+      },
+      "stakeholder.prompt": {
+        "version": "2.0.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "1f9a56db47c78f201a2ed727a4d8c1ff4b494440b87969679985cea217600d2d"
+      },
+      "synthesis.prompt": {
+        "version": "2.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "be7ac673a02f9d0b5f75544714edb3157f1deace536db8ae39c50c0246473f9f"
+      }
+    }
+  }
+}

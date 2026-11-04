@@ -1,7 +1,8 @@
 # Live proof protocol (Part C)
 
 The first live briefings Praxis would publish: what runs, how it is checked,
-what it may claim, and what it costs. Nothing here has run. Each paid step
+what it may claim, and what it costs. Step 0 has run: its first attempt
+failed, its second completed ([§ Step 0](#step-0-one-briefing-capped-at-10)). Each paid step
 waits for its own GO from the maintainer ([§ What each GO authorizes](#what-each-go-authorizes)):
 first one briefing, then the other four, then the judge.
 
@@ -36,8 +37,20 @@ the command below names other questions.
 
 1. Pull requests #19 (strict cap parsing, answers cut at `max_tokens`
    refused) and the `@promptlang/core` switch merged, and this one; CI green.
-2. A clean working tree on `main`: `run-all.ts` refuses a live run over
+2. A clean worktree at `origin/main`: `run-all.ts` refuses a live run over
    modified tracked files, because the artefacts record the commit.
+   The run starts from its own worktree, never from a checkout an agent or
+   another session works in: on 4 Nov 2026 a `git checkout main` made for
+   step 0 in the shared checkout moved an agent's branch under it
+   mid-commit. From the main checkout:
+   `git fetch origin && git worktree add --detach ../praxis-live origin/main`
+   (a stale `origin/main` would put the run of record on the wrong commit),
+   then in `../praxis-live`: `bun install --frozen-lockfile`, and the key in
+   that directory's `.env` or the environment (Bun reads `.env` from the
+   working directory; the worktree has none). The artefacts land in the
+   worktree's `benchmarks/outputs/live/`; commit them there after
+   `git switch -c <branch>` (the worktree is detached), then
+   `git worktree remove ../praxis-live`.
 3. `ANTHROPIC_API_KEY` set; `PRAXIS_NOW` unset (live freshness uses the real
    date); `ANTHROPIC_MODEL` unset, so each stage runs on its `@model` as
    estimated.
@@ -94,6 +107,13 @@ Risk's ceiling is now 32 000, twice the one its answer was cut at
 second attempt is the same command: `bench:live` keeps no checkpoints, so
 it is a new run that pays the first three stages again.
 
+**Second attempt, 2026-11-04.** It completed on commit 7c75a06: $3.51 under
+the $10 cap, 469 s of stages, 23 web searches; the adversarial review
+raised 0 critical, 3 material and 4 minor points and the synthesis was
+rerun; the brief was flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains
+(`benchmarks/outputs/live/05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/`).
+Completion says nothing of quality: the checks below come first.
+
 ### Step 1: the other four, capped at $14 each
 
 ```bash
@@ -113,14 +133,16 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
   spending more. A timed-out request is charged its worst case, so
   timeouts eat the cap fast ([§ Ceiling](#ceiling)).
 - **One attempt per question.** The rule is procedural: `run-all.ts`
-  refuses only a question that already has a `metadata.json`, so a question
-  that failed can be run again by the same command. Do not: running a
-  question again, 05 included after a fix that follows step 0, is a second
-  attempt and needs a new estimate and a new GO. A failure leaves
+  refuses no question, so any question can be run again by the same
+  command. Do not: running a question again is another attempt and needs a
+  new estimate and a new GO. A failure leaves
   `benchmarks/outputs/live/<id>/error-<time>.json` (cause, usage spent,
   commit, prompt versions, redacted); a completed run leaves `brief.md`,
-  `brief.pdf`, `brief.docx` and `metadata.json` and is never overwritten.
-- Then: `shasum -a 256 benchmarks/outputs/live/*/* > benchmarks/outputs/live/SHA256SUMS`
+  `brief.pdf`, `brief.docx` and `metadata.json` in
+  `benchmarks/outputs/live/<id>/run-<start time>/`, so a second completed
+  run sits beside the first and never over it. Scoring and the blind-review
+  export read a question's latest completed run.
+- Then: `find benchmarks/outputs/live -type f ! -name README.md ! -name SHA256SUMS ! -path '*.staging/*' | sort | xargs shasum -a 256 > benchmarks/outputs/live/SHA256SUMS`
   and one commit with every artefact, failures included (DoD B6).
 
 ## Checks, in order

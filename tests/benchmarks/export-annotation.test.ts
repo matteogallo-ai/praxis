@@ -16,9 +16,10 @@ function root(withLive: string[]): string {
   mkdirSync(join(dir, "benchmarks"));
   cpSync("benchmarks/questions.yaml", join(dir, "benchmarks", "questions.yaml"));
   for (const id of withLive) {
-    const out = join(dir, "benchmarks", "outputs", "live", id);
+    const out = join(dir, "benchmarks", "outputs", "live", id, "run-2026-11-04T08-33-09-131Z");
     mkdirSync(out, { recursive: true });
     writeFileSync(join(out, "brief.md"), `# Brief ${id}\n\nText.\n`);
+    writeFileSync(join(out, "metadata.json"), "{}");
     writeFileSync(join(out, "scores.json"), JSON.stringify({ total: 31 }));
   }
   return dir;
@@ -48,6 +49,16 @@ describe("annotationRecords", () => {
 
   test("refuses a question with no live briefing: mock text is not reviewed for quality", () => {
     expect(() => annotationRecords(root([]), ["05-supply-chain-acquisition"])).toThrow(/no live briefing/);
+  });
+
+  test("exports the latest completed run of a question", () => {
+    const dir = root(["05-supply-chain-acquisition"]);
+    const later = join(dir, "benchmarks", "outputs", "live", "05-supply-chain-acquisition", "run-2026-11-05T10-00-00-000Z");
+    mkdirSync(later);
+    writeFileSync(join(later, "brief.md"), "# Second run\n");
+    writeFileSync(join(later, "metadata.json"), "{}");
+    const [r] = annotationRecords(dir, ["05-supply-chain-acquisition"]);
+    expect(r?.brief_markdown).toBe("# Second run\n");
   });
 
   test("refuses an id named twice", () => {

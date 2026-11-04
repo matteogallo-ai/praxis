@@ -9,10 +9,11 @@
  *
  *   bun run export:annotation -- --ids 05-supply-chain-acquisition,02-cfo-buyback-briefing > review.jsonl
  */
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { loadManifest } from "./manifest.ts";
+import { completedLiveRuns } from "./provenance.ts";
 import { SCORING_CRITERIA, type ScoringCriterion } from "./score-all.ts";
 
 const DEFINITIONS: Record<ScoringCriterion, string> = {
@@ -41,8 +42,10 @@ export function annotationRecords(root: string, ids: readonly string[]): Annotat
   return ids.map((id) => {
     const entry = manifest.benchmarks.find((b) => b.id === id);
     if (entry === undefined) throw new Error(`${id}: not in questions.yaml`);
-    const brief = join(root, "benchmarks", "outputs", "live", id, "brief.md");
-    if (!existsSync(brief)) throw new Error(`${id}: no live briefing at ${brief}`);
+    const questionDir = join(root, "benchmarks", "outputs", "live", id);
+    const run = completedLiveRuns(questionDir).at(-1);
+    if (run === undefined) throw new Error(`${id}: no live briefing completed under ${questionDir}`);
+    const brief = join(run, "brief.md");
     return {
       id,
       question: entry.question,
