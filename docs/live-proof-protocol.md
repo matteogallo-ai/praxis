@@ -157,7 +157,7 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 | Format conformance | `synthesis.forbidden_terms_found = 0`, `sections_over_length` (count) with `sections_over_length_ids` (which sections) and `deviation_pct` reported; step 0's record predates the ids and gives the count only |
 | Adversarial | `critical_count`, `material_count`; `rerun.performed` |
 | Cost and latency | `usage.stages.*.cost_usd` and `duration_ms`, against [`SLO.md`](SLO.md) |
-| Hard case | completed and `insufficiently_sourced: true` with the unsourced sodium-ion claims listed (its `intent`); an abort fails it |
+| Hard case | completed and `insufficiently_sourced: true` with the unsourced sodium-ion claims listed (its `intent`); an abort fails it; `bun run hard-case:sources` lists each sodium-ion sentence of the model's sections and each sodium-ion finding, with each source it cites (or none) and that source's chemistry, read from title and URL, for a human to confirm |
 
 **2. Judge**, on completed briefings only, under its own GO
 ([§ Judge](#judge)).
@@ -260,13 +260,6 @@ built; neither result exists, and no published score depends on them.
   at most 1 of 15 neutral criterion readings (the same three criteria, five
   briefings) 1 or more below the unchanged median**, each published as k/15
   with its Wilson interval. It needs a perturbation generator.
-
-## Not built yet (free, before the judge's GO)
-
-- For the hard case, a per-source check of whether each cited source is
-  about sodium-ion cells (its `intent`). The judge cannot do it without
-  reading the sources; it is a manual check on the sourcing report until it
-  is built.
 
 ## Cost
 
