@@ -579,18 +579,18 @@ describe("scoreAll — --dry-run", () => {
   });
 
   test("--live-only in dry-run does NOT throw even when no live outputs exist", async () => {
-    // Wait — the spec says --live-only errors when no live outputs; but
-    // dry-run should still error (the goal of --live-only is to score live).
-    // Cover the ACTUAL behaviour: dry-run enumerates whatever is there; if
-    // --live-only requests it and there are no live briefings, the error
-    // guard fires BEFORE dry-run branches out.
+    // The no-live-briefings guard fires before dry-run branches out; the
+    // root is empty because the repository now holds a live briefing.
+    const empty = mkdtempSync(join(tmpdir(), "praxis-nolive-"));
+    mkdirSync(join(empty, "benchmarks"));
+    writeFileSync(join(empty, "benchmarks", "scoring-prompt.txt"), readFileSync("benchmarks/scoring-prompt.txt"));
     await expect(
       scoreAll({
         mockOnly: false,
         liveOnly: true,
         refresh: null,
         dryRun: true,
-        root: ".",
+        root: empty,
         cacheTtlMs: 60_000,
       })
     ).rejects.toThrow(/no live briefings/);
