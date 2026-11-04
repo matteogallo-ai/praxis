@@ -5,7 +5,8 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { plainText } from "../../src/renderers/markdown-text.ts";
+import { modelText, plainText } from "../../src/renderers/markdown-text.ts";
+import { HOSTILE, renderedTargets } from "../helpers/markdown-inert.ts";
 
 describe("plainText — no link, image or autolink outside code spans", () => {
   test.each([
@@ -63,5 +64,20 @@ describe("plainText — no link, image or autolink outside code spans", () => {
 
   test("empty text stays empty", () => {
     expect(plainText("")).toBe("");
+  });
+});
+
+// The cases review found, rendered by a real GFM parser rather than matched.
+describe("plainText — rendered by marked", () => {
+  test.each([
+    HOSTILE,
+    "`a\nb` [x](https://x.attacker.example) `c`",
+    "- `a\n  b` www.x.attacker.example `c`",
+    "> `a\n> b` www.x.attacker.example `c`",
+    "| h | k |\n|---|---|\n| `a | [x](https://x.attacker.example) ` |",
+    "`a\r\r www.x.attacker.example `",
+    "`a\n\u00a0\nb` www.x.attacker.example `c`",
+  ])("no href or src to the host: %j", (input) => {
+    expect(renderedTargets(modelText(input), "attacker.example")).toEqual([]);
   });
 });

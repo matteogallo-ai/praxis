@@ -12,7 +12,7 @@ import {
   markdownEnhancedRenderer,
   renderMarkdownEnhanced,
 } from "../../src/renderers/markdown-enhanced.ts";
-import { autolinkable, HOSTILE, liveTargets } from "../helpers/markdown-inert.ts";
+import { autolinkable, HOSTILE, liveTargets, renderedTargets } from "../helpers/markdown-inert.ts";
 import type {
   BriefResult,
   BriefWithCritiqueResult,
@@ -621,6 +621,7 @@ describe("renderMarkdownEnhanced — no model text becomes a link or an image", 
     const md = renderMarkdownEnhanced(brief, { include_toc: true, include_critique: true, include_appendices: true });
     expect(md).toContain("attacker.example");
     expect(liveTargets(md, "attacker.example")).toEqual([]);
+    expect(renderedTargets(md, "attacker.example")).toEqual([]);
   });
 
   test("a source's host, as a heading of the Sources section, is not an autolink", () => {

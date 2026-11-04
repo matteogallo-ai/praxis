@@ -9,6 +9,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- The hostile-output tests render the Markdown with marked (GFM), a pinned
+  devDependency, and check that no `href` or `src` points at the hostile
+  host, in addition to the pattern check.
+
 - No model text in the Markdown outputs (the brief, `--render
   md-enhanced`, the CLI's Markdown sourcing report) becomes a link, an
   image or an autolink: `www.` addresses, URLs, e-mail addresses, links,

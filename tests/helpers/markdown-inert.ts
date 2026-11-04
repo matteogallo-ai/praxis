@@ -1,3 +1,5 @@
+import { marked } from "marked";
+
 /**
  * What a GFM viewer (GitHub, VS Code) would turn into a link in Markdown
  * text: a `www.` address or a scheme URL outside code spans. Control text
@@ -40,3 +42,13 @@ export const HOSTILE =
   "https://bare.attacker.example/x ceo@attacker.example <https://angle.attacker.example>\n[r]: https://ref.attacker.example\n" +
   // Backticks a renderer could pair where the viewer does not (review of the fix).
   "`a\nb` [x](https://cross.attacker.example) `c`\n\n| h | k |\n|---|---|\n| `a | www.cell.attacker.example` |\n\n`a\r\r www.cr.attacker.example `";
+
+/**
+ * The `href` and `src` a GFM renderer (marked) writes for `needle`: the
+ * check `liveTargets` approximates with patterns, made by a real parser.
+ * The front matter is skipped, as a viewer shows it as a table, not as Markdown.
+ */
+export function renderedTargets(document: string, needle: string): string[] {
+  const html = marked.parse(document.replace(/^---\n[\s\S]*?\n---\n/, ""), { async: false, gfm: true });
+  return [...html.matchAll(/\b(?:href|src)="([^"]*)"/g)].map((m) => m[1] as string).filter((u) => u.includes(needle));
+}

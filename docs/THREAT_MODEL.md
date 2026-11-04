@@ -194,6 +194,9 @@ Tests:
   autolink outside code spans": seven forms, code spans kept, and the
   backticks a viewer may not pair (a span across lines, in a list item or
   a block quote, a table row, a lone CR) left as text.
+- `tests/renderers/markdown-text.test.ts`, "plainText — rendered by
+  marked": the hostile text and the six review cases yield no `href` or
+  `src` to the host.
 - `tests/renderers/markdown-enhanced.test.ts`, "no model text becomes a
   link or an image": every way GFM makes a link or an image, in every model
   field of every part; a source's host heading is not an autolink.
@@ -210,11 +213,13 @@ Tests:
 - `tests/renderers/docx.test.ts`: "XML escaping — angle brackets and
   ampersands survive".
 
-Remaining: the tests check with a pattern helper (`liveTargets`,
-`tests/helpers/markdown-inert.ts`), not a Markdown parser. The inputs of
-the tests and those of the review of this change were also rendered with
-micromark (GFM), marked and markdown-it (linkify) outside the repository,
-with no link or image to the hostile host; those parsers are not in CI.
+Remaining: the tests render the hostile outputs with one GFM parser,
+marked (`renderedTargets`, a pinned devDependency), and check them with a
+pattern helper (`liveTargets`, `tests/helpers/markdown-inert.ts`). A viewer
+whose rules differ from marked's (GitHub's cmark-gfm, VS Code's
+markdown-it) is covered by the patterns, not by a parser; micromark and
+markdown-it with linkify were run once outside the repository, with no
+link or image to the hostile host.
 The cost is in the model's own Markdown: an escape it meant (`\*`, `\_`)
 shows its backslash and the emphasis it prevented comes back, a task list
 (`- [ ]`) or a footnote (`[^1]`) shows as text, and a backtick the scan
