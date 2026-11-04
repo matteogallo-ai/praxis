@@ -472,6 +472,30 @@ describe("executeSynthesis — each prose check on its own", () => {
     expect(message.slice(message.indexOf(`${reason}: '`) + reason.length + 3)).toStartWith(hit);
   });
 
+  // A refusal is read from the error record alone: the address must be named, not only its prefix.
+  test("a www. address is quoted whole", async () => {
+    const err = await synthesize("Margins held (www.attacker.example/q?d=1, 2026).");
+    expect((err as Error).message).toContain("a www. address, which viewers turn into a link: 'www.attacker.example/q?d=1'");
+  });
+
+  // Viewers do not turn text inside a link into a second link, so a www.
+  // label on an upstream link points nowhere else.
+  test("keeps a www. label on a link to an upstream source", async () => {
+    const prose = `Margins held ([www.reuters.com](${SOURCE_A.url})).`;
+    const result = (await synthesize(prose)) as { sections: { content_markdown: string }[] };
+    expect(result.sections?.[0]?.content_markdown).toBe(prose);
+  });
+
+  test.each([
+    ["a www. label on a link to an unknown site", "Per [www.reuters.com](https://attacker.example/r).", "a URL no upstream stage returned"],
+    ["a www. label on a relative link", "Per [www.reuters.com](/track).", "a www. address"],
+    ["a www. address after an upstream link", `Per [Reuters](${SOURCE_A.url}) and www.attacker.example.`, "a www. address"],
+  ])("still refuses %s", async (_label, prose, reason) => {
+    const err = await synthesize(prose);
+    expect(err).toBeInstanceOf(InvalidAgentOutputError);
+    expect((err as Error).message).toContain(reason);
+  });
+
   test.each([
     ["a space inside the parentheses", `Per [Precedent A]( <${SOURCE_A.url}>), margins held.`],
     ["an angle-bracket destination with a title", `Per [Precedent A](<${SOURCE_A.url}> "Reuters"), margins held.`],
