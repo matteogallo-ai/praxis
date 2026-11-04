@@ -15,9 +15,13 @@ const LIVE = "benchmarks/outputs/live";
 export const UNRECORDED_FAILURES = 5;
 
 interface Completion {
+  id: string;
   at: string;
   cost_usd: number;
   stages_ms: number;
+  searches: number;
+  adversarial: { critical_count: number; material_count: number; minor_count: number };
+  sourcing: { total_items: number; counts: { missing: number; untrusted: number }; insufficiently_sourced: boolean };
 }
 
 export function liveRecords(): { failures: { type: string; at: string }[]; completions: Completion[] } {
@@ -34,11 +38,18 @@ export function liveRecords(): { failures: { type: string; at: string }[]; compl
     .map((r) => ({ type: r.error_type, at: r.failed_at }));
   const completions = dirs.flatMap(completedLiveRuns).map((run) => {
     const meta = JSON.parse(readFileSync(join(run, "metadata.json"), "utf-8")) as {
+      id: string;
       generated_at: string;
-      usage: { total: { cost_usd: number }; stages: Record<string, { duration_ms: number }> };
+      usage: { total: { cost_usd: number; web_search_requests: number }; stages: Record<string, { duration_ms: number }> };
+      adversarial: Completion["adversarial"];
+      sourcing: Completion["sourcing"];
     };
     return {
+      id: meta.id,
       at: meta.generated_at,
+      searches: meta.usage.total.web_search_requests,
+      adversarial: meta.adversarial,
+      sourcing: meta.sourcing,
       cost_usd: meta.usage.total.cost_usd,
       // docs/SLO.md measures latency as the sum of the stages' wall time.
       stages_ms: Object.values(meta.usage.stages).reduce((a, s) => a + s.duration_ms, 0),
@@ -63,4 +74,10 @@ export function wilson(successes: number, n: number): string {
   const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
   const pct = (x: number) => `${Math.round(Math.max(0, Math.min(1, x)) * 100)}%`;
   return `${pct(centre - half)}–${pct(centre + half)}`;
+}
+
+/** How a completed briefing's sourcing flag reads wherever it is reported. */
+export function sourcingFlag(c: Completion): string {
+  const { total_items, counts, insufficiently_sourced } = c.sourcing;
+  return `${insufficiently_sourced ? "flagged insufficiently sourced" : "sourced"}: ${counts.missing} of ${total_items} items without a source, ${counts.untrusted} from untrusted domains`;
 }

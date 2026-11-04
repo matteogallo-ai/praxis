@@ -7,8 +7,9 @@ reader waits for, tolerates and pays for one briefing), not from what the
 pipeline happens to cost. A status of **met** or **not met** is published
 only from live measurements, never from an estimate; a target the
 measurement misses is published as not met, not moved to fit.
-**One live briefing has completed** (question 05, 4 Nov 2026; `docs/CLAIMS.md` C14):
-one measurement per objective, too few for a status.
+**One live briefing has completed** (question 05, 4 Nov 2026; `docs/CLAIMS.md` C14),
+flagged insufficiently sourced, a success with a flag ("What counts"):
+too few briefings for any status.
 
 | Objective | Target | Status | Measured on |
 | --- | --- | --- | --- |

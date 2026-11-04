@@ -2,8 +2,8 @@
 /**
  * Estimates what a live benchmark run costs before anyone pays for it.
  *
- * No live briefing has completed, so nothing measured exists to multiply.
- * The estimate is built from what the repository does know, each piece
+ * The estimate does not read live runs: it is built from what the
+ * repository knows before any run, each piece
  * named in `SCENARIOS`:
  *   - the size of each stage's rendered prompt, measured on the committed
  *     mock run of the same question (`usage.stages.<stage>.input_tokens`,

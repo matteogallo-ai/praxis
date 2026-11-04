@@ -13,7 +13,7 @@ generate options, write each section (one call per section) and critique the
 result. Output: Markdown, PDF, DOCX.
 
 **Status: one briefing has completed against a real model** (question 05,
-4 Nov 2026); its quality is not yet reviewed. 7 live attempts: 6 failed
+4 Nov 2026), flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains; its quality is not yet reviewed. 7 live attempts: 6 failed
 (5 in 1.2.1 without committed records, 1 on 3 Nov 2026), 1 completed
 (4 Nov 2026). Every other result on this page comes from the mock provider,
 which replays hand-written fixtures.

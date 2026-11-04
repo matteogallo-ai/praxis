@@ -12,8 +12,8 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - The judge prompt embedded the briefing bare, and expanded `$&`-style
   patterns in it; the briefing is now delimited as untrusted content.
 - The project was described as feature-complete and as running live against
-  Anthropic. It has never completed a live briefing (5 of 5 aborted, see 1.2.1).
-  README, ROADMAP and `docs/architecture.md` now say so.
+  Anthropic. Until 4 Nov 2026 it had never completed a live briefing (5 of
+  5 aborted, see 1.2.1). README, ROADMAP and `docs/architecture.md` now say so.
 - The "AI-assisted qualitative scoring" of mock briefings is withdrawn: mock text
   is fixture output chosen by format, so the scores graded the fixtures. The
   v1.3.1 re-scoring plan is abandoned (`docs/benchmarking-methodology.md`).
@@ -29,6 +29,7 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - The first completed live briefing: question 05, 4 Nov 2026, $3.51 and
   7.8 minutes of stages, committed under
   `benchmarks/outputs/live/05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/`.
+  It is flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains.
   `docs/SLO.md` reports cost, latency and the error rate (1/2 since the
   records began) on n = 1, with no status. Its quality is not yet reviewed.
 - Part C preparation: `docs/live-proof-protocol.md` (five test-split
@@ -84,8 +85,8 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - A question run live again is no longer refused once it has a completed
   run: each completed run is kept in `live/<id>/run-<start time>/`, never
   over an earlier one, and a failed run leaves no partial directory.
-  Scoring and `export:annotation` read a question's latest completed run.
-
+  Scoring and `export:annotation` read a question's latest completed run;
+  a cached score is keyed by the run it scored.
 - The risk stage's `max_tokens` rises from 16 000 to 32 000 (timeout
   15 minutes). The first live run cut its answer at 16 000; a cut answer
   gives only a lower bound, so the ceiling is twice it. Question 05's

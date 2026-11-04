@@ -13,7 +13,7 @@
 
 Praxis has completed **one briefing against a real model**: question 05,
 4 Nov 2026, $3.51
-(`benchmarks/outputs/live/05-supply-chain-acquisition/`). Its quality is not
+(`benchmarks/outputs/live/05-supply-chain-acquisition/`), flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains. Its quality is not
 yet checked or reviewed. 7 live attempts: 6 failed (5 in 1.2.1 without
 committed records, 1 on 3 Nov 2026), 1 completed (4 Nov 2026). In
 [`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the

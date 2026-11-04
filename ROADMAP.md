@@ -10,7 +10,7 @@ is kept as written in August 2026.
 
 The status this section used to give ("feature-complete at v1.3.0",
 followed by maintenance mode after a v1.3.1 mock re-scoring) was wrong.
-The pipeline has never completed a briefing against a real model: the
+The pipeline had never completed a briefing against a real model: the
 first live benchmark aborted on 5 of 5 briefings, and the published
 scores graded hand-written fixtures. An independent audit on
 2026-11-02 recorded this.

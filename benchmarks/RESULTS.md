@@ -2,8 +2,8 @@
 
 ## Live briefings
 
-No live briefing has completed. The only recorded live benchmark (v1.2.1,
-August 2026) aborted on all 5 of the 5 briefings it attempted, before any
+One live briefing has completed (question 05, 4 Nov 2026, not yet scored;
+`benchmarks/outputs/live/`). The v1.2.1 live benchmark (August 2026) aborted on all 5 of the 5 briefings it attempted, before any
 artefact was written:
 
 | Briefings | Cause |
