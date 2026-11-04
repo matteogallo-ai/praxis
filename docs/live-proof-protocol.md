@@ -229,6 +229,8 @@ published as *unvalidated*, with the numbers that failed.
 **What the five consume.** Running and publishing these five test
 questions spends them: from then on they are dev data. A later held-out
 claim uses the three test questions left (03, 07, 10) or new ones.
+Question 05 was spent before the others: the sourcing fixes (#31, #32, #34, #35, #37, #38 and #39)
+were designed from its step 0 failures. Status: q05 used for development after step 0; no longer held-out.
 
 ## Roadmap (not run by this protocol)
 

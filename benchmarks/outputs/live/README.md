@@ -35,7 +35,7 @@ freshness on the retrieval time, so its sources could not be stale, and a
 source the rerun counts as aging would have been `ok` at step 0. Counts
 are items, read from each run's `metadata.json` (`sourcing`).
 Question 05 is in the test split (`benchmarks/split.yaml`), but the
-sourcing fixes were designed from step 0's failures: q05 used for development after step 0; no longer held-out.
+sourcing fixes were designed from step 0's failures. Status: q05 used for development after step 0; no longer held-out.
 The rerun measures the fixes on the question they were built from.
 
 | | Step 0 (08:33 UTC) | Rerun (10:52 UTC) |
