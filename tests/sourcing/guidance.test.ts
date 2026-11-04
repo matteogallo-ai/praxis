@@ -69,6 +69,13 @@ describe("sourceGuidance", () => {
     expect(deny).toContain("Any other host is accepted.");
   });
 
+  test("a stage whose sources are not freshness-checked is told no freshness limit", () => {
+    const g = sourceGuidance(TIERS, "strict", { freshnessChecked: false });
+    expect(g).not.toContain("older than 730 days");
+    expect(g).toContain("published_at");
+    expect(g).toContain("Tier 1 (accepted)");
+  });
+
   test("a format without rules still asks for the publication date, and names no list", () => {
     const g = sourceGuidance(undefined, "strict");
     expect(g).toContain("published_at");

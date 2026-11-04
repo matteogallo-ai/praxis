@@ -85,6 +85,8 @@ describe("sourcing guide in the search stages' prompts", () => {
       // The system example lists the field the guide asks for, so the two agree.
       expect(p).toContain('"published_at": "YYYY-MM-DD');
       expect(p).not.toContain("these three fields");
+      // Only the research stages' sources are freshness-checked.
+      expect(p.includes("treats sources older than")).toBe(stage !== "options");
     });
   }
 });

@@ -76,25 +76,25 @@ $10 is a limit, not a fuse: before each request the ledger reserves that
 request's worst case and sends it only if what is spent, what requests in
 flight hold and that worst case fit in $10 ([§ Ceiling](#ceiling)). The
 estimator's stages, high scenario, cumulative: scoping $0.17, research
-$0.99, stakeholders $1.88, risks $3.12, options $5.44, synthesis $6.44,
-adversarial $9.16. Walked through the reservations
+$0.99, stakeholders $1.88, risks $3.12, options $5.43, synthesis $6.44,
+adversarial $9.15. Walked through the reservations
 (`bun run estimate:cost -- --ids 05-supply-chain-acquisition --cap-usd 10`):
 
 | Scenario | Under $10 |
 | --- | --- |
 | Low | completes at $1.39 |
 | Central | completes at $5.94 |
-| High | stops before adversarial at $9.16 |
+| High | stops before adversarial at $9.15 |
 
 The high scenario retries its costliest stage once, and that stage is
 adversarial (Opus, 5 searches, 16 000 `max_tokens`): the first attempt
-runs, then the retry reserves $2.99 on top of $9.16 spent, more than $10
+runs, then the retry reserves $2.99 on top of $9.15 spent, more than $10
 allows. Without that retry the high case yields a brief under $10, with
-its synthesis rerun skipped at $9.16.
+its synthesis rerun skipped at $9.15.
 A run that stops leaves no brief: `error-*.json` records what each stage
 spent, which is the measurement step 1 is costed from. The high case would
 yield a brief from a cap of $9.44 (rerun skipped) and finish in full from
-$10.24, without a retry; with one stage retry, $12.15 and $12.95. A cap
+$10.23, without a retry; with one stage retry, $12.15 and $12.95. A cap
 reached during the synthesis rerun keeps the complete pre-rerun brief,
 with `rerun.skipped` in its `metadata.json`.
 
@@ -277,8 +277,8 @@ built; neither result exists, and no published score depends on them.
 | 05-supply-chain-acquisition | $1.39 | $5.94 | $12.89 |
 | 08-ai-regulation-position | $1.43 | $6.09 | $13.24 |
 | 11-family-office-co-investment | $1.45 | $5.87 | $15.51 |
-| 12-sodium-ion-plant-morocco | $1.39 | $5.94 | $12.90 |
-| **Total** | **$7.10** | **$29.95** | **$67.73** |
+| 12-sodium-ion-plant-morocco | $1.39 | $5.94 | $12.89 |
+| **Total** | **$7.09** | **$29.95** | **$67.72** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -311,7 +311,7 @@ No prompt caching is assumed.
 | Estimate | $1.39 | $5.94 | $12.89 |
 
 - Ceiling: **$10.00**, timeouts included, within the allowances below. In
-  the high case the run stops before adversarial's retry at $9.16 rather than
+  the high case the run stops before adversarial's retry at $9.15 rather than
   reaching $12.89.
 
 The prompt sizes are measured; the search sizes, output shares and the

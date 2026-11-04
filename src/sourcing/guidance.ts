@@ -12,7 +12,16 @@
 
 import type { DomainTrustRule, SourcingPolicy, SourcingRules } from "../registry/schema.ts";
 
-export function sourceGuidance(rules: SourcingRules | undefined, policy: SourcingPolicy): string {
+export interface GuidanceOptions {
+  /** `false` for a stage whose sources no freshness check reads (options). */
+  freshnessChecked?: boolean;
+}
+
+export function sourceGuidance(
+  rules: SourcingRules | undefined,
+  policy: SourcingPolicy,
+  options: GuidanceOptions = {}
+): string {
   const lines = [...trustLines(rules?.domain_trust)];
   // Under strict an untrusted citation blocks the briefing as a missing one
   // does; saying only "reported" would undersell what the model risks.
@@ -33,7 +42,7 @@ export function sourceGuidance(rules: SourcingRules | undefined, policy: Sourcin
     "of unknown age, never as recent. Never guess a date, and never use today's date."
   );
   const freshness = rules?.freshness;
-  if (freshness !== undefined) {
+  if (freshness !== undefined && options.freshnessChecked !== false) {
     lines.push(
       `This format treats sources older than ${freshness.max_source_age_days} days as stale; prefer recent ones.`
     );

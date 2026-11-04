@@ -41,8 +41,10 @@ What limits the damage today: the output is a document for a human reader,
 not an action; Praxis executes no tool other than web search and writes only
 to the output path you give it; under the `strict` sourcing policy every
 source cited by the research, stakeholder and risk stages must pass the
-format's freshness and domain-trust checks. Sources cited by the options and
-adversarial stages, and the synthesis text, are not checked.
+format's freshness and domain-trust checks. The options stage's citations
+pass the domain-trust check (blocking under `strict`); the adversarial
+stage's are domain-checked and reported without blocking. The synthesis
+text is not checked.
 
 ### 2. Uncontrolled cost
 
