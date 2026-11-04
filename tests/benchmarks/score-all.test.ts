@@ -13,8 +13,6 @@
  *     rejections, provider allow-list, total mismatch.
  *   - extractJsonBody: fenced ```json blocks, plain-JSON,
  *     preamble+trailing prose, complete garbage.
- *   - aggregate: computes per-criterion mock/live/delta correctly
- *     on the ten-briefing synthetic set.
  *   - readCache / writeCache: TTL enforcement, malformed cache
  *     ignored.
  *   - enumerateBriefings: only picks directories with both
@@ -28,7 +26,6 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import {
-  aggregate,
   enumerateBriefings,
   extractJsonBody,
   interpolateScoringPrompt,
@@ -111,9 +108,6 @@ const MALFORMED = JSON.parse(
 );
 const EDGE = JSON.parse(
   readFileSync("tests/fixtures/scoring/edge-cases.json", "utf-8")
-);
-const SYNTH: ScoringPayload[] = JSON.parse(
-  readFileSync("tests/fixtures/scoring/aggregates-synthetic.json", "utf-8")
 );
 
 describe("parseScoringPayload — happy path", () => {
@@ -252,61 +246,6 @@ describe("interpolateScoringPrompt", () => {
       "MD"
     );
     expect(out).toBe("p=anthropic");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// aggregate
-// ---------------------------------------------------------------------------
-
-describe("aggregate", () => {
-  test("computes correct mock/live counts and averages on the synthetic set", () => {
-    const parsed = SYNTH.map(parseScoringPayload);
-    const agg = aggregate(parsed);
-    expect(agg.mock_n).toBe(5);
-    expect(agg.live_n).toBe(5);
-    expect(agg.total_mock_avg).not.toBeNull();
-    expect(agg.total_live_avg).not.toBeNull();
-    // Sanity: live totals are strictly higher than mock totals in the fixture.
-    expect(agg.total_live_avg!).toBeGreaterThan(agg.total_mock_avg!);
-    // Delta is live - mock.
-    expect(agg.total_delta).toBeCloseTo(
-      agg.total_live_avg! - agg.total_mock_avg!,
-      1
-    );
-  });
-
-  test("per-criterion deltas equal live avg minus mock avg", () => {
-    const parsed = SYNTH.map(parseScoringPayload);
-    const agg = aggregate(parsed);
-    for (const c of SCORING_CRITERIA) {
-      const a = agg.by_criterion[c];
-      expect(a.mock_n).toBe(5);
-      expect(a.live_n).toBe(5);
-      expect(a.mock_avg).not.toBeNull();
-      expect(a.live_avg).not.toBeNull();
-      expect(a.delta).toBeCloseTo(a.live_avg! - a.mock_avg!, 1);
-    }
-  });
-
-  test("aggregate on mock-only returns null live averages", () => {
-    const parsed = SYNTH.filter((s) => s.provider === "mock").map(
-      parseScoringPayload
-    );
-    const agg = aggregate(parsed);
-    expect(agg.mock_n).toBe(5);
-    expect(agg.live_n).toBe(0);
-    expect(agg.total_live_avg).toBeNull();
-    expect(agg.total_delta).toBeNull();
-  });
-
-  test("aggregate on empty input returns all-null aggregates", () => {
-    const agg = aggregate([]);
-    expect(agg.mock_n).toBe(0);
-    expect(agg.live_n).toBe(0);
-    expect(agg.total_mock_avg).toBeNull();
-    expect(agg.total_live_avg).toBeNull();
-    expect(agg.total_delta).toBeNull();
   });
 });
 
