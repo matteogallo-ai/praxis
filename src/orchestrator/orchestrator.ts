@@ -51,7 +51,7 @@ import {
   levenshtein,
 } from "../sourcing/dedupe.ts";
 import { buildReport, mergeReports } from "../sourcing/report.ts";
-import { optionsCitationReport, untrustedCitations } from "../sourcing/citations.ts";
+import { critiqueCitations, optionsCitationReport } from "../sourcing/citations.ts";
 import { buildRequesterProvidedSection } from "../sourcing/requester.ts";
 import { SourcingValidationError } from "../sourcing/errors.ts";
 import {
@@ -971,11 +971,9 @@ function withCritiqueSources(
   // Reported, never blocking: like a missing counter-evidence, a weak one
   // weakens the critique, not the briefing it criticises.
   if (trust !== undefined) {
-    critiqueReport.untrusted_citations = untrustedCitations(
-      "adversarial",
-      adversarial.critiques.map((c) => ({ id: c.id, evidence: c.counter_evidence })),
-      trust
-    );
+    const { untrusted, firstParty } = critiqueCitations(adversarial.critiques, trust);
+    critiqueReport.untrusted_citations = untrusted;
+    if (firstParty.length > 0) critiqueReport.first_party_sources = firstParty;
   }
   return mergeReports(baseReport.policy, [baseReport, critiqueReport]);
 }
