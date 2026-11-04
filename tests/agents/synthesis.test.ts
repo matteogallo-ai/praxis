@@ -472,6 +472,34 @@ describe("executeSynthesis — each prose check on its own", () => {
     expect(message.slice(message.indexOf(`${reason}: '`) + reason.length + 3)).toStartWith(hit);
   });
 
+  // A refusal is read from the error record alone: the address must be named, not only its prefix.
+  test("a www. address is quoted whole", async () => {
+    const err = await synthesize("Margins held (www.attacker.example/q?d=1, 2026).");
+    expect((err as Error).message).toContain("a www. address, which viewers turn into a link: 'www.attacker.example/q?d=1'");
+  });
+
+  // The address goes into the error record committed to git; a beacon address can carry briefing text.
+  test("a long www. address is quoted cut short", async () => {
+    const err = await synthesize(`See www.attacker.example/?d=${"x".repeat(5000)} now.`);
+    const message = (err as Error).message;
+    expect(message).toContain("a www. address, which viewers turn into a link: 'www.attacker.example/?d=xxx");
+    expect(message.length).toBeLessThan(600);
+  });
+
+  // Text that only looks like a link label is prose a viewer may autolink:
+  // a www. there is refused like anywhere else.
+  test.each([
+    ["a label split by a blank line", `Per [see\n\nwww.attacker.example/x](${SOURCE_A.url}) x.`],
+    ["an escaped bracket", `\\[see www.attacker.example/x](${SOURCE_A.url}) x`],
+    ["a bracket inside a code span", `\`[\` see www.attacker.example/x](${SOURCE_A.url})`],
+    ["a nested bracket", `[see www.attacker.example/x [y](${SOURCE_A.url})`],
+    ["a www. label on an upstream link", `Per [www.attacker.example](${SOURCE_A.url}).`],
+  ])("refuses a www. address in %s", async (_label, prose) => {
+    const err = await synthesize(prose);
+    expect(err).toBeInstanceOf(InvalidAgentOutputError);
+    expect((err as Error).message).toContain("a www. address");
+  });
+
   test.each([
     ["a space inside the parentheses", `Per [Precedent A]( <${SOURCE_A.url}>), margins held.`],
     ["an angle-bracket destination with a title", `Per [Precedent A](<${SOURCE_A.url}> "Reuters"), margins held.`],

@@ -146,7 +146,11 @@ Mitigation:
 4. A synthesis section's prose may hold no image, and no link, reference,
    autolink, `www.` address or URL other than an upstream source's, on fresh
    answers and on stored checkpoints (`src/agents/synthesis.ts`,
-   `checkProse`).
+   `checkProse`). A `www.` is refused even in a link's label: text that
+   only looks like a label (an escaped or code-span bracket, a blank line)
+   is prose a viewer autolinks. A refusal quotes the whole address, cut at
+   200 characters, so the error record names it without carrying a
+   beacon's payload.
 5. Both Markdown outputs, the `--full` default and `--render md-enhanced`,
    write model text through one module (`src/renderers/markdown-text.ts`):
    `<` becomes `&lt;`, `![` cannot open an image, neither `-->` nor `--!>`

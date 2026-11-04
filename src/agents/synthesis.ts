@@ -702,11 +702,15 @@ const PROSE_POINTERS: readonly [RegExp, string][] = [
   [/<[a-z][a-z0-9+.-]{1,31}:[^\s>]*>/i, "an autolink to a URL no upstream stage returned"],
   [/\b[a-z][a-z0-9+.-]*:\/\//i, "a URL no upstream stage returned"],
   [/(?:^|[\s("'=])\/\/[^\s/]/, "a protocol-relative URL"],
-  [/\bwww\./i, "a www. address, which viewers turn into a link"],
+  // The whole address is quoted, without a closing punctuation mark, so a refusal names it.
+  [/\bwww\.(?:[^\s()<>[\]"']*[^\s()<>[\]"'.,;:!?])?/i, "a www. address, which viewers turn into a link"],
 ];
 
 /** A link destination left empty once its upstream URL is taken out: `()`, `(<>)`, with an optional title. */
 const EMPTIED_DESTINATION = /^\]\(\s*(?:<>)?\s*(?:"[^"]*"|'[^']*')?\s*\)/;
+
+/** The longest refused text an error quotes. */
+const QUOTE_MAX = 200;
 
 /** Where an upstream URL may end: what follows it cannot extend it into another URL. */
 const URL_END = `(?=$|[\\s)>"'\\]]|[.,;:!?](?:\\s|$))`;
@@ -725,8 +729,10 @@ function checkProse(content: string, where: string, knownSources: KnownSourcesIn
   for (const url of knownSources.urls()) {
     rest = rest.replace(new RegExp(url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + URL_END, "g"), "");
   }
+  // The quote lands in error records committed to git, and a beacon address can carry briefing text.
   const refuse = (what: string, hit: string): never => {
-    throw new InvalidAgentOutputError(AGENT_ID, `${where}: content_markdown contains ${what}: '${hit}'`, raw);
+    const quoted = hit.length > QUOTE_MAX ? `${hit.slice(0, QUOTE_MAX)}…` : hit;
+    throw new InvalidAgentOutputError(AGENT_ID, `${where}: content_markdown contains ${what}: '${quoted}'`, raw);
   };
   for (const [pattern, what] of PROSE_POINTERS) {
     const hit = pattern.exec(rest);
