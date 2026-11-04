@@ -453,7 +453,16 @@ describe("renderMarkdownEnhanced — Critique section", () => {
     const md = renderMarkdownEnhanced(makeBriefWithCritique(), {
       include_critique: true,
     });
-    expect(md).toContain("_SOURCE_MISSING_ — searched for: additional sources");
+    expect(md).toContain("_SOURCE_MISSING_ — searched for: `additional sources`");
+  });
+
+  // The same query is a code span in the "Insufficiently sourced" section; a
+  // www. query must not become a link here either.
+  test("a missing finding's query is a code span in Appendix A", () => {
+    const brief = makeBrief();
+    brief.research.findings = [{ claim: "c", supporting_evidence: "e", source: { status: "SOURCE_MISSING", searched_for: "www.x.example churn" } }];
+    const md = renderMarkdownEnhanced(brief, { include_appendices: true });
+    expect(md).toContain("**Source:** _SOURCE_MISSING_ — searched for: `www.x.example churn`");
   });
 });
 

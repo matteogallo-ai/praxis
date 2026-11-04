@@ -22,6 +22,9 @@ export function oneLine(text: string): string {
  */
 export function codeSpan(text: string): string {
   const line = oneLine(text);
+  // CommonMark has no empty code span: two bare backticks would stay
+  // literal and could pair with a later fence on the line.
+  if (line.length === 0) return "(empty)";
   const runs = new Set((line.match(/`+/g) ?? []).map((r) => r.length));
   let n = 1;
   while (runs.has(n)) n++;

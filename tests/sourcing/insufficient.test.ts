@@ -27,11 +27,13 @@ describe("buildInsufficientlySourcedSection", () => {
 describe("the section's URLs and hosts are inert text", () => {
   const URL = "https://www.bracewell.com/resources/carb";
   const report = {
-    ...buildReport("strict", 4, [
+    ...buildReport("strict", 6, [
       { kind: "untrusted_domain", agent: "risk", item_index: 16, url: URL, reason: "host 'www.bracewell.com' matches no entry in allow-list" },
       { kind: "stale_source", agent: "research", item_index: 0, url: URL, accessed_at: "2026-11-04T00:00:00Z", age_days: 900, exceeds_max: true },
       { kind: "duplicate_source", agent: "stakeholder", item_index: 1, url: URL, previous_agent: "research", previous_item_index: 0, previous_url: "http://www.x.example/a" },
       { kind: "missing_source", finding_index: 0, searched_for: "see www.y.example" },
+      { kind: "missing_stakeholder_evidence", stakeholder_index: 0, stakeholder_name: "FCA", searched_for: "www.s.example" },
+      { kind: "missing_risk_evidence", risk_index: 0, risk_id: "RISK-001", evidence_field: "impact_evidence", searched_for: "www.r.example" },
     ]),
     untrusted_citations: [{ stage: "options" as const, id: "OPT-A", url: URL, reason: "host 'www.bracewell.com' matches no entry in allow-list" }],
   };
@@ -50,7 +52,16 @@ describe("codeSpan", () => {
     ["a run of two inside", "a``b", "`a``b`"],
     ["a backtick at an end", "`a", "`` `a ``"],
     ["a newline", "a\n\n# b", "`a # b`"],
+    // CommonMark has no empty code span: two bare backticks could pair with a later fence.
+    ["empty text", "", "(empty)"],
+    ["blank text", " \n ", "(empty)"],
   ])("%s", (_label, text, expected) => {
     expect(codeSpan(text)).toBe(expected);
+  });
+});
+
+describe("autolinkable", () => {
+  test("an escaped backtick opens no code span", () => {
+    expect(autolinkable("\\`x www.e.example `")).toEqual(["www.e.example"]);
   });
 });

@@ -94,6 +94,7 @@ import type {
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
 import { describeFirstParty, uncategorisedLines } from "../../renderers/source-dates.ts";
+import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 import { codeSpan } from "../../sourcing/code-written-section.ts";
 import { render as dispatchRender } from "../../renderers/index.ts";
 import { RENDER_THEMES, type RenderOptions, type RenderTheme } from "../../renderers/types.ts";
@@ -804,7 +805,7 @@ export function renderSourcingReportMarkdown(report: SourcingReport): string {
     parts.push(`- ${describeWarningMarkdown(w)}\n`);
   }
   for (const u of cited) {
-    parts.push(`- [${u.stage}] ${u.id} cites an untrusted domain: ${codeSpan(u.url)} — ${codeSpan(u.reason)}\n`);
+    parts.push(`- ${describeUntrustedCitation(u, codeSpan)}\n`);
   }
   return parts.join("");
 }
