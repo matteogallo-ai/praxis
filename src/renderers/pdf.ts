@@ -184,6 +184,10 @@ function addFooters(
   const range = doc.bufferedPageRange();
   for (let i = 0; i < range.count; i++) {
     doc.switchToPage(range.start + i);
+    // The footer sits in the bottom margin; with the margin in force pdfkit
+    // takes it for overflow and opens a page for it, one per page.
+    const bottom = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0;
     const y = doc.page.height - 40;
     const width =
       doc.page.width - doc.page.margins.left - doc.page.margins.right;
@@ -201,6 +205,7 @@ function addFooters(
         align: "right",
         lineBreak: false,
       });
+    doc.page.margins.bottom = bottom;
   }
 }
 
@@ -525,41 +530,44 @@ function table(
   headers: string[],
   rows: string[][]
 ): void {
-  const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const left = doc.page.margins.left;
+  const pageWidth = doc.page.width - left - doc.page.margins.right;
   const colWidth = pageWidth / headers.length;
-  const rowHeight = 20;
-  let y = doc.y;
-
-  // Header row.
-  doc.save();
-  doc.rect(doc.page.margins.left, y, pageWidth, rowHeight).fillOpacity(0.12).fillAndStroke(theme.accent, theme.accent).fillOpacity(1);
-  doc.restore();
-  doc.font(theme.bodyBold).fontSize(10).fillColor("#000000");
-  headers.forEach((h, i) => {
-    doc.text(h, doc.page.margins.left + i * colWidth + 4, y + 6, {
-      width: colWidth - 8,
-      lineBreak: false,
+  const PAD = 6;
+  // pdfkit wraps a cell to its width whatever `lineBreak` says, so a row is
+  // as tall as its tallest wrapped cell, or its lines run into the next row.
+  const heightOf = (cells: string[]): number =>
+    Math.max(...cells.map((c) => doc.heightOfString(c, { width: colWidth - 8 }))) + 2 * PAD;
+  const drawRow = (cells: string[], y: number, height: number): void => {
+    cells.forEach((cell, i) => {
+      doc.text(cell, left + i * colWidth + 4, y + PAD, { width: colWidth - 8 });
     });
-  });
-  y += rowHeight;
+    doc.y = y + height;
+  };
+  const header = (y: number): number => {
+    doc.font(theme.bodyBold).fontSize(10).fillColor("#000000");
+    const height = heightOf(headers);
+    doc.save();
+    doc.rect(left, y, pageWidth, height).fillOpacity(0.12).fillAndStroke(theme.accent, theme.accent).fillOpacity(1);
+    doc.restore();
+    doc.fillColor("#000000");
+    drawRow(headers, y, height);
+    doc.font(theme.bodyFont).fontSize(10).fillColor("#000000");
+    return y + height;
+  };
 
-  // Body rows.
-  doc.font(theme.bodyFont).fontSize(10).fillColor("#000000");
+  let y = header(doc.y);
   for (const row of rows) {
-    if (y + rowHeight > doc.page.height - doc.page.margins.bottom - 40) {
+    const height = heightOf(row);
+    if (y + height > doc.page.maxY()) {
       doc.addPage();
-      y = doc.page.margins.top;
+      y = header(doc.page.margins.top);
     }
-    doc.rect(doc.page.margins.left, y, pageWidth, rowHeight).stroke("#C0C0C0");
-    row.forEach((cell, i) => {
-      doc.text(cell, doc.page.margins.left + i * colWidth + 4, y + 6, {
-        width: colWidth - 8,
-        lineBreak: false,
-      });
-    });
-    y += rowHeight;
+    doc.rect(left, y, pageWidth, height).stroke("#C0C0C0");
+    drawRow(row, y, height);
+    y += height;
   }
-  doc.moveTo(doc.page.margins.left, y);
+  doc.x = left;
   doc.y = y + 4;
 }
 
