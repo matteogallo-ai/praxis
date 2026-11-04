@@ -10,7 +10,7 @@
  */
 
 import type { SourceReference, SourceStatus } from "../sourcing/types.ts";
-import type { Format } from "../registry/schema.ts";
+import type { Format, SourcingRules } from "../registry/schema.ts";
 
 /**
  * Inputs the Scoping agent receives at execution time.
@@ -51,6 +51,8 @@ export interface ResearchContext {
   formatId: string;
   sourcingPolicy: "strict" | "permissive";
   targetWords: number;
+  /** The format's rules, from which the prompt's sourcing guide is written. */
+  sourcingRules?: SourcingRules;
 }
 
 /**

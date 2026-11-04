@@ -30,6 +30,7 @@ import type { ResearchContext, ResearchResult, Finding } from "./types.ts";
 import {
   InvalidAgentOutputError,
 } from "./errors.ts";
+import { sourceGuidance } from "../sourcing/guidance.ts";
 
 const AGENT_ID = "research";
 const PROMPT_NAME = "research";
@@ -64,6 +65,7 @@ export async function executeResearch(
     format_id: ctx.formatId,
     sourcing_policy: ctx.sourcingPolicy,
     target_words: String(ctx.targetWords),
+    source_guidance: sourceGuidance(ctx.sourcingRules, ctx.sourcingPolicy),
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);
