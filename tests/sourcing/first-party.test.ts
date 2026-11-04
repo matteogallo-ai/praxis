@@ -7,6 +7,8 @@ import { describe, expect, test } from "bun:test";
 
 import { firstPartyOrganisation, type FirstPartyOrganisation } from "../../src/sourcing/first-party.ts";
 import { FIRST_PARTY_ORGANISATIONS } from "../../src/sourcing/first-party-organisations.ts";
+import { loadFormatFile } from "../../src/registry/loader.ts";
+import { evaluateDomainTrust } from "../../src/sourcing/domain-trust.ts";
 import type { SourceReference } from "../../src/sourcing/types.ts";
 
 const LIST: FirstPartyOrganisation[] = [
@@ -91,5 +93,21 @@ describe("the reviewed organisation list", () => {
   test("each entry is tied to a benchmark question that exists", async () => {
     const yaml = await Bun.file("benchmarks/questions.yaml").text();
     for (const o of FIRST_PARTY_ORGANISATIONS) expect(yaml).toContain(`id: "${o.question}"`);
+  });
+
+  // An entry whose hosts its question's format already trusts changes nothing
+  // for that question, so it would only widen trust in the other formats.
+  test("no entry's domain is already trusted by its question's format", async () => {
+    const yaml = await Bun.file("benchmarks/questions.yaml").text();
+    for (const o of FIRST_PARTY_ORGANISATIONS) {
+      const format = new RegExp(`id: "${o.question}"[\\s\\S]*?format: "([^"]+)"`).exec(yaml)?.[1];
+      const rule = loadFormatFile(`formats/${format}.yaml`).sourcing_rules?.domain_trust;
+      for (const d of o.domains) {
+        for (const host of [d, `www.${d}`]) {
+          const trusted = rule !== undefined && evaluateDomainTrust(`https://${host}/`, rule).classification === "trusted";
+          expect({ organisation: o.name, host, trusted }).toEqual({ organisation: o.name, host, trusted: false });
+        }
+      }
+    }
   });
 });

@@ -46,25 +46,4 @@ export const FIRST_PARTY_ORGANISATIONS: readonly FirstPartyOrganisation[] = [
     evidence: "https://www.lseg.com/",
     question: "04-uk-listing-board-briefing",
   },
-  {
-    name: "FINMA",
-    aliases: ["Swiss Financial Market Supervisory Authority"],
-    domains: ["finma.ch"],
-    evidence: "https://www.finma.ch/",
-    question: "11-family-office-co-investment",
-  },
-  {
-    name: "OECD",
-    aliases: ["Organisation for Economic Co-operation and Development"],
-    domains: ["oecd.org"],
-    evidence: "https://www.oecd.org/",
-    question: "11-family-office-co-investment",
-  },
-  {
-    name: "STEP",
-    aliases: ["Society of Trust and Estate Practitioners"],
-    domains: ["step.org"],
-    evidence: "https://www.step.org/",
-    question: "11-family-office-co-investment",
-  },
 ];
