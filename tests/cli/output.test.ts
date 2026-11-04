@@ -9,6 +9,10 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import { renderFullBrief, renderSourcingReport, setColorEnabled } from "../../src/cli/output.ts";
 import type { BriefResult } from "../../src/orchestrator/orchestrator.ts";
+import { buildInsufficientlySourcedSection } from "../../src/sourcing/insufficient.ts";
+import { buildReport } from "../../src/sourcing/report.ts";
+import { buildRequesterProvidedSection } from "../../src/sourcing/requester.ts";
+import { HOSTILE, liveTargets } from "../helpers/markdown-inert.ts";
 
 beforeEach(() => {
   setColorEnabled(false);
@@ -286,5 +290,24 @@ describe("renderFullBrief — model text cannot become markup (OWASP LLM05)", ()
     const md = renderFullBrief(makeBrief({ question: "Is X < Y?" }));
     expect(md).toContain('question: "Is X < Y?"');
     expect(md).toContain("# Is X &lt; Y?");
+  });
+});
+
+describe("renderFullBrief — no model text becomes a link or an image", () => {
+  test("in the question, the model's sections and the sections code writes from model text", () => {
+    const brief = makeBrief({ question: `Q ${HOSTILE}` });
+    for (const s of brief.synthesis.sections) {
+      s.title = `T ${HOSTILE}`;
+      s.content_markdown = `P ${HOSTILE}`;
+    }
+    const report = buildReport("strict", 2, [
+      { kind: "missing_source", finding_index: 0, searched_for: "q" },
+      { kind: "missing_stakeholder_evidence", stakeholder_index: 0, stakeholder_name: HOSTILE, searched_for: "q" },
+    ]);
+    const research = { findings: [{ claim: HOSTILE, supporting_evidence: "e", source: { status: "SOURCE_MISSING" as const, searched_for: "q" } }], open_questions: [], search_queries_used: [] };
+    brief.synthesis.sections.push(buildInsufficientlySourcedSection(report, { research }), buildRequesterProvidedSection([HOSTILE]));
+    const md = renderFullBrief(brief);
+    expect(md).toContain("attacker.example");
+    expect(liveTargets(md, "attacker.example")).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 id: position-paper-corporate
 name: Corporate Affairs Position Paper
-version: 1.0.0
+version: 1.1.0
 
 metadata:
   author: Matteo Gallo
@@ -64,7 +64,7 @@ sections:
     required_agents:
       - research
       - options
-    tone_directives: "structured argumentation; each paragraph opens with a topic sentence naming the reasoning strand; citations at the end of each strand.\n\nFRAMING RULES.\n1. Each paragraph opens with the reasoning strand itself — not 'we now turn to...'.\n2. The topic sentence carries subject and temporality.\n3. A reader skimming topic sentences reconstructs the rationale."
+    tone_directives: "structured argumentation; each paragraph opens with a topic sentence naming the reasoning strand; each strand ends with the citation marker [n] of each source it rests on; no site name, host or URL in the text.\n\nFRAMING RULES.\n1. Each paragraph opens with the reasoning strand itself — not 'we now turn to...'.\n2. The topic sentence carries subject and temporality.\n3. A reader skimming topic sentences reconstructs the rationale."
     validation_rules:
       - "min_reasoning_strands: 3"
       - "min_citations: 6"

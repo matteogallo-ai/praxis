@@ -264,7 +264,8 @@ function inspectSource(
     const organisation =
       trust.classification === "untrusted" && !item.estimate ? firstPartyOrganisation(source, item.subject) : null;
     if (organisation !== null) {
-      info.firstParty.push({ stage: agent, item: item.label, organisation, url: source.url, ...(item.claim === undefined ? {} : { claim: item.claim }) });
+      const claim = item.claim === undefined ? {} : { claim: item.claim };
+      info.firstParty.push({ stage: agent, item: item.label, organisation, url: source.url, ...claim });
     } else if (trust.classification === "untrusted") {
       warnings.push({
         kind: "untrusted_domain",

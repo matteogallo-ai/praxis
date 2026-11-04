@@ -201,11 +201,11 @@ The Head of EMEA Sales must secure a partner shortlist and complete due diligenc
 - [Reputational cost of failed international expansion](https://hbr.org/2025/10/reputational-cost-of-failed-international-expansion) · publication date unknown, accessed 2026-08-09T10:46:00Z
 - [Why international SaaS expansion misses payback targets](https://hbr.org/2026/02/international-expansion-payback-realities) · publication date unknown, accessed 2026-08-15T10:03:00Z
 
-### www.arbeitsagentur.de
+### www\.arbeitsagentur.de
 
 - [Bundesagentur für Arbeit — Employment of Foreign Workers](https://www.arbeitsagentur.de/en/employers/employment-of-foreign-workers) · publication date unknown, accessed 2026-08-17T12:44:00Z
 
-### www.bcg.com
+### www\.bcg.com
 
 - [Executive alignment and speed of strategic decisions](https://www.bcg.com/publications/2025/executive-alignment-strategic-decisions) · publication date unknown, accessed 2026-08-11T15:27:00Z
 - [Option-space framing effects on board decisions](https://www.bcg.com/publications/2025/option-space-framing-boards) · publication date unknown, accessed 2026-08-10T13:03:00Z
@@ -215,27 +215,27 @@ The Head of EMEA Sales must secure a partner shortlist and complete due diligenc
 - [Selection bias in the BCG partnership sample](https://www.bcg.com/critique-bcg-selection-bias) · publication date unknown, accessed 2026-08-14T14:00:00Z
 - [When SaaS boards retract capital mid-expansion — 2025 review](https://www.bcg.com/publications/2025/capital-retraction-triggers-saas-expansion) · publication date unknown, accessed 2026-08-15T10:08:00Z
 
-### www.bfdi.bund.de
+### www\.bfdi.bund.de
 
 - [BfDI Tätigkeitsbericht 2026 — Kapitel 4](https://www.bfdi.bund.de/DE/Fachthemen/Inhalte/TB-2026/Kapitel-4.html) · publication date unknown, accessed 2026-08-17T12:38:00Z
 
-### www.bitkom.org
+### www\.bitkom.org
 
 - [SaaS-Markt Deutschland 2026](https://www.bitkom.org/publikationen/saas-markt-deutschland-2026) · publication date unknown, accessed 2026-08-17T10:02:00Z
 
-### www.ft.com
+### www\.ft.com
 
 - [EU data audit costs for foreign SaaS providers reach €4m median](https://www.ft.com/content/eu-data-audit-costs-2025) · publication date unknown, accessed 2026-08-12T09:46:00Z
 - [Greenfield SaaS entry failure rates in Europe — 2025](https://www.ft.com/content/saas-greenfield-failure-rates-europe-2025) · publication date unknown, accessed 2026-08-09T10:41:00Z
 
-### www.mckinsey.com
+### www\.mckinsey.com
 
 - [2026 EMEA Priorities Memo — Head of Strategy](https://www.mckinsey.com/de/2026-emea-priorities-strategy-memo) · publication date unknown, accessed 2026-08-17T12:15:00Z
 - [Customer-reference delays after a localisation slip — 2025 benchmark](https://www.mckinsey.com/de/insights/customer-reference-delay-localisation-slip-2025) · publication date unknown, accessed 2026-08-08T16:16:00Z
 - [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/de/our-insights/germany-saas-entry-benchmark-2025) · publication date unknown, accessed 2026-08-17T10:11:00Z
 - [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025) · publication date unknown, accessed 2026-08-14T14:26:00Z
 
-### www.reuters.com
+### www\.reuters.com
 
 - [CFO payback thresholds are re-negotiable when trailing data supports](https://www.reuters.com/critique-cfo-payback-flexibility) · publication date unknown, accessed 2026-08-13T11:00:00Z
 - [German BfDI publishes 2026 audit priorities for foreign SaaS](https://www.reuters.com/technology/bfdi-audit-priorities-foreign-saas-2026) · publication date unknown, accessed 2026-08-12T09:41:00Z

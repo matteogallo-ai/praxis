@@ -9,6 +9,21 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- No model text in the Markdown outputs (the brief, `--render
+  md-enhanced`, the CLI's Markdown sourcing report) becomes a link, an
+  image or an autolink: `www.` addresses, URLs, e-mail addresses, links,
+  images and reference definitions are escaped outside code spans, so
+  nothing the model wrote is fetched or clickable when the briefing is
+  opened. A citation marker shows as `[1]`, written `\[1\]`; a host heading
+  of the Sources section is no longer an autolink. A backtick that may not
+  pair as a viewer pairs it is text, so a span across lines or in a table
+  row cannot hide a link. The model's own escapes (`\*`), task lists and
+  footnotes now show as text. PDF and DOCX unchanged.
+- Position paper 1.1.0: the rationale's strands end with the citation
+  marker `[n]` of each source, with no site name, host or URL in the text.
+  "Citations at the end of each strand" named no form and invited a host
+  name, which the synthesis refuses.
+
 - The human review of question 10's step 1 first-party sources is
   published in `benchmarks/outputs/live/README.md`: 8 reviewed, 6 accepted,
   2 refused (both a risk's likelihood). The rule now excludes a risk's
@@ -71,9 +86,9 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - Every listing of a first-party source (Markdown, PDF, DOCX, CLI report)
   shows the claim it was accepted for, cut at 160 characters on a word
   boundary: a finding's claim, or a stakeholder's position and interest
-  (only those two stages can cite first-party sources). Without it the human review of question 10's step 1
-  briefing could not check whether each sentence states the organisation's
-  own fact. `FirstPartySource.claim` is a new optional field; a report
+  (only those two stages can cite first-party sources). Without it the
+  human review of question 10's step 1 briefing could not check whether
+  each sentence states the organisation's own fact. `FirstPartySource.claim` is a new optional field; a report
   stored without it reads "claim not recorded". In the CLI's Markdown
   sourcing report the claim and label are made inert, as in the brief.
 

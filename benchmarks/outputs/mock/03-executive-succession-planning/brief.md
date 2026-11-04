@@ -48,11 +48,11 @@ Enter Germany in Q1 2027 via a bounded greenfield office capped at 15 staff for 
 
 ## Supporting Evidence
 
-The German mid-market SaaS segment grew 12% CAGR 2022-2025 and is now the largest addressable slice of EMEA [1].
+The German mid-market SaaS segment grew 12% CAGR 2022-2025 and is now the largest addressable slice of EMEA \[1\].
 
-BfDI's 2026 audit priority list singles out foreign SaaS entrants, which makes local counsel and a pre-filed DPIA a table stake rather than an optional cost [2].
+BfDI's 2026 audit priority list singles out foreign SaaS entrants, which makes local counsel and a pre-filed DPIA a table stake rather than an optional cost \[2\].
 
-SAP has already restructured its DACH mid-market coverage to defend against new entrants, which shortens the window in which a bounded beachhead can settle in without triggering a bundled counter-offer [3].
+SAP has already restructured its DACH mid-market coverage to defend against new entrants, which shortens the window in which a bounded beachhead can settle in without triggering a bundled counter-offer \[3\].
 
 **Sources:**
 
@@ -196,20 +196,20 @@ SAP's likely bundled counter-offer is the largest strategic risk; the mitigation
 
 - [Sales leader attrition during international expansion — a benchmark](https://hbr.org/2025/10/sales-leader-attrition-during-international-expansion) · publication date unknown, accessed 2026-08-08T16:07:00Z
 
-### www.bcg.com
+### www\.bcg.com
 
 - [Partnership vs Greenfield — European SaaS Market Entry](https://www.bcg.com/publications/2025/saas-market-entry-europe-partnership-vs-greenfield) · publication date unknown, accessed 2026-08-15T10:20:00Z
 
-### www.bfdi.bund.de
+### www\.bfdi.bund.de
 
 - [BfDI Tätigkeitsbericht 2026 — Kapitel 4](https://www.bfdi.bund.de/DE/Fachthemen/Inhalte/TB-2026/Kapitel-4.html) · publication date unknown, accessed 2026-08-17T11:12:00Z
 
-### www.bitkom.org
+### www\.bitkom.org
 
 - [Bitkom — Position zu ausländischen SaaS-Anbietern 2026](https://www.bitkom.org/Presse/Anmeldung/2026/PMs/2026-06-marktzugang) · publication date unknown, accessed 2026-08-17T11:22:00Z
 - [SaaS-Markt Deutschland 2026 — Kennzahlen & Prognose](https://www.bitkom.org/publikationen/saas-markt-deutschland-2026) · publication date unknown, accessed 2026-08-17T09:14:00Z
 
-### www.bloomberg.com
+### www\.bloomberg.com
 
 - [EU data residency costs bite SaaS providers](https://www.bloomberg.com/news/saas-eu-data-residency-costs-2025) · publication date unknown, accessed 2026-08-09T11:08:00Z
 - [EU SaaS payback benchmarks — 2025 tracker](https://www.bloomberg.com/news/eu-saas-payback-benchmarks-2025) · publication date unknown, accessed 2026-08-13T15:36:00Z
@@ -218,16 +218,16 @@ SAP's likely bundled counter-offer is the largest strategic risk; the mitigation
 - [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025) · publication date unknown, accessed 2026-08-14T13:02:00Z
 - [Support quality drives German mid-market SaaS renewals](https://www.bloomberg.com/news/saas-support-quality-german-mid-market) · publication date unknown, accessed 2026-08-11T14:28:00Z
 
-### www.bundeskartellamt.de
+### www\.bundeskartellamt.de
 
 - [Bundeskartellamt Annual Report 2025](https://www.bundeskartellamt.de/EN/AboutUs/AnnualReports/annual_report_2025.html) · publication date unknown, accessed 2026-08-17T11:46:00Z
 
-### www.economist.com
+### www\.economist.com
 
 - [German mid-market SaaS: the CAC premium foreign entrants pay](https://www.economist.com/business/2026/07/mid-market-saas-german-acquisition-costs) · publication date unknown, accessed 2026-08-13T15:31:00Z
 - [Leadership transitions during SaaS international expansion](https://www.economist.com/business/2025/11/leadership-transitions-saas-expansion) · publication date unknown, accessed 2026-08-08T16:12:00Z
 
-### www.ft.com
+### www\.ft.com
 
 - [BfDI audit costs for foreign SaaS](https://www.ft.com/critique-bfdi-audit-cost) · publication date unknown, accessed 2026-08-13T15:00:00Z
 - [EU regulators fined SaaS providers a combined €340m in 2025](https://www.ft.com/content/eu-data-fines-saas-2025) · publication date unknown, accessed 2026-08-15T09:18:00Z
@@ -235,21 +235,21 @@ SAP's likely bundled counter-offer is the largest strategic risk; the mitigation
 - [Reputational recovery timelines for foreign SaaS providers in Germany](https://www.ft.com/content/foreign-saas-reputation-recovery-germany) · publication date unknown, accessed 2026-08-12T10:10:00Z
 - [SAP's counter-offers reshape German SaaS competitive landscape](https://www.ft.com/content/sap-mid-market-german-competition-2025) · publication date unknown, accessed 2026-08-14T13:08:00Z
 
-### www.handelsblatt.com
+### www\.handelsblatt.com
 
 - [Fachkräftemangel in der IT-Branche 2026](https://www.handelsblatt.com/karriere/it-fachkraeftemangel-2026) · publication date unknown, accessed 2026-08-11T14:22:00Z
 - [SaaS launch delays — a cost analysis](https://www.handelsblatt.com/technik/it-internet/saas-launch-delays-cost-analysis) · publication date unknown, accessed 2026-08-07T12:46:00Z
 
-### www.idc.com
+### www\.idc.com
 
 - [IDC Germany Mid-Market SaaS Tracker — Q1 2026](https://www.idc.com/getdoc.jsp?containerId=DE-MidMarket-SaaS-Q1-2026) · publication date unknown, accessed 2026-08-17T09:44:00Z
 
-### www.mckinsey.com
+### www\.mckinsey.com
 
 - [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/de/our-insights/germany-saas-entry-benchmark-2025) · publication date unknown, accessed 2026-08-17T09:22:00Z
 - [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025) · publication date unknown, accessed 2026-08-15T10:11:00Z
 
-### www.reuters.com
+### www\.reuters.com
 
 - [Bundeskartellamt SaaS review thresholds — 2025 outlook](https://www.reuters.com/business/germany/bundeskartellamt-saas-thresholds-2025) · publication date unknown, accessed 2026-08-10T09:44:00Z
 - [Data-handling incidents at foreign SaaS providers in Germany, 2025](https://www.reuters.com/technology/saas-german-data-incidents-2025) · publication date unknown, accessed 2026-08-12T10:05:00Z

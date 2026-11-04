@@ -197,47 +197,47 @@ Convene the council within four weeks to authorise the co-investment at the capp
 
 ## Sources
 
-### www.admin.ch
+### www\.admin.ch
 
 - [admin.ch Circular 2024/12 — Cantonal Tax Treatment of Foreign-Domiciled Family Investors](https://www.admin.ch/circulars/2024-12-fintech-family-investors) · publication date unknown, accessed 2026-03-08T11:20:00Z
 
-### www.bis.org
+### www\.bis.org
 
 - [BIS Note — Illiquid Concentration Risk in Private Capital Vehicles](https://www.bis.org/publ/othp57-illiquid-concentration.htm) · publication date unknown, accessed 2026-01-27T14:12:00Z
 
-### www.campdenfb.com
+### www\.campdenfb.com
 
 - [Campden European Single-Family-Office Benchmark 2025](https://www.campdenfb.com/research/european-sfo-benchmark-2025) · publication date unknown, accessed 2026-05-22T09:03:00Z
 - [Campden Next-Gen Preferences Report 2024](https://www.campdenfb.com/research/next-gen-preferences-2024) · publication date unknown, accessed 2026-04-18T11:41:00Z
 
-### www.finma.ch
+### www\.finma.ch
 
 - [FINMA 2025 Annual Report — Fintech Authorisation Perimeter](https://www.finma.ch/en/publications/annual-report-2025-fintech-authorisation) · publication date unknown, accessed 2026-07-04T10:14:00Z
 - [FINMA Guidance — Beneficial Ownership Disclosure 2025](https://www.finma.ch/en/publications/beneficial-ownership-disclosure-2025) · publication date unknown, accessed 2026-07-04T10:22:00Z
 
-### www.ft.com
+### www\.ft.com
 
 - [Governance disputes on inheritance of private capital — 2023 review](https://www.ft.com/content/family-inheritance-governance-disputes-2023) · publication date unknown, accessed 2026-02-11T09:35:00Z
 
-### www.oecd.org
+### www\.oecd.org
 
 - [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024) · publication date unknown, accessed 2026-06-11T08:47:00Z
 
-### www.privatebankerinternational.com
+### www\.privatebankerinternational.com
 
 - [Private banker collateral reviews after material illiquid allocations](https://www.privatebankerinternational.com/analysis/collateral-review-post-illiquid-2024) · publication date unknown, accessed 2026-03-14T15:12:00Z
 
-### www.reuters.com
+### www\.reuters.com
 
 - [Family-office reputational recovery cycles remain slow](https://www.reuters.com/business/finance/family-office-reputation-slow-recovery-2023) · publication date unknown, accessed 2026-02-21T11:08:00Z
 
-### www.step.org
+### www\.step.org
 
 - [STEP Practice Note — Advisor Conflicts of Interest 2024](https://www.step.org/practice-notes/advisor-conflicts-of-interest-2024) · publication date unknown, accessed 2026-04-30T13:22:00Z
 - [STEP Practice Note — Phased Authorisation of Private Capital Decisions 2024](https://www.step.org/practice-notes/phased-authorisation-2024) · publication date unknown, accessed 2026-04-30T13:41:00Z
 - [STEP Practice Note — Trustee Role in Private Capital Decisions 2024](https://www.step.org/practice-notes/trustee-role-private-capital-2024) · publication date unknown, accessed 2026-04-30T13:31:00Z
 
-### www.wealthbriefing.com
+### www\.wealthbriefing.com
 
 - [Wealth Briefing — Family Office Governance in the Press 2024](https://www.wealthbriefing.com/analysis/family-office-governance-press-coverage-2024) · publication date unknown, accessed 2026-03-02T08:41:00Z
 

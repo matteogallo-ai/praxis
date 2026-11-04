@@ -156,6 +156,16 @@ Mitigation:
    `<` becomes `&lt;`, `![` cannot open an image, neither `-->` nor `--!>`
    can close the validation comment, a backslash cannot escape a link's
    closing bracket, and link targets are encoded so a URL stays one target.
+   Every model field (the question, section titles and prose, claims,
+   evidence, stakeholder names, critiques, first-party labels and claims,
+   and the model text quoted in the sections code writes) goes through
+   `plainText`: outside code spans, `\`, `[`, `]` and `@` are escaped and
+   `www.` and `://` broken, so that no link, image, reference definition or
+   autolink (`www.`, scheme, e-mail) forms and nothing is fetched when the
+   briefing is opened. The same holds for the CLI's Markdown sourcing
+   report. A code span is kept only where a viewer must see one (a pair on
+   one line, in a block with no earlier unpaired backtick and no table
+   row); from the first doubt to the next blank line, backticks are text.
 6. DOCX text is XML-escaped; PDF text is drawn as text, with no link
    annotation.
 
@@ -180,6 +190,17 @@ Tests:
   close its comment with --!> either", "a source title ending in a backslash
   cannot escape its closing bracket", "a URL with parentheses or spaces stays
   one link target".
+- `tests/renderers/markdown-text.test.ts`, "plainText — no link, image or
+  autolink outside code spans": seven forms, code spans kept, and the
+  backticks a viewer may not pair (a span across lines, in a list item or
+  a block quote, a table row, a lone CR) left as text.
+- `tests/renderers/markdown-enhanced.test.ts`, "no model text becomes a
+  link or an image": every way GFM makes a link or an image, in every model
+  field of every part; a source's host heading is not an autolink.
+- `tests/cli/output.test.ts`, "renderFullBrief — no model text becomes a
+  link or an image".
+- `tests/cli/brief.test.ts`, "renderSourcingReportMarkdown — no model text
+  becomes a link or an image".
 - `tests/cli/output.test.ts`, "renderFullBrief — model text cannot become
   markup": "raw HTML and images in a section are written inert", "a
   validation issue cannot close its comment, and a URL stays one link
@@ -189,9 +210,17 @@ Tests:
 - `tests/renderers/docx.test.ts`: "XML escaping — angle brackets and
   ampersands survive".
 
-Remaining: a bare URL inside another stage's text (a claim, a critique) is
-kept as text, and a viewer that auto-links URLs makes it clickable. It is
-not fetched on open. Front matter values are YAML-quoted, not made inert.
+Remaining: the tests check with a pattern helper (`liveTargets`,
+`tests/helpers/markdown-inert.ts`), not a Markdown parser. The inputs of
+the tests and those of the review of this change were also rendered with
+micromark (GFM), marked and markdown-it (linkify) outside the repository,
+with no link or image to the hostile host; those parsers are not in CI.
+The cost is in the model's own Markdown: an escape it meant (`\*`, `\_`)
+shows its backslash and the emphasis it prevented comes back, a task list
+(`- [ ]`) or a footnote (`[^1]`) shows as text, and a backtick the scan
+doubts shows a backslash in what the viewer draws as code. Front matter
+values are YAML-quoted, not made inert. PDF and DOCX draw the text as
+written.
 
 ## LLM06 — Excessive agency
 

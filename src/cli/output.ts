@@ -537,6 +537,7 @@ import type { BriefResult } from "../orchestrator/orchestrator.ts";
 import {
   escapeMarkdownHeading,
   inert,
+  plainText,
   renderSynthesisSections,
   sourcingSummary,
   yamlString,
@@ -572,7 +573,7 @@ export function renderFullBrief(result: BriefResult): string {
   );
   parts.push("---\n\n");
 
-  parts.push(inert(`# ${escapeMarkdownHeading(result.question)}\n\n`));
+  parts.push(inert(`# ${plainText(escapeMarkdownHeading(result.question))}\n\n`));
   parts.push(renderSynthesisSections(result.synthesis.sections));
   return parts.join("");
 }
