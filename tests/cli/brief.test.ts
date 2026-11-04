@@ -1229,3 +1229,18 @@ describe("renderSourcingReportMarkdown — freshness", () => {
     expect(renderSourcingReportMarkdown(report)).not.toContain("Freshness unknown");
   });
 });
+
+describe("renderSourcingReportMarkdown — citations", () => {
+  test("lists untrusted citations, and does not claim every item passed", () => {
+    const md = renderSourcingReportMarkdown({
+      policy: "permissive",
+      total_items: 1,
+      counts: { ok: 1, stale: 0, untrusted: 0, duplicated: 0, missing: 0 },
+      warnings: [],
+      missing_sources_count: 0,
+      untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }],
+    });
+    expect(md).toContain("- [options] OPT-B cites an untrusted domain: https://x.example/a — not in any tier");
+    expect(md).not.toContain("every inspected item passed");
+  });
+});

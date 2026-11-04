@@ -234,6 +234,7 @@ import type {
 import type { SourcingReport } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
 import { freshnessUnknownLine } from "../renderers/source-dates.ts";
+import { describeUntrustedCitation } from "../sourcing/citations.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
   const parts: string[] = [];
@@ -495,7 +496,8 @@ export function renderSourcingReport(report: SourcingReport): string {
   const unknown = freshnessUnknownLine(report);
   if (unknown !== undefined) parts.push(`${c.dim(unknown)}\n\n`);
 
-  if (report.warnings.length === 0) {
+  const cited = report.untrusted_citations ?? [];
+  if (report.warnings.length === 0 && cited.length === 0) {
     parts.push(`${c.green("✓")} No warnings — every inspected item passed.\n`);
     return parts.join("");
   }
@@ -503,6 +505,9 @@ export function renderSourcingReport(report: SourcingReport): string {
   parts.push(`${c.bold("Warnings")}\n`);
   for (const w of report.warnings) {
     parts.push(`  ${c.dim("-")} ${describeWarning(w)}\n`);
+  }
+  for (const u of cited) {
+    parts.push(`  ${c.dim("-")} ${describeUntrustedCitation(u)}\n`);
   }
   return parts.join("");
 }

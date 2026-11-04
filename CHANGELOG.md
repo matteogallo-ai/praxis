@@ -31,6 +31,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   one is counted in the report's `freshness_unknown`, never as fresh.
   Briefings list each source's publication date or "publication date
   unknown".
+- The citations of the options and adversarial stages escaped the format's
+  domain-trust rule. Options' citations now follow it like stages 2–4
+  (strict fails or degrades, permissive reports); critiques' are reported
+  without blocking. Both are listed in `SourcingReport.untrusted_citations`.
 
 ### Added
 

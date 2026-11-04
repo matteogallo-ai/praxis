@@ -5,7 +5,7 @@ provider: "mock"
 generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
-sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2 freshness_unknown=28"
+sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2 freshness_unknown=28 untrusted_citations=0"
 critique_summary: "critiques=5 critical=1 material=3 minor=1 robustness=medium revised_needed=true"
 total_word_count: 500
 target_word_count: 1600

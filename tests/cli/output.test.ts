@@ -133,6 +133,25 @@ describe("renderFullBrief — YAML front-matter", () => {
     const md = renderFullBrief(makeBrief({ sourcing_report: { ...base.sourcing_report, freshness_unknown: 7 } }));
     expect(md).toContain('sourcing_summary: "total=5 ok=5 stale=0 untrusted=0 duplicated=0 missing=0 freshness_unknown=7"');
   });
+
+  test("sourcing_summary counts the options and critique citations from untrusted domains", () => {
+    const base = makeBrief();
+    const cited = { stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "r" };
+    const md = renderFullBrief(makeBrief({ sourcing_report: { ...base.sourcing_report, untrusted_citations: [cited] } }));
+    expect(md).toMatch(/sourcing_summary: "[^"]*missing=0 untrusted_citations=1"/);
+  });
+});
+
+describe("renderSourcingReport — citations", () => {
+  test("lists each untrusted citation with its stage and id, and does not claim every item passed", () => {
+    const base = makeBrief().sourcing_report;
+    const out = renderSourcingReport({
+      ...base,
+      untrusted_citations: [{ stage: "adversarial", id: "CRIT-2", url: "https://x.example/a", reason: "not in any tier" }],
+    });
+    expect(out).toContain("[adversarial] CRIT-2 cites an untrusted domain: https://x.example/a — not in any tier");
+    expect(out).not.toContain("every inspected item passed");
+  });
 });
 
 describe("renderSourcingReport — freshness", () => {

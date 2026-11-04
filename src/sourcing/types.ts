@@ -208,6 +208,22 @@ export interface SourcingReport {
    * they are fresh.
    */
   freshness_unknown?: number;
+
+  /**
+   * Citations of the options and adversarial stages whose domain fails the
+   * format's `domain_trust` rule. Present when that rule exists and one of
+   * those stages ran; outside `counts` and `warnings`.
+   */
+  untrusted_citations?: UntrustedCitation[];
+}
+
+/** An options or critique citation from a domain the format does not trust. */
+export interface UntrustedCitation {
+  stage: "options" | "adversarial";
+  /** The option (`OPT-A`) or critique id that cites it. */
+  id: string;
+  url: string;
+  reason: string;
 }
 
 // ---------------------------------------------------------------------------

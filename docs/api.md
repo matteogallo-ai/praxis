@@ -56,6 +56,9 @@ major-version bump.
   / duplicate warning.
 - **v0.8 addition**: `SourcingReport.edited_after_critique?:
   boolean` — flips to `true` when the rerun loop fires.
+- **`UntrustedCitation`** and `SourcingReport.untrusted_citations?` —
+  the options and critique citations whose domain fails the format's
+  `domain_trust` rule (`docs/sourcing.md`).
 - **`validateSourcing` / `validateStakeholderSourcing` /
   `validateRiskSourcing`** — the primitives the Orchestrator
   wires up. Available publicly for callers who assemble their

@@ -34,6 +34,7 @@ import type { Renderer, RenderOptions, RenderTheme } from "./types.ts";
 import { hasCritique } from "./types.ts";
 import { RenderError } from "./errors.ts";
 import { freshnessUnknownLine, sourceDates } from "./source-dates.ts";
+import { describeUntrustedCitation } from "../sourcing/citations.ts";
 
 // ---------------------------------------------------------------------------
 // Theme table
@@ -477,6 +478,14 @@ function renderSourcingReport(
     doc.font(theme.bodyFont);
     for (const w of sr.warnings) {
       doc.text(`•  ${describeWarning(w)}`, { indent: 12 });
+    }
+  }
+  if (sr.untrusted_citations !== undefined && sr.untrusted_citations.length > 0) {
+    doc.moveDown(0.5);
+    doc.font(theme.bodyBold).text("Untrusted citations:");
+    doc.font(theme.bodyFont);
+    for (const c of sr.untrusted_citations) {
+      doc.text(`•  ${describeUntrustedCitation(c)}`, { indent: 12 });
     }
   }
 }

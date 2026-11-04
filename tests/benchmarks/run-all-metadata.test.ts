@@ -48,4 +48,22 @@ describe("buildMetadata", () => {
     ) as { sourcing: { freshness_unknown: number } };
     expect(meta.sourcing.freshness_unknown).toBe(2);
   });
+
+  test("records the options and critique citations from untrusted domains", () => {
+    const cited = [{ stage: "options", id: "OPT-B", url: "https://x.example/a", reason: "r" }];
+    const meta = buildMetadata(
+      { id: "05-x", question: "Q?", format: "f", tags: [] } as never,
+      "live",
+      { ...RESULT, sourcing_report: { total_items: 3, counts: {}, untrusted_citations: cited } } as never,
+      1
+    ) as { sourcing: { untrusted_citations?: unknown } };
+    expect(meta.sourcing.untrusted_citations).toEqual(cited);
+    const without = buildMetadata(
+      { id: "05-x", question: "Q?", format: "f", tags: [] } as never,
+      "live",
+      { ...RESULT, sourcing_report: { total_items: 3, counts: {} } } as never,
+      1
+    ) as { sourcing: object };
+    expect(without.sourcing).not.toHaveProperty("untrusted_citations");
+  });
 });

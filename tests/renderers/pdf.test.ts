@@ -283,6 +283,13 @@ describe("pdfRenderer — optional sections", () => {
     const buf = await pdfRenderer.render(brief, { include_sourcing_report: true, compress_pdf_streams: false });
     expect(pdfContainsText(buf, "Freshness unknown (no publication date): 4")).toBe(true);
   });
+
+  test("the Sourcing Report lists the options and critique citations from untrusted domains", async () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };
+    const buf = await pdfRenderer.render(brief, { include_sourcing_report: true, compress_pdf_streams: false });
+    expect(pdfContainsText(buf, "OPT-B cites an untrusted domain")).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------

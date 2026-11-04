@@ -23,6 +23,7 @@ import type {
 import { hasCritique, type RenderOptions } from "../types.ts";
 import { XML_PROLOG, elem, escapeXmlText } from "./xml-builder.ts";
 import { freshnessUnknownLine, sourceDates } from "../source-dates.ts";
+import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 
 const W_NS = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"`;
 
@@ -161,6 +162,9 @@ export function buildDocumentXml(
     ));
     const unknown = freshnessUnknownLine(sr);
     if (unknown !== undefined) body.push(paragraph(`${unknown}.`));
+    for (const c of sr.untrusted_citations ?? []) {
+      body.push(bulletParagraph(describeUntrustedCitation(c)));
+    }
   }
 
   return (
