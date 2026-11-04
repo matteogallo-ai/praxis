@@ -39,13 +39,17 @@ describe("live attempt count", () => {
 
     test("README: each one's cost and sourcing flag", () => {
       expect(flat("README.md")).toContain(`Praxis has completed **${count} briefings against a real model**`);
-      for (const c of completions) expect(flat("README.md")).toContain(`${usd(c.cost_usd)}, ${sourcingFlag(c)}`);
+      const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\$]/g, "\\$&");
+      for (const c of completions) {
+        expect(flat("README.md")).toMatch(new RegExp(`question ${c.id.slice(0, 2)}[^:;]*: ${esc(`${usd(c.cost_usd)}, ${sourcingFlag(c)}`)}`));
+      }
     });
 
     test("system card: each one's flag, and the cost and latency row", () => {
       const card = flat("docs/SYSTEM_CARD.md");
       expect(card).toContain(`**Status: ${count} briefings have completed against a real model**`);
-      for (const c of completions) expect(card).toContain(sourcingFlag(c));
+      const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\$]/g, "\\$&");
+      for (const c of completions) expect(card).toMatch(new RegExp(`question ${c.id.slice(0, 2)}[^;]*?, ${esc(sourcingFlag(c))}`));
       const each = completions.map((c) => `${usd(c.cost_usd)}, ${minutes(c.stages_ms)} of stages`).join("; ");
       expect(card).toContain(`| Live cost and latency per briefing | ${completions.length} | ${each};`);
     });

@@ -76,8 +76,7 @@ What the rerun shows that step 0 could not:
 ## Step 1: questions 02, 08, 10, 11 and 12
 
 Step 1 of `docs/live-proof-protocol.md`, as amended (question 10 added
-before the run), ran on 4 Nov 2026, all five at `8df678f`, each capped at
-$14. One attempt per question. Counts are items, read from each run's
+before the run), ran on 4 Nov 2026, all five at `8df678f`, each capped at $14. One attempt per question. Counts are items, read from each run's
 `metadata.json` (`sourcing`); question 02 stopped before any sourcing
 report. The estimate is `estimate:cost` at that commit, frozen in
 `benchmarks/estimates/step-1.json`. These are five questions, each run
@@ -104,9 +103,10 @@ once, so a difference between columns is not an effect of anything.
 | Cost / central estimate | 0.38 | 0.60 | 0.64 | 0.56 | 0.80 |
 | Stages' wall time | 5.3 min to the failure | 7.9 min | 8.4 min | 7.7 min | 11.9 min |
 
-Step 1 spent $17.96 in all, against a central estimate of $30.24 and a
+Step 1 spent $17.96 in all, against a central estimate of $30.23 and a
 cap of $70. Every completed briefing cost between 0.56 and 0.80 of its
-central estimate: the estimate's central case runs high. Question 12 took 11.9 min of stages, above the
+central estimate: in step 1 every completed run ran below its central
+case. Question 12 took 11.9 min of stages, above the
 10-minute latency target (`docs/SLO.md`; six briefings set no p95).
 
 What step 1 shows:
@@ -123,16 +123,19 @@ What step 1 shows:
 
 ### Question 02: why it failed
 
-The synthesis section `supporting-evidence` was refused twice, the answer
-and its one retry (`src/agents/retry.ts`): 7 synthesis calls where 08 and
-10 made 6. The error was `content_markdown contains a www. address, which
-viewers turn into a link: 'www.'`. The check is right to refuse a `www.`
+The synthesis section `supporting-evidence` was refused, and so was its one
+retry (`src/agents/retry.ts`, per section): 7 synthesis calls for 6 sections,
+in a format with no strict editorial pass. The record keeps only the last
+refusal: `content_markdown contains a www. address, which viewers turn into
+a link: 'www.'`; the first one's reason is not recorded. (Question 11's 8
+calls come from its format's strict editorial regenerations, not from
+retries.) The check is right to refuse a `www.`
 address in prose (`docs/THREAT_MODEL.md`, item 4), and the synthesis prompt
 says so. The format asks this section for its "source in parentheses at
 end of paragraph", which invites a host name such as `(www.example.com)`.
 The record cannot confirm it: the error quoted only `www.`, and a refused
-answer is not kept. The quote now names the whole address (#42), so a
-second failure would say which. Nothing was rerun.
+answer is not kept. Pull request #42, not merged when this record was
+written, makes the error quote the whole address. Nothing was rerun.
 
 ## Errata
 

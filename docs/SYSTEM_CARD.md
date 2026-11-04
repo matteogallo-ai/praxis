@@ -14,9 +14,9 @@ result. Output: Markdown, PDF, DOCX.
 
 **Status: six briefings have completed against a real model** (questions
 05, 08, 10, 11 and 12, 4 Nov 2026): question 05's step 0, flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains;
-its rerun after the sourcing fixes, flagged insufficiently sourced: 8 of 47 items without a source, 17 from untrusted domains; question 08, flagged insufficiently sourced: 15 of 47 items without a source, 16 from untrusted domains;
+question 05's rerun after the sourcing fixes, flagged insufficiently sourced: 8 of 47 items without a source, 17 from untrusted domains; question 08, flagged insufficiently sourced: 15 of 47 items without a source, 16 from untrusted domains;
 question 10, flagged insufficiently sourced: 6 of 46 items without a source, 19 from untrusted domains; question 11, flagged insufficiently sourced: 13 of 41 items without a source, 23 from untrusted domains; question 12,
-flagged insufficiently sourced: 6 of 49 items without a source, 32 from untrusted domains. Their quality is not yet reviewed. 13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026, 4 Nov 2026), 6 completed (4 Nov 2026). Every other result on this page comes from the mock provider,
+flagged insufficiently sourced: 6 of 49 items without a source, 32 from untrusted domains. Their quality is not yet reviewed. 13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026 and 4 Nov 2026), 6 completed (4 Nov 2026). Every other result on this page comes from the mock provider,
 which replays hand-written fixtures.
 
 ## Owner

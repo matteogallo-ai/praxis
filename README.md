@@ -23,13 +23,13 @@ Praxis has completed **six briefings against a real model**, on questions
 
 Every one is flagged insufficiently sourced; the runs are compared in
 [`benchmarks/outputs/live/README.md`](benchmarks/outputs/live/README.md).
-Their quality is not yet checked or reviewed. 13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026, 4 Nov 2026), 6 completed (4 Nov 2026). In
+Their quality is not yet checked or reviewed. 13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026 and 4 Nov 2026), 6 completed (4 Nov 2026). In
 [`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the
 `strict` sourcing policy because the model returned findings without
 source URLs, one on prose before the JSON, one on a 60 s timeout during
 web search. On 3 Nov 2026 the risk stage's answer was cut at its
-`max_tokens`; on 4 Nov 2026 question 02's synthesis was refused twice for
-a `www.` address in its prose. Everything listed under [Features](#features) is
+`max_tokens`; on 4 Nov 2026 question 02's synthesis section was refused
+and its retry too, the last time for a `www.` address in its prose. Everything listed under [Features](#features) is
 proven on the mock provider, which replays hand-written fixtures; that proves
 the wiring, not the quality of a model's output.
 

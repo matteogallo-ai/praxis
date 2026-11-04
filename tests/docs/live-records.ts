@@ -72,11 +72,12 @@ export function questionsOf(records: readonly { id: string }[]): string {
   return `questions ${n.slice(0, -1).join(", ")} and ${n[n.length - 1]}`;
 }
 
-/** "3 Nov 2026"; several distinct days are joined with commas. */
+/** "3 Nov 2026"; several distinct days read "3 Nov 2026 and 4 Nov 2026". */
 export function days(records: readonly { at: string }[]): string {
   const fmt = (at: string) =>
     new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  return [...new Set(records.map((r) => fmt(r.at)))].join(", ");
+  const all = [...new Set(records.map((r) => fmt(r.at)))];
+  return all.length < 2 ? all.join("") : `${all.slice(0, -1).join(", ")} and ${all[all.length - 1]}`;
 }
 
 /** Wilson score interval at 95%, in whole percent. */

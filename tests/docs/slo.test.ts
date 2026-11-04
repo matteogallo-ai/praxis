@@ -65,7 +65,7 @@ describe("docs/SLO.md", () => {
     test("error rate: failures over started briefings since the records began", () => {
       const started = failures.length + completions.length;
       expect(doc).toContain(
-        `| Error rate | ≤ 10% of started briefings end in an error | ${failures.length}/${started} since run records began (failed ${days(failures)}, ${failures.map((f) => f.type).join(", ")}; completed ${days(completions)}); the five aborted runs of 1.2.1 predate the records; n too small, no status |`
+        `| Error rate | ≤ 10% of started briefings end in an error | ${failures.length}/${started} since run records began (failed ${days(failures)}: ${failures.map((f) => f.type).join(", ")}; completed ${days(completions)}); the five aborted runs of 1.2.1 predate the records; n too small, no status |`
       );
     });
   });
