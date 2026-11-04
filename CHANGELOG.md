@@ -9,6 +9,14 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- PDF: a table row is as tall as its longest wrapped cell, and the header
+  is repeated after a page break. Rows were 20 points high whatever their
+  text, so long option titles and stakeholder names ran over the next row
+  (question 10's step 1 briefing, pages 14, 16 and 24).
+- PDF: the footer no longer opens pages of its own. It was drawn inside
+  the bottom margin, so pdfkit opened a new page for each footer line:
+  question 10's step 1 briefing has 96 pages, 32 of them with content.
+
 - A refused `www.` address in a synthesis section is quoted whole in the
   error, cut at 200 characters (it was quoted as `'www.'`, which left
   question 02's step 1 failure undiagnosable). Every refused text the prose
