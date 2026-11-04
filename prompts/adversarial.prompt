@@ -138,7 +138,7 @@ prompt adversarial(
             "finding_index": <optional finding index (integer)>
           },
           "steelmanned_position": "<≥20-word counter-argument at its strongest>",
-          "counter_evidence": <SourceReference OR SourceMissing>,
+          "counter_evidence": <SourceReference, with "first_party_for": "<organisation>" only as the first-party rule allows, OR SourceMissing>,
           "implication_if_true": "<1-2 sentences>",
           "suggested_revision": "<1 sentence>"
         },

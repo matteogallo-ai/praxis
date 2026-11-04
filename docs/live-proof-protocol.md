@@ -277,8 +277,8 @@ built; neither result exists, and no published score depends on them.
 | 05-supply-chain-acquisition | $1.40 | $5.97 | $12.95 |
 | 08-ai-regulation-position | $1.43 | $6.12 | $13.30 |
 | 11-family-office-co-investment | $1.46 | $5.90 | $15.57 |
-| 12-sodium-ion-plant-morocco | $1.40 | $5.97 | $12.96 |
-| **Total** | **$7.13** | **$30.10** | **$68.02** |
+| 12-sodium-ion-plant-morocco | $1.40 | $5.97 | $12.95 |
+| **Total** | **$7.13** | **$30.09** | **$68.02** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -360,7 +360,7 @@ allowances hold**. They are assumptions, not bounds the API enforces:
   sized low the same way. The tool definitions and message framing the API
   adds are not counted apart: on the measured prompts, the margin between
   2.5 and the measured 2.61 or more is at least 204 tokens on the shortest
-  (scoping, which has no tools) and 211 on the shortest search stage
+  (scoping, which has no tools) and 219 on the shortest search stage
   (research).
 - A run killed by a signal writes no `metadata.json`: what it spent since
   its last stage is unknown to a `--resume`.

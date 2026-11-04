@@ -99,7 +99,8 @@ describe("sourcing guide in the search stages' prompts", () => {
       executeAdversarialCritique({ brief_result: { question: "Should we list in London?" } as never, format: FORMAT }, llm)
     );
     expect(p).toContain(firstPartyGuidance());
-    expect(p).toContain('"first_party_for"');
+    // The mark's place in the answer is shown, not only described.
+    expect(p).toMatch(/"counter_evidence": [^\n]*"first_party_for"/);
     expect(p).not.toContain("{{first_party_guidance}}");
   });
 });

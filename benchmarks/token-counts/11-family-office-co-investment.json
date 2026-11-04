@@ -13,20 +13,20 @@
     {
       "stage": "research",
       "model": "claude-sonnet-5-5",
-      "chars": 7388,
-      "tokens": 2610
+      "chars": 7336,
+      "tokens": 2581
     },
     {
       "stage": "stakeholder",
       "model": "claude-sonnet-5-5",
-      "chars": 14791,
-      "tokens": 5238
+      "chars": 14739,
+      "tokens": 5209
     },
     {
       "stage": "risk",
       "model": "claude-sonnet-5-5",
-      "chars": 25160,
-      "tokens": 8823
+      "chars": 25108,
+      "tokens": 8794
     },
     {
       "stage": "options",
@@ -73,8 +73,8 @@
     {
       "stage": "adversarial",
       "model": "claude-opus-5-5",
-      "chars": 57524,
-      "tokens": 19155
+      "chars": 57551,
+      "tokens": 19153
     }
   ]
 }
