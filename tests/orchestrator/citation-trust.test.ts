@@ -64,7 +64,7 @@ describe("domain trust on options citations", () => {
     expect(result.sourcing_report.insufficiently_sourced).toBe(true);
     const last = result.synthesis.sections.at(-1);
     expect(last?.section_id).toBe(INSUFFICIENTLY_SOURCED_SECTION_ID);
-    expect(last?.content_markdown).toContain(`**Option OPT-B**: ${UNTRUSTED} is not a trusted domain`);
+    expect(last?.content_markdown).toContain(`**Option OPT-B**: \`${UNTRUSTED}\` is not a trusted domain`);
   });
 
   test("trusted citations: an empty list, no flag", async () => {

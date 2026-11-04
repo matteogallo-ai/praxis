@@ -119,7 +119,7 @@ Convene the council within four weeks to authorise the co-investment at the capp
 
 **Suggested revision:** Add an explicit open-item flag on cantonal tax treatment and instruct the family lawyer to secure a direct cantonal counsel note before the vote.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: Zurich cantonal tax administrative circular 2024 foreign-domiciled family investors
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `Zurich cantonal tax administrative circular 2024 foreign-domiciled family investors`
 
 ### CRIT-004 — hidden-assumption (minor)
 
@@ -129,7 +129,7 @@ Convene the council within four weeks to authorise the co-investment at the capp
 
 **Suggested revision:** Add an explicit fallback: if the written statement is not on record by the council session, the file defaults to OPT-B (defer to a formal study) rather than being taken to a vote.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: family office council fallback procedures missing next-generation statement
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `family office council fallback procedures missing next-generation statement`
 
 ## Appendix A — Findings
 
