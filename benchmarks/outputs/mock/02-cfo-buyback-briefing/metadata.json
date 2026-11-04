@@ -94,12 +94,12 @@
       },
       "options": {
         "calls": 1,
-        "input_tokens": 8566,
+        "input_tokens": 8987,
         "output_tokens": 2426,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 2,
-        "cost_usd": 0.102784,
+        "cost_usd": 0.104468,
         "models": [
           "claude-opus-5-5"
         ]
@@ -143,12 +143,12 @@
     },
     "total": {
       "calls": 18,
-      "input_tokens": 163405,
+      "input_tokens": 163826,
       "output_tokens": 12473,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 14,
-      "cost_usd": 0.6780039999999999,
+      "cost_usd": 0.679688,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"
