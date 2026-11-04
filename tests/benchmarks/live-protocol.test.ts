@@ -16,12 +16,9 @@ import {
 } from "../../benchmarks/estimate-cost.ts";
 import { loadManifest } from "../../benchmarks/manifest.ts";
 import { loadSplit, MANIFEST_PATH } from "../../benchmarks/split.ts";
+import { protocolParts } from "./protocol-plan.ts";
 
-const doc = readFileSync("docs/live-proof-protocol.md", "utf-8");
-/** The plan as first written; changes to it live only in "## Amendments", dated and declared. */
-const AMENDMENTS_AT = doc.indexOf("\n## Amendments\n");
-const plan = AMENDMENTS_AT === -1 ? doc : doc.slice(0, AMENDMENTS_AT);
-const amendments = AMENDMENTS_AT === -1 ? "" : doc.slice(AMENDMENTS_AT);
+const { doc, plan, amendments } = protocolParts();
 
 /** The first test question of each format in id order, then the hard case. */
 function selected(): string[] {
