@@ -31,8 +31,8 @@
     {
       "stage": "options",
       "model": "claude-opus-5-5",
-      "chars": 33611,
-      "tokens": 11918
+      "chars": 33533,
+      "tokens": 11892
     },
     {
       "stage": "synthesis",
