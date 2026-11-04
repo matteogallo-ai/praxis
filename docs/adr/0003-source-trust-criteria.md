@@ -150,6 +150,8 @@ been checked against the six criteria).
   that cites an organisation's own site for that organisation's own facts is
   as well sourced as a research finding that does. The critique's subject
   text is its steelmanned position. Options' citations are not judged by it.
+  (Superseded on this point: a critique's counter-evidence is never
+  first-party; see Amendments, 4 Nov 2026.)
 - Accepted items are listed in `SourcingReport.first_party_sources`, in a
   "First-party sources" section of every briefing, and in every sourcing
   report.
@@ -169,11 +171,26 @@ been checked against the six criteria).
   did not apply that to estimates.
 - **Change:** a risk's `likelihood_evidence` and `impact_evidence` are never
   first-party. The risk prompt no longer receives the rule or shows
-  `first_party_for` in its example (risk.prompt 3.1.1). Research findings,
-  stakeholder positions and critique counter-evidence keep the rule.
+  `first_party_for` in its example (risk.prompt 3.1.1). Research findings
+  and stakeholder positions keep the rule.
 - **Effect on records:** none is rewritten. Question 10's two items would
   now be counted untrusted; the human review is recorded in
   `benchmarks/outputs/live/README.md`.
+
+### 4 Nov 2026: a critique's counter-evidence is not first-party
+
+- **Decided by:** the maintainer, after the amendment above.
+- **Why:** a critique's subject text is its steelmanned position, an
+  argument: a judgement, like a likelihood. A source that backs an argument
+  is not the organisation's own fact, whatever site it is on. The extension
+  of the rule to critiques in the Implementation section is withdrawn.
+- **Change:** the critique's counter-evidence is judged only by the
+  format's domain trust and listed as an untrusted citation when it fails,
+  never blocking. The adversarial prompt no longer receives the rule or
+  shows `first_party_for` (adversarial.prompt 4.0.0: the
+  `first_party_guidance` parameter is removed).
+- **Effect on records:** none. No recorded briefing has a critique among
+  its first-party sources.
 
 ## Consequences
 

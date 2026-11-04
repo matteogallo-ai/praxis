@@ -95,13 +95,13 @@ describe("sourcing guide in the search stages' prompts", () => {
     });
   }
 
-  test("adversarial: the critique is told the first-party rule its counter-evidence is judged by", async () => {
+  // Its counter-evidence is never first-party, so the critique is not told the rule.
+  test("adversarial: the critique is not told the first-party rule, nor shown the mark", async () => {
     const p = await promptOf((llm) =>
       executeAdversarialCritique({ brief_result: { question: "Should we list in London?" } as never, format: FORMAT }, llm)
     );
-    expect(p).toContain(firstPartyGuidance());
-    // The mark's place in the answer is shown, not only described.
-    expect(p).toMatch(/"counter_evidence": [^\n]*"first_party_for"/);
+    expect(p).not.toContain(firstPartyGuidance());
+    expect(p).not.toContain('"first_party_for"');
     expect(p).not.toContain("{{first_party_guidance}}");
   });
 });
