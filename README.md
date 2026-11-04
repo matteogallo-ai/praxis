@@ -9,13 +9,16 @@
 > note, position paper, family-office memo), with sourcing checks, an
 > adversarial review and Markdown / PDF / DOCX output.
 
-## Status: one live briefing completed, not yet reviewed
+## Status: two live briefings completed, not yet reviewed
 
-Praxis has completed **one briefing against a real model**: question 05,
-4 Nov 2026, $3.51
-(`benchmarks/outputs/live/05-supply-chain-acquisition/`), flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains. Its quality is not
-yet checked or reviewed. 7 live attempts: 6 failed (5 in 1.2.1 without
-committed records, 1 on 3 Nov 2026), 1 completed (4 Nov 2026). In
+Praxis has completed **two briefings against a real model**, both on
+question 05, 4 Nov 2026
+(`benchmarks/outputs/live/05-supply-chain-acquisition/`): step 0, $3.51, flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains;
+its rerun after the sourcing fixes, $3.69, flagged insufficiently sourced: 8 of 47 items without a source, 17 from untrusted domains
+(compared in [`benchmarks/outputs/live/README.md`](benchmarks/outputs/live/README.md)).
+Their quality is not yet checked or reviewed. 8 live attempts: 6 failed (5
+in 1.2.1 without committed records, 1 on 3 Nov 2026), 2 completed (4 Nov
+2026). In
 [`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the
 `strict` sourcing policy because the model returned findings without
 source URLs, one on prose before the JSON, one on a 60 s timeout during

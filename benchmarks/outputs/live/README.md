@@ -19,7 +19,44 @@ Each run writes, in its question's directory:
 
 The first live record is `05-supply-chain-acquisition/error-*.json` (3 Nov
 2026); the first completed briefing is
-`05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/`.
+`05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/` (step 0). The
+same question was rerun on the sourcing fixes (#31 to #36) as
+`05-supply-chain-acquisition/run-2026-11-04T10-52-05-822Z/`.
+
+## Question 05: step 0 and its rerun
+
+Both runs are `mckinsey-style-note` under `strict`. They are two samples
+of one question: the model searched and cited differently each time, so a
+difference between them is not by itself an effect of the fixes. Counts
+are items, read from each run's `metadata.json` (`sourcing`).
+
+| | Step 0 (08:33 UTC) | Rerun (10:52 UTC) |
+| --- | --- | --- |
+| Items | 44 | 47 |
+| Sourced from a trusted domain (`ok`) | 9 | 15 |
+| From an untrusted domain | 24 | 17 |
+| Without a source (`missing`) | 11 | 8 |
+| Duplicated | 0 | 2 |
+| Stale or aging (`stale`) | 0, not measured (see Errata) | 5: 1 past the format's limit, 4 past its warning age |
+| Freshness unknown (no publication date) | not recorded | 23 |
+| Requester-provided, not sourceable | not recorded | 7 |
+| Options' and critique's untrusted citations | not checked | 3 options, 3 critique |
+| Flagged insufficiently sourced | yes | yes |
+| Cost | $3.51 | $3.69 |
+| Stages' wall time | 7.8 min | 8.4 min |
+
+What the rerun shows that step 0 could not:
+
+- 23 of its sources state no publication date. Their age is unknown, and
+  none of them is counted fresh.
+- 7 facts concern only the requester (its budget, footprint, hurdle rate).
+  The briefing lists them apart and counts none as sourced.
+- Its options cite three untrusted hosts; under `strict` they are listed
+  among the 29 entries of "Insufficiently sourced" with the 17 untrusted
+  and 8 missing items and the one source past the age limit (listed for
+  both reasons).
+- `investor.dsv.com`, DSV's own site, is cited by the critique and judged
+  untrusted: ADR 0003's first-party rule is accepted but not implemented.
 What a live briefing costs is estimated by `bun run estimate:cost`, not
 stated here.
 

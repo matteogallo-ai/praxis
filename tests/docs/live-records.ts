@@ -55,7 +55,14 @@ export function liveRecords(): { failures: { type: string; at: string }[]; compl
       stages_ms: Object.values(meta.usage.stages).reduce((a, s) => a + s.duration_ms, 0),
     };
   });
+  // Oldest first: step 0 is the first completion wherever it is described.
+  completions.sort((a, b) => a.at.localeCompare(b.at));
   return { failures, completions };
+}
+
+/** "two", for the sentences that say how many briefings completed. */
+export function countWord(n: number): string {
+  return ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][n] ?? String(n);
 }
 
 /** "3 Nov 2026"; several distinct days are joined with commas. */
