@@ -75,10 +75,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   gives only a lower bound, so the ceiling is twice it. Question 05's
   estimate moves to $1.37 / $5.87 / $12.78. The run record is committed
   under `benchmarks/outputs/live/05-supply-chain-acquisition/`.
-- `docs/SLO.md` publishes each target's status. The cost target, set from
-  intended use, stays at p95 ≤ $2.50 per briefing and is **not met** on the
-  estimate (question 05: $5.75 central; only its low case meets it), pinned
-  by `tests/docs/slo.test.ts`.
+- `docs/SLO.md` publishes each target's status, met or not met only from
+  live measurements; no target is measured yet. The cost target is p95 ≤
+  $10.00 per briefing: less than 10 minutes of an analyst at $60 an hour
+  (the earlier $2.50 assumed $15 an hour). Question 05's estimate ($5.87
+  central, $12.78 high) is shown beside it, not as a status, pinned by
+  `tests/docs/slo.test.ts`.
   The advice to run with `--max-cost-usd 5`, below that estimate, is gone.
 - The judge is Claude Opus 5 (`claude-opus-5`), sent as one Message Batch
   at half price (`benchmarks/judge-batch.ts`). A paid scoring run needs
