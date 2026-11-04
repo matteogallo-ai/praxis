@@ -14,6 +14,20 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   2 refused (both a risk's likelihood). The rule now excludes a risk's
   evidence and, by the maintainer's decision, a critique's counter-evidence,
   which backs an argument (ADR 0003, amendments of 4 Nov 2026; see Added).
+- The URLs, hosts and searched-for queries of the "Insufficiently
+  sourced" section and of the CLI's Markdown sourcing report are code spans.
+  A Markdown viewer turned them into links: in question 10's step 1
+  briefing, the untrusted host `www.bracewell.com` showed as a link in the
+  line that reports it as untrusted.
+
+- PDF: a table row is as tall as its longest wrapped cell, and the header
+  is repeated after a page break. Rows were 20 points high whatever their
+  text, so long option titles and stakeholder names ran over the next row
+  (question 10's step 1 briefing, pages 14, 16 and 24).
+
+- PDF: the footer no longer opens pages of its own. It was drawn inside
+  the bottom margin, so pdfkit opened a new page for each footer line:
+  question 10's step 1 briefing has 96 pages, 32 of them with content.
 
 - A refused `www.` address in a synthesis section is quoted whole in the
   error, cut at 200 characters (it was quoted as `'www.'`, which left
@@ -142,6 +156,16 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - CI job `prompt-semver` running `promptlang semver-check`.
 
 ### Changed
+
+- A synthesis section cites a source in its text by the marker `[n]`, the
+  n-th entry of its `sources_cited`; each section's source list is numbered
+  `[n]` in Markdown, PDF and DOCX. `executive-pre-read` 1.1.0 asks its
+  supporting-evidence paragraphs to end with that marker, with no site name,
+  host or URL, where it asked for the "source in parentheses" (the likely
+  cause of question 02's step 1 failure). A marker pointing at no listed
+  source is refused; `every_paragraph_ends_with_citation` is checked by
+  code. Synthesis prompt 2.2.0; token counts re-measured (question 05:
+  $1.40 / $5.97 / $12.96).
 
 - The live-proof protocol has a dated "Amendments" section: question 10
   was added to step 1 before the run (2026-11-04), as the only test

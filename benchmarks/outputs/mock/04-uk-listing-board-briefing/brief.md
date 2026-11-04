@@ -7,9 +7,9 @@ recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=34 ok=31 stale=0 untrusted=0 duplicated=1 missing=2 freshness_unknown=29 untrusted_citations=0"
 critique_summary: "critiques=5 critical=1 material=2 minor=2 robustness=medium revised_needed=true"
-total_word_count: 355
+total_word_count: 347
 target_word_count: 800
-word_deviation_pct: -55.6
+word_deviation_pct: -56.6
 ---
 
 # Prepare the board pre-read on a proposed UK dual-listing decision.
@@ -34,9 +34,9 @@ Enter the German mid-market SaaS segment via a controlled majority partnership b
 
 **Sources:**
 
-- [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
-- [EU data protection authorities target foreign SaaS entrants](https://www.reuters.com/technology/eu-data-protection-foreign-saas-2026)
-- [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025)
+- [1] [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
+- [2] [EU data protection authorities target foreign SaaS entrants](https://www.reuters.com/technology/eu-data-protection-foreign-saas-2026)
+- [3] [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025)
 
 ## Key Question
 
@@ -48,13 +48,17 @@ Enter Germany in Q1 2027 via a bounded greenfield office capped at 15 staff for 
 
 ## Supporting Evidence
 
-The German mid-market SaaS segment grew 12% CAGR 2022-2025 and is now the largest addressable slice of EMEA (McKinsey Germany SaaS Benchmark 2025). BfDI's 2026 audit priority list singles out foreign SaaS entrants, which makes local counsel and a pre-filed DPIA a table stake rather than an optional cost (Reuters, June 2026). SAP has already restructured its DACH mid-market coverage to defend against new entrants, which shortens the window in which a bounded beachhead can settle in without triggering a bundled counter-offer (Bloomberg, Q4 2025).
+The German mid-market SaaS segment grew 12% CAGR 2022-2025 and is now the largest addressable slice of EMEA [1].
+
+BfDI's 2026 audit priority list singles out foreign SaaS entrants, which makes local counsel and a pre-filed DPIA a table stake rather than an optional cost [2].
+
+SAP has already restructured its DACH mid-market coverage to defend against new entrants, which shortens the window in which a bounded beachhead can settle in without triggering a bundled counter-offer [3].
 
 **Sources:**
 
-- [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
-- [EU data protection authorities target foreign SaaS entrants](https://www.reuters.com/technology/eu-data-protection-foreign-saas-2026)
-- [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025)
+- [1] [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
+- [2] [EU data protection authorities target foreign SaaS entrants](https://www.reuters.com/technology/eu-data-protection-foreign-saas-2026)
+- [3] [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025)
 
 ## Risks and Mitigations
 
@@ -110,7 +114,7 @@ SAP's likely bundled counter-offer is the largest strategic risk; the mitigation
 
 **Suggested revision:** Add a growth-rate scenario table (persist / halve / reverse) and anchor the recommendation to the middle case.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: SaaS growth-rate persistence in DACH beyond three-year windows
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `SaaS growth-rate persistence in DACH beyond three-year windows`
 
 ### CRIT-005 — temporal-blind-spot (minor)
 
@@ -120,7 +124,7 @@ SAP's likely bundled counter-offer is the largest strategic risk; the mitigation
 
 **Suggested revision:** Add a board-sentiment stability check as a Q4 2026 pre-approval gate before locking the €4-6m envelope.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: board sentiment stability in European SaaS expansion decisions 2023-2025
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `board sentiment stability in European SaaS expansion decisions 2023-2025`
 
 ## Appendix A — Findings
 

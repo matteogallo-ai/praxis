@@ -34,8 +34,8 @@ The organisation should defend an EU-data-residency compromise on the Bundestag 
 
 **Sources:**
 
-- [Germany drafts digital sovereignty procurement guidance](https://www.reuters.com/world/europe/germany-digital-sovereignty-procurement-2026)
-- [BMDV — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang)
+- [1] [Germany drafts digital sovereignty procurement guidance](https://www.reuters.com/world/europe/germany-digital-sovereignty-procurement-2026)
+- [2] [BMDV — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang)
 
 ## Stakeholder Landscape
 
@@ -43,10 +43,10 @@ The Bundestag Digital Committee is the deciding body on procurement guidance and
 
 **Sources:**
 
-- [Plenarprotokoll 20/187 — Debatte Digitale Souveränität](https://www.bundestag.de/protokolle/20-187-digital-sovereignty)
-- [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026)
-- [Handelsblatt — Ausländische SaaS-Anbieter drängen nach Deutschland](https://www.handelsblatt.com/technik/it-internet/saas-markteintritt-auslaendisch-2026)
-- [Verdi — Positionen zur Digitalisierung 2026](https://www.verdi.de/themen/digitalisierung/positionen-2026)
+- [1] [Plenarprotokoll 20/187 — Debatte Digitale Souveränität](https://www.bundestag.de/protokolle/20-187-digital-sovereignty)
+- [2] [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026)
+- [3] [Handelsblatt — Ausländische SaaS-Anbieter drängen nach Deutschland](https://www.handelsblatt.com/technik/it-internet/saas-markteintritt-auslaendisch-2026)
+- [4] [Verdi — Positionen zur Digitalisierung 2026](https://www.verdi.de/themen/digitalisierung/positionen-2026)
 
 ## Our Position
 
@@ -54,8 +54,8 @@ The organisation holds that a bounded, publicly EU-established entry into the Ge
 
 **Sources:**
 
-- [BMDV — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang)
-- [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026)
+- [1] [BMDV — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang)
+- [2] [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026)
 
 ## Rationale
 
@@ -63,10 +63,10 @@ The position rests on the emerging cross-party consensus in the Bundestag Digita
 
 **Sources:**
 
-- [Plenarprotokoll 20/187 — Debatte Digitale Souveränität](https://www.bundestag.de/protokolle/20-187-digital-sovereignty)
-- [BMDV — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang)
-- [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026)
-- [Verdi — Positionen zur Digitalisierung 2026](https://www.verdi.de/themen/digitalisierung/positionen-2026)
+- [1] [Plenarprotokoll 20/187 — Debatte Digitale Souveränität](https://www.bundestag.de/protokolle/20-187-digital-sovereignty)
+- [2] [BMDV — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang)
+- [3] [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026)
+- [4] [Verdi — Positionen zur Digitalisierung 2026](https://www.verdi.de/themen/digitalisierung/positionen-2026)
 
 ## Counter-Arguments Addressed
 
@@ -74,7 +74,7 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 
 **Sources:**
 
-- [Handelsblatt — Ausländische SaaS-Anbieter drängen nach Deutschland](https://www.handelsblatt.com/technik/it-internet/saas-markteintritt-auslaendisch-2026)
+- [1] [Handelsblatt — Ausländische SaaS-Anbieter drängen nach Deutschland](https://www.handelsblatt.com/technik/it-internet/saas-markteintritt-auslaendisch-2026)
 
 ## Recommended Actions
 
@@ -126,7 +126,7 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 
 **Suggested revision:** Add a Länder-level stakeholder subsection covering Bavaria and Baden-Württemberg and pre-commit to engaging their DPAs within 90 days of launch.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: Land-level data protection authority interpretations vs BfDI foreign SaaS 2025-2026
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `Land-level data protection authority interpretations vs BfDI foreign SaaS 2025-2026`
 
 ### CRIT-005 — temporal-blind-spot (minor)
 
@@ -136,7 +136,7 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 
 **Suggested revision:** Add a pre-election contingency paragraph acknowledging cross-party consensus is contingent on the current coalition.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: durability of Bundestag cross-party consensus on digital sovereignty across electoral cycles
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `durability of Bundestag cross-party consensus on digital sovereignty across electoral cycles`
 
 ## Appendix A — Findings
 

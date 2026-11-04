@@ -20,9 +20,13 @@ import type {
 } from "./types.ts";
 import { isSourceMissing } from "./types.ts";
 
-/** One line per untrusted citation, the same in every sourcing report. */
-export function describeUntrustedCitation(c: UntrustedCitation): string {
-  return `[${c.stage}] ${c.id} cites an untrusted domain: ${c.url} — ${c.reason}`;
+/**
+ * One line per untrusted citation, the same in every sourcing report.
+ * `quote` wraps the URL and the reason: Markdown passes `codeSpan`, so that
+ * a viewer does not turn the untrusted URL into a link.
+ */
+export function describeUntrustedCitation(c: UntrustedCitation, quote: (s: string) => string = (s) => s): string {
+  return `[${c.stage}] ${c.id} cites an untrusted domain: ${quote(c.url)} — ${quote(c.reason)}`;
 }
 
 export function untrustedCitations(

@@ -10,7 +10,7 @@ import type {
   StakeholderMapResult,
   SynthesizedSection,
 } from "../agents/types.ts";
-import { codeWrittenSection, oneLine } from "./code-written-section.ts";
+import { codeSpan, codeWrittenSection, oneLine } from "./code-written-section.ts";
 import { isBlockingUnderStrict } from "./errors.ts";
 import type { SourcingReport, SourcingWarning } from "./types.ts";
 
@@ -31,7 +31,7 @@ export function buildInsufficientlySourcedSection(
     // Critique citations never block (orchestrator), so only options' are listed.
     ...(report.untrusted_citations ?? [])
       .filter((c) => c.stage === "options")
-      .map((c) => `- ${oneLine(`**Option ${c.id}**: ${c.url} is not a trusted domain (${c.reason}).`)}`),
+      .map((c) => `- ${oneLine(`**Option ${c.id}**: ${codeSpan(c.url)} is not a trusted domain (${codeSpan(c.reason)}).`)}`),
   ];
   const content_markdown = [
     `This format's sourcing policy is strict. The ${lines.length} item(s) below did not meet it.`,
@@ -49,17 +49,17 @@ function describe(w: SourcingWarning, a: SourcedArtefacts): string {
     case "missing_source": {
       const claim = a.research?.findings[w.finding_index]?.claim;
       const what = claim === undefined ? "" : ` — “${claim}”`;
-      return `**Research finding ${w.finding_index + 1}**${what}: no source found (searched for: ${w.searched_for}).`;
+      return `**Research finding ${w.finding_index + 1}**${what}: no source found (searched for: ${codeSpan(w.searched_for)}).`;
     }
     case "missing_stakeholder_evidence":
-      return `**Stakeholder ${w.stakeholder_name}**: position not sourced (searched for: ${w.searched_for}).`;
+      return `**Stakeholder ${w.stakeholder_name}**: position not sourced (searched for: ${codeSpan(w.searched_for)}).`;
     case "missing_risk_evidence":
-      return `**Risk ${w.risk_id}** (${w.evidence_field.replace("_", " ")}): not sourced (searched for: ${w.searched_for}).`;
+      return `**Risk ${w.risk_id}** (${w.evidence_field.replace("_", " ")}): not sourced (searched for: ${codeSpan(w.searched_for)}).`;
     case "stale_source":
-      return `**${w.agent} item ${w.item_index + 1}**: ${w.url} is ${w.age_days} days old, past the format's limit.`;
+      return `**${w.agent} item ${w.item_index + 1}**: ${codeSpan(w.url)} is ${w.age_days} days old, past the format's limit.`;
     case "untrusted_domain":
-      return `**${w.agent} item ${w.item_index + 1}**: ${w.url} is not a trusted domain (${w.reason}).`;
+      return `**${w.agent} item ${w.item_index + 1}**: ${codeSpan(w.url)} is not a trusted domain (${codeSpan(w.reason)}).`;
     case "duplicate_source":
-      return `**${w.agent} item ${w.item_index + 1}**: duplicate of ${w.previous_url}.`;
+      return `**${w.agent} item ${w.item_index + 1}**: duplicate of ${codeSpan(w.previous_url)}.`;
   }
 }
