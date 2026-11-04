@@ -84,13 +84,14 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - `bun run hard-case:sources`: for question 12, the hard case, each
-  sodium-ion claim of the latest live brief (a cited sentence of the
-  model's sections, or a research finding) with the source it cites and
-  that source's chemistry, read from its title and URL: on sodium-ion,
-  another chemistry, unclear or no source. It reads files only and fails
-  nothing; a human opens the unclear rows. On the 4 Nov 2026 record: 11
-  pairs, 9 on sodium-ion, 0 on another chemistry, 1 unclear, 1 without a
-  source.
+  sodium-ion sentence of the latest live brief (in the model's sections,
+  cited or not, or a research finding) with each source it cites and that
+  source's chemistry, read from its title and URL: on sodium-ion, another
+  chemistry, unclear or no source. Sodium-sulfur and sodium-nickel chloride
+  count as another chemistry. It reads files only and fails nothing; a
+  human opens the unclear rows and tells an uncited claim from a
+  recommendation. On the 4 Nov 2026 record: 22 pairs, 9 on sodium-ion, 0 on
+  another chemistry, 1 unclear, 12 without a source.
 
 - The hostile-output tests render the Markdown with marked (GFM), a pinned
   devDependency, and check that no `href` or `src` points at the hostile

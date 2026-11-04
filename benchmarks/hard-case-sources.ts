@@ -4,8 +4,8 @@
  * questions.yaml): does each sodium-ion claim cite a source about
  * sodium-ion, or one about another chemistry (the trap: Morocco has much on
  * lithium-ion and little on sodium-ion)? It reads the latest completed live
- * brief: each sentence of the model's sections that cites a source, and
- * each research finding. A source's chemistry is read from its title and
+ * brief: each sentence of the model's sections that names sodium-ion, with
+ * each source it cites or none, and each research finding. A source's chemistry is read from its title and
  * URL, not from its page, so "unclear" rows are for a human to open. Free:
  * it reads files only, and reports; it fails nothing.
  *
@@ -19,8 +19,12 @@ import { completedLiveRuns } from "./provenance.ts";
 export type Chemistry = "sodium-ion" | "other" | "none";
 export type Verdict = "on sodium-ion" | "another chemistry" | "unclear: read the page" | "no source";
 
-const SODIUM = /sodium|\bna[- ]?ion\b|naxtra/i;
-const OTHER = /lithium|\bli[- ]?ion\b|\blfp\b|\bnmc\b|\blifepo4\b|solid[- ]state/i;
+// Bare "sodium" is not enough: sodium-sulfur and sodium-nickel chloride are
+// other chemistries, and a source on them passing as sodium-ion is the
+// failure this check exists to catch.
+const SODIUM = /sodium[- ]ion|sodium[- ]batter(?:y|ies)|\bna[- ]?ion\b|naxtra|\bnibs?\b|\bsibs?\b|\bhina\b/i;
+const OTHER =
+  /lithium|\bli[- ]?ion\b|\bl?m?fp\b|\bnmc\b|\bncm\b|\bnca\b|\blifepo4\b|solid[- ]state|sodium[- ](?:sulfur|sulphur|nickel)|\bzebra\b/i;
 
 /** Sodium-ion wins: a page comparing LFP with sodium-ion is about sodium-ion too. */
 export function chemistry(text: string): Chemistry {
@@ -37,6 +41,7 @@ export interface Row {
 }
 
 const LINK = /\[([^\]]*)\]\(([^)\s]+)\)/g;
+const SENTENCE_END = /(?<=[.!?])(?<!\b(?:e\.g|i\.e|vs|etc|cf)\.)\s+(?=[A-Z])/;
 /** Sections after these are written by code or list sources, not the model's argument. */
 const NOT_PROSE = /^(Table of Contents|Requester-provided|Insufficiently sourced|Adversarial Critique|Appendix [B-Z]|Sources|First-party sources)/;
 
@@ -89,8 +94,10 @@ export function checkBrief(markdown: string): Row[] {
       continue;
     }
     if (section === "" || NOT_PROSE.test(section) || line.startsWith("- [") || line.startsWith("**Sources:**")) continue;
-    for (const sentence of line.split(/(?<=[.!?])\s+(?=[A-Z])/)) {
+    if (line.startsWith("#")) continue;
+    for (const sentence of line.split(SENTENCE_END)) {
       const urls = [...new Set([...sentence.matchAll(LINK)].map((m) => m[2] as string))];
+      if (urls.length === 0) add(section, plain(sentence), null);
       for (const url of urls) add(section, plain(sentence), url);
     }
   }
@@ -115,7 +122,7 @@ export function renderCheck(id: string, run: string, rows: readonly Row[]): stri
   const lines = [
     `# ${id}, ${run}: sodium-ion claims and their sources`,
     "",
-    `${rows.length} sodium-ion claim–source pairs: ${counts}. A source's chemistry is read from each source's title and URL, not its page: open every "unclear" and "another chemistry" row before calling it a failure of the hard case.`,
+    `${rows.length} sodium-ion claim–source pairs: ${counts}. A source's chemistry is read from each source's title and URL, not its page: open every "unclear" and "another chemistry" row before calling it a failure of the hard case. A sentence citing nothing is "no source": a recommendation needs none, a factual claim does; a citation in the next sentence is not attached.`,
     "",
     "| Where | Claim | Source | Verdict |",
     "| --- | --- | --- | --- |",
