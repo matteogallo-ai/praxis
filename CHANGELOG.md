@@ -125,6 +125,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The live-proof protocol has a dated "Amendments" section: question 10
+  was added to step 1 before the run (2026-11-04), as the only test
+  question the first-party list covers. The original plan is unchanged;
+  its test accepts the original commands plus declared amendments only.
+  Held-out test questions left: 03 and 07.
+
 - A benchmark run's `metadata.json` names the sections over their length
   cap (`synthesis.sections_over_length_ids`) beside their count; the count
   alone did not say which section to check.

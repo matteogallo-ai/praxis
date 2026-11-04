@@ -9,6 +9,7 @@ import { estimateRun } from "../../benchmarks/estimate-cost.ts";
 import { stageLimits } from "../../src/agents/stage-limits.ts";
 import { DEFAULT_PRICE_TABLE } from "../../src/llm/pricing.ts";
 import { countWord, days, liveRecords } from "./live-records.ts";
+import { protocolParts } from "../benchmarks/protocol-plan.ts";
 
 const doc = readFileSync("docs/SLO.md", "utf-8");
 const flat = doc.replace(/\s+/g, " ");
@@ -79,8 +80,8 @@ describe("docs/SLO.md", () => {
   });
 
   test("its per-run caps are the protocol's, and none is below a central estimate", () => {
-    const protocol = readFileSync("docs/live-proof-protocol.md", "utf-8");
-    const caps = [...protocol.matchAll(/bun run bench:live -- --max-cost-usd (\d+)/g)].map((m) => Number(m[1]));
+    // The plan's caps; an amendment adds questions under the same caps.
+    const caps = [...protocolParts().plan.matchAll(/bun run bench:live -- --max-cost-usd (\d+)/g)].map((m) => Number(m[1]));
     expect(caps.length).toBe(2);
     expect(flat).toContain(`$${caps[0]} for the first live briefing, $${caps[1]} for each of the next four`);
     for (const cap of caps) expect(cap).toBeGreaterThanOrEqual(Math.max(...five.map((r) => r.central)));

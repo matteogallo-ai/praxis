@@ -61,10 +61,11 @@ provider sends no sampling parameter.
   questions across the four formats plus a hard case, with a frozen
   dev/test split (4 / 8) in `benchmarks/split.yaml`; no human labels.
   Question 05 is in the test split but was the development case for the
-  sourcing fixes (#31, #32, #34, #35, #37, #38 and #39). Status: q05 used for development after step 0; no longer held-out.
-  Which test questions remain held-out is set by
-  [`docs/live-proof-protocol.md`](live-proof-protocol.md) ("What the five
-  consume"): a test question published live is spent.
+  sourcing fixes (#31, #32, #34, #35, #37, #38 and #39). Status:
+  q05 used for development after step 0; no longer held-out. Which test
+  questions remain held-out is set by
+  [`docs/live-proof-protocol.md`](live-proof-protocol.md) ("Amendments"):
+  a test question published live is spent.
 
 ## Measured performance
 
