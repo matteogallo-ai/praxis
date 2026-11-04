@@ -64,8 +64,9 @@ export function renderSynthesisSections(sections: readonly SynthesizedSection[])
     parts.push(`${inert(section.content_markdown.trim())}\n\n`);
     if (section.sources_cited.length > 0) {
       parts.push("**Sources:**\n\n");
-      for (const s of section.sources_cited) {
-        parts.push(`- [${inert(escapeMarkdownLinkText(s.title))}](${linkTarget(s.url)})\n`);
+      // Numbered as the prose's markers [n] cite them.
+      for (const [i, s] of section.sources_cited.entries()) {
+        parts.push(`- [${i + 1}] [${inert(escapeMarkdownLinkText(s.title))}](${linkTarget(s.url)})\n`);
       }
       parts.push("\n");
     }

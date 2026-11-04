@@ -307,8 +307,9 @@ function renderSection(
     doc.moveDown(0.5);
     doc.font(theme.bodyBold).text("Sources:", { continued: false });
     doc.font(theme.bodyFont);
-    for (const s of section.sources_cited) {
-      doc.text(`•  ${s.title} — ${s.url}`, { indent: 12 });
+    // Numbered as the prose's markers [n] cite them.
+    for (const [i, s] of section.sources_cited.entries()) {
+      doc.text(`[${i + 1}]  ${s.title} — ${s.url}`, { indent: 12 });
     }
   }
 }

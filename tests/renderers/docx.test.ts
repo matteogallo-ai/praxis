@@ -403,6 +403,11 @@ describe("buildDocxParts — document.xml content", () => {
     expect(doc).toContain("[research] finding 2 — OECD&apos;s own site, for its own facts: https://www.oecd.org/x");
   });
 
+  test("a section's sources are numbered [n], as the prose's markers cite them", () => {
+    const doc = buildDocxParts(makeBrief(), {})[2]?.content;
+    expect(doc).toContain("[1] Reuters piece — ");
+  });
+
   test("the Sourcing Report lists the options and critique citations from untrusted domains", () => {
     const brief = makeBrief();
     brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };
