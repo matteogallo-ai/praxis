@@ -1,6 +1,6 @@
 /**
- * The sourcing guide the research, stakeholder and risk prompts receive,
- * written by code from the format's `sourcing_rules`.
+ * The sourcing guide the research, stakeholder, risk and options prompts
+ * receive, written by code from the format's `sourcing_rules`.
  *
  * The model was told only to "prefer primary sources", so it could not know
  * which hosts the format trusts and cited pages the check then rejected. The

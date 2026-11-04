@@ -1,10 +1,11 @@
 /**
- * The research, stakeholder and risk prompts carry the format's sourcing
+ * The research, stakeholder, risk and options prompts carry the format's sourcing
  * guide (`src/sourcing/guidance.ts`), so the model knows which hosts the
  * format trusts and that a publication date is asked for.
  */
 import { describe, expect, test } from "bun:test";
 
+import { executeOptionsGeneration } from "../../src/agents/options.ts";
 import { executeResearch } from "../../src/agents/research.ts";
 import { executeRiskAnalysis } from "../../src/agents/risk.ts";
 import { executeStakeholderMapping } from "../../src/agents/stakeholder.ts";
@@ -58,6 +59,17 @@ describe("sourcing guide in the search stages' prompts", () => {
     risk: (llm) =>
       executeRiskAnalysis(
         { scoping: SCOPING, research: empty, stakeholders: { stakeholders: [], key_dynamics: [] } as never, format: FORMAT },
+        llm
+      ),
+    options: (llm) =>
+      executeOptionsGeneration(
+        {
+          scoping: SCOPING,
+          research: empty,
+          stakeholders: { stakeholders: [], key_dynamics: [] } as never,
+          risks: { risks: [] } as never,
+          format: FORMAT,
+        },
         llm
       ),
   };

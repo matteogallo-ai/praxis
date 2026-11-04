@@ -26,6 +26,7 @@
  * only validates SHAPE and CROSS-REFERENCES.
  */
 
+import { sourceGuidance } from "../sourcing/guidance.ts";
 import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
@@ -125,6 +126,7 @@ export async function executeOptionsGeneration(
     risks_json: untrustedJson("risks", ctx.risks),
     format_id: ctx.format.id,
     sourcing_policy: ctx.format.sourcing_policy,
+    source_guidance: sourceGuidance(ctx.format.sourcing_rules, ctx.format.sourcing_policy),
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);
