@@ -14,15 +14,16 @@ import { StaleSourceError } from "../../src/sourcing/errors.ts";
 import { FormatRegistry } from "../../src/registry/registry.ts";
 import { FIXTURE_CLOCK } from "../fixtures/clock.ts";
 import { restoreSystemTime } from "../helpers/clock.ts";
+import { datedMockFixtures } from "../helpers/dated-fixtures.ts";
 
 const QUESTION = "Should we enter the German market?";
 const FORMAT = "executive-pre-read";
 const now = new Date(FIXTURE_CLOCK);
 
-function orchestrator(seenRounds: number[] = []): Orchestrator {
+function orchestrator(seenRounds: number[] = [], fixturesDir = "tests/fixtures/mock-llm"): Orchestrator {
   const registry = new FormatRegistry();
   registry.loadDirectory("formats");
-  const mock = new MockLLMProvider({ fixturesDir: "tests/fixtures/mock-llm" });
+  const mock = new MockLLMProvider({ fixturesDir });
   const recording = Object.assign(Object.create(mock) as MockLLMProvider, {
     completeWithTools(prompt: string, tools: Tool[], options?: CompleteWithToolsOptions) {
       if (options?.max_tool_rounds !== undefined) seenRounds.push(options.max_tool_rounds);
@@ -131,13 +132,14 @@ describe("Orchestrator — per-stage options", () => {
   });
 
   test("the format's sourcing rules apply from the risk stage on, not to research alone", async () => {
-    // In 2040 every fixture source is past the format's 730-day cap.
+    // In 2040 every dated fixture source is past the format's 730-day cap.
     // researchAfterScoping takes no clock: it would read this one.
     const later = new Date("2040-06-01T00:00:00Z");
+    const dated = datedMockFixtures();
     setSystemTime(later);
     try {
-      await expect(orchestrator().researchAfterScoping(QUESTION, FORMAT)).resolves.toBeDefined();
-      await expect(orchestrator().brief(QUESTION, FORMAT, { now: later })).rejects.toBeInstanceOf(StaleSourceError);
+      await expect(orchestrator([], dated).researchAfterScoping(QUESTION, FORMAT)).resolves.toBeDefined();
+      await expect(orchestrator([], dated).brief(QUESTION, FORMAT, { now: later })).rejects.toBeInstanceOf(StaleSourceError);
     } finally {
       restoreSystemTime();
     }

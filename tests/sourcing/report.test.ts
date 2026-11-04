@@ -199,6 +199,14 @@ describe("mergeReports", () => {
     expect(merged.counts.ok).toBe(5);
   });
 
+  test("sums the sources of unknown freshness, and leaves the field out when no report has it", () => {
+    const a = { ...buildReport("permissive", 2, []), freshness_unknown: 2 };
+    const b = { ...buildReport("permissive", 3, []), freshness_unknown: 1 };
+    expect(mergeReports("permissive", [a, b]).freshness_unknown).toBe(3);
+    expect(mergeReports("permissive", [buildReport("permissive", 1, [])])).not.toHaveProperty("freshness_unknown");
+    expect(mergeReports("permissive", [a, buildReport("permissive", 1, [])]).freshness_unknown).toBe(2);
+  });
+
   test("merges empty reports cleanly", () => {
     const merged = mergeReports("strict", []);
     expect(merged.total_items).toBe(0);

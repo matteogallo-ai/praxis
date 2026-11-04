@@ -106,8 +106,9 @@ sourcing_rules:
 
 ### Freshness
 
-`FreshnessRule` classifies each source's `accessed_at` age (relative
-to the pipeline's `now`) as `fresh`, `warn`, or `stale`:
+`FreshnessRule` classifies each source's publication date
+(`published_at`, relative to the pipeline's `now`) as `fresh`, `warn`, or
+`stale`:
 
 - `age <= warn_after_days` → **fresh** (no warning)
 - `warn_after_days < age <= max_source_age_days` → **warn** (soft
@@ -115,7 +116,14 @@ to the pipeline's `now`) as `fresh`, `warn`, or `stale`:
 - `age > max_source_age_days` → **stale** (blocking under strict,
   raises `StaleSourceError`)
 
-Malformed `accessed_at` timestamps are treated as `stale`. The
+A source without `published_at` has an **unknown** freshness: it gets no
+warning and is never called fresh; the report counts it in
+`freshness_unknown`, outside the five categories (an `ok` source is not a
+fresh one). The model's answer keeps `published_at` only when it starts
+with a `YYYY-MM-DD` date that parses, cut to that day; anything else is
+dropped, so the date is unknown rather than guessed. `accessed_at`, the
+retrieval time, is not used for freshness: a page read today can be ten
+years old. The
 `warn_after_days <= max_source_age_days` invariant is validated at
 format load time.
 
@@ -126,8 +134,7 @@ same freshness verdicts whatever day it runs; the test suite runs with it
 set (`bench:mock` passes the same date as the library option). A resumed
 run keeps the date its first attempt started at. `PRAXIS_NOW` also stamps
 the run id. It does not date retrieval: a source the model returns without
-`accessed_at` is stamped with the real time it was read, so it is fresh by
-construction whatever the clock.
+`accessed_at` is stamped with the real time it was read.
 
 ### Domain trust
 
@@ -193,6 +200,7 @@ Every validator returns a report, regardless of policy:
   };
   warnings: SourcingWarning[];
   missing_sources_count: number;           // convenience alias (v0.4 compat)
+  freshness_unknown?: number;               // sources without a publication date; set when the format has a freshness rule
 }
 ```
 

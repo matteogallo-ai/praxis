@@ -38,7 +38,8 @@
       "missing": 2
     },
     "edited_after_critique": true,
-    "insufficiently_sourced": false
+    "insufficiently_sourced": false,
+    "freshness_unknown": 27
   },
   "usage": {
     "stages": {
@@ -156,8 +157,8 @@
     "max_cost_usd": null
   },
   "artefacts": {
-    "brief.md": 16832,
-    "brief.pdf": 47276,
-    "brief.docx": 7791
+    "brief.md": 17607,
+    "brief.pdf": 47505,
+    "brief.docx": 7834
   }
 }

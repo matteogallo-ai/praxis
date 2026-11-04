@@ -46,6 +46,12 @@ export interface SourceReference {
   title: string;
   /** ISO 8601 date (UTC), e.g. `2026-08-17T14:32:00Z`. */
   accessed_at: string;
+  /**
+   * When the page was published (`YYYY-MM-DD`, optionally with a time), as
+   * the search result states it. Absent when unknown: freshness is then
+   * unknown, not fresh, since retrieval time says nothing of a page's age.
+   */
+  published_at?: string;
   /** Relevant excerpt, capped at 500 characters. */
   excerpt: string;
 }
@@ -118,6 +124,8 @@ export type SourcingWarning =
       item_index: number;
       url: string;
       accessed_at: string;
+      /** The publication date the age is computed from. */
+      published_at?: string;
       age_days: number;
       /** `true` when age exceeds the hard cap (error-level under strict). */
       exceeds_max: boolean;
@@ -193,6 +201,13 @@ export interface SourcingReport {
    * carries an "Insufficiently sourced" section listing the failing items.
    */
   insufficiently_sourced?: boolean;
+
+  /**
+   * Sources with no known publication date, when the format has a freshness
+   * rule. They are in no category: "ok" says nothing blocked them, not that
+   * they are fresh.
+   */
+  freshness_unknown?: number;
 }
 
 // ---------------------------------------------------------------------------

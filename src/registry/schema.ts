@@ -107,8 +107,9 @@ export interface Format {
 // ---------------------------------------------------------------------------
 
 /**
- * Freshness gate. Sources whose `accessed_at` is older than
- * `max_source_age_days` are rejected (strict) or warned (permissive).
+ * Freshness gate. Sources whose publication date (`published_at`) is older
+ * than `max_source_age_days` are rejected (strict) or warned (permissive); a
+ * source without one has an unknown freshness and is neither.
  * `warn_after_days` is a soft warning threshold; must satisfy
  * `warn_after_days <= max_source_age_days`.
  */

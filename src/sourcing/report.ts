@@ -159,5 +159,8 @@ export function mergeReports(
   if (reports.some((r) => r.insufficiently_sourced === true)) {
     merged.insufficiently_sourced = true;
   }
+  if (reports.some((r) => r.freshness_unknown !== undefined)) {
+    merged.freshness_unknown = reports.reduce((acc, r) => acc + (r.freshness_unknown ?? 0), 0);
+  }
   return merged;
 }

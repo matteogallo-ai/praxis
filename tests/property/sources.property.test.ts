@@ -189,19 +189,21 @@ describe("freshness — properties", () => {
   test("the class follows the age: fresh up to warn_after_days, stale past max_source_age_days", () => {
     fc.assert(
       fc.property(rule, fc.integer({ min: -400, max: 8000 }), (r, ageDays) => {
-        const accessed = new Date(now.getTime() - ageDays * DAY).toISOString();
-        const { classification } = classifyFreshness(accessed, r, now);
+        const published = new Date(now.getTime() - ageDays * DAY).toISOString();
+        const { classification } = classifyFreshness(published, r, now);
         const age = Math.max(0, ageDays);
-        const expected = age > r.max_source_age_days ? "stale" : age > r.warn_after_days ? "warn" : "fresh";
+        // More than a day ahead of the clock is a date the source cannot have.
+        const expected =
+          ageDays < -1 ? "unknown" : age > r.max_source_age_days ? "stale" : age > r.warn_after_days ? "warn" : "fresh";
         expect(classification).toBe(expected);
       })
     );
   });
 
-  test("an unreadable date is stale, never fresh", () => {
+  test("an unreadable publication date is unknown, never fresh", () => {
     fc.assert(
-      fc.property(rule, fc.string().filter((s) => Number.isNaN(Date.parse(s))), (r, accessed) => {
-        expect(classifyFreshness(accessed, r, now).classification).toBe("stale");
+      fc.property(rule, fc.string().filter((s) => Number.isNaN(Date.parse(s))), (r, published) => {
+        expect(classifyFreshness(published, r, now).classification).toBe("unknown");
       })
     );
   });

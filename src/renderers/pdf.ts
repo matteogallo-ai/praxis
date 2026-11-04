@@ -33,6 +33,7 @@ import type {
 import type { Renderer, RenderOptions, RenderTheme } from "./types.ts";
 import { hasCritique } from "./types.ts";
 import { RenderError } from "./errors.ts";
+import { freshnessUnknownLine, sourceDates } from "./source-dates.ts";
 
 // ---------------------------------------------------------------------------
 // Theme table
@@ -421,8 +422,8 @@ function renderSources(
   theme: ThemeColors
 ): void {
   h1(doc, "Sources", theme);
-  const seen = new Map<string, { url: string; title: string; accessed_at: string }>();
-  const add = (s: { url: string; title: string; accessed_at: string }) => {
+  const seen = new Map<string, { url: string; title: string; accessed_at: string; published_at?: string }>();
+  const add = (s: { url: string; title: string; accessed_at: string; published_at?: string }) => {
     if (!seen.has(s.url)) seen.set(s.url, s);
   };
   for (const f of brief.research.findings) if ("url" in f.source) add(f.source);
@@ -453,7 +454,7 @@ function renderSources(
       doc.font(theme.bodyBold).fillColor(theme.accent).text(d);
       doc.font(theme.bodyFont).fillColor("#000000");
     }
-    doc.text(`•  ${s.title} — ${s.url} (accessed ${s.accessed_at})`, { indent: 12 });
+    doc.text(`•  ${s.title} — ${s.url} (${sourceDates(s)})`, { indent: 12 });
   }
 }
 
@@ -468,6 +469,8 @@ function renderSourcingReport(
     .text(`Policy: ${sr.policy}`)
     .text(`Total items: ${sr.total_items}`)
     .text(`OK: ${sr.counts.ok} · stale: ${sr.counts.stale} · untrusted: ${sr.counts.untrusted} · duplicated: ${sr.counts.duplicated} · missing: ${sr.counts.missing}`);
+  const unknown = freshnessUnknownLine(sr);
+  if (unknown !== undefined) doc.text(unknown);
   if (sr.warnings.length > 0) {
     doc.moveDown(0.5);
     doc.font(theme.bodyBold).text("Warnings:");

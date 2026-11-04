@@ -276,6 +276,13 @@ describe("pdfRenderer — optional sections", () => {
     expect(pdfContainsText(buf, "Sourcing Report")).toBe(true);
     expect(pdfContainsText(buf, "Policy: strict")).toBe(true);
   });
+
+  test("the Sourcing Report counts the sources of unknown freshness", async () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, freshness_unknown: 4 };
+    const buf = await pdfRenderer.render(brief, { include_sourcing_report: true, compress_pdf_streams: false });
+    expect(pdfContainsText(buf, "Freshness unknown (no publication date): 4")).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------

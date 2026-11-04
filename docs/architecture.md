@@ -123,8 +123,11 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 
 - The per-stage timeouts are derived from each stage's token and search
   ceilings, not from measured durations; no live stage duration exists yet.
-- Freshness is checked on `accessed_at`, which Praxis sets to the retrieval
-  time; the page's own age (`page_age`) is not used.
+- Freshness is judged on the publication date the model reports
+  (`published_at`), which nothing checks against the page's own age
+  (`page_age`). A source without a readable date is counted as freshness
+  unknown (`freshness_unknown`), never as fresh. The stage prompts do not ask
+  the model for that date, so a live source's freshness is unknown.
 - Web search results arrive inside the model's own turn, so Praxis cannot
   wrap them; they are covered by the system rule alone. Whether a live model
   resists an injected instruction has not been measured.

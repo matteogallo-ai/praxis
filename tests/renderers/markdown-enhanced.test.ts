@@ -352,6 +352,23 @@ describe("renderMarkdownEnhanced — Sources section (dedup + domain grouping)",
     expect(tail).toContain("https://ft.com/critique-source");
   });
 
+  test("each source states its publication date, or that it is unknown, beside its retrieval", () => {
+    const dated = { ...SRC_B, published_at: "2026-05-14" };
+    const md = renderMarkdownEnhanced(
+      makeBrief({ research: { findings: [{ claim: "c", supporting_evidence: "e", source: dated }], open_questions: [], search_queries_used: [] } })
+    );
+    const tail = md.slice(md.indexOf("## Sources"));
+    expect(tail).toContain("published 2026-05-14, accessed 2026-08-15T00:00:00Z");
+    expect(tail).toContain("publication date unknown, accessed 2026-08-15T00:00:00Z");
+  });
+
+  test("the sourcing summary counts the sources of unknown freshness when the format dates them", () => {
+    const base = makeBrief();
+    const md = renderMarkdownEnhanced(makeBrief({ sourcing_report: { ...base.sourcing_report, freshness_unknown: 7 } }));
+    expect(md).toMatch(/sourcing_summary: "[^"]*freshness_unknown=7"/);
+    expect(renderMarkdownEnhanced(base)).not.toContain("freshness_unknown");
+  });
+
   test("SOURCE_MISSING entries do NOT appear in the Sources footer", () => {
     const md = renderMarkdownEnhanced(makeBriefWithCritique());
     const srcIdx = md.indexOf("## Sources");

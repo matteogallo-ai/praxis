@@ -23,6 +23,14 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   computed from the run records (`tests/docs/live-records.ts`) and checked
   in `tests/docs/live-attempts.test.ts`. Live runs start from their own
   worktree (`docs/live-proof-protocol.md`).
+- Source freshness was measured on `accessed_at`, the retrieval time, so a
+  live source was always fresh, and question 05's run of 4 Nov 2026
+  reported `stale: 0` without knowing any publication date (erratum in
+  `benchmarks/outputs/live/README.md`; the record is unchanged). Freshness
+  is now judged on an optional `published_at`; a source without a readable
+  one is counted in the report's `freshness_unknown`, never as fresh.
+  Briefings list each source's publication date or "publication date
+  unknown".
 
 ### Added
 

@@ -349,4 +349,36 @@ describe("output reader refusals name the field and the rule", () => {
   ])("parseSource refuses %s with its own message", (_label, value, message) => {
     expect(() => reader.parseSource(value, "s", "raw")).toThrow(message);
   });
+
+  test("parseSource keeps a publication date it can read, and drops one it cannot", () => {
+    // An unreadable date becomes unknown freshness rather than failing the stage.
+    expect(reader.parseSource({ ...source, published_at: "2026-05-14" }, "s", "raw")).toEqual(
+      expect.objectContaining({ published_at: "2026-05-14" })
+    );
+    // Rendered into the briefing, so only the calendar day is kept.
+    expect(reader.parseSource({ ...source, published_at: "2026-05-14T23:10:00Z" }, "s", "raw")).toEqual(
+      expect.objectContaining({ published_at: "2026-05-14" })
+    );
+    for (const bad of ["May 2026", "", 2026, null, "2026-05-14<img src=x>", "2026-13-40"]) {
+      expect(reader.parseSource({ ...source, published_at: bad }, "s", "raw")).not.toHaveProperty("published_at");
+    }
+    expect(reader.parseSource(source, "s", "raw")).not.toHaveProperty("published_at");
+  });
+
+  test("parseSource keeps the day as written: no calendar roll-over, no time-zone shift", () => {
+    // Date.parse rolls 30 Feb over to 2 March; the source never said 2 March.
+    for (const impossible of ["2026-02-30", "2026-02-31", "2026-04-31", "2026-02-29T10:00:00Z"]) {
+      expect(reader.parseSource({ ...source, published_at: impossible }, "s", "raw")).not.toHaveProperty("published_at");
+    }
+    for (const [written, day] of [
+      ["2026-05-01T00:00:00", "2026-05-01"],
+      ["2026-05-01T23:30:00-05:00", "2026-05-01"],
+      ["2026-05-01T01:00:00+09:00", "2026-05-01"],
+      ["2028-02-29", "2028-02-29"],
+    ] as const) {
+      expect(reader.parseSource({ ...source, published_at: written }, "s", "raw")).toEqual(
+        expect.objectContaining({ published_at: day })
+      );
+    }
+  });
 });
