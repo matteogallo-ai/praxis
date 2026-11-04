@@ -20,10 +20,8 @@
  *   5. Caches the parsed payload under
  *      `benchmarks/.scoring-cache/{slug}-{mode}.json`. Cache TTL:
  *      24 hours by default.
- *   6. Aggregates every parsed score per criterion, mode, and
- *      overall, and rewrites the "AI-Assisted Qualitative Scoring"
- *      section in `benchmarks/RESULTS.md` (the v0.9 objective-
- *      checks block is preserved verbatim).
+ *   6. Writes each new live judgment to `benchmarks/judgments/`, to be
+ *      committed; `benchmarks/results.ts` publishes them in RESULTS.md.
  *
  * Flags:
  *   default          — score the live briefings that exist.
@@ -40,9 +38,6 @@
  * script emits a structured error naming the missing env var and
  * pointing at docs/benchmarking-methodology.md.
  *
- * v0.10.0 SHIPS THE FRAMEWORK ONLY. Empirical numbers land in
- * v0.10.1, when a maintainer with API credits runs this script and
- * commits the resulting RESULTS.md diff.
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -718,6 +713,19 @@ export function writeCache(
   writeFileSync(cachePath(root, slug, mode), JSON.stringify(record, null, 2));
 }
 
+/**
+ * A live judgment, committed: the cache is local and expires, but a score
+ * published in RESULTS.md must come from a file in the repository
+ * (`benchmarks/results.ts`). Named as the cache names it, by run.
+ */
+export function writeJudgment(root: string, key: string, payload: ScoringPayload): string {
+  const dir = join(root, "benchmarks", "judgments");
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, `${key}-live.json`);
+  writeFileSync(path, `${JSON.stringify({ judge_model: JUDGE_MODEL, judged_at: new Date().toISOString(), payload }, null, 2)}\n`);
+  return path;
+}
+
 // ---------------------------------------------------------------------------
 // Main orchestration
 // ---------------------------------------------------------------------------
@@ -726,7 +734,8 @@ export interface ScoreAllReport {
   scored: number;
   from_cache: number;
   errors: number;
-  results_md_path: string | null;
+  /** The judgments written under `benchmarks/judgments/`, one per newly scored briefing. */
+  judgments_written: string[];
   scorings: ScoringPayload[];
   /** The batch's worst case, reserved against the cap; 0 when nothing was sent. */
   reserved_usd: number;
@@ -800,7 +809,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
       scored: 0,
       from_cache: 0,
       errors: 0,
-      results_md_path: null,
+      judgments_written: [],
       scorings: [],
       reserved_usd: 0,
       spent_usd: 0,
@@ -825,6 +834,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
 
   const apiKey = process.env["ANTHROPIC_API_KEY"] as string;
   const scorings: ScoringPayload[] = [];
+  const judgmentsWritten: string[] = [];
   let scored = 0;
   let fromCache = 0;
   let errors = 0;
@@ -871,6 +881,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
         const parsed = parseScoringPayload(JSON.parse(extractJsonBody(outcome.text)));
         scorings.push(parsed);
         writeCache(opts.root, cacheKey(ref), ref.mode, parsed);
+        judgmentsWritten.push(writeJudgment(opts.root, cacheKey(ref), parsed));
         scored += 1;
         process.stderr.write(`  ✓ [${ref.mode}] ${ref.slug} (score=${parsed.total}/35)\n`);
       } catch (err) {
@@ -892,26 +903,11 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     }
   }
 
-  // Rewrite RESULTS.md when at least one scoring came in.
-  let resultsPath: string | null = null;
-  if (scorings.length > 0) {
-    resultsPath = join(opts.root, "benchmarks", "RESULTS.md");
-    const existing = existsSync(resultsPath)
-      ? readFileSync(resultsPath, "utf-8")
-      : "# Benchmark results\n";
-    const agg = aggregate(scorings);
-    const obs = computeObservations(agg, scorings);
-    const iso = new Date().toISOString().slice(0, 10);
-    const block = renderScoringSection(scorings, agg, obs, iso);
-    const next = insertScoringSection(existing, block);
-    writeFileSync(resultsPath, next);
-  }
-
   return {
     scored,
     from_cache: fromCache,
     errors,
-    results_md_path: resultsPath,
+    judgments_written: judgmentsWritten,
     scorings,
     reserved_usd: reservedUsd,
     spent_usd: spentUsd,
@@ -928,8 +924,7 @@ if (import.meta.main) {
   process.stderr.write(
     `\n== scored=${report.scored} cached=${report.from_cache} errors=${report.errors} ==\n`
   );
-  if (report.results_md_path !== null) {
-    process.stderr.write(`   wrote ${report.results_md_path}\n`);
-  }
+  for (const path of report.judgments_written) process.stderr.write(`   wrote ${path}\n`);
+  if (report.judgments_written.length > 0) process.stderr.write("   commit them, then: bun run results\n");
   process.exit(report.errors === 0 ? 0 : 1);
 }
