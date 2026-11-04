@@ -55,9 +55,17 @@ export function describeFirstParty(
   return `[${f.stage}] ${text(oneLine(f.item))} — ${f.organisation}'s own site, for its own facts: ${link(f.url)}${claim}`;
 }
 
-/** Cut at the last word boundary within the limit, or inside a word longer than it. */
+/**
+ * Cut at the last word boundary within the limit, counted in characters so
+ * a two-unit character (an emoji) is never split. A boundary that keeps
+ * under half the limit ("See https://…") is no clean cut: the text is cut
+ * inside the word instead.
+ */
 function cut(s: string): string {
-  if (s.length <= CLAIM_MAX) return s;
-  const space = s.lastIndexOf(" ", CLAIM_MAX);
-  return `${(space > 0 ? s.slice(0, space) : s.slice(0, CLAIM_MAX)).replace(/[\s.,;:]+$/, "")}…`;
+  const chars = Array.from(s);
+  if (chars.length <= CLAIM_MAX) return s;
+  const head = chars.slice(0, CLAIM_MAX + 1).join("");
+  const space = head.lastIndexOf(" ");
+  const kept = space >= CLAIM_MAX / 2 ? head.slice(0, space) : chars.slice(0, CLAIM_MAX).join("");
+  return `${kept.replace(/[.,;:]+$/, "")}…`;
 }

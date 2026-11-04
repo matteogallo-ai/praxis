@@ -113,7 +113,7 @@ export function validateStakeholderSourcing(
         stakeholder_index: i,
         stakeholder_name: stakeholder.name,
       },
-      { subject: stakeholder.name, label: stakeholder.name, claim: `position: ${stakeholder.position}. ${stakeholder.interest}` },
+      { subject: stakeholder.name, label: stakeholder.name, claim: `position: ${stakeholder.position}; interest: ${stakeholder.interest}` },
       rulesInfo,
       warnings
     );
@@ -150,7 +150,7 @@ export function validateRiskSourcing(
         risk_id: risk.id,
         evidence_field: "likelihood_evidence" as const,
       },
-      { subject: risk.description, label: `${risk.id} likelihood`, claim: risk.description },
+      { subject: risk.description, label: `${risk.id} likelihood`, claim: `likelihood: ${risk.likelihood}. ${risk.description}` },
       rulesInfo,
       warnings
     );
@@ -164,7 +164,7 @@ export function validateRiskSourcing(
         risk_id: risk.id,
         evidence_field: "impact_evidence" as const,
       },
-      { subject: risk.description, label: `${risk.id} impact`, claim: risk.description },
+      { subject: risk.description, label: `${risk.id} impact`, claim: `impact: ${risk.impact}. ${risk.description}` },
       rulesInfo,
       warnings
     );

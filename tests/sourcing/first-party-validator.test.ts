@@ -77,13 +77,15 @@ describe("first-party sources in the research validators", () => {
     const s = validateStakeholderSourcing(stakeholders, "strict", { rules: RULES, now: NOW });
     expect(s.first_party_sources?.[0]?.item).toBe("Financial Conduct Authority (FCA)");
     // The source backs the stakeholder's position, so that is the claim a reviewer checks.
-    expect(s.first_party_sources?.[0]?.claim).toBe("position: neutral. Orderly markets.");
+    expect(s.first_party_sources?.[0]?.claim).toBe("position: neutral; interest: Orderly markets.");
 
     const risks = {
       risks: [
         {
           id: "RISK-001",
           description: "LSEG may change its listing fees.",
+          likelihood: "medium",
+          impact: "major",
           likelihood_evidence: source("https://www.lseg.com/fees", "London Stock Exchange Group"),
           impact_evidence: source("https://www.lseg.com/fees", "London Stock Exchange Group"),
         },
@@ -91,7 +93,11 @@ describe("first-party sources in the research validators", () => {
     } as unknown as RiskAnalysisResult;
     const k = validateRiskSourcing(risks, "strict", { rules: RULES, now: NOW });
     expect(k.first_party_sources?.map((f) => f.item)).toEqual(["RISK-001 likelihood", "RISK-001 impact"]);
-    expect(k.first_party_sources?.map((f) => f.claim)).toEqual(["LSEG may change its listing fees.", "LSEG may change its listing fees."]);
+    // The source backs the level, so the claim names it before the risk.
+    expect(k.first_party_sources?.map((f) => f.claim)).toEqual([
+      "likelihood: medium. LSEG may change its listing fees.",
+      "impact: major. LSEG may change its listing fees.",
+    ]);
   });
 
   test("merged reports keep every first-party source", () => {

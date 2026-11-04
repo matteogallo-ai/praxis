@@ -16,12 +16,26 @@ describe("describeFirstParty — the claim", () => {
     );
   });
 
-  test("a long claim is cut at a word boundary, with an ellipsis", () => {
-    const claim = `${"word ".repeat(60)}end`;
-    const quoted = /claim: “(.*)”$/.exec(describeFirstParty({ ...F, claim }))?.[1] as string;
-    expect(quoted.endsWith(" …")).toBe(false);
-    expect(quoted.endsWith("word…")).toBe(true);
-    expect(quoted.length).toBeLessThanOrEqual(CLAIM_MAX + 1);
+  const quotedOf = (claim: string) => /claim: “(.*)”$/.exec(describeFirstParty({ ...F, claim }))?.[1] as string;
+
+  // 12-character units: the limit (160) falls inside "defghij", so a blind cut would end mid-word.
+  test("a long claim is cut at the last word boundary, with an ellipsis", () => {
+    expect(quotedOf("abc defghij ".repeat(30))).toBe(`${"abc defghij ".repeat(13)}abc…`);
+  });
+
+  test("punctuation left before the cut goes, so the ellipsis follows a word", () => {
+    expect(quotedOf(`${"x".repeat(150)}, yy. ${"z".repeat(20)}`)).toBe(`${"x".repeat(150)}, yy…`);
+  });
+
+  test("a cut never splits a character written as two UTF-16 units", () => {
+    const quoted = quotedOf(`${"x".repeat(159)}😀😀😀`);
+    expect(quoted).toBe(`${"x".repeat(159)}😀…`);
+  });
+
+  // "See https://…": a boundary that keeps almost nothing is no clean cut.
+  test("a boundary that would keep under half the limit cuts inside the word instead", () => {
+    const quoted = quotedOf(`See ${"u".repeat(300)}`);
+    expect(quoted).toBe(`See ${"u".repeat(CLAIM_MAX - 4)}…`);
   });
 
   test("a single word longer than the limit is cut inside it", () => {
