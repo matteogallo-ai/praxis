@@ -12,7 +12,7 @@ measurement misses is published as not met, not moved to fit.
 | Objective | Target | Status | Measured on |
 | --- | --- | --- | --- |
 | Latency | p95 ≤ 10 minutes per briefing | Not measured | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
-| Error rate | ≤ 10% of started briefings end in an error | 1/1 (step 0, 3 Nov 2026, TruncatedOutputError); n too small, no status | exit code of each run |
+| Error rate | ≤ 10% of started briefings end in an error | 1/1 since run records began (step 0, 3 Nov 2026, TruncatedOutputError); the five aborted runs of 1.2.1 predate the records; n too small, no status | `error-*.json` (budget stops excluded) against `metadata.json` under `benchmarks/outputs/live/` |
 | Cost | p95 ≤ $10.00 per briefing | Not measured; estimate for question 05 (step 0), not a status: $1.37 low, $5.87 central, $12.78 high | `usage.total.cost_usd` in `metadata.json` |
 
 The estimate comes from `bun run estimate:cost` (prompt sizes measured
@@ -27,8 +27,8 @@ live measurements do.
 
 - **Error**: a run that exits 1 for a reason the operator did not choose. A
   missing key and a budget cap the operator set are not errors of the
-  service; a timeout, an invalid answer after its retry, or a refused
-  checkpoint are. A briefing that completes with an "Insufficiently sourced"
+  service; a timeout, an invalid answer after its retry, an answer cut at
+  its stage's `max_tokens` (not retried), or a refused checkpoint are. A briefing that completes with an "Insufficiently sourced"
   section is a success with a flag, counted separately: it is the pipeline
   declining to present unsourced claims (ADR 0002).
 - **Latency**: wall time of the stages, from `metadata.json`; a resumed

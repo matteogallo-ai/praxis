@@ -46,19 +46,23 @@ describe("docs/SLO.md", () => {
 
   test("reports the error rate from the committed live run records, with no status at this n", () => {
     // Each started live briefing leaves metadata.json (completed) or an
-    // error-*.json (failed); the row must count exactly those records.
+    // error-*.json (failed). A stop at the operator's own cap is not an error
+    // of the service ("What counts"), so it is left out of both counts.
     const live = "benchmarks/outputs/live";
     const dirs = readdirSync(live, { withFileTypes: true }).filter((d) => d.isDirectory());
-    const failures = dirs.flatMap((d) =>
-      readdirSync(`${live}/${d.name}`)
-        .filter((f) => /^error-.*\.json$/.test(f))
-        .map((f) => JSON.parse(readFileSync(`${live}/${d.name}/${f}`, "utf-8")) as { error_type: string })
-    );
+    const failures = dirs
+      .flatMap((d) =>
+        readdirSync(`${live}/${d.name}`)
+          .filter((f) => /^error-.*\.json$/.test(f))
+          .map((f) => JSON.parse(readFileSync(`${live}/${d.name}/${f}`, "utf-8")) as { error_type: string })
+      )
+      .filter((f) => f.error_type !== "BudgetExceededError");
     const completed = dirs.filter((d) => existsSync(`${live}/${d.name}/metadata.json`)).length;
+    // The row names the one failure; any new record must change it.
     expect(failures.map((f) => f.error_type)).toEqual(["TruncatedOutputError"]);
     expect(completed).toBe(0);
     expect(doc).toContain(
-      "| Error rate | ≤ 10% of started briefings end in an error | 1/1 (step 0, 3 Nov 2026, TruncatedOutputError); n too small, no status |"
+      `| Error rate | ≤ 10% of started briefings end in an error | ${failures.length}/${failures.length + completed} since run records began (step 0, 3 Nov 2026, TruncatedOutputError); the five aborted runs of 1.2.1 predate the records; n too small, no status |`
     );
     expect(flat).toContain("No live briefing has completed yet");
   });
