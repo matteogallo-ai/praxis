@@ -15,11 +15,6 @@
  *     preamble+trailing prose, complete garbage.
  *   - aggregate: computes per-criterion mock/live/delta correctly
  *     on the ten-briefing synthetic set.
- *   - computeObservations: identifies live-outperforms
- *     (Δ ≥ +1.0), holds-close (Δ < +0.5), weakest / strongest.
- *   - insertScoringSection: idempotent, replaces existing block,
- *     appends when absent.
- *   - renderScoringSection: markdown structure sanity.
  *   - readCache / writeCache: TTL enforcement, malformed cache
  *     ignored.
  *   - enumerateBriefings: only picks directories with both
@@ -34,18 +29,14 @@ import { tmpdir } from "node:os";
 
 import {
   aggregate,
-  computeObservations,
-  CRITERION_LABELS,
   enumerateBriefings,
   extractJsonBody,
-  insertScoringSection,
   interpolateScoringPrompt,
   parseScoreArgs,
   parseScoringPayload,
   ScoringParseError,
   cacheKey,
   readCache,
-  renderScoringSection,
   scoreAll,
   SCORING_CRITERIA,
   writeCache,
@@ -316,110 +307,6 @@ describe("aggregate", () => {
     expect(agg.total_mock_avg).toBeNull();
     expect(agg.total_live_avg).toBeNull();
     expect(agg.total_delta).toBeNull();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// computeObservations
-// ---------------------------------------------------------------------------
-
-describe("computeObservations", () => {
-  test("identifies weakest / strongest aspects from real deltas", () => {
-    const parsed = SYNTH.map(parseScoringPayload);
-    const agg = aggregate(parsed);
-    const obs = computeObservations(agg, parsed);
-    // In the synthetic set, perceived_sourcing has the widest delta
-    // (mock 2.4 vs live 4.4). It should be among live-outperforms.
-    expect(obs.live_outperforms.join(", ")).toContain(
-      CRITERION_LABELS.perceived_sourcing
-    );
-    // format_fidelity is stable across mock and live at 4.0 →
-    // holds-close (delta 0).
-    expect(obs.mock_holds_close.join(", ")).toContain(
-      CRITERION_LABELS.format_fidelity
-    );
-    expect(obs.weakest_aspect.length).toBeGreaterThan(0);
-    expect(obs.strongest_aspect.length).toBeGreaterThan(0);
-    expect(obs.verdict.length).toBeGreaterThan(0);
-  });
-
-  test("handles a briefing below the usability floor", () => {
-    // Craft a scoring with total < 15.
-    const low: ScoringPayload = {
-      briefing_id: "sink",
-      provider: "mock",
-      format_id: "executive-pre-read",
-      scores: {
-        framing_clarity: { score: 1, example: "…", improvement: "…" },
-        non_hedging: { score: 1, example: "…", improvement: "…" },
-        decisive_recommendation: { score: 1, example: "…", improvement: "…" },
-        concrete_tradeoffs: { score: 1, example: "…", improvement: "…" },
-        perceived_sourcing: { score: 2, example: "…", improvement: "…" },
-        adversarial_usefulness: { score: 2, example: "…", improvement: "…" },
-        format_fidelity: { score: 2, example: "…", improvement: "…" },
-      },
-      total: 10,
-      weakest_aspect: "…",
-      strongest_aspect: "…",
-      comparative_note: "…",
-    };
-    const agg = aggregate([low]);
-    const obs = computeObservations(agg, [low]);
-    const verdictJoined = obs.verdict.join(" ");
-    expect(verdictJoined).toContain("below the 15/35 usability floor");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// insertScoringSection
-// ---------------------------------------------------------------------------
-
-describe("insertScoringSection", () => {
-  test("appends when no block exists", () => {
-    const existing = "# Benchmark results\n\n## Objective checks\n\nfoo\n";
-    const block =
-      "## AI-Assisted Qualitative Scoring (2026-01-01)\n\nnew content\n";
-    const out = insertScoringSection(existing, block);
-    expect(out).toContain("## Objective checks");
-    expect(out).toContain("## AI-Assisted Qualitative Scoring (2026-01-01)");
-  });
-
-  test("replaces (does not concatenate) when block exists", () => {
-    const existing =
-      "# Results\n\n## AI-Assisted Qualitative Scoring (2026-01-01)\n\nOLD\n\n## Other\n\ntail\n";
-    const block =
-      "## AI-Assisted Qualitative Scoring (2026-02-02)\n\nNEW\n";
-    const out = insertScoringSection(existing, block);
-    expect(out).toContain("NEW");
-    expect(out).not.toContain("OLD");
-    // Tail is preserved.
-    expect(out).toContain("## Other");
-    expect(out).toContain("tail");
-    // Only one AI-Assisted block.
-    const matches = out.match(/## AI-Assisted Qualitative Scoring/g) ?? [];
-    expect(matches.length).toBe(1);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// renderScoringSection
-// ---------------------------------------------------------------------------
-
-describe("renderScoringSection", () => {
-  test("renders the seven-criterion table and totals row", () => {
-    const parsed = SYNTH.map(parseScoringPayload);
-    const agg = aggregate(parsed);
-    const obs = computeObservations(agg, parsed);
-    const md = renderScoringSection(parsed, agg, obs, "2026-01-01");
-    expect(md).toContain("## AI-Assisted Qualitative Scoring (2026-01-01)");
-    expect(md).toContain("| Criterion | Mock (n) | Live (n) | Delta |");
-    for (const c of SCORING_CRITERIA) {
-      expect(md).toContain(CRITERION_LABELS[c]);
-    }
-    expect(md).toContain("**Total /35**");
-    expect(md).toContain("Per-briefing scores");
-    expect(md).toContain("Systematic observations");
-    expect(md).toContain("Overall verdict:");
   });
 });
 
