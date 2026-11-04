@@ -9,6 +9,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- The URLs, hosts and searched-for queries of the "Insufficiently
+  sourced" section and of the CLI's Markdown sourcing report are code spans.
+  A Markdown viewer turned them into links: in question 10's step 1
+  briefing, the untrusted host `www.bracewell.com` showed as a link in the
+  line that reports it as untrusted.
+
 - A refused `www.` address in a synthesis section is quoted whole in the
   error, cut at 200 characters (it was quoted as `'www.'`, which left
   question 02's step 1 failure undiagnosable). Every refused text the prose

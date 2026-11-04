@@ -15,6 +15,21 @@ export function oneLine(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Text as one Markdown code span, so that a viewer shows it as written: a
+ * URL or a `www.` host in a span is not turned into a link. The fence is a
+ * backtick run of a length the text does not contain (CommonMark).
+ */
+export function codeSpan(text: string): string {
+  const line = oneLine(text);
+  const runs = new Set((line.match(/`+/g) ?? []).map((r) => r.length));
+  let n = 1;
+  while (runs.has(n)) n++;
+  const fence = "`".repeat(n);
+  const pad = line.startsWith("`") || line.endsWith("`") ? " " : "";
+  return `${fence}${pad}${line}${pad}${fence}`;
+}
+
 export function codeWrittenSection(section_id: string, title: string, content_markdown: string): SynthesizedSection {
   return {
     section_id,
