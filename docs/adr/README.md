@@ -4,7 +4,7 @@
 | --- | --- |
 | [0001](0001-getting-json-from-the-model.md) | Getting JSON out of each stage: the text after the last tool block, the largest balanced object that parses (nothing repaired), and the output schema sent as `output_config.format` for scoping and synthesis |
 | [0002](0002-degrade-on-insufficient-sourcing.md) | Degrade a briefing with an "Insufficiently sourced" section instead of aborting it under `strict` sourcing |
-| [0003](0003-source-trust-criteria.md) | Proposed: a company's own site is primary for its own facts only, its domains taken from an explicit list; specialist press joins `tier_2` only on six written criteria; law-firm memos, vendors' content and aggregators stay untrusted |
+| [0003](0003-source-trust-criteria.md) | Accepted: a company's own site is primary for its own facts only, its domains taken from an explicit, reviewed, versioned list; specialist press joins `tier_2` only on six written criteria; law-firm memos, vendors' content and aggregators stay untrusted |
 
 Each record states the context, the options weighed and why one was chosen.
 A record is not edited after it is accepted; a later decision that changes it

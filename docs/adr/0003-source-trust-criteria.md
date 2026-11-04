@@ -1,7 +1,11 @@
 # ADR 0003 — Criteria for trusting a source: first-party facts and specialist press
 
-Status: proposed, 2026-11-04. The maintainer accepts or amends it; no live
-run starts on a changed trust policy before it is accepted.
+Status: accepted, 2026-11-04, on one condition: the organisation-to-domains
+mapping (Decision 1) is explicit, reviewed and versioned. It is a committed
+file, each entry names its domains and the evidence of ownership, and an
+entry is added or changed only through a pull request the maintainer has
+read. Until that file exists on those terms, no item is accepted as
+first-party.
 
 ## Context
 
@@ -51,7 +55,8 @@ competitors or its market.
 
 What code checks, and what it cannot:
 
-- **The publisher, by an explicit list.** A committed file maps each
+- **The publisher, by an explicit, reviewed, versioned list.** A committed
+  file, changed only through a reviewed pull request, maps each
   organisation to the domains it controls (`DSV` → `dsv.com`; `DHL Group` →
   `dhl.com`, `dpdhl.com`), each entry with the page that shows the
   ownership (an annual report, an investor-relations page). A stage marks an
