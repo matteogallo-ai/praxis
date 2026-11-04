@@ -8,7 +8,8 @@ estimate and the maintainer's GO.
 Each run writes, in its question's directory:
 
 - when the briefing completes, a `run-<start time>/` directory holding
-  `metadata.json` (question, format, timing, word counts, critique
+  `metadata.json` (question, format, timing, word counts and the sections
+  over their length cap, critique
   summary, rerun status, usage and cost per stage, and the commit and
   prompt versions it ran on) and `brief.md`, `brief.pdf`, `brief.docx`.
   A question completed again gets a new directory; none is overwritten;
