@@ -47,12 +47,12 @@
     "stages": {
       "scoping": {
         "calls": 1,
-        "input_tokens": 711,
+        "input_tokens": 743,
         "output_tokens": 300,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 0,
-        "cost_usd": 0.008844,
+        "cost_usd": 0.008972,
         "models": [
           "claude-opus-5-5"
         ]
@@ -144,12 +144,12 @@
     },
     "total": {
       "calls": 18,
-      "input_tokens": 150708,
+      "input_tokens": 150740,
       "output_tokens": 12135,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 10,
-      "cost_usd": 0.605942,
+      "cost_usd": 0.60607,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"
