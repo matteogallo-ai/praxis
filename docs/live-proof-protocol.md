@@ -426,13 +426,18 @@ estimate.
 ## Amendments
 
 The plan above is kept as first written. A change to it is recorded here,
-dated, before the run it changes; `tests/benchmarks/live-protocol.test.ts`
-accepts the original commands plus the changes declared below, nothing
-else.
+dated, with when it was decided and when it was written down;
+`tests/benchmarks/live-protocol.test.ts` accepts the original commands plus
+the changes declared below, nothing else.
 
 | Date | Step | Change | Reason |
 | --- | --- | --- | --- |
-| 2026-11-04 | 1 | `10-esg-position` added, before the run | the only test question covered by the first-party list (ADR 0003) |
+| 2026-11-04 | 1 | `10-esg-position` added by the operator's GO before step 1 started | the only test question covered by the first-party list (ADR 0003) |
+
+q10 added by the operator's GO before step 1 started; the amendment was
+written down after step 1 had started (commit 0417613, 13:02:53Z), 78 s
+before q10 itself ran. All five step 1 runs record `8df678f`, which does not
+contain 0417613; the GO is the operator's account, not a file.
 
 Step 1 as amended, five briefings under the same cap:
 

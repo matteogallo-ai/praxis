@@ -75,8 +75,10 @@ What the rerun shows that step 0 could not:
 
 ## Step 1: questions 02, 08, 10, 11 and 12
 
-Step 1 of `docs/live-proof-protocol.md`, as amended (question 10 added
-before the run), ran on 4 Nov 2026, all five at `8df678f`, each capped at $14. One attempt per question. Counts are items, read from each run's
+Step 1 of `docs/live-proof-protocol.md`, as amended, ran on 4 Nov 2026,
+all five at `8df678f`, each capped at $14. q10 added by the operator's GO
+before step 1 started; the amendment was written down after step 1 had
+started (commit 0417613, 13:02:53Z), 78 s before q10 itself ran. One attempt per question. Counts are items, read from each run's
 `metadata.json` (`sourcing`); question 02 stopped before any sourcing
 report. The estimate is `estimate:cost` at that commit, frozen in
 `benchmarks/estimates/step-1.json`. These are five questions, each run

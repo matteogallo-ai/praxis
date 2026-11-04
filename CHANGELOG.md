@@ -9,6 +9,13 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- The live-proof protocol and the live outputs' README no longer say question
+  10's amendment was recorded before the run. q10 added by the operator's GO
+  before step 1 started; the amendment was written down after step 1 had
+  started (commit 0417613, 13:02:53Z), 78 s before q10 itself ran. The
+  amendment row reads "added by the operator's GO before step 1 started" and
+  its test parses that form.
+
 - No model text in the Markdown outputs (the brief, `--render
   md-enhanced`, the CLI's Markdown sourcing report) becomes a link, an
   image or an autolink: `www.` addresses, URLs, e-mail addresses, links,
@@ -233,7 +240,8 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   $1.40 / $5.97 / $12.96).
 
 - The live-proof protocol has a dated "Amendments" section: question 10
-  was added to step 1 before the run (2026-11-04), as the only test
+  was added to step 1 by the operator's GO before step 1 started
+  (2026-11-04), as the only test
   question the first-party list covers. The original plan is unchanged;
   its test accepts the original commands plus declared amendments only.
   Held-out test questions left: 03 and 07.
