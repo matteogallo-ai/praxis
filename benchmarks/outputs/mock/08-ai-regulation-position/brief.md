@@ -5,7 +5,7 @@ provider: "mock"
 generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
-sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2"
+sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2 freshness_unknown=28"
 critique_summary: "critiques=5 critical=1 material=3 minor=1 robustness=medium revised_needed=true"
 total_word_count: 500
 target_word_count: 1600
@@ -202,67 +202,67 @@ The strongest counter-argument is that a full day-one EU-residency commitment is
 
 ### pac.org
 
-- [Entering the German Policy Environment — 2025 Handbook](https://pac.org/handbook/germany-entry-2025) · accessed 2026-08-17T11:33:00Z
+- [Entering the German Policy Environment — 2025 Handbook](https://pac.org/handbook/germany-entry-2025) · publication date unknown, accessed 2026-08-17T11:33:00Z
 
 ### www.bfdi.bund.de
 
-- [BfDI Tätigkeitsbericht 2026 — Kapitel 4](https://www.bfdi.bund.de/DE/Fachthemen/Inhalte/TB-2026/Kapitel-4.html) · accessed 2026-08-17T11:12:00Z
+- [BfDI Tätigkeitsbericht 2026 — Kapitel 4](https://www.bfdi.bund.de/DE/Fachthemen/Inhalte/TB-2026/Kapitel-4.html) · publication date unknown, accessed 2026-08-17T11:12:00Z
 
 ### www.bloomberg.com
 
-- [EU data residency costs bite SaaS providers](https://www.bloomberg.com/news/saas-eu-data-residency-costs-2025) · accessed 2026-08-09T09:17:00Z
+- [EU data residency costs bite SaaS providers](https://www.bloomberg.com/news/saas-eu-data-residency-costs-2025) · publication date unknown, accessed 2026-08-09T09:17:00Z
 
 ### www.bmdv.bund.de
 
-- [Bundesministerium für Digitales — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang) · accessed 2026-08-17T11:04:00Z
+- [Bundesministerium für Digitales — Pressemitteilung 12.03.2026](https://www.bmdv.bund.de/pressemitteilungen/2026/03/12-saas-marktzugang) · publication date unknown, accessed 2026-08-17T11:04:00Z
 
 ### www.bundestag.de
 
-- [Plenarprotokoll 20/187 — Debatte Digitale Souveränität](https://www.bundestag.de/protokolle/20-187-digital-sovereignty) · accessed 2026-08-17T11:20:00Z
+- [Plenarprotokoll 20/187 — Debatte Digitale Souveränität](https://www.bundestag.de/protokolle/20-187-digital-sovereignty) · publication date unknown, accessed 2026-08-17T11:20:00Z
 
 ### www.eco.de
 
-- [eco — Presseerklärung Wettbewerb im SaaS-Markt 2026](https://www.eco.de/presse/2026/eco-begruesst-wettbewerb-im-saas-markt) · accessed 2026-08-17T13:45:00Z
+- [eco — Presseerklärung Wettbewerb im SaaS-Markt 2026](https://www.eco.de/presse/2026/eco-begruesst-wettbewerb-im-saas-markt) · publication date unknown, accessed 2026-08-17T13:45:00Z
 
 ### www.ft.com
 
-- [Bavarian and Baden-Württemberg data protection stances diverge from BfDI](https://www.ft.com/content/bayern-baden-wuerttemberg-data-protection-2026) · accessed 2026-08-10T14:18:00Z
-- [BMDV reversals of prior welcome — past cases](https://www.ft.com/content/bmdv-reversals-past-cases-2024) · accessed 2026-08-12T15:19:00Z
-- [eco membership signal value for foreign SaaS providers](https://www.ft.com/content/eco-membership-signal-value-foreign-saas-2025) · accessed 2026-08-11T10:41:00Z
-- [EU data residency cost overruns exceed benchmarks](https://www.ft.com/critique-eu-residency-cost-overrun) · accessed 2026-08-15T11:00:00Z
-- [First-impression effect on vendor adoption timelines](https://www.ft.com/content/first-impression-effect-vendor-adoption-2024) · accessed 2026-08-14T13:34:00Z
-- [Länder-level interpretation divergence on SaaS providers](https://www.ft.com/content/land-level-authority-interpretations-saas-2024) · accessed 2026-08-10T14:23:00Z
-- [Public Affairs Council DACH — value for new entrants](https://www.ft.com/content/public-affairs-council-dach-value-2025) · accessed 2026-08-08T16:03:00Z
-- [Transitional data-transfer arrangements — what foreign SaaS providers can safely commit to](https://www.ft.com/content/eu-us-data-framework-transitional-arrangements) · accessed 2026-08-11T09:12:00Z
-- [Verdi industrial action against tech employers in Germany](https://www.ft.com/content/verdi-industrial-action-tech-employers-2024) · accessed 2026-08-13T09:56:00Z
-- [When EU public procurement excludes foreign SaaS — sizing the impact](https://www.ft.com/content/eu-public-procurement-saas-exclusion-2025) · accessed 2026-08-15T11:09:00Z
+- [Bavarian and Baden-Württemberg data protection stances diverge from BfDI](https://www.ft.com/content/bayern-baden-wuerttemberg-data-protection-2026) · publication date unknown, accessed 2026-08-10T14:18:00Z
+- [BMDV reversals of prior welcome — past cases](https://www.ft.com/content/bmdv-reversals-past-cases-2024) · publication date unknown, accessed 2026-08-12T15:19:00Z
+- [eco membership signal value for foreign SaaS providers](https://www.ft.com/content/eco-membership-signal-value-foreign-saas-2025) · publication date unknown, accessed 2026-08-11T10:41:00Z
+- [EU data residency cost overruns exceed benchmarks](https://www.ft.com/critique-eu-residency-cost-overrun) · publication date unknown, accessed 2026-08-15T11:00:00Z
+- [First-impression effect on vendor adoption timelines](https://www.ft.com/content/first-impression-effect-vendor-adoption-2024) · publication date unknown, accessed 2026-08-14T13:34:00Z
+- [Länder-level interpretation divergence on SaaS providers](https://www.ft.com/content/land-level-authority-interpretations-saas-2024) · publication date unknown, accessed 2026-08-10T14:23:00Z
+- [Public Affairs Council DACH — value for new entrants](https://www.ft.com/content/public-affairs-council-dach-value-2025) · publication date unknown, accessed 2026-08-08T16:03:00Z
+- [Transitional data-transfer arrangements — what foreign SaaS providers can safely commit to](https://www.ft.com/content/eu-us-data-framework-transitional-arrangements) · publication date unknown, accessed 2026-08-11T09:12:00Z
+- [Verdi industrial action against tech employers in Germany](https://www.ft.com/content/verdi-industrial-action-tech-employers-2024) · publication date unknown, accessed 2026-08-13T09:56:00Z
+- [When EU public procurement excludes foreign SaaS — sizing the impact](https://www.ft.com/content/eu-public-procurement-saas-exclusion-2025) · publication date unknown, accessed 2026-08-15T11:09:00Z
 
 ### www.handelsblatt.com
 
-- [Corporate Affairs 2026 Ambitions Memo](https://www.handelsblatt.com/technik/it-internet/example-corp-corporate-affairs-2026-ambitions) · accessed 2026-08-17T13:04:00Z
-- [Handelsblatt — Ausländische SaaS-Anbieter drängen nach Deutschland](https://www.handelsblatt.com/technik/it-internet/saas-markteintritt-auslaendisch-2026) · accessed 2026-08-17T13:29:00Z
-- [Verdi hiring thresholds have drifted downward](https://www.handelsblatt.com/critique-verdi-threshold-drift) · accessed 2026-08-13T15:00:00Z
+- [Corporate Affairs 2026 Ambitions Memo](https://www.handelsblatt.com/technik/it-internet/example-corp-corporate-affairs-2026-ambitions) · publication date unknown, accessed 2026-08-17T13:04:00Z
+- [Handelsblatt — Ausländische SaaS-Anbieter drängen nach Deutschland](https://www.handelsblatt.com/technik/it-internet/saas-markteintritt-auslaendisch-2026) · publication date unknown, accessed 2026-08-17T13:29:00Z
+- [Verdi hiring thresholds have drifted downward](https://www.handelsblatt.com/critique-verdi-threshold-drift) · publication date unknown, accessed 2026-08-13T15:00:00Z
 
 ### www.idc.com
 
-- [IDC Germany Mid-Market SaaS Tracker — Q1 2026](https://www.idc.com/getdoc.jsp?containerId=DE-MidMarket-SaaS-Q1-2026) · accessed 2026-08-17T13:53:00Z
+- [IDC Germany Mid-Market SaaS Tracker — Q1 2026](https://www.idc.com/getdoc.jsp?containerId=DE-MidMarket-SaaS-Q1-2026) · publication date unknown, accessed 2026-08-17T13:53:00Z
 
 ### www.pac.org
 
-- [Entering the German Policy Environment — 2025 Handbook](https://www.pac.org/handbook/germany-entry-2025) · accessed 2026-08-14T14:01:00Z
+- [Entering the German Policy Environment — 2025 Handbook](https://www.pac.org/handbook/germany-entry-2025) · publication date unknown, accessed 2026-08-14T14:01:00Z
 
 ### www.reuters.com
 
-- [BMDV welcome statements — consistency track record](https://www.reuters.com/critique-bmdv-consistency) · accessed 2026-08-14T13:00:00Z
-- [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026) · accessed 2026-08-12T15:15:00Z
-- [Business press coverage remains a top influence on DACH C-suite decisions](https://www.reuters.com/business/media/business-press-influence-c-suite-decisions-2025) · accessed 2026-08-14T13:29:00Z
-- [DACH buyer signals — 2025 preferences](https://www.reuters.com/business/media/dach-buyer-signals-preferences-2025) · accessed 2026-08-11T10:47:00Z
-- [EU-US data privacy framework faces CJEU review in 2026](https://www.reuters.com/technology/eu-us-data-framework-cjeu-review-2026) · accessed 2026-08-09T09:12:00Z
-- [Germany drafts digital sovereignty procurement guidance](https://www.reuters.com/world/europe/germany-digital-sovereignty-procurement-2026) · accessed 2026-08-15T11:04:00Z
-- [Peer networks and corporate affairs effectiveness](https://www.reuters.com/world/europe/corporate-affairs-peer-networks-effect-2024) · accessed 2026-08-08T16:08:00Z
-- [Verdi sharpens rhetoric on foreign digital employers](https://www.reuters.com/world/europe/verdi-foreign-digital-employers-2026) · accessed 2026-08-13T09:52:00Z
+- [BMDV welcome statements — consistency track record](https://www.reuters.com/critique-bmdv-consistency) · publication date unknown, accessed 2026-08-14T13:00:00Z
+- [BMDV welcomes foreign SaaS with conditions](https://www.reuters.com/technology/bmdv-conditional-welcome-saas-2026) · publication date unknown, accessed 2026-08-12T15:15:00Z
+- [Business press coverage remains a top influence on DACH C-suite decisions](https://www.reuters.com/business/media/business-press-influence-c-suite-decisions-2025) · publication date unknown, accessed 2026-08-14T13:29:00Z
+- [DACH buyer signals — 2025 preferences](https://www.reuters.com/business/media/dach-buyer-signals-preferences-2025) · publication date unknown, accessed 2026-08-11T10:47:00Z
+- [EU-US data privacy framework faces CJEU review in 2026](https://www.reuters.com/technology/eu-us-data-framework-cjeu-review-2026) · publication date unknown, accessed 2026-08-09T09:12:00Z
+- [Germany drafts digital sovereignty procurement guidance](https://www.reuters.com/world/europe/germany-digital-sovereignty-procurement-2026) · publication date unknown, accessed 2026-08-15T11:04:00Z
+- [Peer networks and corporate affairs effectiveness](https://www.reuters.com/world/europe/corporate-affairs-peer-networks-effect-2024) · publication date unknown, accessed 2026-08-08T16:08:00Z
+- [Verdi sharpens rhetoric on foreign digital employers](https://www.reuters.com/world/europe/verdi-foreign-digital-employers-2026) · publication date unknown, accessed 2026-08-13T09:52:00Z
 
 ### www.verdi.de
 
-- [Verdi — Positionen zur Digitalisierung 2026](https://www.verdi.de/themen/digitalisierung/positionen-2026) · accessed 2026-08-17T13:38:00Z
+- [Verdi — Positionen zur Digitalisierung 2026](https://www.verdi.de/themen/digitalisierung/positionen-2026) · publication date unknown, accessed 2026-08-17T13:38:00Z
 
