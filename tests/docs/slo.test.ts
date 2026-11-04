@@ -32,7 +32,7 @@ describe("docs/SLO.md", () => {
 
   test("publishes no cost status while no live briefing has completed", () => {
     // A completed live briefing writes metadata.json; once one exists this
-    // test fails until the row reports the measurement instead of the estimate.
+    // test fails and must be replaced by one checking the row against it.
     const live = "benchmarks/outputs/live";
     const measured = readdirSync(live, { withFileTypes: true }).some(
       (d) => d.isDirectory() && existsSync(`${live}/${d.name}/metadata.json`)
@@ -41,7 +41,7 @@ describe("docs/SLO.md", () => {
     expect(doc).toContain(
       `| Cost | p95 ≤ ${usd(COST_TARGET_USD)} per briefing | Not measured; estimate for question 05 (step 0), not a status: ${usd(q05?.low ?? 0)} low, ${usd(q05?.central ?? 0)} central, ${usd(q05?.high ?? 0)} high |`
     );
-    expect(flat).not.toMatch(/\| Cost \|[^|]*\| \**(Not met|Met)\b/);
+    expect(flat).not.toMatch(/\| Cost \|[^|]*\|[^|]*\b(not met|met)\b/i);
   });
 
   test("grounds the cost target in the analyst time a briefing replaces", () => {
@@ -78,6 +78,9 @@ describe("docs/SLO.md", () => {
       const five = outputUsd("scoping") + 5 * search.reduce((a, s) => a + outputUsd(s), 0) + SECTIONS * outputUsd("synthesis");
       expect(flat).toContain(`one round per stage costs at most ${usd(once)}`);
       expect(flat).toContain(`the ceiling is ${usd(five)}`);
+      const searchFive = (5 * search.length * 5 * DEFAULT_PRICE_TABLE.web_search_per_1000) / 1000;
+      expect(flat).toContain(`and 100 with five (${usd(searchFive)})`);
+      expect(flat).toContain(`the output and search ceilings add up to ${usd(five + searchFive)}, under the target`);
     });
 
     test("latency", () => {

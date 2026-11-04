@@ -57,10 +57,13 @@ per briefing in the worst case.
 - **Input tokens** have no ceiling in code: search results enter the
   context, and each continuation resends them, model output included. The
   estimate does not split its total into input and output, so which one
-  closes the gap to the target (fewer search rounds, shorter upstream
-  outputs passed downstream, prompt caching) is for live runs to measure.
-- **Worst case versus target**: the ceilings add up to more than the
-  target, so the target cannot be proven from the limits alone. The hard
+  drives the high case over the target (fewer search rounds, shorter
+  upstream outputs passed downstream, prompt caching) is for live runs to
+  measure.
+- **Worst case versus target**: the output and search ceilings add up to
+  $6.44, under the target, but input tokens have no ceiling and a retried
+  stage pays its ceiling again, so the target cannot be proven from the
+  limits alone. The hard
   stop is `--max-cost-usd` (below): each request reserves its worst case
   before it is sent, timeouts are charged at it, and a run passes the cap
   only when a request costs more than its worst case, through searches
