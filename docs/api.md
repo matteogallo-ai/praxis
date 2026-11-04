@@ -59,6 +59,10 @@ major-version bump.
 - **`UntrustedCitation`** and `SourcingReport.untrusted_citations?` —
   the options and critique citations whose domain fails the format's
   `domain_trust` rule (`docs/sourcing.md`).
+- **`FirstPartySource`** and `SourcingReport.first_party_sources?` —
+  sources accepted as an organisation's own site for its own facts
+  (ADR 0003, `docs/sourcing.md`). `SourceReference.first_party_for?` is
+  the stage's proposal the rule checks.
 - **`validateSourcing` / `validateStakeholderSourcing` /
   `validateRiskSourcing`** — the primitives the Orchestrator
   wires up. Available publicly for callers who assemble their

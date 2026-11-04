@@ -110,6 +110,7 @@ paid, and in its current state it is expected to fail (see Status).
 - The API key never reaches stderr, run files or a printed provider; home paths and e-mail addresses in stderr are masked (C20).
 - Installs and runs from a clean clone, with PromptLang from npm (C19).
 - Facts only the requester can supply are listed in the briefing as "Requester-provided, not sourceable" and counted apart, never as sourced (C24).
+- An organisation's own site counts as a source for its own facts only when a reviewed list names the organisation and its domains and the item names it; such sources are listed apart in the briefing (C25).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
 prove it; CI fails if one of them does not pass.
