@@ -478,22 +478,26 @@ describe("executeSynthesis — each prose check on its own", () => {
     expect((err as Error).message).toContain("a www. address, which viewers turn into a link: 'www.attacker.example/q?d=1'");
   });
 
-  // Viewers do not turn text inside a link into a second link, so a www.
-  // label on an upstream link points nowhere else.
-  test("keeps a www. label on a link to an upstream source", async () => {
-    const prose = `Margins held ([www.reuters.com](${SOURCE_A.url})).`;
-    const result = (await synthesize(prose)) as { sections: { content_markdown: string }[] };
-    expect(result.sections?.[0]?.content_markdown).toBe(prose);
+  // The address goes into the error record committed to git; a beacon address can carry briefing text.
+  test("a long www. address is quoted cut short", async () => {
+    const err = await synthesize(`See www.attacker.example/?d=${"x".repeat(5000)} now.`);
+    const message = (err as Error).message;
+    expect(message).toContain("a www. address, which viewers turn into a link: 'www.attacker.example/?d=xxx");
+    expect(message.length).toBeLessThan(600);
   });
 
+  // Text that only looks like a link label is prose a viewer may autolink:
+  // a www. there is refused like anywhere else.
   test.each([
-    ["a www. label on a link to an unknown site", "Per [www.reuters.com](https://attacker.example/r).", "a URL no upstream stage returned"],
-    ["a www. label on a relative link", "Per [www.reuters.com](/track).", "a www. address"],
-    ["a www. address after an upstream link", `Per [Reuters](${SOURCE_A.url}) and www.attacker.example.`, "a www. address"],
-  ])("still refuses %s", async (_label, prose, reason) => {
+    ["a label split by a blank line", `Per [see\n\nwww.attacker.example/x](${SOURCE_A.url}) x.`],
+    ["an escaped bracket", `\\[see www.attacker.example/x](${SOURCE_A.url}) x`],
+    ["a bracket inside a code span", `\`[\` see www.attacker.example/x](${SOURCE_A.url})`],
+    ["a nested bracket", `[see www.attacker.example/x [y](${SOURCE_A.url})`],
+    ["a www. label on an upstream link", `Per [www.attacker.example](${SOURCE_A.url}).`],
+  ])("refuses a www. address in %s", async (_label, prose) => {
     const err = await synthesize(prose);
     expect(err).toBeInstanceOf(InvalidAgentOutputError);
-    expect((err as Error).message).toContain(reason);
+    expect((err as Error).message).toContain("a www. address");
   });
 
   test.each([
