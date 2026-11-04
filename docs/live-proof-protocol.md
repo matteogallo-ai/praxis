@@ -154,7 +154,7 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 | --- | --- |
 | Completed | `metadata.json` exists (else the `error-*.json` cause is reported) |
 | Sourcing | `sourcing.counts`; `insufficiently_sourced` reported, never hidden |
-| Format conformance | `synthesis.forbidden_terms_found = 0`, `sections_over_length` and `deviation_pct` reported |
+| Format conformance | `synthesis.forbidden_terms_found = 0`, `sections_over_length` (count) with `sections_over_length_ids` (which sections) and `deviation_pct` reported; step 0's record predates the ids and gives the count only |
 | Adversarial | `critical_count`, `material_count`; `rerun.performed` |
 | Cost and latency | `usage.stages.*.cost_usd` and `duration_ms`, against [`SLO.md`](SLO.md) |
 | Hard case | completed and `insufficiently_sourced: true` with the unsourced sodium-ion claims listed (its `intent`); an abort fails it |

@@ -82,6 +82,9 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- A benchmark run's `metadata.json` names the sections over their length
+  cap (`synthesis.sections_over_length_ids`) beside their count; the count
+  alone did not say which section to check.
 - A question run live again is no longer refused once it has a completed
   run: each completed run is kept in `live/<id>/run-<start time>/`, never
   over an earlier one, and a failed run leaves no partial directory.

@@ -356,7 +356,7 @@ function makeProvider(mode: "mock" | "live", root: string): LLMProvider {
   return new AnthropicLLMProvider();
 }
 
-function buildMetadata(
+export function buildMetadata(
   b: BenchmarkEntry,
   mode: "mock" | "live",
   result: BriefWithCritiqueAndRerunResult,
@@ -377,6 +377,7 @@ function buildMetadata(
       deviation_pct: result.synthesis.format_conformance.deviation_pct,
       sections_over_length:
         result.synthesis.format_conformance.sections_over_length.length,
+      sections_over_length_ids: result.synthesis.format_conformance.sections_over_length,
       forbidden_terms_found:
         result.synthesis.format_conformance.forbidden_terms_found.length,
     },
