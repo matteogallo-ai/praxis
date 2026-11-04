@@ -22,7 +22,7 @@ import type {
 } from "../../orchestrator/orchestrator.ts";
 import { hasCritique, type RenderOptions } from "../types.ts";
 import { XML_PROLOG, elem, escapeXmlText } from "./xml-builder.ts";
-import { sourceDates, uncategorisedLines } from "../source-dates.ts";
+import { describeFirstParty, sourceDates, uncategorisedLines } from "../source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 
 const W_NS = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"`;
@@ -161,6 +161,7 @@ export function buildDocumentXml(
         `missing: ${sr.counts.missing}.`
     ));
     for (const line of uncategorisedLines(sr)) body.push(paragraph(`${line}.`));
+    for (const f of sr.first_party_sources ?? []) body.push(bulletParagraph(describeFirstParty(f)));
     for (const c of sr.untrusted_citations ?? []) {
       body.push(bulletParagraph(describeUntrustedCitation(c)));
     }

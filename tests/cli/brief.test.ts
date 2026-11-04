@@ -1233,6 +1233,21 @@ describe("renderSourcingReportMarkdown — freshness", () => {
   });
 });
 
+describe("renderSourcingReportMarkdown — first-party", () => {
+  test("counts and lists the first-party sources", () => {
+    const md = renderSourcingReportMarkdown({
+      policy: "strict",
+      total_items: 1,
+      counts: { ok: 1, stale: 0, untrusted: 0, duplicated: 0, missing: 0 },
+      warnings: [],
+      missing_sources_count: 0,
+      first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }],
+    });
+    expect(md).toContain("First-party (an organisation's own site, for its own facts): 1");
+    expect(md).toContain("- [research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x");
+  });
+});
+
 describe("renderSourcingReportMarkdown — citations", () => {
   test("lists untrusted citations, and does not claim every item passed", () => {
     const md = renderSourcingReportMarkdown({

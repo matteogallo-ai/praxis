@@ -33,7 +33,7 @@ import type {
 import type { Renderer, RenderOptions, RenderTheme } from "./types.ts";
 import { hasCritique } from "./types.ts";
 import { RenderError } from "./errors.ts";
-import { sourceDates, uncategorisedLines } from "./source-dates.ts";
+import { describeFirstParty, sourceDates, uncategorisedLines } from "./source-dates.ts";
 import { describeUntrustedCitation } from "../sourcing/citations.ts";
 
 // ---------------------------------------------------------------------------
@@ -471,6 +471,7 @@ function renderSourcingReport(
     .text(`Total items: ${sr.total_items}`)
     .text(`OK: ${sr.counts.ok} · stale: ${sr.counts.stale} · untrusted: ${sr.counts.untrusted} · duplicated: ${sr.counts.duplicated} · missing: ${sr.counts.missing}`);
   for (const line of uncategorisedLines(sr)) doc.text(line);
+  for (const f of sr.first_party_sources ?? []) doc.text(`•  ${describeFirstParty(f)}`, { indent: 12 });
   if (sr.warnings.length > 0) {
     doc.moveDown(0.5);
     doc.font(theme.bodyBold).text("Warnings:");

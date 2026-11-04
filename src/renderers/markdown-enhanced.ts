@@ -31,7 +31,7 @@ import {
   sourcingSummary,
   yamlString,
 } from "./markdown-text.ts";
-import { sourceDates } from "./source-dates.ts";
+import { describeFirstParty, sourceDates } from "./source-dates.ts";
 
 /**
  * A `Renderer` returning a UTF-8 Buffer holding the enhanced
@@ -62,6 +62,7 @@ export function renderMarkdownEnhanced(
   parts.push(renderSynthesisSections(brief.synthesis.sections));
   if (options.include_critique && hasCritique(brief)) parts.push(inert(renderCritiqueSection(brief)));
   if (options.include_appendices) parts.push(inert(renderAppendices(brief)));
+  parts.push(renderFirstPartySection(brief));
   parts.push(inert(renderSourcesSection(brief, options)));
   return parts.join("");
 }
@@ -114,6 +115,9 @@ function renderToc(
     parts.push(`- [Appendix A — Findings](#appendix-a--findings)\n`);
     parts.push(`- [Appendix B — Stakeholders](#appendix-b--stakeholders)\n`);
     parts.push(`- [Appendix C — Risk Register](#appendix-c--risk-register)\n`);
+  }
+  if ((brief.sourcing_report.first_party_sources ?? []).length > 0) {
+    parts.push(`- [First-party sources](#first-party-sources)\n`);
   }
   parts.push(`- [Sources](#sources)\n\n`);
   return parts.join("");
@@ -193,6 +197,22 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
   }
   parts.push("\n");
 
+  return parts.join("");
+}
+
+/**
+ * Sources accepted as an organisation's own (ADR 0003), listed apart in
+ * every briefing so a reader sees what rests on self-reporting.
+ */
+function renderFirstPartySection(brief: BriefResult | BriefWithCritiqueResult): string {
+  const firstParty = brief.sourcing_report.first_party_sources ?? [];
+  if (firstParty.length === 0) return "";
+  const parts = ["## First-party sources\n\n"];
+  for (const f of firstParty) {
+    // The label can be model text; the URL is an autolink linkTarget keeps whole.
+    parts.push(`- ${describeFirstParty({ ...f, item: inert(f.item) }, (u) => `<${linkTarget(u)}>`)}\n`);
+  }
+  parts.push("\n");
   return parts.join("");
 }
 

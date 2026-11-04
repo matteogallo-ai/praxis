@@ -59,6 +59,17 @@ describe("buildMetadata", () => {
     expect(meta.sourcing.requester_provided).toBe(3);
   });
 
+  test("records the sources accepted as an organisation's own", () => {
+    const firstParty = [{ stage: "research", item: "finding 1", organisation: "OECD", url: "https://www.oecd.org/a" }];
+    const meta = buildMetadata(
+      { id: "05-x", question: "Q?", format: "f", tags: [] } as never,
+      "live",
+      { ...RESULT, sourcing_report: { total_items: 3, counts: {}, first_party_sources: firstParty } } as never,
+      1
+    ) as { sourcing: { first_party_sources?: unknown } };
+    expect(meta.sourcing.first_party_sources).toEqual(firstParty);
+  });
+
   test("records the options and critique citations from untrusted domains", () => {
     const cited = [{ stage: "options", id: "OPT-B", url: "https://x.example/a", reason: "r" }];
     const meta = buildMetadata(
