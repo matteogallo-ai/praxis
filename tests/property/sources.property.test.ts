@@ -198,10 +198,10 @@ describe("freshness — properties", () => {
     );
   });
 
-  test("an unreadable date is stale, never fresh", () => {
+  test("an unreadable publication date is unknown, never fresh", () => {
     fc.assert(
-      fc.property(rule, fc.string().filter((s) => Number.isNaN(Date.parse(s))), (r, accessed) => {
-        expect(classifyFreshness(accessed, r, now).classification).toBe("stale");
+      fc.property(rule, fc.string().filter((s) => Number.isNaN(Date.parse(s))), (r, published) => {
+        expect(classifyFreshness(published, r, now).classification).toBe("unknown");
       })
     );
   });

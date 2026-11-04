@@ -263,6 +263,7 @@ describe("validateStakeholderSourcing — permissive", () => {
 
 const NOW = new Date("2026-08-18T00:00:00Z");
 
+/** A source published on `dateIso`, retrieved at NOW: freshness is the publication's. */
 function sourcedAt(dateIso: string, url = "https://reuters.com/x"): ResearchResult["findings"][number] {
   return {
     claim: "some claim",
@@ -270,9 +271,18 @@ function sourcedAt(dateIso: string, url = "https://reuters.com/x"): ResearchResu
     source: {
       url,
       title: "T",
-      accessed_at: dateIso,
+      accessed_at: NOW.toISOString(),
+      published_at: dateIso,
       excerpt: "…",
     },
+  };
+}
+
+function retrievedOnly(accessedIso: string): ResearchResult["findings"][number] {
+  return {
+    claim: "some claim",
+    supporting_evidence: "supporting text",
+    source: { url: "https://reuters.com/y", title: "T", accessed_at: accessedIso, excerpt: "…" },
   };
 }
 
@@ -284,6 +294,27 @@ describe("validateSourcing — freshness rule", () => {
   const rules: SourcingRules = {
     freshness: { max_source_age_days: 730, warn_after_days: 365 },
   };
+
+  test("freshness is the publication date's: retrieved today, published long ago, is stale", () => {
+    const r = validateSourcing(research([sourcedAt("2010-01-01")]), "permissive", { rules, now: NOW });
+    expect(r.counts.stale).toBe(1);
+    expect(r.warnings[0]).toEqual(expect.objectContaining({ kind: "stale_source", published_at: "2010-01-01" }));
+  });
+
+  test("without a publication date, freshness is unknown: counted apart, never fresh, never stale", () => {
+    // Retrieval time says nothing about the page's age, old or recent.
+    for (const accessed of ["2026-08-18T00:00:00Z", "2000-01-01T00:00:00Z"]) {
+      const r = validateSourcing(research([retrievedOnly(accessed)]), "strict", { rules, now: NOW });
+      expect(r.warnings).toEqual([]);
+      expect(r.counts.stale).toBe(0);
+      expect(r.freshness_unknown).toBe(1);
+    }
+  });
+
+  test("a dated source is not counted as unknown", () => {
+    const r = validateSourcing(research([sourcedAt("2026-08-01")]), "permissive", { rules, now: NOW });
+    expect(r.freshness_unknown).toBe(0);
+  });
 
   test("emits a stale_source warning under permissive when past max", () => {
     const r = validateSourcing(
@@ -605,7 +636,7 @@ describe("validators — what mutation testing found unchecked", () => {
   const OLD = "2000-01-01T00:00:00Z";
   const THEN = new Date("2000-01-02T00:00:00Z");
   const freshness: SourcingRules = { freshness: { max_source_age_days: 365, warn_after_days: 30 } };
-  const old = (url: string) => ({ url, title: "T", accessed_at: OLD, excerpt: "…" });
+  const old = (url: string) => ({ url, title: "T", accessed_at: OLD, published_at: OLD, excerpt: "…" });
 
   test("the injected clock, not the wall clock, dates every validator's sources", () => {
     const options = { rules: freshness, now: THEN };

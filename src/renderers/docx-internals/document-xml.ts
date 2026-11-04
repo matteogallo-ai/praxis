@@ -22,6 +22,7 @@ import type {
 } from "../../orchestrator/orchestrator.ts";
 import { hasCritique, type RenderOptions } from "../types.ts";
 import { XML_PROLOG, elem, escapeXmlText } from "./xml-builder.ts";
+import { sourceDates } from "../source-dates.ts";
 
 const W_NS = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"`;
 
@@ -144,7 +145,7 @@ export function buildDocumentXml(
     body.push(paragraph("No sources cited."));
   } else {
     for (const s of allSources) {
-      body.push(bulletParagraph(`${s.title} — ${s.url} (accessed ${s.accessed_at})`));
+      body.push(bulletParagraph(`${s.title} — ${s.url} (${sourceDates(s)})`));
     }
   }
 
@@ -308,6 +309,7 @@ interface Src {
   url: string;
   title: string;
   accessed_at: string;
+  published_at?: string;
 }
 
 function collectSources(brief: BriefResult | BriefWithCritiqueResult): Src[] {

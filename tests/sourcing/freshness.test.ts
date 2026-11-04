@@ -70,9 +70,11 @@ describe("classifyFreshness", () => {
     expect(r.age_days).toBeGreaterThan(730);
   });
 
-  test("classifies a malformed timestamp as stale", () => {
-    const r = classifyFreshness("not-a-date", RULE, NOW);
-    expect(r.classification).toBe("stale");
-    expect(r.age_days).toBe(Number.POSITIVE_INFINITY);
+  test("an unknown publication date is unknown, never fresh", () => {
+    for (const published of [undefined, "", "not-a-date"]) {
+      const r = classifyFreshness(published, RULE, NOW);
+      expect(r.classification).toBe("unknown");
+      expect(r.age_days).toBeNull();
+    }
   });
 });

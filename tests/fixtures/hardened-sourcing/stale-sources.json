@@ -8,7 +8,7 @@
         "source": {
           "url": "https://www.reuters.com/legacy/2015-filing",
           "title": "Historical filing snapshot",
-          "accessed_at": "2015-01-01T00:00:00Z",
+          "accessed_at": "2015-01-01T00:00:00Z", "published_at": "2015-01-01",
           "excerpt": "Excerpt from a 2015 archived report."
         }
       },
@@ -18,7 +18,7 @@
         "source": {
           "url": "https://www.ft.com/legacy/2016-benchmark",
           "title": "2016 industry benchmark",
-          "accessed_at": "2016-06-01T00:00:00Z",
+          "accessed_at": "2016-06-01T00:00:00Z", "published_at": "2016-06-01",
           "excerpt": "Historical benchmark, no longer representative."
         }
       }

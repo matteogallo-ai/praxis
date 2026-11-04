@@ -349,4 +349,19 @@ describe("output reader refusals name the field and the rule", () => {
   ])("parseSource refuses %s with its own message", (_label, value, message) => {
     expect(() => reader.parseSource(value, "s", "raw")).toThrow(message);
   });
+
+  test("parseSource keeps a publication date it can read, and drops one it cannot", () => {
+    // An unreadable date becomes unknown freshness rather than failing the stage.
+    expect(reader.parseSource({ ...source, published_at: "2026-05-14" }, "s", "raw")).toEqual(
+      expect.objectContaining({ published_at: "2026-05-14" })
+    );
+    // Rendered into the briefing, so only the calendar day is kept.
+    expect(reader.parseSource({ ...source, published_at: "2026-05-14T23:10:00Z" }, "s", "raw")).toEqual(
+      expect.objectContaining({ published_at: "2026-05-14" })
+    );
+    for (const bad of ["May 2026", "", 2026, null, "2026-05-14<img src=x>", "2026-13-40"]) {
+      expect(reader.parseSource({ ...source, published_at: bad }, "s", "raw")).not.toHaveProperty("published_at");
+    }
+    expect(reader.parseSource(source, "s", "raw")).not.toHaveProperty("published_at");
+  });
 });

@@ -127,6 +127,12 @@ describe("renderFullBrief — YAML front-matter", () => {
     const md = renderFullBrief(makeBrief());
     expect(md).toContain('sourcing_summary: "total=5 ok=5 stale=0 untrusted=0 duplicated=0 missing=0"');
   });
+
+  test("sourcing_summary counts the sources of unknown freshness when the format dates them", () => {
+    const base = makeBrief();
+    const md = renderFullBrief(makeBrief({ sourcing_report: { ...base.sourcing_report, freshness_unknown: 7 } }));
+    expect(md).toContain('sourcing_summary: "total=5 ok=5 stale=0 untrusted=0 duplicated=0 missing=0 freshness_unknown=7"');
+  });
 });
 
 describe("renderFullBrief — Markdown body", () => {

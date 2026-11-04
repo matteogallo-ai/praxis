@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { runBriefCli } from "../../src/cli/commands/brief.ts";
 import { setColorEnabled } from "../../src/cli/output.ts";
 import { extractRunArgs } from "../../src/cli/run-args.ts";
+import { datedMockFixtures } from "../helpers/dated-fixtures.ts";
 
 const ARGS = ["Should we enter the German market?", "--format", "executive-pre-read", "--full"];
 
@@ -63,6 +64,7 @@ describe("PRAXIS_NOW", () => {
   );
 
   test("decides freshness and stamps the run id", async () => {
+    const fixturesDir = datedMockFixtures();
     const verdicts: Record<string, number> = {};
     for (const now of ["2026-08-20T00:00:00Z", "2029-01-01T00:00:00Z"]) {
       process.env["PRAXIS_NOW"] = now;
@@ -70,7 +72,7 @@ describe("PRAXIS_NOW", () => {
       const output = join(runsDir, "brief.json");
       const code = await runBriefCli([...ARGS, "--json", "--output", output, "--runs-dir", runsDir], {
         formatsDir: "formats",
-        fixturesDir: "tests/fixtures/mock-llm",
+        fixturesDir,
       });
       expect(code).toBe(0);
       const brief = JSON.parse(readFileSync(output, "utf-8")) as {
@@ -80,8 +82,24 @@ describe("PRAXIS_NOW", () => {
       const runId = readdirSync(runsDir).find((name) => name !== "brief.json") ?? "";
       expect(runId.startsWith(now.replace(/[-:]/g, ""))).toBe(true);
     }
-    // The fixtures' sources were read in August 2026; by 2029 all are past
-    // the format's 730-day limit.
+    // The fixtures' sources were published in August 2026; by 2029 all are
+    // past the format's 730-day limit.
     expect(verdicts).toEqual({ "2026-08-20T00:00:00Z": 0, "2029-01-01T00:00:00Z": 29 });
+  });
+
+  test("sources with no publication date are never aged by the clock: their freshness is unknown", async () => {
+    process.env["PRAXIS_NOW"] = "2029-01-01T00:00:00Z";
+    const runsDir = mkdtempSync(join(tmpdir(), "praxis-clock-"));
+    const output = join(runsDir, "brief.json");
+    const code = await runBriefCli([...ARGS, "--json", "--output", output, "--runs-dir", runsDir], {
+      formatsDir: "formats",
+      fixturesDir: "tests/fixtures/mock-llm",
+    });
+    expect(code).toBe(0);
+    const { sourcing_report } = JSON.parse(readFileSync(output, "utf-8")) as {
+      sourcing_report: { counts: { stale: number; missing: number }; total_items: number; freshness_unknown: number };
+    };
+    expect(sourcing_report.counts.stale).toBe(0);
+    expect(sourcing_report.freshness_unknown).toBe(29);
   });
 });

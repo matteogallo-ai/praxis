@@ -530,6 +530,7 @@ import {
   escapeMarkdownHeading,
   inert,
   renderSynthesisSections,
+  sourcingSummary,
   yamlString,
 } from "../renderers/markdown-text.ts";
 
@@ -553,14 +554,7 @@ export function renderFullBrief(result: BriefResult): string {
   parts.push(`generated_at: ${yamlString(result.generated_at)}\n`);
   parts.push(`recommended_option: ${yamlString(result.options.recommended_option_id)}\n`);
   parts.push(`aggregated_risk: ${yamlString(result.risks.aggregated_risk_score.overall)}\n`);
-  parts.push(
-    `sourcing_summary: "total=${result.sourcing_report.total_items} ` +
-      `ok=${result.sourcing_report.counts.ok} ` +
-      `stale=${result.sourcing_report.counts.stale} ` +
-      `untrusted=${result.sourcing_report.counts.untrusted} ` +
-      `duplicated=${result.sourcing_report.counts.duplicated} ` +
-      `missing=${result.sourcing_report.counts.missing}"\n`
-  );
+  parts.push(sourcingSummary(result.sourcing_report));
   parts.push(`total_word_count: ${result.synthesis.total_word_count}\n`);
   parts.push(
     `target_word_count: ${result.synthesis.format_conformance.target_words}\n`

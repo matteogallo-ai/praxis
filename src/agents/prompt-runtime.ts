@@ -453,7 +453,21 @@ export function outputReader(agentId: string): OutputReader {
       if (excerpt.length > 500) {
         return fail(`${path}.excerpt exceeds 500 characters`, raw);
       }
-      return { url, title, accessed_at: accessedAt, excerpt };
+      // A date the reader cannot place on a calendar day ("May 2026") is
+      // dropped: freshness is then unknown, which is what it is. Only the
+      // day is kept, so nothing else of the model's string is rendered.
+      const published = obj["published_at"];
+      const day =
+        typeof published === "string" && /^\d{4}-\d{2}-\d{2}/.test(published) && !Number.isNaN(Date.parse(published))
+          ? new Date(Date.parse(published)).toISOString().slice(0, 10)
+          : undefined;
+      return {
+        url,
+        title,
+        accessed_at: accessedAt,
+        ...(day === undefined ? {} : { published_at: day }),
+        excerpt,
+      };
     },
   };
 }

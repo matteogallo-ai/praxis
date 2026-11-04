@@ -311,6 +311,11 @@ describe("buildDocxParts — document.xml content", () => {
     expect(doc).toContain("Should we do the thing?");
   });
 
+  test("each source states its publication date or that it is unknown", () => {
+    const doc = buildDocxParts(makeBrief())[2]?.content;
+    expect(doc).toContain("publication date unknown, accessed");
+  });
+
   test("every synthesis section renders as Heading2", () => {
     const parts = buildDocxParts(makeBrief());
     const doc = parts[2]!.content;

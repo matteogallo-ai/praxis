@@ -403,6 +403,9 @@ export function buildMetadata(
         result.sourcing_report.edited_after_critique === true,
       insufficiently_sourced:
         result.sourcing_report.insufficiently_sourced === true,
+      ...(result.sourcing_report.freshness_unknown === undefined
+        ? {}
+        : { freshness_unknown: result.sourcing_report.freshness_unknown }),
     },
   };
 }
