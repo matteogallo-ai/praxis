@@ -7,7 +7,7 @@ dist
 coverage
 
 # v0.10: local cache of scoring JSON payloads, keyed by
-# {slug}-{mode}. Never committed — the whole point is that a
+# {slug}[-{run}]-{mode}. Never committed — the whole point is that a
 # maintainer with API access regenerates them, and the score
 # aggregation lands in benchmarks/RESULTS.md instead.
 benchmarks/.scoring-cache/
@@ -18,3 +18,7 @@ benchmarks/.scoring-cache/
 # Stryker (bunx stryker run): in-place backup and report
 /.stryker-tmp/
 /reports/
+
+# A live run renders here before it completes; one left behind is a killed
+# run, not a record.
+benchmarks/outputs/live/*/*.staging/
