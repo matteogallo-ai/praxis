@@ -52,6 +52,12 @@ export interface SourceReference {
    * unknown, not fresh, since retrieval time says nothing of a page's age.
    */
   published_at?: string;
+  /**
+   * The organisation whose own site this is, when the stage cites it for
+   * that organisation's own facts (ADR 0003). A proposal: code accepts it
+   * only against the reviewed list (`src/sourcing/first-party.ts`).
+   */
+  first_party_for?: string;
   /** Relevant excerpt, capped at 500 characters. */
   excerpt: string;
 }
