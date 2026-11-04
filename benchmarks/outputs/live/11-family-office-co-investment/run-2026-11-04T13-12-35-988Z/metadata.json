@@ -1,0 +1,262 @@
+{
+  "id": "11-family-office-co-investment",
+  "question": "Should the family council approve the co-investment opportunity in the Zurich-based fintech proposed by our external advisor?",
+  "format": "family-office-memo",
+  "tags": [
+    "family-office",
+    "co-investment",
+    "governance"
+  ],
+  "mode": "live",
+  "duration_ms": 460583,
+  "generated_at": "2026-11-04T13:12:35.988Z",
+  "provider_name": "anthropic",
+  "synthesis": {
+    "total_word_count": 1128,
+    "target_words": 1200,
+    "deviation_pct": -6,
+    "sections_over_length": 0,
+    "sections_over_length_ids": [],
+    "forbidden_terms_found": 0
+  },
+  "adversarial": {
+    "critical_count": 1,
+    "material_count": 6,
+    "minor_count": 0,
+    "revised_recommendation_needed": true
+  },
+  "rerun": {
+    "performed": true,
+    "critiques_addressed_count": 7,
+    "re_synthesis_deviations": [
+      "principal-summary",
+      "context-and-heritage",
+      "stakeholders-and-alignment",
+      "options-and-tradeoffs",
+      "risks-and-preservation",
+      "recommended-next-step"
+    ]
+  },
+  "sourcing": {
+    "total_items": 41,
+    "counts": {
+      "ok": 4,
+      "stale": 0,
+      "untrusted": 23,
+      "duplicated": 1,
+      "missing": 13
+    },
+    "edited_after_critique": true,
+    "insufficiently_sourced": true,
+    "freshness_unknown": 24,
+    "requester_provided": 7,
+    "untrusted_citations": [
+      {
+        "stage": "options",
+        "id": "OPT-B",
+        "url": "https://www.mercer.com/insights/investments/alternative-investments/co-investment-opportunities/",
+        "reason": "host 'www.mercer.com' matches no reputation tier"
+      },
+      {
+        "stage": "options",
+        "id": "OPT-C",
+        "url": "https://www.campdenwealth.com/sites/default/files/GFO_EU_2022_D.pdf",
+        "reason": "host 'www.campdenwealth.com' matches no reputation tier"
+      },
+      {
+        "stage": "options",
+        "id": "OPT-D",
+        "url": "https://www.institutionalinvestor.com/article/family-offices-struggle-find-direct-deals-we-werent-getting-paid-time-we-were-investing",
+        "reason": "host 'www.institutionalinvestor.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-002",
+        "url": "https://pipelineroad.com/glossary/co-investment",
+        "reason": "host 'pipelineroad.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-003",
+        "url": "https://www.loyensloeff.com/insights/news--events/news/swiss-federal-council-proposes-finia-amendments-new-licences-for-payment-and-crypto-institutions-to-replace-fintech-regime/",
+        "reason": "host 'www.loyensloeff.com' matches no reputation tier"
+      },
+      {
+        "stage": "adversarial",
+        "id": "CRIT-004",
+        "url": "https://www.researchgate.net/publication/254931542_The_Disintermediation_of_Financial_Markets_Direct_Investing_in_Private_Equity",
+        "reason": "host 'www.researchgate.net' matches no reputation tier"
+      }
+    ]
+  },
+  "usage": {
+    "stages": {
+      "scoping": {
+        "calls": 1,
+        "input_tokens": 1391,
+        "output_tokens": 1207,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.029704,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 14760
+      },
+      "research": {
+        "calls": 1,
+        "input_tokens": 51189,
+        "output_tokens": 4750,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.199878,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 35803
+      },
+      "stakeholder": {
+        "calls": 1,
+        "input_tokens": 93343,
+        "output_tokens": 6737,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.304056,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 53879
+      },
+      "risk": {
+        "calls": 1,
+        "input_tokens": 65430,
+        "output_tokens": 18073,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.36158999999999997,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 119508
+      },
+      "options": {
+        "calls": 1,
+        "input_tokens": 121119,
+        "output_tokens": 8779,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.710056,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 85635
+      },
+      "synthesis": {
+        "calls": 8,
+        "input_tokens": 191246,
+        "output_tokens": 16390,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.546392,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 35596
+      },
+      "adversarial": {
+        "calls": 1,
+        "input_tokens": 89319,
+        "output_tokens": 6690,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 2,
+        "cost_usd": 0.511076,
+        "models": [
+          "claude-opus-5-5"
+        ],
+        "duration_ms": 65256
+      },
+      "synthesis-rerun": {
+        "calls": 8,
+        "input_tokens": 204170,
+        "output_tokens": 21831,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 0,
+        "cost_usd": 0.62665,
+        "models": [
+          "claude-sonnet-5-5"
+        ],
+        "duration_ms": 49934
+      }
+    },
+    "total": {
+      "calls": 22,
+      "input_tokens": 817207,
+      "output_tokens": 84457,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 22,
+      "cost_usd": 3.2894020000000004,
+      "models": [
+        "claude-opus-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "duration_ms": 460371
+    },
+    "simulated": false,
+    "max_cost_usd": 14
+  },
+  "artefacts": {
+    "brief.md": 49385,
+    "brief.pdf": 91034,
+    "brief.docx": 15823
+  },
+  "provenance": {
+    "git_sha": "8df678f514814a6705332a2ffad822bd35ad2b25",
+    "git_dirty": false,
+    "prompts": {
+      "adversarial.prompt": {
+        "version": "3.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "f1e9385b149eb3b052b956232ee3254632fccbf9b09489f01c432471f2eb627d"
+      },
+      "options.prompt": {
+        "version": "3.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b45b994c42501a6a444976302944dd78eff58acc451c935ae1f91a0b913c1418"
+      },
+      "research.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "779e15013283913004526623ecc7218045320cbfe3b09f14b12187b90a2a9513"
+      },
+      "risk.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "69d90328a32e96a2b336a29f03596081c8c8b19b37f7973a785cb4fac99f7a32"
+      },
+      "scoping.prompt": {
+        "version": "2.1.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b652767f30813ac6bc57a095a36d2ee80e67f2da2c3ae6dae93113a02cbedf86"
+      },
+      "stakeholder.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "ee69e7fb205854c4a29c20ecb5dc8afde1968261f8b824cbed9a47c054c95380"
+      },
+      "synthesis.prompt": {
+        "version": "2.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "be7ac673a02f9d0b5f75544714edb3157f1deace536db8ae39c50c0246473f9f"
+      }
+    }
+  }
+}
