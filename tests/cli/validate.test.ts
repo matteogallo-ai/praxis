@@ -43,7 +43,7 @@ describe("praxis formats validate — success cases", () => {
     });
     expect(code).toBe(0);
     expect(stdout()).toContain("Valid format: executive-pre-read");
-    expect(stdout()).toContain("v1.0.0");
+    expect(stdout()).toContain("v1.1.0");
     expect(stderr()).toBe("");
   });
 

@@ -19,7 +19,7 @@
 // The full response schema is enforced Praxis-side in
 // src/agents/synthesis.ts.
 
-@version "2.1.0"
+@version "2.2.0"
 @model claude-sonnet-5-5
 @description "Praxis synthesis agent — assembles one briefing section, respecting the target format's constraints."
 
@@ -80,7 +80,12 @@ prompt synthesis(
        lines. No image and no HTML. A link or a URL in the text must
        be a source URL copied exactly from the artefacts, with
        nothing added to it; write no other URL, link or `www.`
-       address. The answer is refused otherwise.
+       address. The answer is refused otherwise. A citation marker
+       `[n]` cites the n-th entry (from 1) of your `sources_cited`;
+       when the section asks for a citation in the text, write its
+       marker, never a site name, host or URL in its place; several
+       sources are written `[1][2]`. A marker that points at no entry
+       is refused, and so is a line that defines one (`[1]: ...`).
 
     2. Respect the section's `tone_directives` verbatim. If the
        tone says "authoritative, imperative; lead with the verb",

@@ -300,6 +300,11 @@ describe("pdfRenderer — optional sections", () => {
     expect(pdfContainsText(buf, "finding 2")).toBe(true);
   });
 
+  test("a section's sources are numbered [n], as the prose's markers cite them", async () => {
+    const buf = await pdfRenderer.render(makeBrief(), { compress_pdf_streams: false });
+    expect(pdfContainsText(buf, "[1]  Reuters PDF piece")).toBe(true);
+  });
+
   test("the Sourcing Report lists the options and critique citations from untrusted domains", async () => {
     const brief = makeBrief();
     brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };

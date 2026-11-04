@@ -1,6 +1,6 @@
 id: executive-pre-read
 name: Executive Pre-Read
-version: 1.0.0
+version: 1.1.0
 
 metadata:
   author: Matteo Gallo
@@ -61,7 +61,7 @@ sections:
     required_agents:
       - research
       - stakeholder
-    tone_directives: "evidentiary, structured; one paragraph per fact; source in parentheses at end of paragraph.\n\nFRAMING RULES.\n1. The opening sentence of each paragraph states the load-bearing fact — not 'this section covers...'.\n2. Each paragraph identifies the subject and the temporality the fact refers to.\n3. A reader skimming only the first sentence of each paragraph can triage the case."
+    tone_directives: "evidentiary, structured; one paragraph per fact; each paragraph ends with the citation marker [n] of its source; no site name, host or URL in the text.\n\nFRAMING RULES.\n1. The opening sentence of each paragraph states the load-bearing fact — not 'this section covers...'.\n2. Each paragraph identifies the subject and the temporality the fact refers to.\n3. A reader skimming only the first sentence of each paragraph can triage the case."
     validation_rules:
       - "min_citations: 3"
       - "max_citations: 7"
