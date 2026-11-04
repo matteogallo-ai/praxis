@@ -276,11 +276,11 @@ built; neither result exists, and no published score depends on them.
 | Question | Low | Central | High |
 | --- | ---: | ---: | ---: |
 | 02-cfo-buyback-briefing | $1.44 | $6.13 | $13.25 |
-| 05-supply-chain-acquisition | $1.40 | $5.97 | $12.95 |
+| 05-supply-chain-acquisition | $1.40 | $5.97 | $12.96 |
 | 08-ai-regulation-position | $1.43 | $6.12 | $13.30 |
-| 11-family-office-co-investment | $1.46 | $5.90 | $15.57 |
-| 12-sodium-ion-plant-morocco | $1.40 | $5.97 | $12.95 |
-| **Total** | **$7.13** | **$30.09** | **$68.02** |
+| 11-family-office-co-investment | $1.46 | $5.90 | $15.58 |
+| 12-sodium-ion-plant-morocco | $1.40 | $5.97 | $12.96 |
+| **Total** | **$7.13** | **$30.10** | **$68.04** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -310,11 +310,11 @@ No prompt caching is assumed.
 
 | | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| Estimate | $1.40 | $5.97 | $12.95 |
+| Estimate | $1.40 | $5.97 | $12.96 |
 
 - Ceiling: **$10.00**, timeouts included, within the allowances below. In
   the high case the run stops before adversarial's retry at $9.20 rather than
-  reaching $12.95.
+  reaching $12.96.
 
 The prompt sizes are measured; the search sizes, output shares and the
 growth of live upstream outputs over the fixtures stay assumptions:

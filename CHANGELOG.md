@@ -136,6 +136,16 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- A synthesis section cites a source in its text by the marker `[n]`, the
+  n-th entry of its `sources_cited`; each section's source list is numbered
+  `[n]` in Markdown, PDF and DOCX. `executive-pre-read` 1.1.0 asks its
+  supporting-evidence paragraphs to end with that marker, with no site name,
+  host or URL, where it asked for the "source in parentheses" (the likely
+  cause of question 02's step 1 failure). A marker pointing at no listed
+  source is refused; `every_paragraph_ends_with_citation` is checked by
+  code. Synthesis prompt 2.2.0; token counts re-measured (question 05:
+  $1.40 / $5.97 / $12.96).
+
 - The live-proof protocol has a dated "Amendments" section: question 10
   was added to step 1 before the run (2026-11-04), as the only test
   question the first-party list covers. The original plan is unchanged;
