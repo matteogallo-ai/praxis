@@ -83,6 +83,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- The hostile-output tests render the Markdown with marked (GFM), a pinned
+  devDependency, and check that no `href` or `src` points at the hostile
+  host, in addition to the pattern check; the check reads any quoting
+  and case and decodes entities.
+
 - Every listing of a first-party source (Markdown, PDF, DOCX, CLI report)
   shows the claim it was accepted for, cut at 160 characters on a word
   boundary: a finding's claim, or a stakeholder's position and interest

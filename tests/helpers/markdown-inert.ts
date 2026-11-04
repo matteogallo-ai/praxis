@@ -1,3 +1,5 @@
+import { marked } from "marked";
+
 /**
  * What a GFM viewer (GitHub, VS Code) would turn into a link in Markdown
  * text: a `www.` address or a scheme URL outside code spans. Control text
@@ -40,3 +42,27 @@ export const HOSTILE =
   "https://bare.attacker.example/x ceo@attacker.example <https://angle.attacker.example>\n[r]: https://ref.attacker.example\n" +
   // Backticks a renderer could pair where the viewer does not (review of the fix).
   "`a\nb` [x](https://cross.attacker.example) `c`\n\n| h | k |\n|---|---|\n| `a | www.cell.attacker.example` |\n\n`a\r\r www.cr.attacker.example `";
+
+/**
+ * The `href` and `src` a GFM renderer (marked) writes for `needle`: the
+ * check `liveTargets` approximates with patterns, made by a real parser.
+ * Any quoting and case, entities decoded, so that raw HTML let through by a
+ * regression of `inert` is found too.
+ * The front matter is skipped, as a viewer shows it as a table, not as Markdown.
+ */
+export function renderedTargets(document: string, needle: string): string[] {
+  const html = marked.parse(document.replace(/^---\n[\s\S]*?\n---\n/, ""), { async: false, gfm: true });
+  const attributes = /\b(?:href|src)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+  return [...html.matchAll(attributes)]
+    .map((m) => decodeEntities(m[1] ?? m[2] ?? m[3] ?? "").toLowerCase())
+    .filter((u) => u.includes(needle.toLowerCase()));
+}
+
+/** Numeric and the few named entities a URL can hide a dot or a slash behind. */
+function decodeEntities(v: string): string {
+  const named: Record<string, string> = { amp: "&", period: ".", sol: "/", colon: ":", quot: '"', apos: "'", lt: "<", gt: ">" };
+  return v.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, e: string) => {
+    if (e[0] === "#") return String.fromCodePoint(e[1] === "x" || e[1] === "X" ? Number.parseInt(e.slice(2), 16) : Number(e.slice(1)));
+    return named[e.toLowerCase()] ?? whole;
+  });
+}

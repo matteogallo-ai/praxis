@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { parseBriefArgs, renderSourcingReportMarkdown, runBriefCli } from "../../src/cli/commands/brief.ts";
 import { setColorEnabled } from "../../src/cli/output.ts";
 import { buildReport } from "../../src/sourcing/report.ts";
-import { autolinkable, HOSTILE, liveTargets } from "../helpers/markdown-inert.ts";
+import { autolinkable, HOSTILE, liveTargets, renderedTargets } from "../helpers/markdown-inert.ts";
 
 const CTX = {
   formatsDir: "formats",
@@ -1311,6 +1311,7 @@ describe("renderSourcingReportMarkdown — no model text becomes a link or an im
     };
     const md = renderSourcingReportMarkdown(report);
     expect(md).toContain("attacker.example");
+    expect(renderedTargets(md, "attacker.example")).toEqual([]);
     expect(liveTargets(md, "attacker.example")).toEqual([]);
   });
 });

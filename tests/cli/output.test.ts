@@ -12,7 +12,7 @@ import type { BriefResult } from "../../src/orchestrator/orchestrator.ts";
 import { buildInsufficientlySourcedSection } from "../../src/sourcing/insufficient.ts";
 import { buildReport } from "../../src/sourcing/report.ts";
 import { buildRequesterProvidedSection } from "../../src/sourcing/requester.ts";
-import { HOSTILE, liveTargets } from "../helpers/markdown-inert.ts";
+import { HOSTILE, liveTargets, renderedTargets } from "../helpers/markdown-inert.ts";
 
 beforeEach(() => {
   setColorEnabled(false);
@@ -308,6 +308,7 @@ describe("renderFullBrief — no model text becomes a link or an image", () => {
     brief.synthesis.sections.push(buildInsufficientlySourcedSection(report, { research }), buildRequesterProvidedSection([HOSTILE]));
     const md = renderFullBrief(brief);
     expect(md).toContain("attacker.example");
+    expect(renderedTargets(md, "attacker.example")).toEqual([]);
     expect(liveTargets(md, "attacker.example")).toEqual([]);
   });
 });

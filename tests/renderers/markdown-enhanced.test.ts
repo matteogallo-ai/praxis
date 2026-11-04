@@ -12,7 +12,7 @@ import {
   markdownEnhancedRenderer,
   renderMarkdownEnhanced,
 } from "../../src/renderers/markdown-enhanced.ts";
-import { autolinkable, HOSTILE, liveTargets } from "../helpers/markdown-inert.ts";
+import { autolinkable, HOSTILE, liveTargets, renderedTargets } from "../helpers/markdown-inert.ts";
 import type {
   BriefResult,
   BriefWithCritiqueResult,
@@ -620,6 +620,7 @@ describe("renderMarkdownEnhanced — no model text becomes a link or an image", 
     };
     const md = renderMarkdownEnhanced(brief, { include_toc: true, include_critique: true, include_appendices: true });
     expect(md).toContain("attacker.example");
+    expect(renderedTargets(md, "attacker.example")).toEqual([]);
     expect(liveTargets(md, "attacker.example")).toEqual([]);
   });
 
