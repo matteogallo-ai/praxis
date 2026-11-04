@@ -66,7 +66,7 @@ describe("renderResults", () => {
 
   test("with the human review committed, the agreement decides the label", () => {
     write(`benchmarks/judgments/05-x-${RUN}-live.json`, judgment(4));
-    const review = { id: "05-x", criteria: SCORING_CRITERIA.map((key, i) => ({ key, score: i % 2 === 0 ? 4 : 5, note: "" })) };
+    const review = { id: "05-x", run: RUN, criteria: SCORING_CRITERIA.map((key, i) => ({ key, score: i % 2 === 0 ? 4 : 5, note: "" })) };
     write("benchmarks/judgments/human-review.jsonl", `${JSON.stringify(review)}\n`);
     const md = renderResults(root);
     expect(md).toContain("Judge–human agreement, n = 7 criterion pairs");
