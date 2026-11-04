@@ -12,7 +12,7 @@
     "src/sourcing/freshness.ts",
     "src/sourcing/domain-trust.ts",
     "src/agents/prompt-runtime.ts:304-497",
-    "src/agents/synthesis.ts:697-781"
+    "src/agents/synthesis.ts:697-787"
   ],
   "reporters": ["clear-text", "progress", "json"],
   "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
