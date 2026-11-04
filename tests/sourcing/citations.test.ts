@@ -5,7 +5,7 @@ import { UntrustedDomainError } from "../../src/sourcing/errors.ts";
 import { buildReport, mergeReports } from "../../src/sourcing/report.ts";
 import type { DomainTrustRule, SourceStatus } from "../../src/sourcing/types.ts";
 
-const RULE: DomainTrustRule = { mode: "allow-list", allow_list: ["*.reuters.com", "reuters.com"] };
+const RULE: DomainTrustRule = { mode: "allow-list", allow_list: ["reuters.com"] };
 
 const src = (url: string): SourceStatus => ({
   url,
@@ -19,7 +19,7 @@ describe("untrustedCitations", () => {
     const out = untrustedCitations(
       "options",
       [
-        { id: "OPT-A", evidence: src("https://www.reuters.com/a") },
+        { id: "OPT-A", evidence: src("https://reuters.com/a") },
         { id: "OPT-B", evidence: src("https://blog.example.com/b") },
       ],
       RULE
