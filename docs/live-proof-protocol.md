@@ -157,7 +157,7 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 | Format conformance | `synthesis.forbidden_terms_found = 0`, `sections_over_length` (count) with `sections_over_length_ids` (which sections) and `deviation_pct` reported; step 0's record predates the ids and gives the count only |
 | Adversarial | `critical_count`, `material_count`; `rerun.performed` |
 | Cost and latency | `usage.stages.*.cost_usd` and `duration_ms`, against [`SLO.md`](SLO.md) |
-| Hard case | completed and `insufficiently_sourced: true` with the unsourced sodium-ion claims listed (its `intent`); an abort fails it |
+| Hard case | completed and `insufficiently_sourced: true` with the unsourced sodium-ion claims listed (its `intent`); an abort fails it; `bun run hard-case:sources` pairs each sodium-ion claim with its source's chemistry, read from title and URL, for a human to confirm |
 
 **2. Judge**, on completed briefings only, under its own GO
 ([§ Judge](#judge)).
@@ -264,10 +264,6 @@ built; neither result exists, and no published score depends on them.
   agreement computation.
 - The script that writes `RESULTS.md` from the artefacts and its `--check`
   in CI (methodology point 4).
-- For the hard case, a per-source check of whether each cited source is
-  about sodium-ion cells (its `intent`). The judge cannot do it without
-  reading the sources; it is a manual check on the sourcing report until it
-  is built.
 
 ## Cost
 
