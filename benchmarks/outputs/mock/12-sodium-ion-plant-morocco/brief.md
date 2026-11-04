@@ -115,7 +115,7 @@ The Head of EMEA Sales must secure a partner shortlist and complete due diligenc
 
 **Suggested revision:** Re-classify RISK-005 as high likelihood and add a pre-board mitigation that resolves the trade-off with Head of Product BEFORE the board meeting rather than after.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: board Q&A internal opposition rate for strategic decisions over 10m euros
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `board Q&A internal opposition rate for strategic decisions over 10m euros`
 
 ### CRIT-005 — missing-perspective (minor)
 
@@ -125,7 +125,7 @@ The Head of EMEA Sales must secure a partner shortlist and complete due diligenc
 
 **Suggested revision:** Add a supporting argument surfacing the Head of Engineering's capacity view and its impact on time-to-first-reference under both options.
 
-**Counter-evidence:** _SOURCE_MISSING_ — searched for: head of engineering perspective in cross-border SaaS market entry decisions
+**Counter-evidence:** _SOURCE_MISSING_ — searched for: `head of engineering perspective in cross-border SaaS market entry decisions`
 
 ## Appendix A — Findings
 
