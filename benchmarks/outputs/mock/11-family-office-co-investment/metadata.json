@@ -40,7 +40,8 @@
     },
     "edited_after_critique": false,
     "insufficiently_sourced": false,
-    "freshness_unknown": 22
+    "freshness_unknown": 22,
+    "untrusted_citations": []
   },
   "usage": {
     "stages": {
@@ -146,7 +147,7 @@
     "max_cost_usd": null
   },
   "artefacts": {
-    "brief.md": 19698,
+    "brief.md": 19720,
     "brief.pdf": 51245,
     "brief.docx": 7893
   }
