@@ -21,7 +21,7 @@ interface RunMetadata {
   usage: { total: { cost_usd: number }; stages: Record<string, { duration_ms?: number }> };
   sourcing?: {
     total_items: number;
-    counts: { ok: number; untrusted: number; missing: number };
+    counts: { ok: number; untrusted: number; missing: number; stale: number; duplicated: number };
     insufficiently_sourced: boolean;
   };
 }
@@ -37,16 +37,23 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 const readJson = <T>(path: string) => JSON.parse(readFileSync(path, "utf-8")) as T;
 
 /**
- * The test list of split.yaml as written. Whether the split is current against
- * the manifest is `loadSplit`'s check and has its own test; this page reports
- * membership only.
+ * The test list of split.yaml as `bun run bench:split` writes it. Whether the
+ * split is current against the manifest is `loadSplit`'s check and has its
+ * own test; this page reports membership only, and refuses a file it cannot
+ * read rather than marking every run "no".
  */
 function testSplit(root: string): Set<string> {
   const path = join(root, "benchmarks", "split.yaml");
-  if (!existsSync(path)) return new Set();
-  const block = /^test:\n((?:[ \t]+-.*\n?)*)/m.exec(readFileSync(path, "utf-8"))?.[1] ?? "";
-  return new Set([...block.matchAll(/-\s*"?([^"\n]+?)"?\s*$/gm)].map((m) => m[1] as string));
+  if (!existsSync(path)) throw new Error(`${path}: missing; run \`bun run bench:split\``);
+  const block = /^test:\r?\n((?:[ \t]+-.*\r?\n?)+)/m.exec(readFileSync(path, "utf-8"))?.[1];
+  if (block === undefined) throw new Error(`${path}: no test list`);
+  return new Set([...block.matchAll(/-\s*"?([^"\r\n]+?)"?\s*$/gm)].map((m) => m[1] as string));
 }
+
+// The maintainer's decision, recorded in docs/live-proof-protocol.md, not in
+// any artefact: split.yaml still lists q05 under test, and the page must not
+// let that column read as held-out.
+const USED_FOR_DEVELOPMENT = "05-supply-chain-acquisition";
 
 function liveSection(root: string): string[] {
   const live = join(root, "benchmarks", "outputs", "live");
@@ -69,8 +76,8 @@ function liveSection(root: string): string[] {
     "",
     `${plural(runs.length, "live briefing", "live briefings")} completed and ${plural(failures.length, "attempt", "attempts")} failed with a record (\`benchmarks/outputs/live/\`). The five attempts of v1.2.1 (August 2026) aborted before any record was written; their causes are in the CHANGELOG under 1.2.1. Status: q05 used for development after step 0; no longer held-out.`,
     "",
-    "| Question | Run | Format | Test split | Cost | Stages' time | Items | `ok` | Untrusted | Missing | Flagged insufficiently sourced |",
-    "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    "| Question | Run | Format | Test split | Cost | Stages' time | Items | `ok` | Untrusted | Missing | Stale | Duplicated | Flagged insufficiently sourced |",
+    "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
   ];
   for (const { id, dir } of runs) {
     const m = readJson<RunMetadata>(join(dir, "metadata.json"));
@@ -78,9 +85,10 @@ function liveSection(root: string): string[] {
     const s = m.sourcing;
     const sourcing =
       s === undefined
-        ? ["—", "—", "—", "—", "—"]
-        : [s.total_items, s.counts.ok, s.counts.untrusted, s.counts.missing, s.insufficiently_sourced ? "yes" : "no"];
-    const cells = [id, basename(dir), m.format, held.has(id) ? "yes" : "no", usd(m.usage.total.cost_usd), `${minutes.toFixed(1)} min`, ...sourcing];
+        ? ["—", "—", "—", "—", "—", "—", "—"]
+        : [s.total_items, s.counts.ok, s.counts.untrusted, s.counts.missing, s.counts.stale, s.counts.duplicated, s.insufficiently_sourced ? "yes" : "no"];
+    const split = !held.has(id) ? "no" : id === USED_FOR_DEVELOPMENT ? "yes, used for development" : "yes";
+    const cells = [id, basename(dir), m.format, split, usd(m.usage.total.cost_usd), `${minutes.toFixed(1)} min`, ...sourcing];
     lines.push(`| ${cells.join(" | ")} |`);
   }
   if (failures.length > 0) {
@@ -91,7 +99,7 @@ function liveSection(root: string): string[] {
   }
   lines.push(
     "",
-    "Cost is the tokens and searches the API reported, at the price table in `src/llm/pricing.ts`; it is not an invoice. Stages' time is the sum of the stages' durations."
+    "Cost is the tokens and searches the API reported, at the price table in `src/llm/pricing.ts`; it is not an invoice. Stages' time is the sum of the stages' durations. An item counts under one status (`ok`, untrusted, missing, stale, duplicated), so the five add up to Items."
   );
   return lines;
 }

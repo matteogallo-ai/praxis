@@ -6,21 +6,21 @@
 
 6 live briefings completed and 2 attempts failed with a record (`benchmarks/outputs/live/`). The five attempts of v1.2.1 (August 2026) aborted before any record was written; their causes are in the CHANGELOG under 1.2.1. Status: q05 used for development after step 0; no longer held-out.
 
-| Question | Run | Format | Test split | Cost | Stages' time | Items | `ok` | Untrusted | Missing | Flagged insufficiently sourced |
-| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| 05-supply-chain-acquisition | run-2026-11-04T08-33-09-131Z | mckinsey-style-note | yes | $3.51 | 7.8 min | 44 | 9 | 24 | 11 | yes |
-| 05-supply-chain-acquisition | run-2026-11-04T10-52-05-822Z | mckinsey-style-note | yes | $3.69 | 8.4 min | 47 | 15 | 17 | 8 | yes |
-| 08-ai-regulation-position | run-2026-11-04T12-56-19-902Z | position-paper-corporate | yes | $3.66 | 7.9 min | 47 | 14 | 16 | 15 | yes |
-| 10-esg-position | run-2026-11-04T13-04-11-831Z | position-paper-corporate | yes | $3.92 | 8.4 min | 46 | 16 | 19 | 6 | yes |
-| 11-family-office-co-investment | run-2026-11-04T13-12-35-988Z | family-office-memo | yes | $3.29 | 7.7 min | 41 | 4 | 23 | 13 | yes |
-| 12-sodium-ion-plant-morocco | run-2026-11-04T13-20-16-572Z | mckinsey-style-note | yes | $4.75 | 11.9 min | 49 | 10 | 32 | 6 | yes |
+| Question | Run | Format | Test split | Cost | Stages' time | Items | `ok` | Untrusted | Missing | Stale | Duplicated | Flagged insufficiently sourced |
+| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 05-supply-chain-acquisition | run-2026-11-04T08-33-09-131Z | mckinsey-style-note | yes, used for development | $3.51 | 7.8 min | 44 | 9 | 24 | 11 | 0 | 0 | yes |
+| 05-supply-chain-acquisition | run-2026-11-04T10-52-05-822Z | mckinsey-style-note | yes, used for development | $3.69 | 8.4 min | 47 | 15 | 17 | 8 | 5 | 2 | yes |
+| 08-ai-regulation-position | run-2026-11-04T12-56-19-902Z | position-paper-corporate | yes | $3.66 | 7.9 min | 47 | 14 | 16 | 15 | 0 | 2 | yes |
+| 10-esg-position | run-2026-11-04T13-04-11-831Z | position-paper-corporate | yes | $3.92 | 8.4 min | 46 | 16 | 19 | 6 | 0 | 5 | yes |
+| 11-family-office-co-investment | run-2026-11-04T13-12-35-988Z | family-office-memo | yes | $3.29 | 7.7 min | 41 | 4 | 23 | 13 | 0 | 1 | yes |
+| 12-sodium-ion-plant-morocco | run-2026-11-04T13-20-16-572Z | mckinsey-style-note | yes | $4.75 | 11.9 min | 49 | 10 | 32 | 6 | 0 | 1 | yes |
 
 | Question | Failed at | Format | Cause | Spent |
 | --- | --- | --- | --- | ---: |
 | 02-cfo-buyback-briefing | 2026-11-04T12:56:19.900Z | executive-pre-read | `InvalidAgentOutputError` | $2.33 |
 | 05-supply-chain-acquisition | 2026-11-03T14:47:43.035Z | mckinsey-style-note | `TruncatedOutputError` | $0.92 |
 
-Cost is the tokens and searches the API reported, at the price table in `src/llm/pricing.ts`; it is not an invoice. Stages' time is the sum of the stages' durations.
+Cost is the tokens and searches the API reported, at the price table in `src/llm/pricing.ts`; it is not an invoice. Stages' time is the sum of the stages' durations. An item counts under one status (`ok`, untrusted, missing, stale, duplicated), so the five add up to Items.
 
 ## Scores
 
