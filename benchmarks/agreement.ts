@@ -10,7 +10,7 @@
  *
  *   bun run agreement -- --human review.jsonl --judge benchmarks/.scoring-cache
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { parseScoringPayload, SCORING_CRITERIA, type ScoringCriterion } from "./score-all.ts";
@@ -51,6 +51,7 @@ export interface Agreement {
 }
 
 export function agreement(pairs: readonly Pair[]): Agreement {
+  if (pairs.length === 0) throw new Error("no criterion pair to compare");
   const kappa = quadraticKappa(pairs);
   return {
     n: pairs.length,
@@ -68,30 +69,53 @@ export interface ScorePair {
   judge: number;
 }
 
+interface HumanRecord {
+  id: string;
+  run: string;
+  criteria: { key: string; score: unknown }[];
+}
+
+function isHumanRecord(x: unknown): x is HumanRecord {
+  const r = x as Partial<HumanRecord> | null;
+  return typeof r?.id === "string" && typeof r.run === "string" && Array.isArray(r.criteria);
+}
+
 /**
- * The maintainer's annotation file against the judge's cached scorings: one
- * file per briefing, named `<id>-<run>-live.json` by `score-all.ts`.
+ * The maintainer's annotation file against the judge's scorings: one file per
+ * briefing, named `<id>-<run>-live.json` by `score-all.ts`. Each record names
+ * the run it reviewed, and only that run's judgment is paired with it: a
+ * judgment of another run of the same question grades a different text.
  */
 export function pairsFromFiles(humanPath: string, judgeDir: string): ScorePair[] {
-  const judged = readdirSync(judgeDir).filter((f) => f.endsWith("-live.json"));
   const pairs: ScorePair[] = [];
-  for (const line of readFileSync(humanPath, "utf-8").split("\n")) {
-    if (line.trim() === "") continue;
-    const record = JSON.parse(line) as { id: string; criteria: { key: string; score: unknown }[] };
-    const files = judged.filter((f) => f.startsWith(`${record.id}-run-`));
-    if (files.length === 0) throw new Error(`${record.id}: no judgment in ${judgeDir}`);
-    if (files.length > 1) throw new Error(`${record.id}: ${files.length} judgments in ${judgeDir}; keep the one for the reviewed run`);
-    const cached = JSON.parse(readFileSync(join(judgeDir, files[0] as string), "utf-8")) as { payload: unknown };
-    const judge = parseScoringPayload(cached.payload);
-    for (const criterion of SCORING_CRITERIA) {
-      const score = record.criteria.find((c) => c.key === criterion)?.score;
-      if (typeof score !== "number" || !Number.isInteger(score) || score < 1 || score > LEVELS) {
-        throw new Error(`${record.id}: ${criterion} has no score 1–5`);
-      }
-      pairs.push({ id: record.id, criterion, human: score, judge: judge.scores[criterion].score });
-    }
-  }
+  const seen = new Set<string>();
+  readFileSync(humanPath, "utf-8")
+    .split("\n")
+    .forEach((line, i) => {
+      if (line.trim() === "") return;
+      const record: unknown = JSON.parse(line);
+      if (!isHumanRecord(record)) throw new Error(`line ${i + 1}: not an annotation record (id, run, criteria)`);
+      if (seen.has(record.id)) throw new Error(`${record.id}: reviewed twice`);
+      seen.add(record.id);
+      pairs.push(...pairsOf(record, judgeDir));
+    });
+  if (pairs.length === 0) throw new Error(`no review in ${humanPath}`);
   return pairs;
+}
+
+function pairsOf(record: HumanRecord, judgeDir: string): ScorePair[] {
+  const file = `${record.id}-${record.run}-live.json`;
+  if (!existsSync(join(judgeDir, file))) throw new Error(`${record.id}: no judgment of ${record.run} in ${judgeDir}`);
+  const cached = JSON.parse(readFileSync(join(judgeDir, file), "utf-8")) as { payload: unknown };
+  const judge = parseScoringPayload(cached.payload);
+  if (judge.briefing_id !== record.id) throw new Error(`${file} judges ${judge.briefing_id}, not ${record.id}`);
+  return SCORING_CRITERIA.map((criterion) => {
+    const score = record.criteria.find((c) => c.key === criterion)?.score;
+    if (typeof score !== "number" || !Number.isInteger(score) || score < 1 || score > LEVELS) {
+      throw new Error(`${record.id}: ${criterion} has no score 1–5`);
+    }
+    return { id: record.id, criterion, human: score, judge: judge.scores[criterion].score };
+  });
 }
 
 export function renderAgreement(a: Agreement): string {
