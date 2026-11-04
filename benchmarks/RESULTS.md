@@ -2,8 +2,8 @@
 
 ## Live briefings
 
-One live briefing has completed (question 05, 4 Nov 2026, not yet scored;
-`benchmarks/outputs/live/`). The v1.2.1 live benchmark (August 2026) aborted on all 5 of the 5 briefings it attempted, before any
+Two live briefings have completed (question 05, step 0 and its rerun,
+4 Nov 2026, not yet scored; `benchmarks/outputs/live/`). Status: q05 used for development after step 0; no longer held-out. The v1.2.1 live benchmark (August 2026) aborted on all 5 of the 5 briefings it attempted, before any
 artefact was written:
 
 | Briefings | Cause |
