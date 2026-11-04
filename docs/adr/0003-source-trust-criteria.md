@@ -9,18 +9,21 @@ Question 05's live briefing (4 Nov 2026, `mckinsey-style-note`, strict) was
 flagged insufficiently sourced: 24 of 44 items from untrusted domains. Its
 brief cites 33 hosts; the format's `reputation-only` rule trusts 2 of them
 (`www.mckinsey.com`, `www.bain.com`). The 31 others, re-evaluated with the
-shipped rule on the committed `brief.md` (the record is unchanged), fall into
-these groups:
+shipped rule on the committed `brief.md` (the record is unchanged), are
+grouped below from the host and the cited page. The grouping illustrates
+the problem; it is not the check of any host against the criteria, which is
+done host by host before a list changes.
 
 | Group | Hosts in q05 |
 | --- | --- |
 | The company a claim is about, on its own site | `investor.dsv.com`, `group.dhl.com` |
-| Sector press (logistics, finance) | `theloadstar.com`, `trans.info`, `breakbulk.news`, `www.trasportoeuropa.it`, `gfmag.com`, `m.jctrans.com`, `market-insights.upply.com` |
-| Sector research firms | `ti-insight.com`, `www.aranca.com`, `imaa-institute.org` |
+| Sector press | `theloadstar.com`, `breakbulk.news`, `www.trasportoeuropa.it`, `gfmag.com` |
+| Sector press owned by a company of the sector | `trans.info` (Trans.eu, a freight exchange) |
+| Sector research firms | `ti-insight.com` |
 | Law-firm client memos and legal blogs | `www.aoshearman.com`, `www.sullcrom.com`, `www.cooley.com`, `www.goodwinlaw.com`, `www.mcdermottlaw.com`, `vlolawfirm.com`, `globallawexperts.com`, `legalblogs.wolterskluwer.com` |
-| Vendors' and advisers' content marketing | `axiagrowth.com`, `acquisitionstars.com`, `rlhulett.com`, `www.gotara.com`, `www.logisyn.com`, `www.valoremreply.com`, `www.bakertilly.global` |
+| Vendors', advisers' and platforms' content | `axiagrowth.com`, `acquisitionstars.com`, `rlhulett.com`, `www.gotara.com`, `www.logisyn.com`, `www.valoremreply.com`, `www.bakertilly.global`, `www.aranca.com`, `market-insights.upply.com`, `m.jctrans.com` |
 | Aggregators and republishers | `www.investing.com` |
-| Trade bodies and education | `www.rha.uk.net`, `www.pon.harvard.edu`, `executiveeducation.wharton.upenn.edu` |
+| Trade bodies, training and education | `www.rha.uk.net`, `imaa-institute.org`, `www.pon.harvard.edu`, `executiveeducation.wharton.upenn.edu` |
 
 The trust lists name hosts, not reasons. Two cases are judged wrongly by
 any host list:
@@ -40,26 +43,38 @@ record fixes the criteria first; a host joins a list only by meeting them.
 
 ### 1. A company's own source is primary for its own facts
 
-A source on a host the company controls is trusted **for that company's own
-facts only**: its reported figures, announcements, filings, decisions and
-stated positions. It is not trusted for claims about other parties, markets,
+A source published by a company is accepted **for that company's own facts
+only**: its reported figures, announcements, filings, decisions and stated
+positions. It is not accepted for claims about other parties, markets,
 forecasts or evaluations, including the company's claims about its
 competitors or its market.
 
-Deterministic check, so the model proposes and code decides:
+What code checks, and what it cannot:
 
-- The stage marks the item `first_party_for: "<organisation>"`.
-- Code accepts the mark only if the organisation is the item's subject: the
-  stakeholder's `name`, or a name in the finding's claim or the risk's text.
-- The URL's registrable domain (the host minus subdomains, `dsv.com` for
-  `investor.dsv.com`) must contain the organisation's name, normalised to
-  lowercase letters and digits (`DSV A/S` → `dsv`). A domain without the name
-  (a subsidiary, a rebrand) fails, and the item stays untrusted: a false
-  negative costs a flag, a false positive would let any site vouch for
-  itself.
-- An accepted item is counted as first-party in the sourcing report, not as
-  tier 1 or 2, so a reader can see how much of a briefing rests on what
-  companies say about themselves.
+- **The publisher, by an explicit list.** A committed file maps each
+  organisation to the domains it controls (`DSV` → `dsv.com`; `DHL Group` →
+  `dhl.com`, `dpdhl.com`), each entry with the page that shows the
+  ownership (an annual report, an investor-relations page). A stage marks an
+  item `first_party_for: "<organisation>"`; code accepts the mark only if the
+  organisation is in the file and the URL's host is one of its domains or a
+  subdomain of one, compared label by label. Nothing is inferred from the
+  name: `dsvtravel.com` or `mydsv.net` never match `dsv.com`, and a
+  subsidiary or rebrand fails until its domain is added. No public-suffix
+  list is needed, because every domain is written out.
+- **The subject, by name.** The organisation must be the item's subject:
+  the stakeholder's `name`, or a name the file lists for it appearing in the
+  finding's claim or the risk's text.
+- **Not the kind of claim.** Whether a sentence states the company's own
+  fact (DSV's reported revenue) or something else (DSV's view of DHL;
+  a regulator's decision about a DHL joint venture reported on
+  `group.dhl.com`) is the model's judgment; code cannot verify it. First-party
+  items are therefore counted apart in the sourcing report and listed apart
+  in the briefing, so a reader sees how much rests on what companies say
+  about themselves.
+
+Under `strict`, an accepted first-party item is not blocking: it is counted
+as first-party, not as untrusted. A mark code refuses leaves the item
+untrusted, and blocking as before.
 
 ### 2. Specialist press: a tier defined by criteria
 
@@ -67,55 +82,65 @@ A host joins a format's `tier_2` as specialist press only if it meets
 **all** of:
 
 1. **Editorial business.** Its main activity is reporting on a sector. It
-   does not sell the product, service or advice its articles discuss, so
-   vendors, consultancies writing about their own services, and law firms
-   writing for clients fail.
-2. **Accountable masthead.** Named editors, and a published corrections
-   policy or editorial standards.
-3. **Attributed, dated articles.** Each article names its author and its
+   does not sell the product, service or advice its articles discuss.
+2. **Independent ownership.** It is not owned by, or financially dependent
+   on, a company of the sector it covers (a freight exchange's news site
+   fails for logistics).
+3. **Accountable masthead.** Named editors and a published corrections
+   policy.
+4. **Attributed, dated articles.** Each article names its author and its
    publication date.
-4. **Sponsored content labelled and separable.** Paid content is marked, and
-   on paths the trust rule can exclude.
-5. **Original reporting.** It reports, rather than republishing press
-   releases or other outlets' wires; aggregators and republishers fail.
+5. **Sponsored content separable.** Paid content is labelled and served
+   from a host the trust rule can leave out. The matcher reads hosts, not
+   paths, so a site mixing paid and editorial pages on one host fails.
+6. **Original reporting.** Of its ten most recent articles on the day it is
+   checked, at least eight are not reprints of press releases or of other
+   outlets' wires. Aggregators and republishers fail.
 
 Each host added under this rule is listed with the date it was checked and
-the evidence for each criterion (the masthead URL, the corrections page) in
-`docs/sourcing.md`, and a test fails when a specialist-press entry in a
-format has no such row (part of implementing this record, below). Sector research firms, trade bodies and university
-pages are not press: they need their own criteria and remain untrusted
-until a record gives them.
+the evidence for each criterion (masthead, corrections page, owner, the ten
+articles). Sector research firms, trade bodies and training or university
+pages are not press: they need their own criteria and stay untrusted until a
+record gives them.
 
 ### 3. What stays untrusted
 
-Law-firm client memos, vendors' and advisers' content marketing, aggregators
-and republishers stay untrusted under every format, whatever their quality
-on a given page. They are written to win clients or traffic, and the
-pipeline cannot tell a fair page from a slanted one (`docs/SYSTEM_CARD.md`).
+Law-firm client memos, vendors', advisers' and platforms' content, and
+aggregators and republishers stay untrusted under every format, whatever
+their quality on a given page. They are written to win clients or traffic,
+and the pipeline cannot tell a fair page from a slanted one
+(`docs/SYSTEM_CARD.md`).
 
 ## Rejected
 
 - **Adding q05's hosts to `tier_2` one by one.** This fits the list to one
   run and leaves no rule for the next host.
+- **Matching a company's name inside the domain.** `DSV A/S` normalises to
+  `dsvas`, which is in no DSV domain, while `dsv` is a substring of
+  look-alike domains a search can return. An explicit list fails safe; a
+  name heuristic fails both ways.
 - **Letting the model rate a source's trust.** The model would grade its own
-  sources. It may propose a first-party mark; code checks it.
+  sources. It may propose a first-party mark; code checks the publisher.
 - **Dropping `strict` for `mckinsey-style-note`.** The flag is right to say
   what is unverified (ADR 0002); the defect is a list without criteria.
 - **Strict `allowed_domains` on web search.** It would hide the sources
-  instead of judging them, and would also exclude first-party sites, which
-  no list can enumerate in advance.
+  instead of judging them, and would also exclude first-party sites.
 
 ## Consequences
 
-- No list changes and no code changes in this record. Implementing it takes:
+- This record changes no list and no code. Implementing it takes:
+  - the organisation-to-domains file, and a test that fails when an entry
+    has no ownership evidence;
   - `first_party_for` in the research, stakeholder and risk output
     contracts, with an `@version` bump;
-  - the domain check;
-  - a first-party count in `SourcingReport`, a new optional field;
-  - the criteria table and its test.
-- Of q05's 24 untrusted items, only those marked first-party (DSV, DHL), or
-  citing a press host that meets all five criteria once checked, would
-  change category. How many that is, is computed only after the criteria are
-  applied, and only as an indication: the record stays as it is.
+  - the publisher and subject checks;
+  - a first-party count in `SourcingReport` (a new optional field) and a
+    first-party list in the briefing;
+  - the specialist-press evidence table, and a test that fails when a
+    specialist-press entry in a format has no row in it.
+- Of q05's 24 untrusted items, only those citing a listed company's own
+  domain for its own facts, or a press host that meets all six criteria
+  once checked, would change category. How many is known only once the
+  lists exist, and is reported as an indication: the record stays as it is.
 - Under `strict`, q05's 11 items without a source keep the briefing flagged
   whatever the trust policy.
