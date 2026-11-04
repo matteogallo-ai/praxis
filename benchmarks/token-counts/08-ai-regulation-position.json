@@ -55,8 +55,8 @@
     {
       "stage": "synthesis",
       "model": "claude-sonnet-5-5",
-      "chars": 41620,
-      "tokens": 15508
+      "chars": 41696,
+      "tokens": 15532
     },
     {
       "stage": "synthesis",
@@ -97,8 +97,8 @@
     {
       "stage": "synthesis-rerun",
       "model": "claude-sonnet-5-5",
-      "chars": 43775,
-      "tokens": 16265
+      "chars": 43851,
+      "tokens": 16289
     },
     {
       "stage": "synthesis-rerun",
