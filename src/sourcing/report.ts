@@ -165,6 +165,8 @@ export function mergeReports(
   if (reports.some((r) => r.requester_provided !== undefined)) {
     merged.requester_provided = reports.reduce((acc, r) => acc + (r.requester_provided ?? 0), 0);
   }
+  const firstParty = reports.flatMap((r) => r.first_party_sources ?? []);
+  if (firstParty.length > 0) merged.first_party_sources = firstParty;
   if (reports.some((r) => r.untrusted_citations !== undefined)) {
     merged.untrusted_citations = reports.flatMap((r) => r.untrusted_citations ?? []);
   }

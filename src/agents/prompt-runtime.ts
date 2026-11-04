@@ -454,15 +454,28 @@ export function outputReader(agentId: string): OutputReader {
         return fail(`${path}.excerpt exceeds 500 characters`, raw);
       }
       const day = calendarDay(obj["published_at"]);
+      const mark = organisationName(obj["first_party_for"]);
       return {
         url,
         title,
         accessed_at: accessedAt,
         ...(day === undefined ? {} : { published_at: day }),
+        ...(mark === undefined ? {} : { first_party_for: mark }),
         excerpt,
       };
     },
   };
+}
+
+/**
+ * A first-party mark is only a proposal checked against the reviewed list
+ * (src/sourcing/first-party.ts), so anything but a short name is dropped
+ * rather than failing the stage.
+ */
+function organisationName(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const name = value.trim();
+  return name.length === 0 || name.length > 120 ? undefined : name;
 }
 
 const PUBLISHED_AT = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/;

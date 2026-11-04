@@ -228,6 +228,27 @@ export interface SourcingReport {
    * `total_items`: no source can exist for them, and none is claimed.
    */
   requester_provided?: number;
+
+  /**
+   * Sources the first-party rule accepted. Their items are counted by their
+   * other checks (`ok` when nothing else fails), never as untrusted; they
+   * are listed here so a reader sees how much rests on what organisations
+   * say about themselves. Absent when there are none.
+   */
+  first_party_sources?: FirstPartySource[];
+}
+
+/**
+ * A source on a host the format does not trust, accepted because it is the
+ * organisation's own site and the organisation is the item's subject
+ * (ADR 0003, `src/sourcing/first-party.ts`).
+ */
+export interface FirstPartySource {
+  stage: "research" | "stakeholder" | "risk" | "adversarial";
+  /** `finding 3`, a stakeholder's name, `RISK-004 impact`, `CRIT-006`. */
+  item: string;
+  organisation: string;
+  url: string;
 }
 
 /** An options or critique citation from a domain the format does not trust. */

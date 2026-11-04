@@ -32,6 +32,7 @@ import type {
   RiskAnalysisResult,
 } from "../agents/types.ts";
 import type {
+  FirstPartySource,
   SourceStatus,
   SourcingAccumulator,
   SourcingAgentOrigin,
@@ -49,6 +50,7 @@ import {
 } from "./errors.ts";
 import { classifyFreshness } from "./freshness.ts";
 import { evaluateDomainTrust } from "./domain-trust.ts";
+import { firstPartyOrganisation } from "./first-party.ts";
 import { NoopSourcingAccumulator } from "./dedupe.ts";
 import { buildReport } from "./report.ts";
 
@@ -74,7 +76,7 @@ export function validateSourcing(
   const rules = options.rules;
   const accumulator = options.accumulator ?? new NoopSourcingAccumulator();
   const now = options.now ?? new Date();
-  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0 };
+  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0, firstParty: [] };
 
   for (const [i, finding] of result.findings.entries()) {
     inspectSource(
@@ -82,6 +84,7 @@ export function validateSourcing(
       i,
       "research",
       { finding_index: i, missing_searched_for: null },
+      { subject: finding.claim, label: `finding ${i + 1}` },
       rulesInfo,
       warnings
     );
@@ -99,7 +102,7 @@ export function validateStakeholderSourcing(
   const rules = options.rules;
   const accumulator = options.accumulator ?? new NoopSourcingAccumulator();
   const now = options.now ?? new Date();
-  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0 };
+  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0, firstParty: [] };
 
   for (const [i, stakeholder] of result.stakeholders.entries()) {
     inspectSource(
@@ -110,6 +113,7 @@ export function validateStakeholderSourcing(
         stakeholder_index: i,
         stakeholder_name: stakeholder.name,
       },
+      { subject: stakeholder.name, label: stakeholder.name },
       rulesInfo,
       warnings
     );
@@ -133,7 +137,7 @@ export function validateRiskSourcing(
   const rules = options.rules;
   const accumulator = options.accumulator ?? new NoopSourcingAccumulator();
   const now = options.now ?? new Date();
-  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0 };
+  const rulesInfo: RulesInfo = { rules, accumulator, now, unknownFreshness: 0, firstParty: [] };
 
   let itemIndex = 0;
   for (const [i, risk] of result.risks.entries()) {
@@ -146,6 +150,7 @@ export function validateRiskSourcing(
         risk_id: risk.id,
         evidence_field: "likelihood_evidence" as const,
       },
+      { subject: risk.description, label: `${risk.id} likelihood` },
       rulesInfo,
       warnings
     );
@@ -159,6 +164,7 @@ export function validateRiskSourcing(
         risk_id: risk.id,
         evidence_field: "impact_evidence" as const,
       },
+      { subject: risk.description, label: `${risk.id} impact` },
       rulesInfo,
       warnings
     );
@@ -193,6 +199,14 @@ interface RulesInfo {
   now: Date;
   /** Sources inspected under a freshness rule with no known publication date. */
   unknownFreshness: number;
+  /** Sources the first-party rule accepted on an untrusted host. */
+  firstParty: FirstPartySource[];
+}
+
+/** The item's own text, which must name a first-party source's organisation. */
+interface ItemText {
+  subject: string;
+  label: string;
 }
 
 /**
@@ -204,6 +218,7 @@ function inspectSource(
   itemIndex: number,
   agent: SourcingAgentOrigin,
   locator: Locator,
+  item: ItemText,
   info: RulesInfo,
   warnings: SourcingWarning[]
 ): void {
@@ -233,7 +248,10 @@ function inspectSource(
 
   if (rules?.domain_trust !== undefined) {
     const trust = evaluateDomainTrust(source.url, rules.domain_trust);
-    if (trust.classification === "untrusted") {
+    const organisation = trust.classification === "untrusted" ? firstPartyOrganisation(source, item.subject) : null;
+    if (organisation !== null) {
+      info.firstParty.push({ stage: agent, item: item.label, organisation, url: source.url });
+    } else if (trust.classification === "untrusted") {
       warnings.push({
         kind: "untrusted_domain",
         agent,
@@ -308,6 +326,7 @@ function finalize(
   const report = buildReport(policy, totalItems, warnings);
   // Set before any throw: a strict failure carries this report too.
   if (rules?.freshness !== undefined) report.freshness_unknown = info.unknownFreshness;
+  if (info.firstParty.length > 0) report.first_party_sources = info.firstParty;
   if (policy !== "strict") return report;
 
   // Under strict, pick the first blocking warning (in emission order)
