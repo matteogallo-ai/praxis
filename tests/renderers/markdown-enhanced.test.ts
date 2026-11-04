@@ -239,6 +239,17 @@ describe("renderMarkdownEnhanced — first-party sources", () => {
     expect(toc).not.toContain("First-party sources");
   });
 
+  test("markup in a label stays inert: no raw HTML, no image", () => {
+    const base = makeBrief();
+    const item = "X <img src=//t.example/p> ![](//t.example/q)";
+    const md = renderMarkdownEnhanced(
+      makeBrief({ sourcing_report: { ...base.sourcing_report, first_party_sources: [{ stage: "stakeholder", item, organisation: "OECD", url: "https://www.oecd.org/a" }] } })
+    );
+    const line = md.split("\n").find((l) => l.startsWith("- [stakeholder] X")) ?? "";
+    expect(line).toContain("X &lt;img src=//t.example/p> !\\[](//t.example/q)");
+    expect(line).not.toContain("<img");
+  });
+
   test("the table of contents links the section when there is one", () => {
     const base = makeBrief();
     const f = { stage: "risk" as const, item: "RISK-001 impact", organisation: "OECD", url: "https://www.oecd.org/a" };
