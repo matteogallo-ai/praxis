@@ -108,6 +108,10 @@ describe("checkBrief", () => {
     expect(text).toContain("a recommendation needs none, a factual claim does");
     expect(text).toContain("| Situation | Sodium-ion demand in Europe is thin. | Lithium prices retreat | another chemistry |");
   });
+  test("model text cannot break a table cell: a backslash before a pipe is escaped too", () => {
+    const row = { where: "S", claim: "Sodium-ion a\\|b", source_title: null, url: null, verdict: "no source" as const };
+    expect(renderCheck("12-x", "run-1", [row])).toContain("| S | Sodium-ion a\\\\\\|b | — | no source |");
+  });
 });
 
 // The CHANGELOG states the counts on the committed record; they must be the check's.

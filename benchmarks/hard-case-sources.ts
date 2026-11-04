@@ -119,7 +119,8 @@ const SHORT: Record<Verdict, string> = {
 };
 
 const cell = (s: string, max = 140) => {
-  const one = s.replace(/\s+/g, " ").replace(/\|/g, "\\|");
+  // Backslashes first: model text ending in "\" before a "|" would otherwise escape the escape and split the cell.
+  const one = s.replace(/\s+/g, " ").replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
   return one.length > max ? `${one.slice(0, max - 1)}…` : one;
 };
 
