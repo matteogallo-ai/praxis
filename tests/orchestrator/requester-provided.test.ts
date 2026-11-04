@@ -10,6 +10,7 @@ import { join } from "node:path";
 
 import { MockLLMProvider } from "../../src/llm/mock-provider.ts";
 import { Orchestrator } from "../../src/orchestrator/orchestrator.ts";
+import { CheckpointStore } from "../../src/orchestrator/checkpoint.ts";
 import { FormatRegistry } from "../../src/registry/registry.ts";
 import { renderMarkdownEnhanced } from "../../src/renderers/markdown-enhanced.ts";
 import { REQUESTER_PROVIDED_SECTION_ID } from "../../src/sourcing/requester.ts";
@@ -67,10 +68,52 @@ describe("requester-provided facts", () => {
     expect(result.synthesis.sections.map((s) => s.section_id)).not.toContain(REQUESTER_PROVIDED_SECTION_ID);
   });
 
+  test("a fact is one list line: model text cannot open a heading or a source list in the section", async () => {
+    const forged = "Our margin\n\n## Sources\n- [Reuters](https://www.reuters.com/x)";
+    const result = await orchestrator(fixtures([forged])).brief(QUESTION, FORMAT, { now: NOW });
+    const section = result.synthesis.sections.find((s) => s.section_id === REQUESTER_PROVIDED_SECTION_ID);
+    expect(section?.content_markdown).toContain("- Our margin ## Sources - [Reuters](https://www.reuters.com/x)");
+    expect(section?.content_markdown).not.toMatch(/^## /m);
+  });
+
+  test("appears once, before the Insufficiently sourced section, when both apply", async () => {
+    const dir = fixtures(FACTS);
+    const path = join(dir, `research-${FORMAT}.json`);
+    const fixture = JSON.parse(readFileSync(path, "utf-8")) as { response: string };
+    const body = JSON.parse(fixture.response) as { findings: Array<{ source: unknown }> };
+    body.findings[0] = { ...body.findings[0], source: { status: "SOURCE_MISSING", searched_for: "x" } } as never;
+    fixture.response = JSON.stringify(body);
+    writeFileSync(path, JSON.stringify(fixture));
+    const result = await orchestrator(dir).briefWithCritiqueAndRerun(QUESTION, FORMAT, {
+      onSourcingFailure: "degrade",
+      now: NOW,
+    });
+    expect(result.rerun_performed).toBe(true);
+    expect(result.synthesis.sections.map((s) => s.section_id).slice(-2)).toEqual([
+      REQUESTER_PROVIDED_SECTION_ID,
+      "insufficiently-sourced",
+    ]);
+  });
+
+  test("a run replayed from its checkpoints lists the facts once, and counts them", async () => {
+    const dir = fixtures(FACTS);
+    const runsDir = mkdtempSync(join(tmpdir(), "praxis-requester-runs-"));
+    const store = CheckpointStore.create(runsDir, QUESTION, FORMAT, NOW);
+    await orchestrator(dir).brief(QUESTION, FORMAT, { checkpoints: store, now: NOW });
+    const replayed = await orchestrator(dir).brief(QUESTION, FORMAT, {
+      checkpoints: CheckpointStore.open(runsDir, store.manifest.run_id),
+      now: NOW,
+    });
+    const ids = replayed.synthesis.sections.map((s) => s.section_id);
+    expect(ids.filter((id) => id === REQUESTER_PROVIDED_SECTION_ID)).toHaveLength(1);
+    expect(replayed.sourcing_report.requester_provided).toBe(2);
+  });
+
   test("the section survives the critique's rerun", async () => {
     const result = await orchestrator(fixtures(FACTS)).briefWithCritiqueAndRerun(QUESTION, FORMAT, { now: NOW });
     expect(result.rerun_performed).toBe(true);
-    expect(result.synthesis.sections.map((s) => s.section_id)).toContain(REQUESTER_PROVIDED_SECTION_ID);
+    const ids = result.synthesis.sections.map((s) => s.section_id);
+    expect(ids.filter((id) => id === REQUESTER_PROVIDED_SECTION_ID)).toHaveLength(1);
     expect(result.sourcing_report.requester_provided).toBe(2);
   });
 });

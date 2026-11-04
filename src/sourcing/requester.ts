@@ -6,7 +6,7 @@
  */
 
 import type { SynthesizedSection } from "../agents/types.ts";
-import { countWords } from "../agents/synthesis.ts";
+import { codeWrittenSection, oneLine } from "./code-written-section.ts";
 
 export const REQUESTER_PROVIDED_SECTION_ID = "requester-provided";
 
@@ -16,17 +16,8 @@ export function buildRequesterProvidedSection(facts: readonly string[]): Synthes
     "so this briefing counts none of them as sourced; the requester supplies them, and",
     "every statement that rests on them is as reliable as that information.",
     "",
-    ...facts.map((f) => `- ${f}`),
+    ...facts.map((f) => `- ${oneLine(f)}`),
     "",
   ].join("\n");
-  return {
-    section_id: REQUESTER_PROVIDED_SECTION_ID,
-    title: "Requester-provided, not sourceable",
-    content_markdown,
-    word_count: countWords(content_markdown),
-    sources_cited: [],
-    validation_issues: [],
-    editorial_attempts: [],
-    final_attempt_number: 1,
-  };
+  return codeWrittenSection(REQUESTER_PROVIDED_SECTION_ID, "Requester-provided, not sourceable", content_markdown);
 }
