@@ -210,7 +210,7 @@ published as *unvalidated*, with the numbers that failed.
   11, 12 in id order that completes; if 05 does not complete, the first two
   of those that do. `bun run export:annotation -- --ids
   <the two> > review.jsonl` writes them for an annotation tool, one JSON
-  object per line: question, format, the brief's Markdown, and the seven
+  object per line: question, the run reviewed, format, the brief's Markdown, and the seven
   criteria with their definitions and an empty `score` (1–5) and `note`.
   Nothing the judge wrote is in the file. The brief is model output built
   on web excerpts: the annotation tool renders it as plain text, not as
@@ -221,8 +221,9 @@ published as *unvalidated*, with the numbers that failed.
   one informed rater, published as such. Agreement over the 14 criterion
   pairs: exact and within-one agreement, and quadratic-weighted Cohen's
   kappa (`bun run agreement -- --human review.jsonl --judge
-  benchmarks/.scoring-cache`, which refuses an unscored criterion and a
-  briefing judged twice). **Threshold: kappa ≥ 0.6.** The 14 pairs come from one rater and
+  benchmarks/.scoring-cache`, which pairs each review only with the judgment
+  of the run it reviewed, and refuses an unscored criterion, a briefing
+  reviewed twice and an empty review). **Threshold: kappa ≥ 0.6.** The 14 pairs come from one rater and
   two briefings, are not independent, and support no interval; kappa is
   unstable when scores bunch at 3–4. Passing this check makes the judge's
   scores *indicative*, never *validated*, and CLAIMS C18 stays on the

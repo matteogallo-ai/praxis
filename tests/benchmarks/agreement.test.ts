@@ -34,12 +34,23 @@ describe("agreement", () => {
   test("an undefined kappa does not meet the threshold", () => {
     expect(agreement([[4, 4]]).meets_threshold).toBe(false);
   });
+  test("a kappa of exactly the threshold meets it; just below does not", () => {
+    // (1,2) and (4,3): observed 2/16 per 2 pairs, expected 10/16 per 2 → 1 - 2/10 = 0.6 exactly.
+    expect(quadraticKappa([[1, 2], [4, 3]])).toBe(KAPPA_THRESHOLD);
+    expect(agreement([[1, 2], [4, 3]]).meets_threshold).toBe(true);
+    const below = agreement([[1, 2], [4, 3], [3, 4]]);
+    expect(below.kappa).toBeLessThan(KAPPA_THRESHOLD);
+    expect(below.meets_threshold).toBe(false);
+  });
+  test("no pair is refused, not a NaN kappa", () => {
+    expect(() => agreement([])).toThrow("no criterion pair");
+  });
 });
 
 describe("pairsFromFiles", () => {
   const scores = (n: number) => Object.fromEntries(SCORING_CRITERIA.map((k) => [k, { score: n, example: "e", improvement: "i" }]));
-  const human = (id: string, n: number | null) =>
-    JSON.stringify({ id, criteria: SCORING_CRITERIA.map((key) => ({ key, score: n, note: "" })) });
+  const human = (id: string, n: number | null, run = "run-a") =>
+    JSON.stringify({ id, run, criteria: SCORING_CRITERIA.map((key) => ({ key, score: n, note: "" })) });
   const judge = (id: string, n: number) =>
     JSON.stringify({
       cached_at: "2026-11-05T00:00:00Z",
@@ -56,9 +67,10 @@ describe("pairsFromFiles", () => {
 
   test("pairs each criterion of each reviewed briefing with the judge's", () => {
     const dir = setup({
-      "review.jsonl": `${human("05-x", 3)}\n${human("02-y", 4)}\n`,
+      "review.jsonl": `${human("05-x", 3, "run-2026-11-04T08-33-09-131Z")}\n${human("02-y", 4, "run-b")}\n`,
       "05-x-run-2026-11-04T08-33-09-131Z-live.json": judge("05-x", 4),
-      "02-y-run-2026-11-04T10-00-00-000Z-live.json": judge("02-y", 4),
+      "05-x-run-2026-11-04T10-52-05-822Z-live.json": judge("05-x", 1),
+      "02-y-run-b-live.json": judge("02-y", 4),
     });
     try {
       const pairs = pairsFromFiles(join(dir, "review.jsonl"), dir);
@@ -69,11 +81,20 @@ describe("pairsFromFiles", () => {
     }
   });
 
-  test("an unscored criterion, a missing or a doubled judgment is refused", () => {
+  test("a bad score, a missing or mismatched judgment, a repeated or malformed record, or no record is refused", () => {
+    const ok = judge("05-x", 4);
     const cases: [Record<string, string>, string][] = [
-      [{ "review.jsonl": human("05-x", null), "05-x-run-a-live.json": judge("05-x", 4) }, "05-x: framing_clarity has no score 1–5"],
-      [{ "review.jsonl": human("05-x", 3) }, "05-x: no judgment"],
-      [{ "review.jsonl": human("05-x", 3), "05-x-run-a-live.json": judge("05-x", 4), "05-x-run-b-live.json": judge("05-x", 4) }, "05-x: 2 judgments"],
+      [{ "review.jsonl": human("05-x", null), "05-x-run-a-live.json": ok }, "05-x: framing_clarity has no score 1–5"],
+      [{ "review.jsonl": human("05-x", 0), "05-x-run-a-live.json": ok }, "05-x: framing_clarity has no score 1–5"],
+      [{ "review.jsonl": human("05-x", 6), "05-x-run-a-live.json": ok }, "05-x: framing_clarity has no score 1–5"],
+      [{ "review.jsonl": human("05-x", 4.5), "05-x-run-a-live.json": ok }, "05-x: framing_clarity has no score 1–5"],
+      [{ "review.jsonl": human("05-x", 3) }, "05-x: no judgment of run-a"],
+      // Only the reviewed run's judgment counts, and an id that extends another is a different briefing.
+      [{ "review.jsonl": human("05-x", 3), "05-x-run-b-live.json": ok, "05-x-extra-run-a-live.json": judge("05-x-extra", 4) }, "05-x: no judgment of run-a"],
+      [{ "review.jsonl": human("05-x", 3), "05-x-run-a-live.json": judge("02-y", 4) }, "05-x-run-a-live.json judges 02-y"],
+      [{ "review.jsonl": `${human("05-x", 3)}\n${human("05-x", 3)}\n`, "05-x-run-a-live.json": ok }, "05-x: reviewed twice"],
+      [{ "review.jsonl": '{"id":"05-x"}\n', "05-x-run-a-live.json": ok }, "line 1: not an annotation record"],
+      [{ "review.jsonl": "\n" }, "no review in"],
     ];
     for (const [files, message] of cases) {
       const dir = setup(files);

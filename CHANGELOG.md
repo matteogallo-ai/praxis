@@ -87,7 +87,9 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   annotation file, against the judge's cached scores for the same
   briefings: exact and within-one agreement and quadratic-weighted kappa,
   with the protocol's 0.6 threshold deciding whether the judge's scores are
-  called indicative or unvalidated. It reads files only.
+  called indicative or unvalidated. Each review is paired only with the
+  judgment of the run it reviewed: `export:annotation` records that run. It
+  reads files only.
 
 - The hostile-output tests render the Markdown with marked (GFM), a pinned
   devDependency, and check that no `href` or `src` points at the hostile

@@ -10,7 +10,7 @@
  *   bun run export:annotation -- --ids 05-supply-chain-acquisition,02-cfo-buyback-briefing > review.jsonl
  */
 import { readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 import { loadManifest } from "./manifest.ts";
 import { completedLiveRuns } from "./provenance.ts";
@@ -28,6 +28,8 @@ const DEFINITIONS: Record<ScoringCriterion, string> = {
 
 export interface AnnotationRecord {
   id: string;
+  /** The run reviewed: the judge's score paired with this one must be of the same run. */
+  run: string;
   question: string;
   format: string;
   brief_markdown: string;
@@ -48,6 +50,7 @@ export function annotationRecords(root: string, ids: readonly string[]): Annotat
     const brief = join(run, "brief.md");
     return {
       id,
+      run: basename(run),
       question: entry.question,
       format: entry.format,
       brief_markdown: readFileSync(brief, "utf-8"),
