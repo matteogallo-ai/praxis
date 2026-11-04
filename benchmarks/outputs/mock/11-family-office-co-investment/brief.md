@@ -34,8 +34,8 @@ Authorise the co-investment alongside the External Advisor inside a capped CHF 5
 
 **Sources:**
 
-- [Campden European Single-Family-Office Benchmark 2025](https://www.campdenfb.com/research/european-sfo-benchmark-2025)
-- [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024)
+- [1] [Campden European Single-Family-Office Benchmark 2025](https://www.campdenfb.com/research/european-sfo-benchmark-2025)
+- [2] [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024)
 
 ## Context and Heritage Considerations
 
@@ -43,9 +43,9 @@ The direct venture sleeve was established at its current target during the last 
 
 **Sources:**
 
-- [Campden European Single-Family-Office Benchmark 2025](https://www.campdenfb.com/research/european-sfo-benchmark-2025)
-- [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024)
-- [Campden Next-Gen Preferences Report 2024](https://www.campdenfb.com/research/next-gen-preferences-2024)
+- [1] [Campden European Single-Family-Office Benchmark 2025](https://www.campdenfb.com/research/european-sfo-benchmark-2025)
+- [2] [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024)
+- [3] [Campden Next-Gen Preferences Report 2024](https://www.campdenfb.com/research/next-gen-preferences-2024)
 
 ## Stakeholders and Alignment
 
@@ -53,9 +53,9 @@ The principal retains final authority and is neutral pending the completeness of
 
 **Sources:**
 
-- [STEP Practice Note — Advisor Conflicts of Interest 2024](https://www.step.org/practice-notes/advisor-conflicts-of-interest-2024)
-- [STEP Practice Note — Trustee Role in Private Capital Decisions 2024](https://www.step.org/practice-notes/trustee-role-private-capital-2024)
-- [Private banker collateral reviews after material illiquid allocations](https://www.privatebankerinternational.com/analysis/collateral-review-post-illiquid-2024)
+- [1] [STEP Practice Note — Advisor Conflicts of Interest 2024](https://www.step.org/practice-notes/advisor-conflicts-of-interest-2024)
+- [2] [STEP Practice Note — Trustee Role in Private Capital Decisions 2024](https://www.step.org/practice-notes/trustee-role-private-capital-2024)
+- [3] [Private banker collateral reviews after material illiquid allocations](https://www.privatebankerinternational.com/analysis/collateral-review-post-illiquid-2024)
 
 ## Options and Tradeoffs
 
@@ -63,9 +63,9 @@ Three options are available and each is presented as a genuine alternative. The 
 
 **Sources:**
 
-- [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024)
-- [STEP Practice Note — Phased Authorisation of Private Capital Decisions 2024](https://www.step.org/practice-notes/phased-authorisation-2024)
-- [Campden European Single-Family-Office Benchmark 2025](https://www.campdenfb.com/research/european-sfo-benchmark-2025)
+- [1] [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024)
+- [2] [STEP Practice Note — Phased Authorisation of Private Capital Decisions 2024](https://www.step.org/practice-notes/phased-authorisation-2024)
+- [3] [Campden European Single-Family-Office Benchmark 2025](https://www.campdenfb.com/research/european-sfo-benchmark-2025)
 
 ## Risks and Preservation Considerations
 
@@ -73,9 +73,9 @@ Five material risks apply to the recommended option and each is paired with a co
 
 **Sources:**
 
-- [STEP Practice Note — Advisor Conflicts of Interest 2024](https://www.step.org/practice-notes/advisor-conflicts-of-interest-2024)
-- [Campden Next-Gen Preferences Report 2024](https://www.campdenfb.com/research/next-gen-preferences-2024)
-- [FINMA Guidance — Beneficial Ownership Disclosure 2025](https://www.finma.ch/en/publications/beneficial-ownership-disclosure-2025)
+- [1] [STEP Practice Note — Advisor Conflicts of Interest 2024](https://www.step.org/practice-notes/advisor-conflicts-of-interest-2024)
+- [2] [Campden Next-Gen Preferences Report 2024](https://www.campdenfb.com/research/next-gen-preferences-2024)
+- [3] [FINMA Guidance — Beneficial Ownership Disclosure 2025](https://www.finma.ch/en/publications/beneficial-ownership-disclosure-2025)
 
 ## Recommended Next Step
 
@@ -83,7 +83,7 @@ Convene the council within four weeks to authorise the co-investment at the capp
 
 **Sources:**
 
-- [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024)
+- [1] [OECD Note — Governance of Family Capital 2024](https://www.oecd.org/finance/family-office-governance-2024)
 
 ## Adversarial Critique
 

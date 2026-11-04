@@ -107,12 +107,12 @@
       },
       "synthesis": {
         "calls": 6,
-        "input_tokens": 62046,
+        "input_tokens": 62442,
         "output_tokens": 1937,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 0,
-        "cost_usd": 0.14346199999999998,
+        "cost_usd": 0.144254,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -131,12 +131,12 @@
       },
       "synthesis-rerun": {
         "calls": 6,
-        "input_tokens": 65650,
+        "input_tokens": 66050,
         "output_tokens": 1937,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 0,
-        "cost_usd": 0.15066999999999997,
+        "cost_usd": 0.15147,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -144,12 +144,12 @@
     },
     "total": {
       "calls": 18,
-      "input_tokens": 160531,
+      "input_tokens": 161327,
       "output_tokens": 13934,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 13,
-      "cost_usd": 0.6778299999999999,
+      "cost_usd": 0.679422,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"
@@ -159,8 +159,8 @@
     "max_cost_usd": null
   },
   "artefacts": {
-    "brief.md": 19924,
-    "brief.pdf": 49764,
-    "brief.docx": 8363
+    "brief.md": 19976,
+    "brief.pdf": 49804,
+    "brief.docx": 8380
   }
 }

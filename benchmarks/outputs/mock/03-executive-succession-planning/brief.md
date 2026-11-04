@@ -7,9 +7,9 @@ recommended_option: "OPT-A"
 aggregated_risk: "high"
 sourcing_summary: "total=34 ok=31 stale=0 untrusted=0 duplicated=1 missing=2 freshness_unknown=29 untrusted_citations=0"
 critique_summary: "critiques=5 critical=1 material=2 minor=2 robustness=medium revised_needed=true"
-total_word_count: 355
+total_word_count: 347
 target_word_count: 800
-word_deviation_pct: -55.6
+word_deviation_pct: -56.6
 ---
 
 # Draft the executive succession briefing for the incoming CEO.
@@ -34,9 +34,9 @@ Enter the German mid-market SaaS segment via a controlled majority partnership b
 
 **Sources:**
 
-- [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
-- [EU data protection authorities target foreign SaaS entrants](https://www.reuters.com/technology/eu-data-protection-foreign-saas-2026)
-- [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025)
+- [1] [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
+- [2] [EU data protection authorities target foreign SaaS entrants](https://www.reuters.com/technology/eu-data-protection-foreign-saas-2026)
+- [3] [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025)
 
 ## Key Question
 
@@ -48,13 +48,17 @@ Enter Germany in Q1 2027 via a bounded greenfield office capped at 15 staff for 
 
 ## Supporting Evidence
 
-The German mid-market SaaS segment grew 12% CAGR 2022-2025 and is now the largest addressable slice of EMEA (McKinsey Germany SaaS Benchmark 2025). BfDI's 2026 audit priority list singles out foreign SaaS entrants, which makes local counsel and a pre-filed DPIA a table stake rather than an optional cost (Reuters, June 2026). SAP has already restructured its DACH mid-market coverage to defend against new entrants, which shortens the window in which a bounded beachhead can settle in without triggering a bundled counter-offer (Bloomberg, Q4 2025).
+The German mid-market SaaS segment grew 12% CAGR 2022-2025 and is now the largest addressable slice of EMEA [1].
+
+BfDI's 2026 audit priority list singles out foreign SaaS entrants, which makes local counsel and a pre-filed DPIA a table stake rather than an optional cost [2].
+
+SAP has already restructured its DACH mid-market coverage to defend against new entrants, which shortens the window in which a bounded beachhead can settle in without triggering a bundled counter-offer [3].
 
 **Sources:**
 
-- [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
-- [EU data protection authorities target foreign SaaS entrants](https://www.reuters.com/technology/eu-data-protection-foreign-saas-2026)
-- [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025)
+- [1] [Germany SaaS Market-Entry Benchmark 2025](https://www.mckinsey.com/insights/germany-saas-entry-benchmark-2025)
+- [2] [EU data protection authorities target foreign SaaS entrants](https://www.reuters.com/technology/eu-data-protection-foreign-saas-2026)
+- [3] [SAP intensifies mid-market defence strategy across DACH](https://www.bloomberg.com/news/sap-mid-market-defence-strategy-2025)
 
 ## Risks and Mitigations
 
