@@ -381,6 +381,17 @@ describe("in-text citations", () => {
     for (const f of all) for (const s of f.sections) expect(`${f.id}/${s.id}: ${s.tone_directives}`).not.toMatch(/source in parenthes/i);
   });
 
+  // Position-paper's rationale asked for "citations at the end of each strand"
+  // with no form, which invites the same host name.
+  test("a section that says where its citations go asks for the marker [n], and no site name or URL", () => {
+    const placed = all.flatMap((f) => f.sections.filter((s) => /citations? (at|in) |ends? with (the|a) citation/i.test(s.tone_directives ?? "")));
+    expect(placed.length).toBeGreaterThan(1);
+    for (const s of placed) {
+      expect(s.tone_directives).toContain("citation marker [n]");
+      expect(s.tone_directives).toContain("no site name, host or URL in the text");
+    }
+  });
+
   test("a section whose paragraphs must end with a citation asks for the marker [n], and no site name or URL", () => {
     const ruled = all.flatMap((f) => f.sections.filter((s) => (s.validation_rules ?? []).includes("every_paragraph_ends_with_citation: true")));
     expect(ruled.length).toBeGreaterThan(0);
