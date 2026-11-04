@@ -5,8 +5,9 @@
  *
  * Model text, and the web pages behind it, is data here, never markup
  * (OWASP LLM05): a raw `<img>` or a Markdown image would be fetched when the
- * briefing is opened, `-->` would close the comment it sits in, and a URL
- * with a parenthesis would end its link early.
+ * briefing is opened, an address the model wrote would be a link, `-->`
+ * would close the comment it sits in, and a URL with a parenthesis would end
+ * its link early.
  */
 import type { SynthesizedSection } from "../agents/types.ts";
 import type { SourcingReport } from "../sourcing/types.ts";
@@ -18,6 +19,53 @@ import type { SourcingReport } from "../sourcing/types.ts";
  */
 export function inert(v: string): string {
   return v.replace(/</g, "&lt;").replace(/--(!?)>/g, "--$1&gt;").replace(/!\[/g, "!\\[");
+}
+
+/**
+ * Model text a GFM viewer shows as written: outside code spans, no link,
+ * image, reference definition or autolink (`www.`, `scheme://`, e-mail), so
+ * nothing the model wrote is fetched or clickable when the briefing is
+ * opened. Emphasis, lists and headings stay Markdown.
+ *
+ * A code span is found as CommonMark finds it, but only on one line: text
+ * misread as code would be left live, while code misread as text only shows
+ * a backslash. Every backslash outside a span is escaped first, so no
+ * backtick is escaped and the spans seen here are the viewer's.
+ */
+export function plainText(v: string): string {
+  let out = "";
+  let i = 0;
+  while (i < v.length) {
+    const open = v.indexOf("`", i);
+    if (open === -1) return out + escapeLinks(v.slice(i));
+    out += escapeLinks(v.slice(i, open));
+    const fence = /^`+/.exec(v.slice(open))?.[0] ?? "`";
+    const close = closingFence(v, open + fence.length, fence.length);
+    const end = close === -1 ? open + fence.length : close + fence.length;
+    out += v.slice(open, end);
+    i = end;
+  }
+  return out;
+}
+
+/** One model field, inert and plain: for text written outside a block `inert` already covers. */
+export function modelText(v: string): string {
+  return inert(plainText(v));
+}
+
+/** The start of the next run of exactly `n` backticks on the same line, or -1. */
+function closingFence(v: string, from: number, n: number): number {
+  const lineEnd = v.indexOf("\n", from);
+  const line = v.slice(from, lineEnd === -1 ? v.length : lineEnd);
+  for (const m of line.matchAll(/`+/g)) if (m[0].length === n) return from + m.index;
+  return -1;
+}
+
+function escapeLinks(v: string): string {
+  return v
+    .replace(/[\\[\]@]/g, "\\$&")
+    .replace(/(www)\./gi, "$1\\.")
+    .replace(/:\/\//g, "\\://");
 }
 
 /** A URL as one Markdown link destination: `(`, `)`, `<`, `>` and whitespace would end it early. */
@@ -60,8 +108,8 @@ export function escapeMarkdownLinkText(v: string): string {
 export function renderSynthesisSections(sections: readonly SynthesizedSection[]): string {
   const parts: string[] = [];
   for (const section of sections) {
-    parts.push(`## ${inert(escapeMarkdownHeading(section.title))}\n\n`);
-    parts.push(`${inert(section.content_markdown.trim())}\n\n`);
+    parts.push(`## ${inert(plainText(escapeMarkdownHeading(section.title)))}\n\n`);
+    parts.push(`${inert(plainText(section.content_markdown.trim()))}\n\n`);
     if (section.sources_cited.length > 0) {
       parts.push("**Sources:**\n\n");
       // Numbered as the prose's markers [n] cite them.

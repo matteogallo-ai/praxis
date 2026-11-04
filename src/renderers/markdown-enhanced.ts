@@ -28,6 +28,8 @@ import {
   escapeMarkdownLinkText,
   inert,
   linkTarget,
+  modelText,
+  plainText,
   renderSynthesisSections,
   sourcingSummary,
   yamlString,
@@ -58,7 +60,7 @@ export function renderMarkdownEnhanced(
   // The front matter holds YAML-quoted values; every other part is Markdown
   // that carries model text, made inert (src/renderers/markdown-text.ts).
   const parts: string[] = [renderFrontMatter(brief)];
-  parts.push(inert(`# ${escapeMarkdownHeading(brief.question)}\n\n`));
+  parts.push(inert(`# ${plainText(escapeMarkdownHeading(brief.question))}\n\n`));
   if (options.include_toc) parts.push(inert(renderToc(brief, options)));
   parts.push(renderSynthesisSections(brief.synthesis.sections));
   if (options.include_critique && hasCritique(brief)) parts.push(inert(renderCritiqueSection(brief)));
@@ -107,7 +109,7 @@ function renderToc(
 ): string {
   const parts: string[] = ["## Table of Contents\n\n"];
   for (const s of brief.synthesis.sections) {
-    parts.push(`- [${s.title}](#${slugify(s.title)})\n`);
+    parts.push(`- [${plainText(escapeMarkdownHeading(s.title))}](#${slugify(s.title)})\n`);
   }
   if (options.include_critique && hasCritique(brief)) {
     parts.push(`- [Adversarial Critique](#adversarial-critique)\n`);
@@ -135,14 +137,14 @@ function renderCritiqueSection(brief: BriefWithCritiqueResult): string {
   );
   if (a.steelmanned_alternative !== null) {
     parts.push(
-      `**Steelmanned alternative to the current recommendation:** ${a.steelmanned_alternative}\n\n`
+      `**Steelmanned alternative to the current recommendation:** ${plainText(a.steelmanned_alternative)}\n\n`
     );
   }
   for (const c of a.critiques) {
-    parts.push(`### ${c.id} — ${c.category} (${c.severity})\n\n`);
-    parts.push(`**Steelmanned position:** ${c.steelmanned_position}\n\n`);
-    parts.push(`**Implication if true:** ${c.implication_if_true}\n\n`);
-    parts.push(`**Suggested revision:** ${c.suggested_revision}\n\n`);
+    parts.push(`### ${plainText(c.id)} — ${c.category} (${c.severity})\n\n`);
+    parts.push(`**Steelmanned position:** ${plainText(c.steelmanned_position)}\n\n`);
+    parts.push(`**Implication if true:** ${plainText(c.implication_if_true)}\n\n`);
+    parts.push(`**Suggested revision:** ${plainText(c.suggested_revision)}\n\n`);
     if ("url" in c.counter_evidence) {
       parts.push(
         `**Counter-evidence:** [${escapeMarkdownLinkText(c.counter_evidence.title)}](${linkTarget(c.counter_evidence.url)})\n\n`
@@ -163,8 +165,8 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
   parts.push("## Appendix A — Findings\n\n");
   for (const [i, f] of brief.research.findings.entries()) {
     parts.push(`### Finding ${i + 1}\n\n`);
-    parts.push(`**Claim:** ${f.claim}\n\n`);
-    parts.push(`**Evidence:** ${f.supporting_evidence}\n\n`);
+    parts.push(`**Claim:** ${plainText(f.claim)}\n\n`);
+    parts.push(`**Evidence:** ${plainText(f.supporting_evidence)}\n\n`);
     if ("url" in f.source) {
       parts.push(
         `**Source:** [${escapeMarkdownLinkText(f.source.title)}](${linkTarget(f.source.url)})\n\n`
@@ -182,7 +184,7 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
   parts.push("|---|---|---|---|---|\n");
   for (const s of brief.stakeholders.stakeholders) {
     parts.push(
-      `| ${mdCell(s.name)} | ${s.category} | ${s.position} | ${s.power} | ${s.priority} |\n`
+      `| ${mdCell(plainText(s.name))} | ${s.category} | ${s.position} | ${s.power} | ${s.priority} |\n`
     );
   }
   parts.push("\n");
@@ -211,7 +213,7 @@ function renderFirstPartySection(brief: BriefResult | BriefWithCritiqueResult): 
   const parts = ["## First-party sources\n\n"];
   for (const f of firstParty) {
     // The label can be model text; the URL is an autolink linkTarget keeps whole.
-    parts.push(`- ${describeFirstParty(f, (u) => `<${linkTarget(u)}>`, inert)}\n`);
+    parts.push(`- ${describeFirstParty(f, (u) => `<${linkTarget(u)}>`, modelText)}\n`);
   }
   parts.push("\n");
   return parts.join("");
@@ -258,7 +260,7 @@ function renderSourcesSection(
   }
   const domains = [...byDomain.keys()].sort();
   for (const domain of domains) {
-    parts.push(`### ${domain}\n\n`);
+    parts.push(`### ${plainText(domain)}\n\n`);
     for (const s of byDomain.get(domain)!.sort((a, b) => a.title.localeCompare(b.title))) {
       parts.push(`- [${escapeMarkdownLinkText(s.title)}](${linkTarget(s.url)}) · ${sourceDates(s)}\n`);
     }

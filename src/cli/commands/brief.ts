@@ -93,7 +93,7 @@ import type {
   RiskAnalysisResult,
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
-import { inert, linkTarget } from "../../renderers/markdown-text.ts";
+import { linkTarget, modelText, plainText } from "../../renderers/markdown-text.ts";
 import { describeFirstParty, uncategorisedLines } from "../../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 import { codeSpan } from "../../sourcing/code-written-section.ts";
@@ -795,7 +795,7 @@ export function renderSourcingReportMarkdown(report: SourcingReport): string {
   );
   for (const line of uncategorisedLines(report)) parts.push(`${line}\n\n`);
   // The claim and the label are model text, and this appendix joins a Markdown file.
-  for (const f of report.first_party_sources ?? []) parts.push(`- ${describeFirstParty(f, (u) => `<${linkTarget(u)}>`, inert)}\n`);
+  for (const f of report.first_party_sources ?? []) parts.push(`- ${describeFirstParty(f, (u) => `<${linkTarget(u)}>`, modelText)}\n`);
   if ((report.first_party_sources ?? []).length > 0) parts.push("\n");
   const cited = report.untrusted_citations ?? [];
   if (report.warnings.length === 0 && cited.length === 0) {
@@ -817,9 +817,9 @@ function describeWarningMarkdown(w: SourcingReport["warnings"][number]): string 
     case "missing_source":
       return `[research] finding[${w.finding_index}] SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
     case "missing_stakeholder_evidence":
-      return `[stakeholder] '${w.stakeholder_name}' (index ${w.stakeholder_index}) SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
+      return `[stakeholder] '${modelText(w.stakeholder_name)}' (index ${w.stakeholder_index}) SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
     case "missing_risk_evidence":
-      return `[risk] ${w.risk_id} .${w.evidence_field} SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
+      return `[risk] ${plainText(w.risk_id)} .${w.evidence_field} SOURCE_MISSING — ${codeSpan(w.searched_for)}`;
     case "stale_source":
       return `[${w.agent}] stale source (${w.age_days} days${w.exceeds_max ? "; past max" : ""}): ${codeSpan(w.url)}`;
     case "untrusted_domain":

@@ -12,6 +12,7 @@ import {
   markdownEnhancedRenderer,
   renderMarkdownEnhanced,
 } from "../../src/renderers/markdown-enhanced.ts";
+import { autolinkable, HOSTILE, liveTargets } from "../helpers/markdown-inert.ts";
 import type {
   BriefResult,
   BriefWithCritiqueResult,
@@ -239,7 +240,7 @@ describe("renderMarkdownEnhanced — first-party sources", () => {
     expect(md).toContain("## First-party sources");
     expect(md.indexOf("## First-party sources")).toBeLessThan(md.indexOf("## Sources"));
     expect(md).toContain(
-      "- [stakeholder] OECD ## Injected — OECD's own site, for its own facts: <https://www.oecd.org/a_%28b%29> — claim: “position: supportive. !\\[x](https://evil.example/p.png)”"
+      "- [stakeholder] OECD ## Injected — OECD's own site, for its own facts: <https://www.oecd.org/a_%28b%29> — claim: “position: supportive. !\\[x\\](https\\://evil.example/p.png)”"
     );
     expect(md).not.toMatch(/^## Injected/m);
     expect(md).toMatch(/sourcing_summary: "[^"]* first_party=1[^"]*"/);
@@ -254,13 +255,13 @@ describe("renderMarkdownEnhanced — first-party sources", () => {
       makeBrief({ sourcing_report: { ...base.sourcing_report, first_party_sources: [{ stage: "stakeholder", item, organisation: "OECD", url: "https://www.oecd.org/a" }] } })
     );
     const line = md.split("\n").find((l) => l.startsWith("- [stakeholder] X")) ?? "";
-    expect(line).toContain("X &lt;img src=//t.example/p> !\\[](//t.example/q)");
+    expect(line).toContain("X &lt;img src=//t.example/p> !\\[\\](//t.example/q)");
     expect(line).not.toContain("<img");
   });
 
   test("the table of contents links the section when there is one", () => {
     const base = makeBrief();
-    const f = { stage: "risk" as const, item: "RISK-001 impact", organisation: "OECD", url: "https://www.oecd.org/a" };
+    const f = { stage: "research" as const, item: "finding 1", organisation: "OECD", url: "https://www.oecd.org/a" };
     const md = renderMarkdownEnhanced(makeBrief({ sourcing_report: { ...base.sourcing_report, first_party_sources: [f] } }), { include_toc: true });
     expect(md).toContain("- [First-party sources](#first-party-sources)");
   });
@@ -377,7 +378,7 @@ describe("renderMarkdownEnhanced — Sources section (dedup + domain grouping)",
     const md = renderMarkdownEnhanced(makeBrief());
     const srcIdx = md.indexOf("## Sources");
     expect(srcIdx).toBeGreaterThan(0);
-    const bloombergIdx = md.indexOf("### www.bloomberg.com", srcIdx);
+    const bloombergIdx = md.indexOf("### www\\.bloomberg.com", srcIdx);
     const reutersIdx = md.indexOf("### reuters.com", srcIdx);
     expect(bloombergIdx).toBeGreaterThan(srcIdx);
     expect(reutersIdx).toBeGreaterThan(srcIdx);
@@ -535,7 +536,7 @@ describe("renderMarkdownEnhanced — model text cannot become markup", () => {
     finding.claim = "c1 <iframe src=https://attacker.example>";
     const md = renderMarkdownEnhanced(brief, { include_appendices: true });
     expect(md).not.toMatch(/<(img|script|iframe)/);
-    expect(md).toContain('Margins held. &lt;img src="https://attacker.example/b?d=1">');
+    expect(md).toContain('Margins held. &lt;img src="https\\://attacker.example/b?d=1">');
   });
 
   test("an image in a claim or a critique is not an image", () => {
@@ -586,5 +587,50 @@ describe("renderMarkdownEnhanced — model text cannot become markup", () => {
     first.sources_cited = [source];
     const md = renderMarkdownEnhanced(brief);
     expect(md).toContain("[Reuters article A](https://example.org/wiki/Foo_%28bar%29%20x)");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// No model text becomes a link or an image: nothing remote loads when the
+// briefing is opened, and no address the model wrote is clickable.
+// ---------------------------------------------------------------------------
+
+describe("renderMarkdownEnhanced — no model text becomes a link or an image", () => {
+  test("in every model field of every part", () => {
+    const brief = makeBriefWithCritique();
+    brief.question = `Q ${HOSTILE}`;
+    for (const s of brief.synthesis.sections) {
+      s.title = `T ${HOSTILE}`;
+      s.content_markdown = `P ${HOSTILE}`;
+    }
+    for (const f of brief.research.findings) {
+      f.claim = HOSTILE;
+      f.supporting_evidence = HOSTILE;
+    }
+    for (const s of brief.stakeholders.stakeholders) s.name = HOSTILE;
+    for (const c of brief.adversarial.critiques) {
+      c.steelmanned_position = HOSTILE;
+      c.implication_if_true = HOSTILE;
+      c.suggested_revision = HOSTILE;
+    }
+    brief.adversarial.steelmanned_alternative = HOSTILE;
+    brief.sourcing_report = {
+      ...brief.sourcing_report,
+      first_party_sources: [{ stage: "research", item: HOSTILE, organisation: "OECD", url: "https://www.oecd.org/a", claim: HOSTILE }],
+    };
+    const md = renderMarkdownEnhanced(brief, { include_toc: true, include_critique: true, include_appendices: true });
+    expect(md).toContain("attacker.example");
+    expect(liveTargets(md, "attacker.example")).toEqual([]);
+  });
+
+  test("a source's host, as a heading of the Sources section, is not an autolink", () => {
+    const brief = makeBrief();
+    const [first] = brief.synthesis.sections;
+    if (first === undefined) throw new Error("makeBrief has a section");
+    first.sources_cited = [{ ...SRC_A, url: "https://www.source.example/a" }];
+    brief.research.findings = [{ claim: "c", supporting_evidence: "e", source: { ...SRC_A, url: "https://www.source.example/a" } }];
+    const headings = renderMarkdownEnhanced(brief).split("\n").filter((l) => l.startsWith("### "));
+    expect(headings.join("\n")).toContain("source");
+    expect(autolinkable(headings.join("\n"))).toEqual([]);
   });
 });

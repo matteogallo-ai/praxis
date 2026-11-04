@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { parseBriefArgs, renderSourcingReportMarkdown, runBriefCli } from "../../src/cli/commands/brief.ts";
 import { setColorEnabled } from "../../src/cli/output.ts";
 import { buildReport } from "../../src/sourcing/report.ts";
-import { autolinkable } from "../helpers/markdown-inert.ts";
+import { autolinkable, HOSTILE, liveTargets } from "../helpers/markdown-inert.ts";
 
 const CTX = {
   formatsDir: "formats",
@@ -1298,5 +1298,19 @@ describe("renderSourcingReportMarkdown — URLs and hosts are inert text", () =>
       untrusted_citations: [{ stage: "adversarial" as const, id: "CRIT-001", url: URL, reason: "host 'www.bracewell.com' matches no entry in allow-list" }],
     };
     expect(autolinkable(renderSourcingReportMarkdown(report))).toEqual([]);
+  });
+});
+
+describe("renderSourcingReportMarkdown — no model text becomes a link or an image", () => {
+  test("a stakeholder's name, a first-party label and its claim", () => {
+    const report = {
+      ...buildReport("strict", 2, [
+        { kind: "missing_stakeholder_evidence", stakeholder_index: 0, stakeholder_name: HOSTILE, searched_for: "q" },
+      ]),
+      first_party_sources: [{ stage: "research" as const, item: HOSTILE, organisation: "OECD", url: "https://www.oecd.org/x", claim: HOSTILE }],
+    };
+    const md = renderSourcingReportMarkdown(report);
+    expect(md).toContain("attacker.example");
+    expect(liveTargets(md, "attacker.example")).toEqual([]);
   });
 });
