@@ -9,12 +9,10 @@
  */
 
 import { evaluateDomainTrust } from "./domain-trust.ts";
-import { firstPartyOrganisation } from "./first-party.ts";
 import { UntrustedDomainError } from "./errors.ts";
 import { buildReport } from "./report.ts";
 import type {
   DomainTrustRule,
-  FirstPartySource,
   SourceStatus,
   SourcingPolicy,
   SourcingReport,
@@ -45,31 +43,6 @@ export function untrustedCitations(
     }
   }
   return out;
-}
-
-/**
- * The critique's counter-evidence, judged like the research stages' sources:
- * an untrusted host is accepted as first-party when the reviewed list
- * confirms the mark and the critique's position names the organisation
- * (ADR 0003). The rest of the untrusted ones are listed, never blocking.
- */
-export function critiqueCitations(
-  critiques: readonly { id: string; steelmanned_position: string; counter_evidence: SourceStatus }[],
-  rule: DomainTrustRule
-): { untrusted: UntrustedCitation[]; firstParty: FirstPartySource[] } {
-  const firstParty: FirstPartySource[] = [];
-  const rest: { id: string; evidence: SourceStatus }[] = [];
-  for (const c of critiques) {
-    const e = c.counter_evidence;
-    const untrusted = !isSourceMissing(e) && evaluateDomainTrust(e.url, rule).classification === "untrusted";
-    const organisation = untrusted ? firstPartyOrganisation(e, c.steelmanned_position) : null;
-    if (organisation !== null && !isSourceMissing(e)) {
-      firstParty.push({ stage: "adversarial", item: c.id, organisation, url: e.url });
-    } else {
-      rest.push({ id: c.id, evidence: e });
-    }
-  }
-  return { untrusted: untrustedCitations("adversarial", rest, rule), firstParty };
 }
 
 /**

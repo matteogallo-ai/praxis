@@ -9,6 +9,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- The human review of question 10's step 1 first-party sources is
+  published in `benchmarks/outputs/live/README.md`: 8 reviewed, 6 accepted,
+  2 refused (both a risk's likelihood). The rule now excludes a risk's
+  evidence and, by the maintainer's decision, a critique's counter-evidence,
+  which backs an argument (ADR 0003, amendments of 4 Nov 2026; see Added).
 - The URLs, hosts and searched-for queries of the "Insufficiently
   sourced" section and of the CLI's Markdown sourcing report are code spans.
   A Markdown viewer turned them into links: in question 10's step 1
@@ -70,15 +75,16 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   `benchmarks/estimates/step-1.json`; `SHA256SUMS` lists every record.
 
 - First-party sources (ADR 0003, now implemented for its first decision).
-  A research, stakeholder or risk source, or a critique's counter-evidence,
-  on an untrusted host counts as the organisation's own source when the
+  A research or stakeholder source on an untrusted host (never a risk's or
+  a critique's: they back a judgement) counts as the organisation's own
+  source when the
   stage marks it `first_party_for` an organisation of the reviewed list
   `src/sourcing/first-party-organisations.ts`, the host is one of its
   domains and the item names it. Such sources do not block under `strict`
   and are listed apart (`SourcingReport.first_party_sources`, a
   "First-party sources" section, every sourcing report). Prompts:
-  research, stakeholder and risk 3.1.0, adversarial 3.0.0; token counts
-  re-measured with count_tokens (question 05: $1.40 / $5.97 / $12.95).
+  research and stakeholder 3.1.0, risk 3.1.1, adversarial 4.0.0; token
+  counts re-measured with count_tokens (question 05: $1.40 / $5.96 / $12.92).
 
 - The research, stakeholder, risk and options prompts (3.0.0: a new
   required `source_guidance` parameter) name the format's trusted hosts by

@@ -1,7 +1,9 @@
 /**
- * The research, stakeholder and risk validators accept a first-party source
- * the reviewed list confirms: it is not untrusted, does not block under
- * strict, and is listed apart. A mark the list refuses changes nothing.
+ * The research and stakeholder validators accept a first-party source the
+ * reviewed list confirms: it is not untrusted, does not block under strict,
+ * and is listed apart. A mark the list refuses changes nothing. A risk's
+ * evidence is never first-party: a likelihood or an impact is a judgement,
+ * not the organisation's own fact (ADR 0003, amendment of 4 Nov 2026).
  */
 import { describe, expect, test } from "bun:test";
 
@@ -56,14 +58,18 @@ describe("first-party sources in the research validators", () => {
     expect(r).not.toHaveProperty("first_party_sources");
   });
 
-  test("stakeholders are judged on their name, risks on their description", () => {
+  test("stakeholders are judged on their name", () => {
     const stakeholders = {
       stakeholders: [{ name: "Financial Conduct Authority (FCA)", position_evidence: source("https://www.fca.org.uk/p", "Financial Conduct Authority") }],
       key_dynamics: [],
     } as unknown as StakeholderMapResult;
     const s = validateStakeholderSourcing(stakeholders, "strict", { rules: RULES, now: NOW });
     expect(s.first_party_sources?.[0]?.item).toBe("Financial Conduct Authority (FCA)");
+  });
 
+  // Question 10, step 1: "RISK-003 likelihood" and "RISK-008 likelihood" were
+  // accepted on ghgprotocol.org and ifrs.org; the human review refused both.
+  test("a risk's likelihood and impact evidence stays untrusted, even marked", () => {
     const risks = {
       risks: [
         {
@@ -74,8 +80,10 @@ describe("first-party sources in the research validators", () => {
         },
       ],
     } as unknown as RiskAnalysisResult;
-    const k = validateRiskSourcing(risks, "strict", { rules: RULES, now: NOW });
-    expect(k.first_party_sources?.map((f) => f.item)).toEqual(["RISK-001 likelihood", "RISK-001 impact"]);
+    const k = validateRiskSourcing(risks, "permissive", { rules: RULES, now: NOW });
+    expect(k).not.toHaveProperty("first_party_sources");
+    expect(k.counts.untrusted).toBe(2);
+    expect(() => validateRiskSourcing(risks, "strict", { rules: RULES, now: NOW })).toThrow(UntrustedDomainError);
   });
 
   test("merged reports keep every first-party source", () => {

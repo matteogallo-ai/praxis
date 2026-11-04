@@ -266,5 +266,9 @@ describe("docs/live-proof-protocol.md", () => {
     const [q12] = estimateRun(".", ["12-sodium-ion-plant-morocco"]).rows;
     expect(doc.replace(/\s+/g, " ")).toContain(`Question 11 is ${usd((q05?.central ?? 0) - (q11?.central ?? 0))} cheaper`);
     for (const k of ["low", "central", "high"] as const) expect(Math.abs((q12?.[k] ?? 0) - (q05?.[k] ?? 0))).toBeLessThan(0.015);
+    // Both sentences name question 11's high case; neither sits in a table the other tests read.
+    const flat_ = doc.replace(/\s+/g, " ");
+    expect(flat_).toContain(`\`strict_editorial\`, ${usd(q11?.high ?? 0)} in the high case)`);
+    expect(flat_).toContain(`question 11, the costliest (${usd(q11?.high ?? 0)} in full)`);
   });
 });

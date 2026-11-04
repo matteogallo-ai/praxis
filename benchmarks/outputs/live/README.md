@@ -117,7 +117,8 @@ What step 1 shows:
   eight first-party sources: IFRS Foundation, GHG Protocol and EFRAG for
   their own standards, and the FCA for its own policy statement. They are
   listed in its briefing's "First-party sources" section; whether each
-  sentence states the organisation's own fact is not checked by code.
+  sentence states the organisation's own fact is not checked by code. A
+  human review accepted 6 of the 8 and refused 2 (below).
 - No source is stale; 24 to 30 cited items per briefing have no
   publication date, so their freshness is unknown.
 
@@ -136,6 +137,33 @@ end of paragraph", which invites a host name such as `(www.example.com)`.
 The record cannot confirm it: the error quoted only `www.`, and a refused
 answer is not kept. Since #42 the error quotes the whole address, cut at
 200 characters, so a second failure would name it. Nothing was rerun.
+
+### Question 10: human review of its first-party sources
+
+Matteo Gallo reviewed the eight sources the first-party rule accepted in
+question 10's briefing, on 4 Nov 2026. This is a finding about the record;
+the record is not modified.
+
+| # | Stage | Item | Organisation | Verdict |
+| --- | --- | --- | --- | --- |
+| 1 | research | finding 3 | IFRS Foundation | accepted |
+| 2 | research | finding 7 | GHG Protocol | accepted |
+| 3 | stakeholder | EFRAG (technical adviser on ESRS) | EFRAG | accepted |
+| 4 | stakeholder | ISSB / IFRS Foundation (IFRS S2) | IFRS Foundation | accepted |
+| 5 | stakeholder | UK Financial Conduct Authority (UK SRS for listed issuers) | Financial Conduct Authority | accepted |
+| 6 | stakeholder | GHG Protocol (WRI/WBCSD) – Scope 3 Standard revision | GHG Protocol | accepted |
+| 7 | risk | RISK-003 likelihood | GHG Protocol | refused |
+| 8 | risk | RISK-008 likelihood | IFRS Foundation | refused |
+
+8 reviewed, 6 accepted, 2 refused. Reason for the two refusals: a risk's
+likelihood (RISK-008's is very-high) is a judgement of what may happen, not
+a decision, rule, publication or figure of the organisation, so an
+organisation's own site cannot be its first-party source. The rule now
+never accepts a risk's likelihood or impact evidence (ADR 0003, amendment
+of 4 Nov 2026). The review also found that the section shows no claim
+beside each source, which leaves a reviewer nothing to check, and that a
+Markdown viewer turned a host in the "Insufficiently sourced" text into a
+link; both are fixed apart.
 
 ## Errata
 

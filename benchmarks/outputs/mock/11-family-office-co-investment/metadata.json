@@ -83,12 +83,12 @@
       },
       "risk": {
         "calls": 1,
-        "input_tokens": 6279,
+        "input_tokens": 6119,
         "output_tokens": 2182,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 3,
-        "cost_usd": 0.06437799999999999,
+        "cost_usd": 0.064058,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -119,12 +119,12 @@
       },
       "adversarial": {
         "calls": 1,
-        "input_tokens": 14390,
+        "input_tokens": 14224,
         "output_tokens": 1177,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 1,
-        "cost_usd": 0.0911,
+        "cost_usd": 0.09043599999999999,
         "models": [
           "claude-opus-5-5"
         ]
@@ -132,12 +132,12 @@
     },
     "total": {
       "calls": 12,
-      "input_tokens": 97621,
+      "input_tokens": 97295,
       "output_tokens": 12255,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 13,
-      "cost_usd": 0.536588,
+      "cost_usd": 0.535604,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"

@@ -87,20 +87,21 @@ describe("sourcing guide in the search stages' prompts", () => {
       // The system example lists the field the guide asks for, so the two agree.
       expect(p).toContain('"published_at": "YYYY-MM-DD');
       expect(p).not.toContain("these three fields");
-      // Options' citations are not judged by the first-party rule (ADR 0003).
-      expect(p.includes('"first_party_for"')).toBe(stage !== "options");
+      // Options' citations are not judged by the first-party rule (ADR 0003), nor
+      // are risks', whose sources back an estimate (amendment of 4 Nov 2026).
+      expect(p.includes('"first_party_for"')).toBe(stage !== "options" && stage !== "risk");
       // Only the research stages' sources are freshness-checked.
       expect(p.includes("treats sources older than")).toBe(stage !== "options");
     });
   }
 
-  test("adversarial: the critique is told the first-party rule its counter-evidence is judged by", async () => {
+  // Its counter-evidence is never first-party, so the critique is not told the rule.
+  test("adversarial: the critique is not told the first-party rule, nor shown the mark", async () => {
     const p = await promptOf((llm) =>
       executeAdversarialCritique({ brief_result: { question: "Should we list in London?" } as never, format: FORMAT }, llm)
     );
-    expect(p).toContain(firstPartyGuidance());
-    // The mark's place in the answer is shown, not only described.
-    expect(p).toMatch(/"counter_evidence": [^\n]*"first_party_for"/);
+    expect(p).not.toContain(firstPartyGuidance());
+    expect(p).not.toContain('"first_party_for"');
     expect(p).not.toContain("{{first_party_guidance}}");
   });
 });

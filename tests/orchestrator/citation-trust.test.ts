@@ -84,7 +84,9 @@ describe("domain trust on critique citations", () => {
     expect(result.sourcing_report.insufficiently_sourced).toBeUndefined();
   });
 
-  test("a counter-evidence from the organisation's own site, about it, is listed as first-party", async () => {
+  // A steelmanned position is an argument, a judgement: its counter-evidence
+  // is never first-party (ADR 0003, amendment of 4 Nov 2026).
+  test("a counter-evidence from the organisation's own site, marked first-party, stays an untrusted citation", async () => {
     const dir = fixtures(
       "adversarial",
       { steelmanned_position: "The FCA's own listing rules make a UK dual listing slower and costlier than the brief assumes, which changes its timing." },
@@ -92,10 +94,10 @@ describe("domain trust on critique citations", () => {
     );
     const result = await orchestrator(dir).briefWithCritique(QUESTION, FORMAT, { now: NOW });
     const id = result.adversarial.critiques[0]?.id ?? "no critique";
-    expect(result.sourcing_report.untrusted_citations).toEqual([]);
-    expect(result.sourcing_report.first_party_sources).toEqual([
-      { stage: "adversarial", item: id, organisation: "Financial Conduct Authority", url: "https://www.fca.org.uk/markets/listing-rules" },
+    expect(result.sourcing_report.untrusted_citations).toEqual([
+      expect.objectContaining({ stage: "adversarial", id, url: "https://www.fca.org.uk/markets/listing-rules" }),
     ]);
+    expect(result.sourcing_report).not.toHaveProperty("first_party_sources");
   });
 
   test("after the rerun, each untrusted citation is listed once", async () => {
