@@ -74,6 +74,16 @@ describe("matchHostPattern", () => {
     expect(matchHostPattern("a.b", "*")).toBe(false);
   });
 
+  test("the fixed pieces between two '*' are found in order, without overlap", () => {
+    // Each case is accepted by a matcher that skips one of the three checks;
+    // in an allow-list that would trust a host the pattern does not name.
+    expect(matchHostPattern("ab", "a*b*b")).toBe(false);
+    expect(matchHostPattern("aaa.com", "*aa*aa*.com")).toBe(false);
+    expect(matchHostPattern("ab.com", "a*a*b.com")).toBe(false);
+    expect(matchHostPattern("abb", "a*b*b")).toBe(true);
+    expect(matchHostPattern("aaaa.com", "*aa*aa*.com")).toBe(true);
+  });
+
   test("a pattern's other characters are literal", () => {
     expect(matchHostPattern("reuters.com", "reuters.c*m")).toBe(true);
     expect(matchHostPattern("reutersxcom", "reuters.c*m")).toBe(false);
