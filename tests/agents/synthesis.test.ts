@@ -6,6 +6,7 @@ import { join } from "node:path";
 import {
   executeSynthesis,
   countWords,
+  parseStoredSynthesis,
 } from "../../src/agents/synthesis.ts";
 import {
   AgentExecutionError,
@@ -840,6 +841,46 @@ describe("executeSynthesis — citation markers [n]", () => {
     expect(result.format_conformance.failed_validation_rules).toEqual([]);
   });
 
+  test("a marker mid-paragraph does not end it: the paragraph still fails the rule", async () => {
+    const result = (await synthesize("Margins held [1], costs fell.", [SOURCE_A], [RULE])) as {
+      format_conformance: { failed_validation_rules: unknown[] };
+    };
+    expect(result.format_conformance.failed_validation_rules).toEqual([{ section_id: "intro", rule: RULE }]);
+  });
+
+  test("the rule is reported once when the model already reported it", async () => {
+    const own = `validation_rule not honoured: '${RULE}' (paragraph 2)`;
+    const format = makeFormat({
+      sections: makeFormat().sections.map((s) => (s.id === "intro" ? { ...s, validation_rules: [RULE] } : s)),
+    });
+    const provider = fakeLLM({
+      intro: { content_markdown: "Margins held [1].\n\nCosts fell.", sources_cited: [SOURCE_A], validation_issues: [own] },
+      body: { content_markdown: "Body." },
+    });
+    const result = await executeSynthesis({ ...CTX_BASE, format }, provider);
+    expect(result.sections[0]?.validation_issues).toEqual([own]);
+    expect(result.format_conformance.failed_validation_rules).toEqual([{ section_id: "intro", rule: RULE }]);
+  });
+
+  // A definition `[1]: url` would turn every [1] of the briefing into a link to that URL.
+  test("refuses a reference definition for a marker, even to an upstream URL", async () => {
+    const err = await synthesize(`Margins held [1].\n\n[1]: ${SOURCE_B.url}`, [SOURCE_A]);
+    expect(err).toBeInstanceOf(InvalidAgentOutputError);
+    expect((err as Error).message).toContain("content_markdown contains a reference definition for a citation marker");
+  });
+
+  test("a stored checkpoint whose marker points at no listed source is refused", async () => {
+    const format = makeFormat();
+    const fresh = await executeSynthesis(
+      { ...CTX_BASE, format },
+      fakeLLM({ intro: { content_markdown: "Margins held [1].", sources_cited: [SOURCE_A] }, body: { content_markdown: "Body." } })
+    );
+    const ok = JSON.stringify(fresh);
+    expect(() => parseStoredSynthesis(ok, format, CTX_BASE)).not.toThrow();
+    const broken = JSON.stringify({ ...fresh, sections: fresh.sections.map((s, i) => (i === 0 ? { ...s, sources_cited: [] } : s)) });
+    expect(() => parseStoredSynthesis(broken, format, CTX_BASE)).toThrow("citation marker [1] that points at no entry of sources_cited (0 listed)");
+  });
+
   test("a host name in parentheses is not a marker", async () => {
     const result = (await synthesize("Margins held (Reuters, June 2026).", [SOURCE_A], [RULE])) as {
       format_conformance: { failed_validation_rules: unknown[] };
@@ -853,5 +894,6 @@ describe("synthesis prompt — citation markers", () => {
     const text = (await Bun.file("prompts/synthesis.prompt").text()).replace(/\s+/g, " ");
     expect(text).toContain("A citation marker `[n]` cites the n-th entry (from 1) of your `sources_cited`");
     expect(text).toContain("never a site name, host or URL in its place");
+    expect(text).toContain("several sources are written `[1][2]`");
   });
 });

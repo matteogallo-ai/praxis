@@ -37,38 +37,38 @@
     {
       "stage": "synthesis",
       "model": "claude-sonnet-5-5",
-      "chars": 41954,
-      "tokens": 14438
+      "chars": 42047,
+      "tokens": 14472
     },
     {
       "stage": "synthesis",
       "model": "claude-sonnet-5-5",
-      "chars": 41320,
-      "tokens": 14207
+      "chars": 41413,
+      "tokens": 14241
     },
     {
       "stage": "synthesis",
       "model": "claude-sonnet-5-5",
-      "chars": 41389,
-      "tokens": 14224
+      "chars": 41482,
+      "tokens": 14258
     },
     {
       "stage": "synthesis",
       "model": "claude-sonnet-5-5",
-      "chars": 41366,
-      "tokens": 14220
+      "chars": 41459,
+      "tokens": 14254
     },
     {
       "stage": "synthesis",
       "model": "claude-sonnet-5-5",
-      "chars": 41274,
-      "tokens": 14192
+      "chars": 41367,
+      "tokens": 14226
     },
     {
       "stage": "synthesis",
       "model": "claude-sonnet-5-5",
-      "chars": 41231,
-      "tokens": 14175
+      "chars": 41324,
+      "tokens": 14209
     },
     {
       "stage": "adversarial",

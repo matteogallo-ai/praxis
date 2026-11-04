@@ -83,7 +83,7 @@ adversarial $9.20. Walked through the reservations
 | Scenario | Under $10 |
 | --- | --- |
 | Low | completes at $1.40 |
-| Central | completes at $5.97 |
+| Central | completes at $5.98 |
 | High | stops before adversarial at $9.20 |
 
 The high scenario retries its costliest stage once, and that stage is
@@ -126,7 +126,7 @@ after `estimate:cost` has been re-costed from step 0's measured usage.
 - `--max-cost-usd 14` caps each briefing the same way. Walked through the
   reservations, every question's high case yields a brief under it;
   question 11, the costliest ($15.40 in full), does so with its rerun
-  skipped, at $13.52. `tests/benchmarks/live-protocol.test.ts` fails if
+  skipped, at $13.53. `tests/benchmarks/live-protocol.test.ts` fails if
   one would not.
 - Stop after step 0 if it failed for a systematic cause (authentication,
   model id, request shape) or if any stage timed out: fix it, free, before
@@ -276,11 +276,11 @@ built; neither result exists, and no published score depends on them.
 | Question | Low | Central | High |
 | --- | ---: | ---: | ---: |
 | 02-cfo-buyback-briefing | $1.44 | $6.13 | $13.25 |
-| 05-supply-chain-acquisition | $1.40 | $5.97 | $12.96 |
+| 05-supply-chain-acquisition | $1.40 | $5.98 | $12.96 |
 | 08-ai-regulation-position | $1.43 | $6.12 | $13.30 |
 | 11-family-office-co-investment | $1.46 | $5.90 | $15.58 |
-| 12-sodium-ion-plant-morocco | $1.40 | $5.97 | $12.96 |
-| **Total** | **$7.13** | **$30.10** | **$68.04** |
+| 12-sodium-ion-plant-morocco | $1.40 | $5.98 | $12.96 |
+| **Total** | **$7.13** | **$30.11** | **$68.05** |
 
 Assumptions (`SCENARIOS` in `benchmarks/estimate-cost.ts`):
 
@@ -310,7 +310,7 @@ No prompt caching is assumed.
 
 | | Low | Central | High |
 | --- | ---: | ---: | ---: |
-| Estimate | $1.40 | $5.97 | $12.96 |
+| Estimate | $1.40 | $5.98 | $12.96 |
 
 - Ceiling: **$10.00**, timeouts included, within the allowances below. In
   the high case the run stops before adversarial's retry at $9.20 rather than
@@ -418,7 +418,7 @@ protocol's cost:
 ## What each GO authorizes
 
 1. **Step 0**: the one `bench:live` command for `05-supply-chain-acquisition`,
-   one attempt. Expected ≈ $5.97 (central); at most $10.00, timeouts included,
+   one attempt. Expected ≈ $5.98 (central); at most $10.00, timeouts included,
    within the allowances of [§ Ceiling](#ceiling).
 2. **Step 1**, after step 0 and a re-costing from its measured usage: the
    other four. Before that re-costing: at most $14 each, $56.00 for the

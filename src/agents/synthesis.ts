@@ -713,6 +713,8 @@ const PROSE_POINTERS: readonly [RegExp, string][] = [
   [/!\[/, "an image (a Markdown viewer fetches it on open)"],
   [/\b(?:src|href)\s*=/i, "an HTML element that loads or links a URL"],
   [/^\s*\[[^\]]+\]:\s*\S/m, "a reference link to a URL no upstream stage returned"],
+  // Checked even for an upstream URL: the definition would link every [n] of the briefing to it.
+  [/^\s*\[\d+\]:/m, "a reference definition for a citation marker"],
   [/<[a-z][a-z0-9+.-]{1,31}:[^\s>]*>/i, "an autolink to a URL no upstream stage returned"],
   [/\b[a-z][a-z0-9+.-]*:\/\//i, "a URL no upstream stage returned"],
   [/(?:^|[\s("'=])\/\/[^\s/]/, "a protocol-relative URL"],

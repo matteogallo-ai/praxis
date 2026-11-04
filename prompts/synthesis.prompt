@@ -83,8 +83,9 @@ prompt synthesis(
        address. The answer is refused otherwise. A citation marker
        `[n]` cites the n-th entry (from 1) of your `sources_cited`;
        when the section asks for a citation in the text, write its
-       marker, never a site name, host or URL in its place. A marker
-       that points at no entry is refused.
+       marker, never a site name, host or URL in its place; several
+       sources are written `[1][2]`. A marker that points at no entry
+       is refused, and so is a line that defines one (`[1]: ...`).
 
     2. Respect the section's `tone_directives` verbatim. If the
        tone says "authoritative, imperative; lead with the verb",
