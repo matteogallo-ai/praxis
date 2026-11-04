@@ -16,6 +16,10 @@ reference set they can regenerate at any commit.
   fails the test suite until `bun run bench:split` redraws it. Adding
   questions redraws the split: do it before tuning, never after.
   `run-all.ts --split dev|test` runs one half.
+  **Question 05 is in the test split but is no longer held-out:** q05 used for development after step 0; no longer held-out.
+  The sourcing fixes (#31 to #39) were designed from its step 0 failures,
+  so its later live results measure those fixes on the question they were
+  built from. They are reported, never counted as held-out evidence.
 - `run-all.ts` — the Bun script that generates artefacts. Modes:
   `--mock-only`, `--live-only`, or default (mock + live if
   `ANTHROPIC_API_KEY` is set).

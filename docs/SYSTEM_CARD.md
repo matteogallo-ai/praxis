@@ -60,6 +60,8 @@ provider sends no sampling parameter.
 - **Evaluation data**: `benchmarks/questions.yaml`, twelve business
   questions across the four formats plus a hard case, with a frozen
   dev/test split (4 / 8) in `benchmarks/split.yaml`; no human labels.
+  Question 05 is in the test split but was the development case for the
+  sourcing fixes (#31 to #39): q05 used for development after step 0; no longer held-out. Seven test questions remain held-out.
 
 ## Measured performance
 

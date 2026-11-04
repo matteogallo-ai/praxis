@@ -34,6 +34,9 @@ and `stale` rows were measured under different rules: step 0 judged
 freshness on the retrieval time, so its sources could not be stale, and a
 source the rerun counts as aging would have been `ok` at step 0. Counts
 are items, read from each run's `metadata.json` (`sourcing`).
+Question 05 is in the test split (`benchmarks/split.yaml`), but the
+sourcing fixes were designed from step 0's failures: q05 used for development after step 0; no longer held-out.
+The rerun measures the fixes on the question they were built from.
 
 | | Step 0 (08:33 UTC) | Rerun (10:52 UTC) |
 | --- | --- | --- |
@@ -46,6 +49,7 @@ are items, read from each run's `metadata.json` (`sourcing`).
 | Freshness unknown (no publication date) | not recorded | 23 |
 | Requester-provided, not sourceable | not recorded | 7 |
 | Options' and critique's untrusted citations | not checked | 3 options, 3 critique |
+| Held-out (test split) | yes | no: q05 used for development after step 0; no longer held-out |
 | Flagged insufficiently sourced | yes | yes |
 | Cost | $3.51 | $3.69 |
 | Stages' wall time | 7.8 min | 8.4 min |
@@ -61,9 +65,10 @@ What the rerun shows that step 0 could not:
   and 8 missing items. The one source past the age limit is also
   untrusted, and is listed for both reasons.
 - `investor.dsv.com`, DSV's own site, is cited by the critique for DSV's
-  own results and judged untrusted. ADR 0003's first-party rule covers the
-  research, stakeholder and risk stages only, so it would leave this
-  critique citation untrusted.
+  own results and judged untrusted. ADR 0003's first-party rule (#39) also
+  judges the critique, but DSV is not in the reviewed list
+  (`src/sourcing/first-party-organisations.ts`), so this citation would
+  stay untrusted.
 
 ## Errata
 

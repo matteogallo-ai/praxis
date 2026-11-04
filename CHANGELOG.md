@@ -9,6 +9,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- Question 05 is no longer held-out. It is in the test split, but the
+  sourcing fixes (#31 to #39) were designed from its step 0 failures; the
+  benchmark README, the system card and the live comparison table say so,
+  and `tests/benchmarks/held-out.test.ts` requires it.
+
 - The judge prompt embedded the briefing bare, and expanded `$&`-style
   patterns in it; the briefing is now delimited as untrusted content.
 - The project was described as feature-complete and as running live against
