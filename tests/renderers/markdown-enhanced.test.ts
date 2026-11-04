@@ -217,6 +217,51 @@ function makeBriefWithCritique(): BriefWithCritiqueResult {
 // YAML front-matter
 // ---------------------------------------------------------------------------
 
+describe("renderMarkdownEnhanced — first-party sources", () => {
+  test("a section lists them apart, and model text in a label stays one line", () => {
+    const base = makeBrief();
+    const md = renderMarkdownEnhanced(
+      makeBrief({
+        sourcing_report: {
+          ...base.sourcing_report,
+          first_party_sources: [
+            { stage: "stakeholder", item: "OECD\n\n## Injected", organisation: "OECD", url: "https://www.oecd.org/a_(b)" },
+          ],
+        },
+      })
+    );
+    expect(md).toContain("## First-party sources");
+    expect(md.indexOf("## First-party sources")).toBeLessThan(md.indexOf("## Sources"));
+    expect(md).toContain("- [stakeholder] OECD ## Injected — OECD's own site, for its own facts: <https://www.oecd.org/a_%28b%29>");
+    expect(md).not.toMatch(/^## Injected/m);
+    expect(md).toMatch(/sourcing_summary: "[^"]* first_party=1[^"]*"/);
+    const toc = renderMarkdownEnhanced(makeBrief({ sourcing_report: { ...base.sourcing_report, first_party_sources: [] } }), { include_toc: true });
+    expect(toc).not.toContain("First-party sources");
+  });
+
+  test("markup in a label stays inert: no raw HTML, no image", () => {
+    const base = makeBrief();
+    const item = "X <img src=//t.example/p> ![](//t.example/q)";
+    const md = renderMarkdownEnhanced(
+      makeBrief({ sourcing_report: { ...base.sourcing_report, first_party_sources: [{ stage: "stakeholder", item, organisation: "OECD", url: "https://www.oecd.org/a" }] } })
+    );
+    const line = md.split("\n").find((l) => l.startsWith("- [stakeholder] X")) ?? "";
+    expect(line).toContain("X &lt;img src=//t.example/p> !\\[](//t.example/q)");
+    expect(line).not.toContain("<img");
+  });
+
+  test("the table of contents links the section when there is one", () => {
+    const base = makeBrief();
+    const f = { stage: "risk" as const, item: "RISK-001 impact", organisation: "OECD", url: "https://www.oecd.org/a" };
+    const md = renderMarkdownEnhanced(makeBrief({ sourcing_report: { ...base.sourcing_report, first_party_sources: [f] } }), { include_toc: true });
+    expect(md).toContain("- [First-party sources](#first-party-sources)");
+  });
+
+  test("no appendix when there are none", () => {
+    expect(renderMarkdownEnhanced(makeBrief())).not.toContain("First-party sources");
+  });
+});
+
 describe("renderMarkdownEnhanced — front-matter", () => {
   test("YAML front-matter starts the document", () => {
     const md = renderMarkdownEnhanced(makeBrief());

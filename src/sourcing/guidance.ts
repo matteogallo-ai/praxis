@@ -1,6 +1,6 @@
 /**
- * The sourcing guide the research, stakeholder and risk prompts receive,
- * written by code from the format's `sourcing_rules`.
+ * The sourcing guide the research, stakeholder, risk and options prompts
+ * receive, written by code from the format's `sourcing_rules`.
  *
  * The model was told only to "prefer primary sources", so it could not know
  * which hosts the format trusts and cited pages the check then rejected. The
@@ -11,8 +11,20 @@
  */
 
 import type { DomainTrustRule, SourcingPolicy, SourcingRules } from "../registry/schema.ts";
+import { FIRST_PARTY_ORGANISATIONS } from "./first-party-organisations.ts";
 
-export function sourceGuidance(rules: SourcingRules | undefined, policy: SourcingPolicy): string {
+export interface GuidanceOptions {
+  /** `false` for a stage whose sources no freshness check reads (options). */
+  freshnessChecked?: boolean;
+  /** `true` for a stage whose sources the first-party rule judges (ADR 0003). */
+  firstParty?: boolean;
+}
+
+export function sourceGuidance(
+  rules: SourcingRules | undefined,
+  policy: SourcingPolicy,
+  options: GuidanceOptions = {}
+): string {
   const lines = [...trustLines(rules?.domain_trust)];
   // Under strict an untrusted citation blocks the briefing as a missing one
   // does; saying only "reported" would undersell what the model risks.
@@ -33,12 +45,27 @@ export function sourceGuidance(rules: SourcingRules | undefined, policy: Sourcin
     "of unknown age, never as recent. Never guess a date, and never use today's date."
   );
   const freshness = rules?.freshness;
-  if (freshness !== undefined) {
+  if (freshness !== undefined && options.freshnessChecked !== false) {
     lines.push(
       `This format treats sources older than ${freshness.max_source_age_days} days as stale; prefer recent ones.`
     );
   }
+  if (options.firstParty === true) lines.push("", firstPartyGuidance());
   return lines.join("\n");
+}
+
+/**
+ * The first-party rule as the model is told it. The list is the reviewed
+ * one code checks against, so a mark the model writes can be accepted.
+ */
+export function firstPartyGuidance(): string {
+  const orgs = FIRST_PARTY_ORGANISATIONS.map((o) => `${o.name} (${o.domains.join(", ")})`).join("; ");
+  return [
+    "An organisation's own site counts as a source only for that organisation's own facts: its decisions,",
+    "rules, publications and reported figures, never its claims about others, markets or forecasts. When you",
+    'cite such a page for such a fact, add "first_party_for" with the organisation\'s name as written here, and',
+    `name the organisation in the item's text. Organisations: ${orgs}.`,
+  ].join("\n");
 }
 
 const NONE = "This format names no trusted hosts.";

@@ -38,12 +38,25 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- The research, stakeholder and risk prompts (3.0.0: a new required
-  `source_guidance` parameter) name the format's trusted hosts by tier and
-  ask for each source's `published_at` as the page states it, never a
-  guess. The list guides the search; web search gets no `allowed_domains`.
-  Prompt token counts re-measured with count_tokens; the protocol's and the
-  SLO page's estimates follow (question 05: $1.39 / $5.92 / $12.85).
+- First-party sources (ADR 0003, now implemented for its first decision).
+  A research, stakeholder or risk source, or a critique's counter-evidence,
+  on an untrusted host counts as the organisation's own source when the
+  stage marks it `first_party_for` an organisation of the reviewed list
+  `src/sourcing/first-party-organisations.ts`, the host is one of its
+  domains and the item names it. Such sources do not block under `strict`
+  and are listed apart (`SourcingReport.first_party_sources`, a
+  "First-party sources" section, every sourcing report). Prompts:
+  research, stakeholder and risk 3.1.0, adversarial 3.0.0; token counts
+  re-measured with count_tokens (question 05: $1.40 / $5.97 / $12.95).
+
+- The research, stakeholder, risk and options prompts (3.0.0: a new
+  required `source_guidance` parameter) name the format's trusted hosts by
+  tier and ask for each source's `published_at` as the page states it,
+  never a guess. The options' citations are judged by the same domain
+  check, so their stage gets the same guide. The list guides the search;
+  web search gets no `allowed_domains`. Prompt token counts re-measured
+  with count_tokens; the protocol's and the SLO page's estimates follow
+  (question 05: $1.40 / $5.97 / $12.95).
 
 - The scoping stage names the facts only the requester can supply
   (`requester_provided`, scoping prompt 2.1.0). The briefing lists them under

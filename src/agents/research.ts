@@ -65,7 +65,7 @@ export async function executeResearch(
     format_id: ctx.formatId,
     sourcing_policy: ctx.sourcingPolicy,
     target_words: String(ctx.targetWords),
-    source_guidance: sourceGuidance(ctx.sourcingRules, ctx.sourcingPolicy),
+    source_guidance: sourceGuidance(ctx.sourcingRules, ctx.sourcingPolicy, { firstParty: true }),
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);

@@ -21,7 +21,7 @@
 // in struct fields. The full OptionsGenerationResult schema is
 // enforced Praxis-side in src/agents/options.ts.
 
-@version "2.0.0"
+@version "3.0.0"
 @model claude-opus-5-5
 @description "Praxis options generation agent — enumerates decision options with tradeoffs and cross-artefact links."
 
@@ -31,7 +31,8 @@ prompt options(
   stakeholders_json: string,
   risks_json: string,
   format_id: string,
-  sourcing_policy: string
+  sourcing_policy: string,
+  source_guidance: string
 ) -> string {
   system: """
     You are a senior strategy consultant generating decision options
@@ -57,11 +58,12 @@ prompt options(
 
     For every option's `supporting_evidence` field, use EITHER:
 
-      (a) A real, verifiable source with these three fields:
+      (a) A real, verifiable source with these fields:
           {
             "url": "https://…",
             "title": "…",
-            "excerpt": "<the passage that supports the option, ≤500 chars>"
+            "excerpt": "<the passage that supports the option, ≤500 chars>",
+            "published_at": "YYYY-MM-DD, only if the page states it"
           }
 
       Do not write `accessed_at`: Praxis records when the search ran.
@@ -200,6 +202,9 @@ prompt options(
   """
   user: """
     Options generation task for briefing '{{format_id}}' under {{sourcing_policy}} sourcing.
+
+    Sourcing guide for this format:
+    {{source_guidance}}
 
     Scoping output (JSON):
     {{scoping_json}}

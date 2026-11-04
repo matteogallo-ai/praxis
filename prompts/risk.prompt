@@ -18,7 +18,7 @@
 // struct fields. The full RiskAnalysisResult schema is enforced
 // Praxis-side in src/agents/risk.ts.
 
-@version "3.0.0"
+@version "3.1.0"
 @model claude-sonnet-5-5
 @description "Praxis risk analysis agent — identifies sourced risks with stakeholder links and mitigations."
 
@@ -56,7 +56,8 @@ prompt risk(
             "url": "https://…",
             "title": "…",
             "excerpt": "<the passage that supports the assessment, ≤500 chars>",
-            "published_at": "YYYY-MM-DD, only if the page states it"
+            "published_at": "YYYY-MM-DD, only if the page states it",
+            "first_party_for": "<organisation>, only as the sourcing guide allows"
           }
 
       Do not write `accessed_at`: Praxis records when the search ran.

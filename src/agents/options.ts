@@ -21,11 +21,12 @@
  *      `recommendation_level === "recommended"`, and verify
  *      `recommended_option_id` matches that option's id.
  *
- * Sourcing policy enforcement (freshness, domain trust, dedupe) is
- * delegated to the sourcing layer via the Orchestrator — this agent
- * only validates SHAPE and CROSS-REFERENCES.
+ * The Orchestrator checks the options' citations for domain trust only
+ * (`src/sourcing/citations.ts`); this agent validates shape and
+ * cross-references.
  */
 
+import { sourceGuidance } from "../sourcing/guidance.ts";
 import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
@@ -125,6 +126,8 @@ export async function executeOptionsGeneration(
     risks_json: untrustedJson("risks", ctx.risks),
     format_id: ctx.format.id,
     sourcing_policy: ctx.format.sourcing_policy,
+    // Options' citations are judged by domain only: no freshness limit applies.
+    source_guidance: sourceGuidance(ctx.format.sourcing_rules, ctx.format.sourcing_policy, { freshnessChecked: false }),
   };
 
   const rendered = renderPrompt(AGENT_ID, loaded, inputs);

@@ -291,6 +291,14 @@ describe("pdfRenderer — optional sections", () => {
     expect(pdfContainsText(buf, "Requester-provided, not sourceable: 3")).toBe(true);
   });
 
+  test("the Sourcing Report counts and lists the first-party sources", async () => {
+    const brief = makeBrief();
+    brief.sourcing_report = { ...brief.sourcing_report, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }] };
+    const buf = await pdfRenderer.render(brief, { include_sourcing_report: true, compress_pdf_streams: false });
+    expect(pdfContainsText(buf, "First-party")).toBe(true);
+    expect(pdfContainsText(buf, "finding 2")).toBe(true);
+  });
+
   test("the Sourcing Report lists the options and critique citations from untrusted domains", async () => {
     const brief = makeBrief();
     brief.sourcing_report = { ...brief.sourcing_report, untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }] };

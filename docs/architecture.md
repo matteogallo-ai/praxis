@@ -16,6 +16,7 @@ src/
   agents/         one module per stage: load its .prompt file, render it, call the
                   provider, parse and validate the JSON answer into a typed result
   sourcing/       source checks: SOURCE_MISSING markers, freshness, domain trust,
+                  first-party sources (reviewed organisation list, ADR 0003),
                   cross-stage duplicates; strict policy throws, permissive reports
   registry/       format schema, YAML loader, validator, in-memory registry
   renderers/      Markdown, PDF (pdfkit) and DOCX (hand-written OPC parts) renderers
@@ -126,9 +127,10 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 - Freshness is judged on the publication date the model reports
   (`published_at`), which nothing checks against the page's own age
   (`page_age`). A source without a readable date is counted as freshness
-  unknown (`freshness_unknown`), never as fresh. The research, stakeholder
-  and risk prompts ask for the date the page states; no live run has
-  measured how often a model gives one, or gives a wrong one.
+  unknown (`freshness_unknown`), never as fresh. The research,
+  stakeholder, risk and options prompts ask for the date the page states.
+  In question 05's rerun (4 Nov 2026), 23 of the 39 sourced items had no
+  date; how often a stated date is wrong is not measured.
 - Web search results arrive inside the model's own turn, so Praxis cannot
   wrap them; they are covered by the system rule alone. Whether a live model
   resists an injected instruction has not been measured.

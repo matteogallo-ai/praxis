@@ -52,6 +52,12 @@ export interface SourceReference {
    * unknown, not fresh, since retrieval time says nothing of a page's age.
    */
   published_at?: string;
+  /**
+   * The organisation whose own site this is, when the stage cites it for
+   * that organisation's own facts (ADR 0003). A proposal: code accepts it
+   * only against the reviewed list (`src/sourcing/first-party.ts`).
+   */
+  first_party_for?: string;
   /** Relevant excerpt, capped at 500 characters. */
   excerpt: string;
 }
@@ -222,6 +228,27 @@ export interface SourcingReport {
    * `total_items`: no source can exist for them, and none is claimed.
    */
   requester_provided?: number;
+
+  /**
+   * Sources the first-party rule accepted. Their items are counted by their
+   * other checks (`ok` when nothing else fails), never as untrusted; they
+   * are listed here so a reader sees how much rests on what organisations
+   * say about themselves. Absent when there are none.
+   */
+  first_party_sources?: FirstPartySource[];
+}
+
+/**
+ * A source on a host the format does not trust, accepted because it is the
+ * organisation's own site and the organisation is the item's subject
+ * (ADR 0003, `src/sourcing/first-party.ts`).
+ */
+export interface FirstPartySource {
+  stage: "research" | "stakeholder" | "risk" | "adversarial";
+  /** `finding 3`, a stakeholder's name, `RISK-004 impact`, `CRIT-006`. */
+  item: string;
+  organisation: string;
+  url: string;
 }
 
 /** An options or critique citation from a domain the format does not trust. */

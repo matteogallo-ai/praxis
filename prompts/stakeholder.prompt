@@ -20,7 +20,7 @@
 // array types in struct fields. The full StakeholderMapResult schema
 // is enforced Praxis-side in src/agents/stakeholder.ts.
 
-@version "3.0.0"
+@version "3.1.0"
 @model claude-sonnet-5-5
 @description "Praxis stakeholder mapping agent — maps actors, positions, power, priority."
 
@@ -54,7 +54,8 @@ prompt stakeholder(
             "url": "https://…",
             "title": "…",
             "excerpt": "<the passage that documents the position, ≤500 chars>",
-            "published_at": "YYYY-MM-DD, only if the page states it"
+            "published_at": "YYYY-MM-DD, only if the page states it",
+            "first_party_for": "<organisation>, only as the sourcing guide allows"
           }
 
       Do not write `accessed_at`: Praxis records when the search ran.

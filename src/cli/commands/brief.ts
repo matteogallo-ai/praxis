@@ -93,7 +93,7 @@ import type {
   RiskAnalysisResult,
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
-import { uncategorisedLines } from "../../renderers/source-dates.ts";
+import { describeFirstParty, uncategorisedLines } from "../../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 import { render as dispatchRender } from "../../renderers/index.ts";
 import { RENDER_THEMES, type RenderOptions, type RenderTheme } from "../../renderers/types.ts";
@@ -792,6 +792,8 @@ export function renderSourcingReportMarkdown(report: SourcingReport): string {
       `missing ${report.counts.missing}\n\n`
   );
   for (const line of uncategorisedLines(report)) parts.push(`${line}\n\n`);
+  for (const f of report.first_party_sources ?? []) parts.push(`- ${describeFirstParty(f)}\n`);
+  if ((report.first_party_sources ?? []).length > 0) parts.push("\n");
   const cited = report.untrusted_citations ?? [];
   if (report.warnings.length === 0 && cited.length === 0) {
     parts.push("_No warnings — every inspected item passed._\n");

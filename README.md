@@ -67,8 +67,8 @@ citations, enforce the format's `sourcing_policy`:
 under `strict` a missing, stale or untrusted source aborts the brief; under
 `permissive` it is reported. A source is stale only by its publication date;
 without one its freshness is unknown and counted apart. The research,
-stakeholder and risk prompts ask for the date the page states and name the
-format's trusted hosts, as guidance, not as a search filter. `docs/architecture.md` has the module map.
+stakeholder, risk and options prompts ask for the date the page states and
+name the format's trusted hosts, as guidance, not as a search filter. `docs/architecture.md` has the module map.
 
 ## Quick start
 
@@ -110,6 +110,7 @@ paid, and in its current state it is expected to fail (see Status).
 - The API key never reaches stderr, run files or a printed provider; home paths and e-mail addresses in stderr are masked (C20).
 - Installs and runs from a clean clone, with PromptLang from npm (C19).
 - Facts only the requester can supply are listed in the briefing as "Requester-provided, not sourceable" and counted apart, never as sourced (C24).
+- An organisation's own site counts as a source for its own facts only when a reviewed list names the organisation and its domains and the item names it; such sources are listed apart in the briefing (C25).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that
 prove it; CI fails if one of them does not pass.
