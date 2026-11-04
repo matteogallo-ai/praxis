@@ -620,8 +620,8 @@ describe("renderMarkdownEnhanced — no model text becomes a link or an image", 
     };
     const md = renderMarkdownEnhanced(brief, { include_toc: true, include_critique: true, include_appendices: true });
     expect(md).toContain("attacker.example");
-    expect(liveTargets(md, "attacker.example")).toEqual([]);
     expect(renderedTargets(md, "attacker.example")).toEqual([]);
+    expect(liveTargets(md, "attacker.example")).toEqual([]);
   });
 
   test("a source's host, as a heading of the Sources section, is not an autolink", () => {

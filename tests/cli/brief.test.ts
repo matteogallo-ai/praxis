@@ -1311,7 +1311,7 @@ describe("renderSourcingReportMarkdown — no model text becomes a link or an im
     };
     const md = renderSourcingReportMarkdown(report);
     expect(md).toContain("attacker.example");
-    expect(liveTargets(md, "attacker.example")).toEqual([]);
     expect(renderedTargets(md, "attacker.example")).toEqual([]);
+    expect(liveTargets(md, "attacker.example")).toEqual([]);
   });
 });

@@ -308,7 +308,7 @@ describe("renderFullBrief — no model text becomes a link or an image", () => {
     brief.synthesis.sections.push(buildInsufficientlySourcedSection(report, { research }), buildRequesterProvidedSection([HOSTILE]));
     const md = renderFullBrief(brief);
     expect(md).toContain("attacker.example");
-    expect(liveTargets(md, "attacker.example")).toEqual([]);
     expect(renderedTargets(md, "attacker.example")).toEqual([]);
+    expect(liveTargets(md, "attacker.example")).toEqual([]);
   });
 });
