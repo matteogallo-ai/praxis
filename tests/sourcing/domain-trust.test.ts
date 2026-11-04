@@ -61,6 +61,32 @@ describe("matchHostPattern", () => {
     expect(matchHostPattern("anything.com", "*.")).toBe(false);
     expect(matchHostPattern("anything.com", ".*")).toBe(false);
   });
+
+  test("a '*' inside a label matches within that label only", () => {
+    expect(matchHostPattern("news-eu.example.com", "news-*.example.com")).toBe(true);
+    expect(matchHostPattern("news-.example.com", "news-*.example.com")).toBe(true);
+    expect(matchHostPattern("news-eu.x.example.com", "news-*.example.com")).toBe(false);
+    expect(matchHostPattern("eu-news.example.com", "news-*.example.com")).toBe(false);
+    expect(matchHostPattern("a-x-b.org", "a-*-b.org")).toBe(true);
+    expect(matchHostPattern("a-b.org", "a-*-b.org")).toBe(false);
+    expect(matchHostPattern("ab.org", "a*b*.org")).toBe(true);
+    expect(matchHostPattern("localhost", "*")).toBe(true);
+    expect(matchHostPattern("a.b", "*")).toBe(false);
+  });
+
+  test("a pattern's other characters are literal", () => {
+    expect(matchHostPattern("reuters.com", "reuters.c*m")).toBe(true);
+    expect(matchHostPattern("reutersxcom", "reuters.c*m")).toBe(false);
+    expect(matchHostPattern("aaab.com", "a+b.c*m")).toBe(false);
+    expect(matchHostPattern("a+b.com", "a+b.c*m")).toBe(true);
+  });
+
+  test("builds no regular expression from a pattern", async () => {
+    // Patterns come from format YAML; comparing labels as strings leaves
+    // nothing to escape, and no regex for a scanner to read as unanchored.
+    const src = await Bun.file("src/sourcing/domain-trust.ts").text();
+    expect(src).not.toContain("RegExp");
+  });
 });
 
 // ---------------------------------------------------------------------------

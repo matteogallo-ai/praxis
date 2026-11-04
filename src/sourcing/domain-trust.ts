@@ -75,12 +75,30 @@ export function matchHostPattern(host: string, pattern: string): boolean {
     return tail.length > 0 && !tail.includes(".");
   }
 
-  // Generic wildcard fallback: translate `*` into `[^.]*` (never crosses
-  // a dot) and match the full host.
-  const regex = new RegExp(
-    `^${p.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]*")}$`
-  );
-  return regex.test(h);
+  // Any other wildcard: same number of labels, each matched on its own, so
+  // a `*` never crosses a dot and every other character is literal.
+  const hostLabels = h.split(".");
+  const patternLabels = p.split(".");
+  if (hostLabels.length !== patternLabels.length) return false;
+  return patternLabels.every((label, i) => matchLabel(hostLabels[i] ?? "", label));
+}
+
+/** `*` matches any run of characters, possibly empty; nothing else is special. */
+function matchLabel(label: string, pattern: string): boolean {
+  const parts = pattern.split("*");
+  const first = parts[0] ?? "";
+  const last = parts[parts.length - 1] ?? "";
+  if (parts.length === 1) return label === pattern;
+  if (label.length < first.length + last.length) return false;
+  if (!label.startsWith(first) || !label.endsWith(last)) return false;
+  let at = first.length;
+  const end = label.length - last.length;
+  for (const middle of parts.slice(1, -1)) {
+    const found = label.indexOf(middle, at);
+    if (found === -1 || found + middle.length > end) return false;
+    at = found + middle.length;
+  }
+  return true;
 }
 
 function matchAnyPattern(host: string, patterns: readonly string[]): string | null {
