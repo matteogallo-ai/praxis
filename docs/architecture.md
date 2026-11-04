@@ -126,8 +126,9 @@ trusted. Each is a Roadmap item in [`CLAIMS.md`](CLAIMS.md).
 - Freshness is judged on the publication date the model reports
   (`published_at`), which nothing checks against the page's own age
   (`page_age`). A source without a readable date is counted as freshness
-  unknown (`freshness_unknown`), never as fresh. The stage prompts do not ask
-  the model for that date, so a live source's freshness is unknown.
+  unknown (`freshness_unknown`), never as fresh. The research, stakeholder
+  and risk prompts ask for the date the page states; no live run has
+  measured how often a model gives one, or gives a wrong one.
 - Web search results arrive inside the model's own turn, so Praxis cannot
   wrap them; they are covered by the system rule alone. Whether a live model
   resists an injected instruction has not been measured.

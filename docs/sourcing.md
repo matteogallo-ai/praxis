@@ -136,6 +136,17 @@ run keeps the date its first attempt started at. `PRAXIS_NOW` also stamps
 the run id. It does not date retrieval: a source the model returns without
 `accessed_at` is stamped with the real time it was read.
 
+### What the search stages are told
+
+The research, stakeholder and risk prompts receive a sourcing guide written
+by code from the format's rules (`src/sourcing/guidance.ts`): the trusted
+hosts by tier (or the allow- or deny-list), which tiers are accepted, the
+freshness limit, and the request to give `published_at` only as the page
+states it. It guides the search and filters nothing: web search gets no
+`allowed_domains`, a relevant page outside the list is still cited and
+reported as untrusted, and no list can name every company's own site
+(ADR 0003).
+
 ### Domain trust
 
 `DomainTrustRule` supports three modes:
