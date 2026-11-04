@@ -38,6 +38,14 @@ the command below names other questions.
    refused) and the `@promptlang/core` switch merged, and this one; CI green.
 2. A clean working tree on `main`: `run-all.ts` refuses a live run over
    modified tracked files, because the artefacts record the commit.
+   The run starts from its own worktree, never from a checkout an agent or
+   another session works in: on 4 Nov 2026 step 0's `git checkout main` in
+   the shared checkout moved an agent's branch under it mid-commit.
+   `git worktree add --detach ../praxis-live origin/main`, then in
+   `../praxis-live`: `bun install --frozen-lockfile`, and the key in that
+   directory's `.env` or the environment (Bun reads `.env` from the
+   working directory; the worktree has none). The run's artefacts are
+   committed from that worktree, on a branch.
 3. `ANTHROPIC_API_KEY` set; `PRAXIS_NOW` unset (live freshness uses the real
    date); `ANTHROPIC_MODEL` unset, so each stage runs on its `@model` as
    estimated.

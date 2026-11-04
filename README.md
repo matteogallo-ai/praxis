@@ -11,11 +11,13 @@
 
 ## Status: live execution under repair
 
-Praxis has **not yet produced a briefing against a real model**. Every
-recorded live run failed (5 of 5, see [`CHANGELOG.md` § 1.2.1](CHANGELOG.md)):
-three aborted on the `strict` sourcing policy because the model returned
-findings without source URLs, one on prose before the JSON, one on a 60 s
-timeout during web search. Everything listed under [Features](#features) is
+Praxis has **not yet produced a briefing against a real model**. 6 of 6
+live attempts failed so far (5 in 1.2.1 without committed records, 1 on
+3 Nov). In [`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the
+`strict` sourcing policy because the model returned findings without
+source URLs, one on prose before the JSON, one on a 60 s timeout during
+web search. On 3 Nov 2026 the risk stage's answer was cut at its
+`max_tokens` (`benchmarks/outputs/live/05-supply-chain-acquisition/`). Everything listed under [Features](#features) is
 proven on the mock provider, which replays hand-written fixtures; that proves
 the wiring, not the quality of a model's output.
 

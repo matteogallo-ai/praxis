@@ -17,6 +17,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - The "AI-assisted qualitative scoring" of mock briefings is withdrawn: mock text
   is fixture output chosen by format, so the scores graded the fixtures. The
   v1.3.1 re-scoring plan is abandoned (`docs/benchmarking-methodology.md`).
+- README and the system card said every live run failed "5 of 5"; with
+  step 0 on 3 Nov 2026 it is 6 of 6 live attempts, 5 of them in 1.2.1
+  without committed records. The count is derived from the run records in
+  `tests/docs/live-attempts.test.ts`. Live runs start from their own
+  worktree (`docs/live-proof-protocol.md`).
 
 ### Added
 

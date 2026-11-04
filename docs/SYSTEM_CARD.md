@@ -12,9 +12,9 @@ the question, research it on the web, map stakeholders, assess risks,
 generate options, write each section (one call per section) and critique the
 result. Output: Markdown, PDF, DOCX.
 
-**Status: no briefing has completed against a real model.** Every recorded
-live run failed (5 of 5, CHANGELOG 1.2.1); the causes have since been
-addressed without a live run to confirm it. Every result on this page comes
+**Status: no briefing has completed against a real model.** 6 of 6 live
+attempts failed so far (5 in 1.2.1 without committed records, 1 on 3 Nov);
+the causes have since been addressed without a live run to confirm it. Every result on this page comes
 from the mock provider, which replays hand-written fixtures.
 
 ## Owner
