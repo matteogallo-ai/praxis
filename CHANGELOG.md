@@ -214,8 +214,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - `pdfkit` 0.19.1 → 0.20.2 and `@types/pdfkit` 0.17.6 → 0.17.7. pdfkit
-  0.20 breaks its virtual file system, AcroForm and annotation options and
-  named exports, none of which Praxis uses; the mock PDFs are byte for
+  0.20 breaks its virtual file system, AcroForm and annotation options,
+  named exports and standard-font loading in browser builds; Praxis uses
+  the first three nowhere, and its four standard fonts still load lazily
+  under Bun, which resolves the Node build. The mock PDFs are byte for
   byte the same (`bun run bench:mock` leaves the tree clean). `@types/bun`
   stays at 1.3.14, the Bun version CI runs: types of a newer Bun would
   let code typecheck against APIs the runtime lacks.
