@@ -1241,10 +1241,10 @@ describe("renderSourcingReportMarkdown — first-party", () => {
       counts: { ok: 1, stale: 0, untrusted: 0, duplicated: 0, missing: 0 },
       warnings: [],
       missing_sources_count: 0,
-      first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }],
+      first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x", claim: "The OECD revised its model rules in 2026." }],
     });
     expect(md).toContain("First-party (an organisation's own site, for its own facts): 1");
-    expect(md).toContain("- [research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x");
+    expect(md).toContain("- [research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x — claim: “The OECD revised its model rules in 2026.”");
   });
 });
 

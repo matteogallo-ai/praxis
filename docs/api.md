@@ -62,7 +62,8 @@ major-version bump.
 - **`FirstPartySource`** and `SourcingReport.first_party_sources?` —
   sources accepted as an organisation's own site for its own facts
   (ADR 0003, `docs/sourcing.md`). `SourceReference.first_party_for?` is
-  the stage's proposal the rule checks.
+  the stage's proposal the rule checks; `FirstPartySource.claim?` is the
+  item's text it was accepted for, which every listing shows.
 - **`validateSourcing` / `validateStakeholderSourcing` /
   `validateRiskSourcing`** — the primitives the Orchestrator
   wires up. Available publicly for callers who assemble their

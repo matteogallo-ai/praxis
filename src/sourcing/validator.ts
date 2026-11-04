@@ -84,7 +84,7 @@ export function validateSourcing(
       i,
       "research",
       { finding_index: i, missing_searched_for: null },
-      { subject: finding.claim, label: `finding ${i + 1}` },
+      { subject: finding.claim, label: `finding ${i + 1}`, claim: finding.claim },
       rulesInfo,
       warnings
     );
@@ -113,7 +113,7 @@ export function validateStakeholderSourcing(
         stakeholder_index: i,
         stakeholder_name: stakeholder.name,
       },
-      { subject: stakeholder.name, label: stakeholder.name },
+      { subject: stakeholder.name, label: stakeholder.name, claim: `position: ${stakeholder.position}. ${stakeholder.interest}` },
       rulesInfo,
       warnings
     );
@@ -150,7 +150,7 @@ export function validateRiskSourcing(
         risk_id: risk.id,
         evidence_field: "likelihood_evidence" as const,
       },
-      { subject: risk.description, label: `${risk.id} likelihood` },
+      { subject: risk.description, label: `${risk.id} likelihood`, claim: risk.description },
       rulesInfo,
       warnings
     );
@@ -164,7 +164,7 @@ export function validateRiskSourcing(
         risk_id: risk.id,
         evidence_field: "impact_evidence" as const,
       },
-      { subject: risk.description, label: `${risk.id} impact` },
+      { subject: risk.description, label: `${risk.id} impact`, claim: risk.description },
       rulesInfo,
       warnings
     );
@@ -207,6 +207,8 @@ interface RulesInfo {
 interface ItemText {
   subject: string;
   label: string;
+  /** What the source is cited for, shown beside an accepted first-party source. */
+  claim: string;
 }
 
 /**
@@ -250,7 +252,7 @@ function inspectSource(
     const trust = evaluateDomainTrust(source.url, rules.domain_trust);
     const organisation = trust.classification === "untrusted" ? firstPartyOrganisation(source, item.subject) : null;
     if (organisation !== null) {
-      info.firstParty.push({ stage: agent, item: item.label, organisation, url: source.url });
+      info.firstParty.push({ stage: agent, item: item.label, organisation, url: source.url, claim: item.claim });
     } else if (trust.classification === "untrusted") {
       warnings.push({
         kind: "untrusted_domain",

@@ -249,6 +249,14 @@ export interface FirstPartySource {
   item: string;
   organisation: string;
   url: string;
+  /**
+   * The item's own text the source was accepted for: a finding's claim, a
+   * stakeholder's position, a risk's description, a critique's steelmanned
+   * position. Whether it states the organisation's own fact is the human
+   * reviewer's call, so every listing shows it. Absent from reports stored
+   * before the field existed.
+   */
+  claim?: string;
 }
 
 /** An options or critique citation from a domain the format does not trust. */

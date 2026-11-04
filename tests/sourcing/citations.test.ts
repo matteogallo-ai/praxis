@@ -102,7 +102,13 @@ describe("critiqueCitations", () => {
     );
     expect(out.untrusted).toEqual([]);
     expect(out.firstParty).toEqual([
-      { stage: "adversarial", item: "CRIT-001", organisation: "Financial Conduct Authority", url: "https://www.fca.org.uk/r" },
+      {
+        stage: "adversarial",
+        item: "CRIT-001",
+        organisation: "Financial Conduct Authority",
+        url: "https://www.fca.org.uk/r",
+        claim: "The FCA's own rules make the dual listing slower than the brief assumes.",
+      },
     ]);
   });
 

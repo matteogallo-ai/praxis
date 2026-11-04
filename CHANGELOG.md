@@ -9,6 +9,15 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- Every listing of a first-party source (Markdown, PDF, DOCX, CLI report)
+  shows the claim it was accepted for, cut at 160 characters on a word
+  boundary: a finding's claim, a stakeholder's position, a risk's
+  description, a critique's steelmanned position. Without it the human
+  review of question 10's step 1 briefing could not check whether each
+  sentence states the organisation's own fact. `FirstPartySource.claim` is
+  a new optional field; a report stored without it reads "claim not
+  recorded".
+
 - A refused `www.` address in a synthesis section is quoted whole in the
   error, cut at 200 characters (it was quoted as `'www.'`, which left
   question 02's step 1 failure undiagnosable). Every refused text the prose

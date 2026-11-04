@@ -94,7 +94,13 @@ describe("domain trust on critique citations", () => {
     const id = result.adversarial.critiques[0]?.id ?? "no critique";
     expect(result.sourcing_report.untrusted_citations).toEqual([]);
     expect(result.sourcing_report.first_party_sources).toEqual([
-      { stage: "adversarial", item: id, organisation: "Financial Conduct Authority", url: "https://www.fca.org.uk/markets/listing-rules" },
+      {
+        stage: "adversarial",
+        item: id,
+        organisation: "Financial Conduct Authority",
+        url: "https://www.fca.org.uk/markets/listing-rules",
+        claim: "The FCA's own listing rules make a UK dual listing slower and costlier than the brief assumes, which changes its timing.",
+      },
     ]);
   });
 

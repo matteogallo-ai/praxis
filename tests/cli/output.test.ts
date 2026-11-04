@@ -157,9 +157,9 @@ describe("renderSourcingReport — citations", () => {
 describe("renderSourcingReport — first-party", () => {
   test("counts and lists the first-party sources", () => {
     const base = makeBrief().sourcing_report;
-    const out = renderSourcingReport({ ...base, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }] });
+    const out = renderSourcingReport({ ...base, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x", claim: "The OECD revised its model rules in 2026." }] });
     expect(out).toContain("First-party (an organisation's own site, for its own facts): 1");
-    expect(out).toContain("[research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x");
+    expect(out).toContain("[research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x — claim: “The OECD revised its model rules in 2026.”");
   });
 
   test("sourcing_summary counts the first-party sources", () => {

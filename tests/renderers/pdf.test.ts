@@ -293,10 +293,11 @@ describe("pdfRenderer — optional sections", () => {
 
   test("the Sourcing Report counts and lists the first-party sources", async () => {
     const brief = makeBrief();
-    brief.sourcing_report = { ...brief.sourcing_report, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x" }] };
+    brief.sourcing_report = { ...brief.sourcing_report, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x", claim: "The OECD revised its model rules in 2026." }] };
     const buf = await pdfRenderer.render(brief, { include_sourcing_report: true, compress_pdf_streams: false });
     expect(pdfContainsText(buf, "First-party")).toBe(true);
     expect(pdfContainsText(buf, "finding 2")).toBe(true);
+    expect(pdfContainsText(buf, "The OECD revised its model rules in 2026.")).toBe(true);
   });
 
   test("the Sourcing Report lists the options and critique citations from untrusted domains", async () => {

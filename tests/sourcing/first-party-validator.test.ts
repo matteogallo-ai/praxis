@@ -38,7 +38,13 @@ describe("first-party sources in the research validators", () => {
     expect(r.counts.untrusted).toBe(0);
     expect(r.counts.ok).toBe(1);
     expect(r.first_party_sources).toEqual([
-      { stage: "research", item: "finding 1", organisation: "Financial Conduct Authority", url: "https://www.fca.org.uk/rules" },
+      {
+        stage: "research",
+        item: "finding 1",
+        organisation: "Financial Conduct Authority",
+        url: "https://www.fca.org.uk/rules",
+        claim: "The FCA's listing rules allow a secondary listing.",
+      },
     ]);
   });
 
@@ -58,11 +64,20 @@ describe("first-party sources in the research validators", () => {
 
   test("stakeholders are judged on their name, risks on their description", () => {
     const stakeholders = {
-      stakeholders: [{ name: "Financial Conduct Authority (FCA)", position_evidence: source("https://www.fca.org.uk/p", "Financial Conduct Authority") }],
+      stakeholders: [
+        {
+          name: "Financial Conduct Authority (FCA)",
+          position: "neutral",
+          interest: "Orderly markets.",
+          position_evidence: source("https://www.fca.org.uk/p", "Financial Conduct Authority"),
+        },
+      ],
       key_dynamics: [],
     } as unknown as StakeholderMapResult;
     const s = validateStakeholderSourcing(stakeholders, "strict", { rules: RULES, now: NOW });
     expect(s.first_party_sources?.[0]?.item).toBe("Financial Conduct Authority (FCA)");
+    // The source backs the stakeholder's position, so that is the claim a reviewer checks.
+    expect(s.first_party_sources?.[0]?.claim).toBe("position: neutral. Orderly markets.");
 
     const risks = {
       risks: [
@@ -76,6 +91,7 @@ describe("first-party sources in the research validators", () => {
     } as unknown as RiskAnalysisResult;
     const k = validateRiskSourcing(risks, "strict", { rules: RULES, now: NOW });
     expect(k.first_party_sources?.map((f) => f.item)).toEqual(["RISK-001 likelihood", "RISK-001 impact"]);
+    expect(k.first_party_sources?.map((f) => f.claim)).toEqual(["LSEG may change its listing fees.", "LSEG may change its listing fees."]);
   });
 
   test("merged reports keep every first-party source", () => {

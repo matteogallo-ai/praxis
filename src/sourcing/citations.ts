@@ -60,7 +60,7 @@ export function critiqueCitations(
     const untrusted = !isSourceMissing(e) && evaluateDomainTrust(e.url, rule).classification === "untrusted";
     const organisation = untrusted ? firstPartyOrganisation(e, c.steelmanned_position) : null;
     if (organisation !== null && !isSourceMissing(e)) {
-      firstParty.push({ stage: "adversarial", item: c.id, organisation, url: e.url });
+      firstParty.push({ stage: "adversarial", item: c.id, organisation, url: e.url, claim: c.steelmanned_position });
     } else {
       rest.push({ id: c.id, evidence: e });
     }
