@@ -59,36 +59,36 @@
       },
       "research": {
         "calls": 1,
-        "input_tokens": 1403,
+        "input_tokens": 1466,
         "output_tokens": 733,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 3,
-        "cost_usd": 0.040136,
+        "cost_usd": 0.040262,
         "models": [
           "claude-sonnet-5-5"
         ]
       },
       "stakeholder": {
         "calls": 1,
-        "input_tokens": 2689,
+        "input_tokens": 2752,
         "output_tokens": 1933,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 5,
-        "cost_usd": 0.074708,
+        "cost_usd": 0.074834,
         "models": [
           "claude-sonnet-5-5"
         ]
       },
       "risk": {
         "calls": 1,
-        "input_tokens": 5216,
+        "input_tokens": 5279,
         "output_tokens": 3223,
         "cache_creation_input_tokens": 0,
         "cache_read_input_tokens": 0,
         "web_search_requests": 2,
-        "cost_usd": 0.062662,
+        "cost_usd": 0.062788,
         "models": [
           "claude-sonnet-5-5"
         ]
@@ -144,12 +144,12 @@
     },
     "total": {
       "calls": 18,
-      "input_tokens": 159365,
+      "input_tokens": 159554,
       "output_tokens": 13934,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "web_search_requests": 13,
-      "cost_usd": 0.6745019999999999,
+      "cost_usd": 0.6748799999999999,
       "models": [
         "claude-opus-5-5",
         "claude-sonnet-5-5"
