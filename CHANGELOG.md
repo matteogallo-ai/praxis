@@ -43,7 +43,7 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   ask for each source's `published_at` as the page states it, never a
   guess. The list guides the search; web search gets no `allowed_domains`.
   Prompt token counts re-measured with count_tokens; the protocol's and the
-  SLO page's estimates follow (question 05: $1.38 / $5.91 / $12.84).
+  SLO page's estimates follow (question 05: $1.39 / $5.92 / $12.85).
 
 - The scoping stage names the facts only the requester can supply
   (`requester_provided`, scoping prompt 2.1.0). The briefing lists them under
