@@ -263,8 +263,6 @@ built; neither result exists, and no published score depends on them.
 
 ## Not built yet (free, before the judge's GO)
 
-- The script that writes `RESULTS.md` from the artefacts and its `--check`
-  in CI (methodology point 4).
 - For the hard case, a per-source check of whether each cited source is
   about sodium-ion cells (its `intent`). The judge cannot do it without
   reading the sources; it is a manual check on the sourcing report until it

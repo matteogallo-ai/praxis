@@ -20,10 +20,8 @@
  *   5. Caches the parsed payload under
  *      `benchmarks/.scoring-cache/{slug}-{mode}.json`. Cache TTL:
  *      24 hours by default.
- *   6. Aggregates every parsed score per criterion, mode, and
- *      overall, and rewrites the "AI-Assisted Qualitative Scoring"
- *      section in `benchmarks/RESULTS.md` (the v0.9 objective-
- *      checks block is preserved verbatim).
+ *   6. Writes each new live judgment to `benchmarks/judgments/`, to be
+ *      committed; `benchmarks/results.ts` publishes them in RESULTS.md.
  *
  * Flags:
  *   default          — score the live briefings that exist.
@@ -40,9 +38,6 @@
  * script emits a structured error naming the missing env var and
  * pointing at docs/benchmarking-methodology.md.
  *
- * v0.10.0 SHIPS THE FRAMEWORK ONLY. Empirical numbers land in
- * v0.10.1, when a maintainer with API credits runs this script and
- * commits the resulting RESULTS.md diff.
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -378,282 +373,6 @@ export function extractJsonBody(text: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Aggregation
-// ---------------------------------------------------------------------------
-
-export interface CriterionAggregate {
-  mock_avg: number | null;
-  mock_n: number;
-  live_avg: number | null;
-  live_n: number;
-  delta: number | null;
-}
-
-export interface Aggregates {
-  by_criterion: Record<ScoringCriterion, CriterionAggregate>;
-  total_mock_avg: number | null;
-  total_live_avg: number | null;
-  total_delta: number | null;
-  mock_n: number;
-  live_n: number;
-}
-
-export function aggregate(scorings: readonly ScoringPayload[]): Aggregates {
-  const mock = scorings.filter((s) => s.provider === "mock");
-  const live = scorings.filter((s) => s.provider === "anthropic");
-
-  const by_criterion: Record<ScoringCriterion, CriterionAggregate> = {} as Record<
-    ScoringCriterion,
-    CriterionAggregate
-  >;
-  for (const c of SCORING_CRITERIA) {
-    const mockScores = mock.map((s) => s.scores[c].score);
-    const liveScores = live.map((s) => s.scores[c].score);
-    const mock_avg = mockScores.length > 0 ? mean(mockScores) : null;
-    const live_avg = liveScores.length > 0 ? mean(liveScores) : null;
-    by_criterion[c] = {
-      mock_avg,
-      mock_n: mockScores.length,
-      live_avg,
-      live_n: liveScores.length,
-      delta:
-        mock_avg !== null && live_avg !== null
-          ? round1(live_avg - mock_avg)
-          : null,
-    };
-  }
-
-  const mockTotals = mock.map((s) => s.total);
-  const liveTotals = live.map((s) => s.total);
-  const total_mock_avg = mockTotals.length > 0 ? mean(mockTotals) : null;
-  const total_live_avg = liveTotals.length > 0 ? mean(liveTotals) : null;
-  return {
-    by_criterion,
-    total_mock_avg,
-    total_live_avg,
-    total_delta:
-      total_mock_avg !== null && total_live_avg !== null
-        ? round1(total_live_avg - total_mock_avg)
-        : null,
-    mock_n: mock.length,
-    live_n: live.length,
-  };
-}
-
-function mean(xs: readonly number[]): number {
-  return round1(xs.reduce((a, b) => a + b, 0) / xs.length);
-}
-
-function round1(x: number): number {
-  return Math.round(x * 10) / 10;
-}
-
-// ---------------------------------------------------------------------------
-// Systematic observations
-// ---------------------------------------------------------------------------
-
-export interface SystematicObservations {
-  live_outperforms: string[];
-  mock_holds_close: string[];
-  weakest_aspect: string;
-  strongest_aspect: string;
-  verdict: string[];
-}
-
-export function computeObservations(
-  agg: Aggregates,
-  scorings: readonly ScoringPayload[]
-): SystematicObservations {
-  const outperforms: string[] = [];
-  const holdsClose: string[] = [];
-  for (const c of SCORING_CRITERIA) {
-    const a = agg.by_criterion[c];
-    if (a.delta === null) continue;
-    if (a.delta >= 1.0) {
-      outperforms.push(`${CRITERION_LABELS[c]} (+${a.delta.toFixed(1)})`);
-    } else if (a.delta < 0.5) {
-      holdsClose.push(`${CRITERION_LABELS[c]} (Δ=${a.delta.toFixed(1)})`);
-    }
-  }
-
-  let weakestKey: ScoringCriterion | null = null;
-  let weakestVal = Number.POSITIVE_INFINITY;
-  let strongestKey: ScoringCriterion | null = null;
-  let strongestVal = Number.NEGATIVE_INFINITY;
-  for (const c of SCORING_CRITERIA) {
-    const a = agg.by_criterion[c];
-    const overallVals: number[] = [];
-    if (a.mock_avg !== null) overallVals.push(a.mock_avg);
-    if (a.live_avg !== null) overallVals.push(a.live_avg);
-    if (overallVals.length === 0) continue;
-    const overall = mean(overallVals);
-    if (overall < weakestVal) {
-      weakestVal = overall;
-      weakestKey = c;
-    }
-    if (overall > strongestVal) {
-      strongestVal = overall;
-      strongestKey = c;
-    }
-  }
-
-  const verdict: string[] = [];
-  if (agg.total_mock_avg !== null) {
-    verdict.push(
-      `Mock briefings average ${agg.total_mock_avg.toFixed(1)}/35 (n=${agg.mock_n}).`
-    );
-  }
-  if (agg.total_live_avg !== null) {
-    verdict.push(
-      `Live briefings average ${agg.total_live_avg.toFixed(1)}/35 (n=${agg.live_n}).`
-    );
-  }
-  if (agg.total_delta !== null) {
-    verdict.push(
-      `Delta of ${signed(agg.total_delta)} is the empirical spread between MockLLMProvider and Anthropic API.`
-    );
-  }
-  const floor = 15;
-  const ceiling = 32;
-  const belowFloor = scorings.filter((s) => s.total < floor).length;
-  const aboveCeiling = scorings.filter((s) => s.total >= ceiling).length;
-  verdict.push(
-    `${belowFloor} briefing(s) below the ${floor}/35 usability floor; ${aboveCeiling} at or above the ${ceiling}/35 near-excellence line.`
-  );
-
-  return {
-    live_outperforms: outperforms,
-    mock_holds_close: holdsClose,
-    weakest_aspect:
-      weakestKey !== null
-        ? `${CRITERION_LABELS[weakestKey]} (overall ${weakestVal.toFixed(1)}/5)`
-        : "n/a",
-    strongest_aspect:
-      strongestKey !== null
-        ? `${CRITERION_LABELS[strongestKey]} (overall ${strongestVal.toFixed(1)}/5)`
-        : "n/a",
-    verdict,
-  };
-}
-
-function signed(x: number): string {
-  return x >= 0 ? `+${x.toFixed(1)}` : x.toFixed(1);
-}
-
-// ---------------------------------------------------------------------------
-// RESULTS.md rewriter
-// ---------------------------------------------------------------------------
-
-/**
- * Splice the "AI-Assisted Qualitative Scoring" block into an
- * existing RESULTS.md, preserving everything above and below.
- * Idempotent: repeat calls REPLACE the block, they don't
- * concatenate.
- */
-export function insertScoringSection(
-  existingResults: string,
-  scoringBlock: string
-): string {
-  const marker = "## AI-Assisted Qualitative Scoring";
-  const startIdx = existingResults.indexOf(marker);
-  if (startIdx === -1) {
-    // Append at the end.
-    const sep = existingResults.endsWith("\n") ? "\n" : "\n\n";
-    return `${existingResults + sep + scoringBlock}\n`;
-  }
-  // Find the next top-level "## " AFTER our marker to bound the block.
-  const afterStart = existingResults.indexOf("\n## ", startIdx + marker.length);
-  const before = existingResults.slice(0, startIdx);
-  const after = afterStart === -1 ? "" : existingResults.slice(afterStart + 1);
-  return before + scoringBlock + (after.length > 0 ? `\n${after}` : "\n");
-}
-
-export function renderScoringSection(
-  scorings: readonly ScoringPayload[],
-  agg: Aggregates,
-  obs: SystematicObservations,
-  isoDate: string
-): string {
-  const lines: string[] = [];
-  lines.push(`## AI-Assisted Qualitative Scoring (${isoDate})`);
-  lines.push("");
-  lines.push(
-    "Scored by Claude Sonnet 4.5 via the calibrated rubric in `scoring-prompt.txt`. See `docs/benchmarking-methodology.md` for the methodology, model choice, and known biases."
-  );
-  lines.push("");
-  lines.push("### Aggregate scores");
-  lines.push("");
-  lines.push("| Criterion | Mock (n) | Live (n) | Delta |");
-  lines.push("|---|---|---|---|");
-  for (const c of SCORING_CRITERIA) {
-    const a = agg.by_criterion[c];
-    lines.push(
-      `| ${CRITERION_LABELS[c]} | ${cell(a.mock_avg, a.mock_n)} | ${cell(a.live_avg, a.live_n)} | ${deltaCell(a.delta)} |`
-    );
-  }
-  lines.push(
-    `| **Total /35** | **${cell(agg.total_mock_avg, agg.mock_n)}** | **${cell(agg.total_live_avg, agg.live_n)}** | **${deltaCell(agg.total_delta)}** |`
-  );
-  lines.push("");
-  lines.push("### Per-briefing scores");
-  lines.push("");
-  lines.push("| # | Slug | Format | Mock | Live | Delta |");
-  lines.push("|---|---|---|---|---|---|");
-  const bySlug = new Map<string, { mock?: ScoringPayload; live?: ScoringPayload; format: string }>();
-  for (const s of scorings) {
-    const cur = bySlug.get(s.briefing_id) ?? { format: s.format_id };
-    if (s.provider === "mock") cur.mock = s;
-    else cur.live = s;
-    cur.format = s.format_id;
-    bySlug.set(s.briefing_id, cur);
-  }
-  const sortedSlugs = [...bySlug.keys()].sort();
-  for (const [i, slug] of sortedSlugs.entries()) {
-    const rec = bySlug.get(slug)!;
-    const num = String(i + 1).padStart(2, "0");
-    const mockCell = rec.mock !== undefined ? String(rec.mock.total) : "—";
-    const liveCell = rec.live !== undefined ? String(rec.live.total) : "—";
-    const delta =
-      rec.mock !== undefined && rec.live !== undefined
-        ? signed(rec.live.total - rec.mock.total)
-        : "—";
-    lines.push(`| ${num} | ${slug} | ${rec.format} | ${mockCell} | ${liveCell} | ${delta} |`);
-  }
-  lines.push("");
-  lines.push("### Systematic observations");
-  lines.push("");
-  lines.push(
-    `**Where live significantly outperforms mock (Δ ≥ +1.0):** ${obs.live_outperforms.length > 0 ? obs.live_outperforms.join("; ") : "none observed."}`
-  );
-  lines.push("");
-  lines.push(
-    `**Where mock holds close (Δ < +0.5):** ${obs.mock_holds_close.length > 0 ? obs.mock_holds_close.join("; ") : "none observed."}`
-  );
-  lines.push("");
-  lines.push(`**Weakest aspect across all briefings:** ${obs.weakest_aspect}.`);
-  lines.push("");
-  lines.push(`**Strongest aspect across all briefings:** ${obs.strongest_aspect}.`);
-  lines.push("");
-  lines.push("**Overall verdict:**");
-  lines.push("");
-  for (const v of obs.verdict) {
-    lines.push(`- ${v}`);
-  }
-  lines.push("");
-  return lines.join("\n");
-}
-
-function cell(avg: number | null, n: number): string {
-  if (avg === null) return "—";
-  return `${avg.toFixed(1)} (n=${n})`;
-}
-
-function deltaCell(d: number | null): string {
-  if (d === null) return "—";
-  return signed(d);
-}
-
-// ---------------------------------------------------------------------------
 // Cache
 // ---------------------------------------------------------------------------
 
@@ -718,6 +437,19 @@ export function writeCache(
   writeFileSync(cachePath(root, slug, mode), JSON.stringify(record, null, 2));
 }
 
+/**
+ * A live judgment, committed: the cache is local and expires, but a score
+ * published in RESULTS.md must come from a file in the repository
+ * (`benchmarks/results.ts`). Named as the cache names it, by run.
+ */
+export function writeJudgment(root: string, key: string, payload: ScoringPayload): string {
+  const dir = join(root, "benchmarks", "judgments");
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, `${key}-live.json`);
+  writeFileSync(path, `${JSON.stringify({ judge_model: JUDGE_MODEL, judged_at: new Date().toISOString(), payload }, null, 2)}\n`);
+  return path;
+}
+
 // ---------------------------------------------------------------------------
 // Main orchestration
 // ---------------------------------------------------------------------------
@@ -726,7 +458,8 @@ export interface ScoreAllReport {
   scored: number;
   from_cache: number;
   errors: number;
-  results_md_path: string | null;
+  /** The judgments written under `benchmarks/judgments/`, one per newly scored briefing. */
+  judgments_written: string[];
   scorings: ScoringPayload[];
   /** The batch's worst case, reserved against the cap; 0 when nothing was sent. */
   reserved_usd: number;
@@ -800,7 +533,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
       scored: 0,
       from_cache: 0,
       errors: 0,
-      results_md_path: null,
+      judgments_written: [],
       scorings: [],
       reserved_usd: 0,
       spent_usd: 0,
@@ -825,6 +558,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
 
   const apiKey = process.env["ANTHROPIC_API_KEY"] as string;
   const scorings: ScoringPayload[] = [];
+  const judgmentsWritten: string[] = [];
   let scored = 0;
   let fromCache = 0;
   let errors = 0;
@@ -871,6 +605,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
         const parsed = parseScoringPayload(JSON.parse(extractJsonBody(outcome.text)));
         scorings.push(parsed);
         writeCache(opts.root, cacheKey(ref), ref.mode, parsed);
+        judgmentsWritten.push(writeJudgment(opts.root, cacheKey(ref), parsed));
         scored += 1;
         process.stderr.write(`  ✓ [${ref.mode}] ${ref.slug} (score=${parsed.total}/35)\n`);
       } catch (err) {
@@ -892,26 +627,11 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
     }
   }
 
-  // Rewrite RESULTS.md when at least one scoring came in.
-  let resultsPath: string | null = null;
-  if (scorings.length > 0) {
-    resultsPath = join(opts.root, "benchmarks", "RESULTS.md");
-    const existing = existsSync(resultsPath)
-      ? readFileSync(resultsPath, "utf-8")
-      : "# Benchmark results\n";
-    const agg = aggregate(scorings);
-    const obs = computeObservations(agg, scorings);
-    const iso = new Date().toISOString().slice(0, 10);
-    const block = renderScoringSection(scorings, agg, obs, iso);
-    const next = insertScoringSection(existing, block);
-    writeFileSync(resultsPath, next);
-  }
-
   return {
     scored,
     from_cache: fromCache,
     errors,
-    results_md_path: resultsPath,
+    judgments_written: judgmentsWritten,
     scorings,
     reserved_usd: reservedUsd,
     spent_usd: spentUsd,
@@ -928,8 +648,7 @@ if (import.meta.main) {
   process.stderr.write(
     `\n== scored=${report.scored} cached=${report.from_cache} errors=${report.errors} ==\n`
   );
-  if (report.results_md_path !== null) {
-    process.stderr.write(`   wrote ${report.results_md_path}\n`);
-  }
+  for (const path of report.judgments_written) process.stderr.write(`   wrote ${path}\n`);
+  if (report.judgments_written.length > 0) process.stderr.write("   commit them, then: bun run results\n");
   process.exit(report.errors === 0 ? 0 : 1);
 }

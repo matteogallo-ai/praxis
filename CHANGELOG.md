@@ -83,6 +83,15 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `bun run results` writes `benchmarks/RESULTS.md` from the committed
+  artefacts: every completed live run and every recorded failure, with
+  cost, stages' time and sourcing counts, and the committed judgments with
+  the judge–human agreement that labels them indicative or unvalidated. CI
+  runs `bun run results -- --check`. The page it replaces still counted two
+  live briefings; the records hold six and two failures. `score:live`
+  writes each judgment to `benchmarks/judgments/` to be committed, instead
+  of editing `RESULTS.md`.
+
 - `bun run agreement`: the maintainer's blind scores, read back from the
   annotation file, against the judge's cached scores for the same
   briefings: exact and within-one agreement and quadratic-weighted kappa,

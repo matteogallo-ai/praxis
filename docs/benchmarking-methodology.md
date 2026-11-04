@@ -53,10 +53,11 @@ under this method is planned in [`live-proof-protocol.md`](live-proof-protocol.m
    the second branch: its judge, Claude Opus 5, is a model no stage uses
    but the same family, so the maintainer annotates two briefings
    (`docs/live-proof-protocol.md`).
-4. **Every number states its `n`.** Scores in `RESULTS.md` come from a script
-   that reads the artefacts, and CI runs it with `--check` so the page cannot
-   drift from the data. Until that script exists, `RESULTS.md` publishes no
-   score.
+4. **Every number states its `n`.** `RESULTS.md` is written by
+   `bun run results` from the committed artefacts only: the live run records
+   and the judgments `score:live` writes to `benchmarks/judgments/`. CI runs
+   it with `--check`, so the page cannot drift from the data. With no
+   committed judgment it publishes no score.
 
 ## The rubric
 

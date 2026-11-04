@@ -398,8 +398,9 @@ bun run score:dry
 bun run score:live -- --max-cost-usd 3
 ```
 
-Each run rewrites the "AI-Assisted Qualitative Scoring" block in
-`benchmarks/RESULTS.md` and caches the scorer's answer under
+Each run writes one judgment per briefing to `benchmarks/judgments/`
+(commit them, then `bun run results` publishes them in
+`benchmarks/RESULTS.md`) and caches the scorer's answer under
 `benchmarks/.scoring-cache/` (gitignored, 24h TTL). A directory under
 `benchmarks/outputs/live/` is picked up when it holds `brief.md` and
 `metadata.json`.
