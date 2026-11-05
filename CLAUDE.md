@@ -11,8 +11,11 @@ Read this first. `docs/ENGINEERING_STANDARDS.md` is the full standard;
 3. Each stage is a PromptLang `.prompt` file (`prompts/`) plus a TypeScript module that renders it, calls the provider and validates the JSON answer.
 4. Output: Markdown, PDF (pdfkit) and DOCX; surfaces: the `praxis` CLI and a library entry point (`src/index.ts`).
 5. Status: the mock provider path is tested end to end; six briefings have completed against a real model
-   (questions 05, 08, 10, 11 and 12, 4 Nov 2026, `benchmarks/outputs/live/`), their quality not yet reviewed;
-   question 02 failed in synthesis.
+   (questions 05, 08, 10, 11 and 12, 4 Nov 2026, `benchmarks/outputs/live/`); question 02 failed in synthesis.
+   A human review (4 Nov 2026) covered only question 10's eight first-party
+   sources, the ones the rule accepted: the reviewer accepted 6 and refused 2
+   ([review](benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)).
+   The quality of the briefings themselves is not reviewed, for any question.
 
 ## Pipeline
 
