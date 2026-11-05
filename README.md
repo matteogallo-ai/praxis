@@ -9,7 +9,7 @@
 > note, position paper, family-office memo), with sourcing checks, an
 > adversarial review and Markdown / PDF / DOCX output.
 
-## Status: six live briefings completed, not yet reviewed
+## Status: six live briefings completed, their quality not reviewed
 
 Praxis has completed **six briefings against a real model**, on questions
 05, 08, 10, 11 and 12, 4 Nov 2026 (`benchmarks/outputs/live/`):
@@ -23,7 +23,11 @@ Praxis has completed **six briefings against a real model**, on questions
 
 Every one is flagged insufficiently sourced; the runs are compared in
 [`benchmarks/outputs/live/README.md`](benchmarks/outputs/live/README.md).
-Their quality is not yet checked or reviewed. 13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026 and 4 Nov 2026), 6 completed (4 Nov 2026). In
+A human review (4 Nov 2026) covered only question 10's eight first-party
+sources, the ones the rule accepted: the reviewer accepted 6 and refused 2
+([review](benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)).
+The quality of the briefings themselves is not reviewed, for any question.
+13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026 and 4 Nov 2026), 6 completed (4 Nov 2026). In
 [`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the
 `strict` sourcing policy because the model returned findings without
 source URLs, one on prose before the JSON, one on a 60 s timeout during
