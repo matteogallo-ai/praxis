@@ -288,8 +288,11 @@ Tests:
   in any upstream artefact".
 
 Remaining: whether a cited page supports the claim is not checked, and live
-briefing quality is unmeasured: no validated judge (C18), one completed
-live briefing, not yet reviewed (C14).
+briefing quality is unmeasured: no validated judge (C18); six live
+briefings completed (C14). A human review (4 Nov 2026) covered only question 10's eight first-party
+sources, the ones the rule accepted: the reviewer accepted 6 and refused 2
+([review](../benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)).
+The quality of the briefings themselves is not reviewed, for any question.
 
 ## LLM10 — Unbounded consumption
 

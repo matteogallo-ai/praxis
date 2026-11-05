@@ -46,6 +46,10 @@ that rests on them as unverified.
 - **research item 1**: https://www.winssolutions.org/gotion-kenitra-battery-gigafactory-morocco/ is not a trusted domain (host 'www.winssolutions.org' matches no reputation tier).
 ```
 
+The flag lists 39 items where the Status below counts 6 without a source and
+32 from untrusted domains: the remaining item is option OPT-B's citation on an
+untrusted host, which the flag lists and those two counts do not include.
+
 Full briefing: [`brief.md`](benchmarks/outputs/live/12-sodium-ion-plant-morocco/run-2026-11-04T13-20-16-572Z/brief.md) · [`brief.pdf`](benchmarks/outputs/live/12-sodium-ion-plant-morocco/run-2026-11-04T13-20-16-572Z/brief.pdf).
 
 ## Status: six live briefings completed, their quality not reviewed
