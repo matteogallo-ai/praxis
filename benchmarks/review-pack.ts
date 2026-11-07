@@ -33,6 +33,25 @@ function uniformLayout(line: string): string {
     .replace(MONTH_FIRST, "$2 $1 $3");
 }
 
+/**
+ * The body without HTML comments. One pass can leave a comment that the
+ * removal itself assembled ("<!<!---->--"), and an unclosed one hides the
+ * rest of the section in a viewer: both would show one arm's notes or hide
+ * its text, so removal repeats until nothing changes and an open marker
+ * drops what follows it.
+ */
+function withoutComments(body: string): string {
+  let text = body;
+  for (let before = ""; before !== text; ) {
+    before = text;
+    text = text.replace(/<!--[\s\S]*?-->/g, "");
+    const open = text.indexOf("<!--");
+    if (open !== -1) text = text.slice(0, open);
+    text = text.replace(/<!-|-->/g, "");
+  }
+  return text;
+}
+
 /** One section, blinded: prose with numbered markers, then its numbered sources. */
 export function blindSection(title: string, body: string): string {
   const urls: string[] = [];
@@ -43,7 +62,7 @@ export function blindSection(title: string, body: string): string {
     return urls.length;
   };
   const prose: string[] = [];
-  for (const line of body.replace(/<!--[\s\S]*?-->/g, "").split("\n")) {
+  for (const line of withoutComments(body).split("\n")) {
     const trimmed = line.trim();
     if (trimmed === "**Sources:**") continue;
     // A source list item: its URL is listed, the line is not prose.
