@@ -1,0 +1,8 @@
+{
+  "A": "praxis",
+  "B": "baseline",
+  "inputs": {
+    "praxis": "benchmarks/outputs/live/12-sodium-ion-plant-morocco/run-2026-11-04T13-20-16-572Z/brief.md",
+    "baseline": "benchmarks/outputs/baseline/12-sodium-ion-plant-morocco/run-2026-11-07T11-28-59-229Z/brief.md"
+  }
+}
