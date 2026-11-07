@@ -256,8 +256,7 @@ describe("interpolateScoringPrompt", () => {
 describe("readCache / writeCache", () => {
   let tmp: string;
   beforeEach(() => {
-    tmp = join(tmpdir(), `praxis-score-cache-${Date.now()}-${Math.random()}`);
-    mkdirSync(tmp, { recursive: true });
+    tmp = mkdtempSync(join(tmpdir(), "praxis-score-cache-"));
   });
   afterEach(() => {
     rmSync(tmp, { recursive: true, force: true });
