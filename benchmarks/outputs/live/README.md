@@ -28,6 +28,49 @@ record file's SHA-256.
 What a live briefing costs is estimated by `bun run estimate:cost`, not
 stated here.
 
+## Excerpt: question 12's answer and its sourcing flag
+
+Extract, not edited, from question 12's step 1 briefing (4 Nov 2026),
+which is flagged insufficiently sourced. The lines are copied as the
+pipeline wrote them. Lines 90–100 hold the answer and its cited sources:
+
+```markdown
+## Answer
+
+The requester should hold Moroccan factory capital until EU origin rules are final. Within 12 months, it should license a cell design, obtain toll-made samples and sign named buyers. That avoids Gotion-scale exposure, reported at $1.3bn for phase one.
+
+No European OEM sodium-ion demand is documented. EEA-only Battery Booster loans and split Council positions leave Moroccan origin status open. Choose Morocco or Iberia only after a sourced landed-cost benchmark exists.
+
+**Sources:**
+
+- [Gotion Starts Up Morocco's First Battery Gigafactory](https://www.winssolutions.org/gotion-kenitra-battery-gigafactory-morocco/)
+- [Commission seeks projects to fund under Battery Booster Facility - Internal Market, Industry, Entrepreneurship and SMEs](https://single-market-economy.ec.europa.eu/news/commission-seeks-projects-fund-under-battery-booster-facility-2026-07-28_en)
+- [Made in Europe: the Industrial Accelerator Act and your BOM · GETMILK](https://getmilk.tech/blog/how-much-of-your-product-is-made-in-europe)
+```
+
+Lines 101–172 are omitted. Lines 102–109 are a validation note that
+viewers hide. It says the answer follows the critique's steelmanned
+alternative rather than the recommended option, and that its toll-made
+sample route comes from that alternative, not from a cited source.
+Lines 173–179 start the sourcing flag; its first item is the first source
+the answer cites:
+
+```markdown
+## Insufficiently sourced
+
+This format's sourcing policy is strict. The 39 item(s) below did not meet it.
+They stayed in the analysis that produced this briefing; treat every statement
+that rests on them as unverified.
+
+- **research item 1**: https://www.winssolutions.org/gotion-kenitra-battery-gigafactory-morocco/ is not a trusted domain (host 'www.winssolutions.org' matches no reputation tier).
+```
+
+The flag lists 39 items where the run record counts 6 without a source and
+32 from untrusted domains: the remaining item is option OPT-B's citation on an
+untrusted host, which the flag lists and those two counts do not include.
+
+Full briefing: [`brief.md`](12-sodium-ion-plant-morocco/run-2026-11-04T13-20-16-572Z/brief.md) · [`brief.pdf`](12-sodium-ion-plant-morocco/run-2026-11-04T13-20-16-572Z/brief.pdf).
+
 ## Question 05: step 0 and its rerun
 
 Both runs are `mckinsey-style-note` under `strict`. They are two samples
