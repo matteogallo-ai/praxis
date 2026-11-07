@@ -96,8 +96,8 @@ matter, and they are empty or failing.
 ## Known limits
 
 - **Faithfulness is not checked.** Code checks that a claim has a source,
-  that the source was returned by search, is fresh and is on a trusted
-  domain; it does not check that the page says what the claim says.
+  fresh by its stated date and on a trusted domain; it does not check that
+  the URL came from the search, nor that the page says what the claim says.
 - **No validated judge.** Quality would be scored by a model whose agreement
   with a human has not been measured (`docs/CLAIMS.md` C18).
 - **The judge is from the same model family.** It is Claude Opus 5, a

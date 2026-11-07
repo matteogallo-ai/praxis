@@ -62,13 +62,21 @@ describe("live attempt count", () => {
     const [step0] = completions;
     const count = countWord(completions.length);
 
-    test("README: each one's cost and sourcing flag", () => {
-      expect(flat("README.md")).toContain(`Praxis has completed **${count} briefings against a real model**`);
-      const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\$]/g, "\\$&");
-      for (const c of completions) {
-        expect(flat("README.md")).toMatch(new RegExp(`question ${c.id.slice(0, 2)}[^:;]*: ${esc(`${usd(c.cost_usd)}, ${sourcingFlag(c)}`)}`));
-      }
+    test("README: how many completed, their cost range and their flag, from the records", () => {
+      const readme = flat("README.md");
+      expect(readme).toContain(`Praxis has completed **${count} briefings against a real model**`);
+      const costs = completions.map((c) => c.cost_usd);
+      expect(readme).toContain(`each ${usd(Math.min(...costs))} to ${usd(Math.max(...costs))} and each flagged insufficiently sourced`);
+      expect(completions.every((c) => sourcingFlag(c).startsWith("flagged insufficiently sourced"))).toBe(true);
     });
+
+    // No code compares a cited URL with what web_search returned
+    // (src/llm/anthropic-provider.ts passes the result blocks back unread).
+    for (const path of ["README.md", "docs/SYSTEM_CARD.md", "docs/defense/FICHE_DEFENSE.md"]) {
+      test(`${path} does not claim a check that sources came from the search`, () => {
+        expect(flat(path)).not.toMatch(/returned by search|the search returned|renvoyée par la recherche/);
+      });
+    }
 
     test("system card: each one's flag, and the cost and latency row", () => {
       const card = flat("docs/SYSTEM_CARD.md");
