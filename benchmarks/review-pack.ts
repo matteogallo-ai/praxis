@@ -34,22 +34,15 @@ function uniformLayout(line: string): string {
 }
 
 /**
- * The body without HTML comments. One pass can leave a comment that the
- * removal itself assembled ("<!<!---->--"), and an unclosed one hides the
- * rest of the section in a viewer: both would show one arm's notes or hide
- * its text, so removal repeats until nothing changes and an open marker
- * drops what follows it.
+ * The body as text, without HTML comments. A comment is one arm's note and
+ * is dropped (an unclosed one with the rest of the body, which a viewer
+ * would hide anyway); every '<' left is then escaped, so no markup either
+ * arm wrote, a fragment the removal left included, renders for the reviewer.
  */
 function withoutComments(body: string): string {
-  let text = body;
-  for (let before = ""; before !== text; ) {
-    before = text;
-    text = text.replace(/<!--[\s\S]*?-->/g, "");
-    const open = text.indexOf("<!--");
-    if (open !== -1) text = text.slice(0, open);
-    text = text.replace(/<!-|-->/g, "");
-  }
-  return text;
+  const closed = body.replace(/<!--[\s\S]*?--!?>/g, "");
+  const open = closed.indexOf("<!--");
+  return (open === -1 ? closed : closed.slice(0, open)).replace(/</g, "&lt;");
 }
 
 /** One section, blinded: prose with numbered markers, then its numbered sources. */
