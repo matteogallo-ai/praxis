@@ -494,6 +494,16 @@ describe("renderMarkdownEnhanced — Appendices", () => {
     expect(cells.length).toBe(5);
   });
 
+  // plainText pairs backticks line by line; a cell joins the lines, so the
+  // joining has to come first or the pairs it decided no longer hold.
+  test.each(["`\n\n`www.evil.example`", "a `b\nc` www.evil.example `d"])("a stakeholder named %p links nowhere", (name) => {
+    const brief = makeBrief();
+    const first = brief.stakeholders.stakeholders[0]!;
+    brief.stakeholders.stakeholders = [{ ...first, name }];
+    const md = renderMarkdownEnhanced(brief, { include_appendices: true });
+    expect(renderedTargets(md, "evil.example")).toEqual([]);
+  });
+
   test("without include_appendices, no appendix sections", () => {
     const md = renderMarkdownEnhanced(makeBrief());
     expect(md).not.toContain("## Appendix A");

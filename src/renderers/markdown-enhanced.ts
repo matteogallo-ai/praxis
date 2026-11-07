@@ -291,12 +291,14 @@ function extractHost(url: string): string {
 }
 
 /**
- * Model text as one Markdown table cell. `plainText` escapes backslashes
- * first, so a `\|` in web text cannot turn the pipe escape below into an
- * escaped backslash followed by a cell break.
+ * Model text as one Markdown table cell. The lines are joined before
+ * `plainText` because it pairs backticks line by line: joined after, a
+ * backtick it left as text could pair with another and expose a link.
+ * Outside code spans `plainText` escapes every backslash, so the pipe
+ * escape below stays one escape.
  */
 function mdCell(v: string): string {
-  return plainText(v).replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ");
+  return plainText(v.replace(/[\r\n]+/g, " ")).replace(/\|/g, "\\|");
 }
 
 function slugify(v: string): string {
