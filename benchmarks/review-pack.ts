@@ -40,9 +40,20 @@ function uniformLayout(line: string): string {
  * arm wrote, a fragment the removal left included, renders for the reviewer.
  */
 function withoutComments(body: string): string {
-  const closed = body.replace(/<!--[\s\S]*?--!?>/g, "");
-  const open = closed.indexOf("<!--");
-  return (open === -1 ? closed : closed.slice(0, open)).replace(/</g, "&lt;");
+  let text = "";
+  for (let at = 0; at < body.length; ) {
+    const open = body.indexOf("<!--", at);
+    if (open === -1) {
+      text += body.slice(at);
+      break;
+    }
+    text += body.slice(at, open);
+    const ends = [body.indexOf("-->", open + 4), body.indexOf("--!>", open + 4)].filter((i) => i !== -1);
+    if (ends.length === 0) break;
+    const end = Math.min(...ends);
+    at = end + (body.startsWith("-->", end) ? 3 : 4);
+  }
+  return text.replace(/</g, "&lt;");
 }
 
 /** One section, blinded: prose with numbered markers, then its numbered sources. */
