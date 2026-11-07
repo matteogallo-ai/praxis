@@ -128,13 +128,13 @@ describe("renderFullBrief — YAML front-matter", () => {
 
   test("sourcing_summary is a single quoted string with all count categories", () => {
     const md = renderFullBrief(makeBrief());
-    expect(md).toContain('sourcing_summary: "total=5 ok=5 stale=0 untrusted=0 duplicated=0 missing=0"');
+    expect(md).toContain('sourcing_summary: "mock, not verified: total=5 ok=0 unverified=5 stale=0 untrusted=0 duplicated=0 missing=0"');
   });
 
   test("sourcing_summary counts the sources of unknown freshness when the format dates them", () => {
     const base = makeBrief();
     const md = renderFullBrief(makeBrief({ sourcing_report: { ...base.sourcing_report, freshness_unknown: 7 } }));
-    expect(md).toContain('sourcing_summary: "total=5 ok=5 stale=0 untrusted=0 duplicated=0 missing=0 freshness_unknown=7"');
+    expect(md).toContain('sourcing_summary: "mock, not verified: total=5 ok=0 unverified=5 stale=0 untrusted=0 duplicated=0 missing=0 freshness_unknown=7"');
   });
 
   test("sourcing_summary counts the options and critique citations from untrusted domains", () => {
@@ -151,7 +151,7 @@ describe("renderSourcingReport — citations", () => {
     const out = renderSourcingReport({
       ...base,
       untrusted_citations: [{ stage: "adversarial", id: "CRIT-2", url: "https://x.example/a", reason: "not in any tier" }],
-    });
+    }, "anthropic");
     expect(out).toContain("[adversarial] CRIT-2 cites an untrusted domain: https://x.example/a — not in any tier");
     expect(out).not.toContain("every inspected item passed");
   });
@@ -160,7 +160,7 @@ describe("renderSourcingReport — citations", () => {
 describe("renderSourcingReport — first-party", () => {
   test("counts and lists the first-party sources", () => {
     const base = makeBrief().sourcing_report;
-    const out = renderSourcingReport({ ...base, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x", claim: "The OECD revised its model rules in 2026." }] });
+    const out = renderSourcingReport({ ...base, first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x", claim: "The OECD revised its model rules in 2026." }] }, "anthropic");
     expect(out).toContain("First-party (an organisation's own site, for its own facts): 1");
     expect(out).toContain("[research] finding 2 — OECD's own site, for its own facts: https://www.oecd.org/x — claim: “The OECD revised its model rules in 2026.”");
   });
@@ -175,14 +175,14 @@ describe("renderSourcingReport — first-party", () => {
 describe("renderSourcingReport — freshness", () => {
   test("counts the sources of unknown freshness when the format dates them", () => {
     const base = makeBrief().sourcing_report;
-    expect(renderSourcingReport({ ...base, freshness_unknown: 4 })).toContain("Freshness unknown (no publication date): 4");
-    expect(renderSourcingReport(base)).not.toContain("Freshness unknown");
+    expect(renderSourcingReport({ ...base, freshness_unknown: 4 }, "anthropic")).toContain("Freshness unknown (no publication date): 4");
+    expect(renderSourcingReport(base, "anthropic")).not.toContain("Freshness unknown");
   });
 
   test("counts the requester-provided facts apart", () => {
     const base = makeBrief().sourcing_report;
-    expect(renderSourcingReport({ ...base, requester_provided: 3 })).toContain("Requester-provided, not sourceable: 3");
-    expect(renderSourcingReport(base)).not.toContain("Requester-provided");
+    expect(renderSourcingReport({ ...base, requester_provided: 3 }, "anthropic")).toContain("Requester-provided, not sourceable: 3");
+    expect(renderSourcingReport(base, "anthropic")).not.toContain("Requester-provided");
   });
 });
 

@@ -94,6 +94,7 @@ import type {
 } from "../../agents/types.ts";
 import type { SourcingReport } from "../../sourcing/types.ts";
 import { linkTarget, modelText } from "../../renderers/markdown-text.ts";
+import { shownCounts } from "../../renderers/mock.ts";
 import { describeFirstParty, uncategorisedLines } from "../../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
 import { codeSpan } from "../../sourcing/code-written-section.ts";
@@ -582,7 +583,7 @@ async function fullBrief(
   if (opts.sourcingReport) {
     out += "\n---\n\n";
     out += "# Sourcing Report\n\n";
-    out += renderSourcingReportMarkdown(result.sourcing_report);
+    out += renderSourcingReportMarkdown(result.sourcing_report, result.provider_name);
   }
   writeOrEmit(out, opts.outputPath);
   // Additionally print the inline critique: to stdout if writing
@@ -622,7 +623,7 @@ async function stagedBrief(
       );
     }
     if (opts.sourcingReport && !opts.withRisks) {
-      printSourcingReportOnly(result.sourcing_report, opts.json);
+      printSourcingReportOnly(result.sourcing_report, opts.provider, opts.json);
     } else {
       printFullPipelineWithRisks(
         result.scoping,
@@ -630,6 +631,7 @@ async function stagedBrief(
         result.stakeholders,
         result.risks,
         result.sourcing_report,
+        opts.provider,
         opts.json
       );
     }
@@ -739,6 +741,7 @@ function printFullPipelineWithRisks(
   stakeholders: StakeholderMapResult,
   risks: RiskAnalysisResult,
   sourcing_report: SourcingReport,
+  providerName: string,
   json: boolean
 ): void {
   if (json) {
@@ -755,18 +758,18 @@ function printFullPipelineWithRisks(
   process.stdout.write(renderResearchResult(research));
   process.stdout.write(renderStakeholders(stakeholders));
   process.stdout.write(renderRisks(risks));
-  process.stdout.write(renderSourcingReport(sourcing_report));
+  process.stdout.write(renderSourcingReport(sourcing_report, providerName));
   process.stdout.write(
     `\n${c.dim("Run with --full to produce the assembled Markdown briefing.")}\n`
   );
 }
 
-function printSourcingReportOnly(report: SourcingReport, json: boolean): void {
+function printSourcingReportOnly(report: SourcingReport, providerName: string, json: boolean): void {
   if (json) {
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return;
   }
-  process.stdout.write(renderSourcingReport(report));
+  process.stdout.write(renderSourcingReport(report, providerName));
 }
 
 /**
@@ -788,12 +791,15 @@ function writeOrEmit(content: string, path: string | null): void {
  * ANSI-free markdown rendering of the sourcing report, used as an
  * appendix under `--full --with-sourcing-report`.
  */
-export function renderSourcingReportMarkdown(report: SourcingReport): string {
+export function renderSourcingReportMarkdown(report: SourcingReport, providerName: string): string {
+  const { ok, unverified } = shownCounts(report, providerName);
   const parts: string[] = [];
   parts.push(`**Policy:** ${report.policy}  \n`);
   parts.push(`**Total items:** ${report.total_items}  \n`);
   parts.push(
-    `**Counts:** ok ${report.counts.ok} · stale ${report.counts.stale} · ` +
+    `**Counts:** ok ${ok} · ` +
+      (unverified === null ? "" : `unverified (mock fixtures) ${unverified} · `) +
+      `stale ${report.counts.stale} · ` +
       `untrusted ${report.counts.untrusted} · duplicated ${report.counts.duplicated} · ` +
       `missing ${report.counts.missing}\n\n`
   );

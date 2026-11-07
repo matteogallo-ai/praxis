@@ -28,6 +28,7 @@ import {
   escapeMarkdownLinkText,
   inert,
   linkTarget,
+  mockBannerMarkdown,
   modelText,
   plainText,
   renderSynthesisSections,
@@ -59,7 +60,7 @@ export function renderMarkdownEnhanced(
 ): string {
   // The front matter holds YAML-quoted values; every other part is Markdown
   // that carries model text, made inert (src/renderers/markdown-text.ts).
-  const parts: string[] = [renderFrontMatter(brief)];
+  const parts: string[] = [renderFrontMatter(brief), mockBannerMarkdown(brief.provider_name)];
   parts.push(inert(`# ${plainText(escapeMarkdownHeading(brief.question))}\n\n`));
   if (options.include_toc) parts.push(inert(renderToc(brief, options)));
   parts.push(renderSynthesisSections(brief.synthesis.sections));
@@ -82,7 +83,7 @@ function renderFrontMatter(brief: BriefResult | BriefWithCritiqueResult): string
   parts.push(`generated_at: ${yamlString(brief.generated_at)}\n`);
   parts.push(`recommended_option: ${yamlString(brief.options.recommended_option_id)}\n`);
   parts.push(`aggregated_risk: ${yamlString(brief.risks.aggregated_risk_score.overall)}\n`);
-  parts.push(sourcingSummary(brief.sourcing_report));
+  parts.push(sourcingSummary(brief.sourcing_report, brief.provider_name));
   if (hasCritique(brief)) {
     const a = brief.adversarial;
     parts.push(
