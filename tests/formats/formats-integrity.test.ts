@@ -147,7 +147,7 @@ describe("shipped formats — structural invariants", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Every shipped format now declares a sourcing_rules block that
+  // Every shipped format declares a sourcing_rules block that
   // covers freshness, domain trust, and dedupe. This locks the format
   // authoring convention in place: any new shipped format must repeat it.
   // -------------------------------------------------------------------------

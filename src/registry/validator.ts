@@ -262,7 +262,7 @@ function validateSections(
 
   for (const [i, item] of raw.entries()) {
     const path = `sections[${i}]`;
-        const parsed = validateSection(item, path, issues);
+    const parsed = validateSection(item, path, issues);
     if (parsed === null) {
       anyInvalid = true;
       continue;
@@ -334,7 +334,7 @@ function validateSection(
       const rules: string[] = [];
       let ok = true;
       for (const [j, r] of validationRulesRaw.entries()) {
-                if (typeof r !== "string" || r.trim() === "") {
+        if (typeof r !== "string" || r.trim() === "") {
           issues.push({
             path: `${path}.validation_rules[${j}]`,
             message: "must be a non-empty string",
@@ -423,7 +423,7 @@ function validateRequiredAgents(
   const agents: AgentId[] = [];
   let ok = true;
   for (const [j, v] of raw.entries()) {
-        if (!isAgentId(v)) {
+    if (!isAgentId(v)) {
       issues.push({
         path: `${path}[${j}]`,
         message: `must be one of [${AGENT_IDS.join(", ")}], got ${formatValue(v)}`,
@@ -472,7 +472,7 @@ function validateStyleGuide(
     const terms: string[] = [];
     let ok = true;
     for (const [j, t] of forbiddenRaw.entries()) {
-            if (typeof t !== "string" || t === "") {
+      if (typeof t !== "string" || t === "") {
         issues.push({
           path: `style_guide.forbidden_terms[${j}]`,
           message: "must be a non-empty string",
@@ -509,7 +509,7 @@ function validateOutputTargets(
   const targets: OutputTarget[] = [];
   let ok = true;
   for (const [j, v] of raw.entries()) {
-        if (!isOutputTarget(v)) {
+    if (!isOutputTarget(v)) {
       issues.push({
         path: `output_targets[${j}]`,
         message: `must be one of [${OUTPUT_TARGETS.join(", ")}], got ${formatValue(v)}`,
@@ -819,7 +819,7 @@ function optionalStringArray(
   const out: string[] = [];
   let ok = true;
   for (const [i, v] of raw.entries()) {
-        if (typeof v !== "string" || v.trim() === "") {
+    if (typeof v !== "string" || v.trim() === "") {
       issues.push({ path: `${path}[${i}]`, message: "must be a non-empty string" });
       ok = false;
     } else {
@@ -847,7 +847,7 @@ function requireStringArrayAllowEmpty(
   const out: string[] = [];
   let ok = true;
   for (const [i, v] of raw.entries()) {
-        if (typeof v !== "string" || v.trim() === "") {
+    if (typeof v !== "string" || v.trim() === "") {
       issues.push({ path: `${path}[${i}]`, message: "must be a non-empty string" });
       ok = false;
     } else {

@@ -9,7 +9,7 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
-- CLAUDE.md forbids comments that say when ("v0.8 additions."); 197 did,
+- CLAUDE.md forbids comments that say when ("v0.8 additions."); 193 did,
   118 of them under `src/`. They are rewritten to say what the code does,
   and `check:stale-narrative` now fails on a release number in a `.ts`
   comment under `src/`, `tests/`, `benchmarks/` or `scripts/`.
