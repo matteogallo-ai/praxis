@@ -304,3 +304,11 @@ describe("parseScopingResult — requester-provided facts", () => {
     }
   });
 });
+
+describe("parseScopingResult — an empty answer", () => {
+  // Every other stage already said "empty response"; scoping reported a
+  // JSON parse error for the same input.
+  test("is refused as an empty response, like every other stage", () => {
+    expect(() => parseScopingResult("  ")).toThrow("invalid output — empty response");
+  });
+});

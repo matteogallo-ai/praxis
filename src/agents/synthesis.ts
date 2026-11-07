@@ -33,7 +33,7 @@
 import { withRetry } from "./retry.ts";
 import {
   callModel,
-  extractJsonText,
+  parseAnswerObject,
   loadPrompt,
   renderPrompt,
   untrusted,
@@ -487,33 +487,7 @@ function parseSectionResponse(
   section: FormatSection,
   knownSources: KnownSourcesIndex
 ): ParsedSectionResponse {
-  const stripped = extractJsonText(raw);
-  if (stripped.length === 0) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `empty response for section '${section.id}'`,
-      raw
-    );
-  }
-  let value: unknown;
-  try {
-    value = JSON.parse(stripped);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `not valid JSON for section '${section.id}' (${message})`,
-      raw
-    );
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `expected a JSON object for section '${section.id}'`,
-      raw
-    );
-  }
-  const obj = value as Record<string, unknown>;
+  const obj = parseAnswerObject(AGENT_ID, raw, `section '${section.id}'`);
 
   const content = obj["content_markdown"];
   if (typeof content !== "string" || content.length === 0) {

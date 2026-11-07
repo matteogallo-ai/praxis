@@ -11,8 +11,8 @@
     "src/sourcing/validator.ts",
     "src/sourcing/freshness.ts",
     "src/sourcing/domain-trust.ts",
-    "src/agents/prompt-runtime.ts:304-497",
-    "src/agents/synthesis.ts:711-828"
+    "src/agents/prompt-runtime.ts:304-526",
+    "src/agents/synthesis.ts:685-802"
   ],
   "reporters": ["clear-text", "progress", "json"],
   "jsonReporter": { "fileName": "reports/mutation/mutation.json" },
