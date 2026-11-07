@@ -1048,280 +1048,60 @@ no code change).
 
 ## [0.9.0] — 2026-08-18
 
-**Release-readiness release: CLI polish, `--format auto`, ten
-calibrated benchmarks, refreshed documentation.**
+**Release-readiness release: CLI polish, `--format auto`, ten calibrated
+benchmarks, refreshed documentation.** No new agent, no new npm dependency,
+no breaking API change.
 
-The final consolidation before v1.0. No new agent. No new npm
-dep. No breaking API change. The v0.8 baseline of 1042 tests is
-preserved verbatim; v0.9 adds ~60 new tests around the CLI
-polish and the benchmarks framework.
+### Added
 
-Dependencies remain exactly `{ @promptlang/yaml-parser (workspace),
-pdfkit }`.
-
-### Added — CLI polish
-
-- New helpers in `src/cli/output.ts`:
-  - `symbols` and `styledSymbols` — the canonical glyph set
-    (`✓`, `✗`, `⚠`, `ℹ`, `•`, `→`) with colour-styled variants.
-  - `log(level, message)` — leveled stderr logger with a
-    verbosity gate (info/success suppressed under `--quiet`,
-    verbose messages gated on `--verbose`, errors always
-    pass).
-  - `progress(step, detail?)` — one-line stderr step marker,
-    suppressed under `--quiet`, brightened under `--verbose`.
-  - `errorWithContext({ what, cause?, suggestion?, see? })` —
-    structured error block with actionable guidance.
-- **`--verbose` / `--quiet` global flags** — stripped by the
-  dispatcher before command parsing; can appear anywhere on the
-  command line.
-- **`--format auto`** — opinionated keyword-based format
-  router. Matches on:
-  - `board`, `executive`, `leadership decision`
-    → `executive-pre-read`
-  - `position`, `regulatory`, `policy`, `association`
-    → `position-paper-corporate`
-  - `should we`, `market entry`, `M&A`, `acquisition`,
-    `strategic` → `mckinsey-style-note`
-  - Ambiguous matches surface as an actionable error naming
-    the candidates. No matches also error out. Deterministic
-    substring / word-boundary matching, not an LLM router.
-- The `brief` command now uses `progress()` markers at every
-  major pipeline stage and upgrades the three most common
-  actionable failures to structured error blocks:
-  - `FormatNotFoundError` → suggests `praxis formats list`.
-  - `AnthropicAuthenticationError` → suggests `--provider mock`.
-  - `UnsupportedRenderTargetError` → suggests a valid target.
-
-### Added — benchmarks framework
-
-- **`benchmarks/questions.yaml`** — 10 calibrated benchmark
-  questions distributed across the three shipped formats. The
-  set is closed at v0.9; adding an 11th requires a v-plus-1
-  release.
-- **`benchmarks/run-all.ts`** — the runner. Modes:
-  - default: mock always, live if `ANTHROPIC_API_KEY` is set.
-  - `--mock-only`: mock only, ignore the key.
-  - `--live-only`: live only, error if no key.
-  - `--dry-run`: manifest × modes → outcome list without
-    dispatching the pipeline (used by the unit tests).
-  - `--root <path>`: override the repo root.
-- **`benchmarks/CHECKLIST.md`** — scoring rubric with two
-  blocks: objective checks (automated) and qualitative axes
-  (five, human review only, 1–5 scale).
-- **`benchmarks/RESULTS.md`** — running scoreboard. v0.9.0
-  objective check row: 10/10 pass on the mock briefings; live
-  block populated when a maintainer with API access runs the
-  live path.
-- **`benchmarks/outputs/mock/`** — 10 mock briefings committed
-  at v0.9.0 (`brief.md` where the format declares `md`,
-  `brief.pdf`, `brief.docx` where the format declares `docx`,
-  and `metadata.json`). Total on disk: 740 KB, well under the
-  10 MiB target; largest single artefact ≤ 50 KB, well under
-  the 500 KB per-file ceiling.
-- **`benchmarks/outputs/live/`** — placeholder + README
-  explaining regeneration. Populated when a maintainer with
-  API access runs `bun run bench:live`.
-- New package.json scripts: `bench`, `bench:mock`, `bench:live`.
-
-### Added — documentation
-
-- `docs/getting-started.md` — the 5-minute walkthrough (clone,
-  install, first brief, formats, rendering, verbosity, live
-  provider).
-- `docs/cookbook.md` — 10 recipes (adding a format, adding a
-  provider, embedding as a library, configuring
-  `strict_editorial`, interpreting a `SourcingReport`,
-  debugging `EditorialFailureError`, interpreting critiques,
-  chaining briefings, using `--with-rerun`, generating own
-  benchmarks).
-- `docs/troubleshooting.md` — 12 common errors with cause and
-  fix (format not found, ambiguous auto-router, missing key,
-  rate limits, timeouts, sourcing failures, editorial
-  exhaustion, render targets, YAML restrictions, PromptLang
-  parse errors, adversarial parser rejections).
-- `README.md` refreshed as a v1.0-ready landing page (badges,
-  tagline, sample output, quick start, ASCII pipeline
-  diagram, formats table, library snippet, dev setup, FAQ).
-- `docs/architecture.md` gains a `§ 7. Final pipeline (v0.9)`
-  section with the complete pipeline diagram and the invariants
-  worth stressing (no recursion in the rerun loop, no
-  agent-to-agent calls, rendering is always last).
+- Global `--verbose` / `--quiet` flags, accepted anywhere on the command line.
+- `--format auto`: a deterministic keyword router to one of the three formats;
+  an ambiguous or empty match is an error naming the candidates.
+- Structured errors with a suggestion for `FormatNotFoundError`,
+  `AnthropicAuthenticationError` and `UnsupportedRenderTargetError`.
+- Benchmarks: `benchmarks/questions.yaml` (10 questions),
+  `benchmarks/run-all.ts`, `CHECKLIST.md`, `RESULTS.md`, and the mock
+  briefings under `benchmarks/outputs/mock/`; scripts `bench`, `bench:mock`,
+  `bench:live`.
+- Docs: `docs/getting-started.md`, `docs/cookbook.md`,
+  `docs/troubleshooting.md`, and a refreshed `README.md`.
 
 ### Changed
 
-- CLI output style unified across `brief`, format helpers, and
-  the top-level dispatcher — every user-facing error now goes
-  through `errorWithContext` or the plain `✗` prefix; every
-  progress marker goes through `progress()` with a consistent
-  arrow glyph.
-- `src/cli/index.ts` gains `stripVerbosityFlags(argv)` as an
-  exported helper so tests can pin the verbosity dispatch
-  discipline.
-
-### Not changed (v0.8 baseline preserved)
-
-- Every v0.8 public API method signature is unchanged.
-  `briefWithCritiqueAndRerun()` produces the same output as at
-  v0.8.0.
-- Dependencies: `@promptlang/yaml-parser` (workspace) + `pdfkit`.
-- The seven shipped agents. No new agent in v0.9, and none
-  planned for v1.0 either.
-
-### Migration notes
-
-- **Library callers**: no change. Every new symbol
-  (`stripVerbosityFlags`, `symbols`, `progress`, `log`,
-  `errorWithContext`, `detectFormatFromQuestion`,
-  `AUTO_FORMAT_IDS`, `AUTO_FORMAT_KEYWORDS`) is additive.
-- **Format authors**: no change. Existing formats work
-  unchanged. `--format auto` is a shortcut, not a replacement.
-- **CI**: `bun test` should still pass in ~5 seconds against
-  the mock provider. `bun run bench:mock` takes ~200 ms and is
-  a useful pre-merge smoke test.
+- Every user-facing CLI error goes through `errorWithContext` or the plain
+  `✗` prefix.
 
 ---
 
 ## [0.8.0] — 2026-08-18
 
-**Consolidation release: editorial re-run loop (hard-cap 1), `strict_editorial` retry mode, Praxis-as-library API surface.**
+**Consolidation release: editorial re-run loop (hard-cap 1),
+`strict_editorial` retry mode, Praxis-as-library API surface.** No new agent,
+no new npm dependency.
 
-No new agent, no new npm dep, no Web UI. Three bricks that harden
-Praxis toward v1.0 without expanding scope. Dependencies remain
-exactly `{ @promptlang/yaml-parser (workspace), pdfkit }`.
+### Added
 
-### Added — editorial re-run loop
-
-- `Orchestrator.briefWithCritiqueAndRerun(question, formatId, options)`
-  runs `briefWithCritique()`, then — iff `revised_recommendation_needed:
-  true` AND `steelmanned_alternative !== null` — re-invokes the
-  Synthesis agent ONCE in REVISION MODE, addressing the critical and
-  material critiques and aligning the recommendation with the
-  steelmanned alternative.
-- **Hard cap: exactly one rerun.** No recursion. A post-rerun brief
-  is never critiqued or re-synthesized again inside the same call.
-  Downstream callers can invoke the method a second time on the new
-  output if they want another pass — the library never loops on its
-  own. See `docs/editorial-loop.md`.
-- New payload `BriefWithCritiqueAndRerunResult` — superset of
-  `BriefWithCritiqueResult` carrying:
-  - `rerun_performed: boolean`
-  - `rerun_reason: string | null`
-  - `original_synthesis: SynthesisResult | null` (pre-rerun audit)
-  - `rerun_metadata: RerunMetadata | null` — `critiques_addressed[]`,
-    `steelmanned_alternative_used`, and `re_synthesis_deviations[]`
-    (section IDs whose text changed substantially).
-- Deviation heuristic: word-count delta > 20% OR normalised
-  Levenshtein distance > 0.30. Both signals published as
-  `computeReSynthesisDeviations()` in the public API.
-- `SourcingReport.edited_after_critique?: boolean` flips to `true`
-  on the returned payload when the rerun fires.
-- CLI: `praxis brief ... --full --with-rerun` (implies `--critique`,
-  requires `--full`). One-line rerun summary printed to stderr; the
-  `--json` payload carries the full rerun metadata block.
-
-### Added — `strict_editorial` retry mode
-
-- Optional `sourcing_rules.editorial` block on every format:
-  - `strict_editorial: boolean` — master switch (default `false`,
-    preserving v0.7 warn-only behaviour).
-  - `max_regeneration_attempts: number` — in `[1, 3]`, default 2.
-  - `forbidden_terms_action`, `over_length_action`,
-    `validation_rules_action` — each `"reject" | "warn"`, default
-    `"warn"`.
-- Under strict mode, the Synthesis agent enforces `"reject"`-action
-  rules as HARD refusals: a failing section is re-generated up to
-  `max_regeneration_attempts` times, with a per-attempt
-  `STRICT EDITORIAL RETRY` block in the prompt naming the reason
-  and details. Every attempt is recorded in
-  `SynthesizedSection.editorial_attempts[]`; the accepted attempt
-  is at `final_attempt_number`.
-- Exhausted retries throw `EditorialFailureError`, carrying the
-  section id, the last failure reason, and the full attempt
-  history for downstream inspection.
-- Reason precedence when several axes fail simultaneously:
-  `forbidden_terms` > `over_length` > `validation_rule`. Fix the
-  loudest first.
-- Reason on accepted attempts: `"accepted"` with a synthesised
-  detail message; useful for auditing that the section passed
-  without a retry.
-
-### Added — Praxis-as-library
-
-- `src/index.ts` refactored as the v1.0 stable API surface. Every
-  named export is covered by the SemVer contract — removing an
-  export or changing an error's inheritance requires a
-  major-version bump.
-- `src/errors/public.ts` — canonical barrel for the public error
-  taxonomy. Every re-exported error inherits from `PraxisError`; a
-  single top-level `catch (e instanceof PraxisError)` is now
-  sufficient to catch every typed Praxis failure.
-- Public value exports now include (v0.8 additions in bold):
-  - Every agent RESULT type from v0.2 through v0.7 (`ScopingResult`,
-    `ResearchResult`, `StakeholderMapResult`, `RiskAnalysisResult`,
-    `OptionsGenerationResult`, `SynthesisResult`,
-    `AdversarialCritiqueResult`).
-  - **`EditorialAttempt`, `RevisionContext`,
-    `BriefWithCritiqueAndRerunResult`, `RerunMetadata`,
-    `EditorialFailureError`, `EditorialAction`, `EditorialRules`,
-    `DEFAULT_MAX_REGENERATION_ATTEMPTS`,
-    `MAX_REGENERATION_ATTEMPTS_CEILING`, `EDITORIAL_ACTIONS`,
-    `isEditorialAction`, `computeReSynthesisDeviations`.**
-  - Renderer dispatcher (`render`, `resolveTarget`, three renderer
-    instances, `RENDER_TARGETS`, `RENDER_THEMES`).
-  - Complete `PraxisError` taxonomy from
-    `src/errors/public.ts`.
-- Post-Stakeholder agent `executeXxx()` implementations
-  (`executeRiskAnalysis`, `executeOptionsGeneration`,
-  `executeSynthesis`, `executeAdversarialCritique`) remain
-  INTERNAL — the Orchestrator owns their sequencing.
-- New docs: `docs/api.md` (narrated API reference),
-  `docs/embedding-praxis.md` (quick-start for library embedders),
-  `docs/editorial-loop.md` (the rerun mechanics and hard-cap
-  rationale).
+- `Orchestrator.briefWithCritiqueAndRerun()`: when the critique sets
+  `revised_recommendation_needed` and gives a steelmanned alternative,
+  Synthesis reruns exactly once, never recursively. CLI
+  `brief --full --with-rerun`.
+- `computeReSynthesisDeviations()`: a section deviates on a word-count delta of
+  more than 20% OR a normalised Levenshtein distance > 0.30.
+- Optional `sourcing_rules.editorial` block: under `strict_editorial`, a
+  section failing a `"reject"` rule is regenerated up to
+  `max_regeneration_attempts` (in `[1, 3]`, default 2), then
+  `EditorialFailureError`.
+- `src/index.ts` is the stable library API; every public error inherits from
+  `PraxisError`. Docs: `docs/api.md`, `docs/embedding-praxis.md`,
+  `docs/editorial-loop.md`.
 
 ### Changed
 
-- `SynthesizedSection` gained two REQUIRED fields:
-  `editorial_attempts: EditorialAttempt[]` and
-  `final_attempt_number: number`. Backward-compat default is
-  `[]` and `1` respectively for sections that ran under the
-  default warn-only editorial mode.
-- `SynthesisContext` gained an OPTIONAL `revision_context?:
-  RevisionContext` field. Set only by
-  `Orchestrator.briefWithCritiqueAndRerun()`; end-user code never
-  provides it directly.
-- `prompts/synthesis.prompt` gained two conditional parameters
-  (`revision_block`, `retry_block`) that are empty strings on
-  the initial pass and non-empty on rerun / strict-mode retry.
-
-### Not changed (v0.7 baseline preserved)
-
-- The public v0.6 / v0.7 API — every existing method signature is
-  unchanged. `brief()` and `briefWithCritique()` produce the same
-  outputs as v0.7.
-- Dependencies: still exactly two runtime deps
-  (`@promptlang/yaml-parser`, `pdfkit`). Zero additions.
-- The seven shipped agents — no new agent in v0.8, and no plans
-  for one in v0.9 or v1.0 either. The v0.7 pipeline is the final
-  pipeline.
-
-### Migration notes
-
-- **Formats**: adding `sourcing_rules.editorial: { strict_editorial:
-  false }` is optional and a no-op; formats that omit the block
-  behave identically to v0.7. Formats that set
-  `strict_editorial: true` MUST also set at least one
-  `*_action: "reject"` to make the strict mode meaningful.
-- **Library callers**: `briefWithCritique()` continues to work
-  unchanged; `briefWithCritiqueAndRerun()` is the opt-in v0.8
-  entry point. Every existing `catch (e instanceof PraxisError)`
-  continues to catch the same set plus `EditorialFailureError`.
-- **Direct consumers of `SynthesizedSection`**: the two new
-  required fields are populated by the Synthesis agent and by the
-  renderers already; only test fixtures that construct
-  `SynthesizedSection` literals directly need to add
+- `SynthesizedSection` gains the required fields `editorial_attempts` and
+  `final_attempt_number`; code that builds it as a literal adds
   `editorial_attempts: []` and `final_attempt_number: 1`.
+- `prompts/synthesis.prompt` gains the `revision_block` and `retry_block`
+  parameters, empty on the initial pass.
 
 ---
 
