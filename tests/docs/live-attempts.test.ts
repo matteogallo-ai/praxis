@@ -7,15 +7,13 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
-import { countWord, days, liveRecords, questionsOf, sourcingFlag, UNRECORDED_FAILURES, wilson } from "./live-records.ts";
+import { attemptsSentence, byCommit, countWord, days, liveRecords, questionsOf, sourcingFlag, UNRECORDED_FAILURES } from "./live-records.ts";
 
 const flat = (path: string) => readFileSync(path, "utf-8").replace(/\s+/g, " ");
 
 describe("live attempt count", () => {
   const { failures, completions } = liveRecords();
-  const failed = UNRECORDED_FAILURES + failures.length;
-  const attempts = failed + completions.length;
-  const sentence = `${attempts} live attempts: ${failed} failed (${UNRECORDED_FAILURES} in 1.2.1 without committed records, ${failures.length} on ${days(failures)}), ${completions.length} completed (${days(completions)})`;
+  const sentence = attemptsSentence();
 
   test("failures and completions are listed oldest first, whatever the directory order", () => {
     const sorted = (xs: readonly { at: string }[]) => xs.every((x, i) => i === 0 || (xs[i - 1] as { at: string }).at <= x.at);
@@ -23,18 +21,39 @@ describe("live attempt count", () => {
     expect(sorted(completions)).toBe(true);
   });
 
+  test("every recorded attempt is counted under exactly one commit", () => {
+    const groups = byCommit();
+    expect(groups.reduce((n, g) => n + g.attempts, 0)).toBe(failures.length + completions.length);
+    expect(new Set(groups.map((g) => g.sha)).size).toBe(groups.length);
+  });
+
   for (const path of ["README.md", "docs/SYSTEM_CARD.md"]) {
-    test(`${path} states it from the run records`, () => {
+    test(`${path} states the attempts by commit, from the run records`, () => {
       expect(flat(path)).toContain(sentence);
       expect(flat(path)).not.toContain("6 of 6");
+      // A rate pooled over several versions of the code, and attempts
+      // without a record, describe no version: neither is published.
+      expect(flat(path)).not.toMatch(/\d+ of \d+ \| [^|]*\(Wilson\)/);
+      expect(flat(path)).not.toMatch(/\b\d+ live attempts: /);
     });
   }
 
-  test("the system card's completion row and its Wilson interval", () => {
-    expect(wilson(0, 5)).toBe("0%–43%");
-    expect(flat("docs/SYSTEM_CARD.md")).toContain(
-      `| Live briefings completed | ${attempts} attempts | ${completions.length} of ${attempts} | ${wilson(completions.length, attempts)} (Wilson) |`
-    );
+  test("the defence sheet states the attempts by commit, without a pooled rate or interval", () => {
+    const sheet = flat("docs/defense/FICHE_DEFENSE.md").replace(/`/g, "");
+    for (const g of byCommit()) expect(sheet).toContain(`${g.sha} ${g.completed} sur ${g.attempts}`);
+    expect(sheet).not.toMatch(/intervalle de \d+ % à \d+ %/);
+  });
+
+  test("the sentence dates the attempts before it lists them, so no date reads as one commit's", () => {
+    expect(sentence).toMatch(/^Live attempts by commit \([^)]*\d{4}\), completed of attempted: /);
+  });
+
+  test("the system card has one completion row per commit, without an interval", () => {
+    const card = flat("docs/SYSTEM_CARD.md");
+    for (const g of byCommit()) {
+      expect(card).toContain(`| Live briefings completed at \`${g.sha}\` | ${g.attempts} | ${g.completed} of ${g.attempts} | — |`);
+    }
+    expect(card).toContain(`| Live attempts in 1.2.1, no record committed | ${UNRECORDED_FAILURES} | failed, as stated in CHANGELOG 1.2.1 | — |`);
   });
 
   describe("the completed briefings, wherever they are described", () => {

@@ -14,7 +14,7 @@ too few briefings for any status.
 | Objective | Target | Status | Measured on |
 | --- | --- | --- | --- |
 | Latency | p95 ≤ 10 minutes per briefing | 7.8, 8.4, 7.9, 8.4, 7.7 and 11.9 min on n = 6 (4 Nov 2026); n too small, no status | the sum of `usage.stages.<stage>.duration_ms` in `metadata.json` |
-| Error rate | ≤ 10% of started briefings end in an error | 2/8 since run records began (failed 3 Nov 2026 and 4 Nov 2026: TruncatedOutputError, InvalidAgentOutputError; completed 4 Nov 2026); the five aborted runs of 1.2.1 predate the records; n too small, no status | `error-*.json` (budget stops excluded) against `metadata.json` under `benchmarks/outputs/live/` |
+| Error rate | ≤ 10% of started briefings end in an error | errors by commit, failed of started: fe09710 1 of 1, 7c75a06 0 of 1, 3a7ca6a 0 of 1, 8df678f 1 of 5 (failed 3 Nov 2026 and 4 Nov 2026: TruncatedOutputError, InvalidAgentOutputError); the five aborted runs of 1.2.1 predate the records; n too small, no status | `error-*.json` (budget stops excluded) against `metadata.json` under `benchmarks/outputs/live/` |
 | Cost | p95 ≤ $10.00 per briefing | $3.51, $3.69, $3.66, $3.92, $3.29 and $4.75 on n = 6 (4 Nov 2026); n too small, no status; estimate for question 05, not a status: $1.40 low, $5.96 central, $12.92 high | `usage.total.cost_usd` in `metadata.json` |
 
 The estimate comes from `bun run estimate:cost` (prompt sizes measured
@@ -96,8 +96,10 @@ for the first live briefing, $14 for each of the next four
 
 ## How it is reported
 
-Each objective is reported over the last n live briefings with n and a 95%
-interval (Wilson for the error rate), as `docs/DEFINITION_OF_DONE.md` B4
-asks, from committed live artefacts under `benchmarks/outputs/live/`. That
-report does not exist yet: it needs paid runs, which need the maintainer's
-approval and a cost estimate.
+Each objective is reported per commit of the code, over that commit's live
+briefings, with n and a 95% interval (Wilson for the error rate), as
+`docs/DEFINITION_OF_DONE.md` B4 asks, from committed live artefacts under
+`benchmarks/outputs/live/`. Runs of different commits are not pooled: they
+measure different code. No commit has the runs an interval needs (at most
+5 each); getting them takes paid runs, which need the maintainer's approval
+and a cost estimate.

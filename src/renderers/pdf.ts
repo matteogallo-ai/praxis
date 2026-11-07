@@ -35,6 +35,7 @@ import { hasCritique } from "./types.ts";
 import { RenderError } from "./errors.ts";
 import { describeFirstParty, sourceDates, uncategorisedLines } from "./source-dates.ts";
 import { describeUntrustedCitation } from "../sourcing/citations.ts";
+import { isMockProvider, MOCK_BANNER, MOCK_NOTICE, shownCounts } from "./mock.ts";
 
 // ---------------------------------------------------------------------------
 // Theme table
@@ -224,6 +225,11 @@ function renderCover(
   brief: BriefResult | BriefWithCritiqueResult,
   theme: ThemeColors
 ): void {
+  if (isMockProvider(brief.provider_name)) {
+    doc.fontSize(14).font(theme.headingFont).fillColor("#B00020").text(MOCK_BANNER);
+    doc.fontSize(10).font(theme.bodyFont).text(MOCK_NOTICE);
+    doc.moveDown(1);
+  }
   doc
     .fontSize(32)
     .font(theme.headingFont)
@@ -474,10 +480,12 @@ function renderSourcingReport(
 ): void {
   h1(doc, "Sourcing Report", theme);
   const sr = brief.sourcing_report;
+  const { ok, unverified } = shownCounts(sr, brief.provider_name);
+  const fixtures = unverified === null ? "" : ` · unverified (mock fixtures): ${unverified}`;
   doc.font(theme.bodyFont).fontSize(11).fillColor("#000000")
     .text(`Policy: ${sr.policy}`)
     .text(`Total items: ${sr.total_items}`)
-    .text(`OK: ${sr.counts.ok} · stale: ${sr.counts.stale} · untrusted: ${sr.counts.untrusted} · duplicated: ${sr.counts.duplicated} · missing: ${sr.counts.missing}`);
+    .text(`OK: ${ok}${fixtures} · stale: ${sr.counts.stale} · untrusted: ${sr.counts.untrusted} · duplicated: ${sr.counts.duplicated} · missing: ${sr.counts.missing}`);
   for (const line of uncategorisedLines(sr)) doc.text(line);
   for (const f of sr.first_party_sources ?? []) doc.text(`•  ${describeFirstParty(f)}`, { indent: 12 });
   if (sr.warnings.length > 0) {

@@ -5,7 +5,7 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/matteogallo-ai/praxis/badge)](https://scorecard.dev/viewer/?uri=github.com/matteogallo-ai/praxis) ([why some checks stay low](docs/supply-chain.md#scorecard-checks-that-stay-low))
 
 > A 7-stage LLM pipeline that turns a business question into an analytical
-> briefing shaped by a declared format (executive pre-read, McKinsey-style
+> briefing shaped by a declared format (executive pre-read, consulting-style
 > note, position paper, family-office memo), with sourcing checks, an
 > adversarial review and Markdown / PDF / DOCX output.
 
@@ -70,7 +70,7 @@ A human review (4 Nov 2026) covered only question 10's eight first-party
 sources, the ones the rule accepted: the reviewer accepted 6 and refused 2
 ([review](benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)).
 The quality of the briefings themselves is not reviewed, for any question.
-13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026 and 4 Nov 2026), 6 completed (4 Nov 2026). In
+Live attempts by commit (3 Nov 2026 and 4 Nov 2026), completed of attempted: fe09710 0 of 1, 7c75a06 1 of 1, 3a7ca6a 1 of 1, 8df678f 4 of 5; 5 earlier attempts, in 1.2.1, failed and left no record. In
 [`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the
 `strict` sourcing policy because the model returned findings without
 source URLs, one on prose before the JSON, one on a 60 s timeout during
@@ -85,8 +85,10 @@ sample), is the work under [Roadmap](#roadmap).
 
 ## Architecture
 
-Seven LLM calls in a fixed order, each stage receiving the earlier stages'
-typed output. Stages run one after another; nothing runs in parallel today.
+Seven stages in a fixed order, each receiving the earlier stages' typed
+output. The stages run one after another; inside the synthesis stage, the
+format's sections are written by one call each, concurrently
+(`src/agents/synthesis.ts`).
 
 ```mermaid
 flowchart LR

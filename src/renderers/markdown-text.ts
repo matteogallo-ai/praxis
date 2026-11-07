@@ -9,6 +9,7 @@
  * would close the comment it sits in, and a URL with a parenthesis would end
  * its link early.
  */
+import { isMockProvider, MOCK_BANNER, MOCK_NOTICE, shownCounts } from "./mock.ts";
 import type { SynthesizedSection } from "../agents/types.ts";
 import type { SourcingReport } from "../sourcing/types.ts";
 
@@ -93,8 +94,14 @@ export function linkTarget(url: string): string {
   return url.replace(/[()<>\s]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
 }
 
-/** The front-matter `sourcing_summary` line, shared by both Markdown outputs. */
-export function sourcingSummary(report: SourcingReport): string {
+/**
+ * The front-matter `sourcing_summary` line, shared by both Markdown outputs.
+ * A mock run's fixture sources are counted as `unverified`, never as `ok`.
+ */
+export function sourcingSummary(report: SourcingReport, providerName: string): string {
+  const { ok, unverified } = shownCounts(report, providerName);
+  const lead = unverified === null ? "" : "mock, not verified: ";
+  const fixtures = unverified === null ? "" : ` unverified=${unverified}`;
   const unknown =
     report.freshness_unknown === undefined ? "" : ` freshness_unknown=${report.freshness_unknown}`;
   const requester =
@@ -104,10 +111,15 @@ export function sourcingSummary(report: SourcingReport): string {
   const firstParty =
     report.first_party_sources === undefined ? "" : ` first_party=${report.first_party_sources.length}`;
   return (
-    `sourcing_summary: "total=${report.total_items} ok=${report.counts.ok} ` +
+    `sourcing_summary: "${lead}total=${report.total_items} ok=${ok}${fixtures} ` +
     `stale=${report.counts.stale} untrusted=${report.counts.untrusted} ` +
     `duplicated=${report.counts.duplicated} missing=${report.counts.missing}${unknown}${cited}${requester}${firstParty}"\n`
   );
+}
+
+/** The banner a mock briefing opens with, as a Markdown block quote; empty for a real provider. */
+export function mockBannerMarkdown(providerName: string): string {
+  return isMockProvider(providerName) ? `> **${MOCK_BANNER}** ${MOCK_NOTICE}\n\n` : "";
 }
 
 /** A YAML double-quoted scalar: escapes backslashes and quotes. */

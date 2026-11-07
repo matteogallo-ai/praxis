@@ -24,6 +24,7 @@ import { hasCritique, type RenderOptions } from "../types.ts";
 import { XML_PROLOG, elem, escapeXmlText } from "./xml-builder.ts";
 import { describeFirstParty, sourceDates, uncategorisedLines } from "../source-dates.ts";
 import { describeUntrustedCitation } from "../../sourcing/citations.ts";
+import { isMockProvider, MOCK_BANNER, MOCK_NOTICE, shownCounts } from "../mock.ts";
 
 const W_NS = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"`;
 
@@ -33,6 +34,10 @@ export function buildDocumentXml(
 ): string {
   const body: string[] = [];
 
+  if (isMockProvider(brief.provider_name)) {
+    body.push(paragraph(MOCK_BANNER, { bold: true }));
+    body.push(paragraph(MOCK_NOTICE));
+  }
   // Title.
   body.push(heading1(brief.question));
   body.push(smallLine(
@@ -155,9 +160,12 @@ export function buildDocumentXml(
   if (options.include_sourcing_report) {
     body.push(heading2("Sourcing Report"));
     const sr = brief.sourcing_report;
+    const { ok, unverified } = shownCounts(sr, brief.provider_name);
     body.push(paragraph(
       `Policy: ${sr.policy}. Total items: ${sr.total_items}. ` +
-        `OK: ${sr.counts.ok}, stale: ${sr.counts.stale}, ` +
+        `OK: ${ok}, ` +
+        (unverified === null ? "" : `unverified (mock fixtures): ${unverified}, `) +
+        `stale: ${sr.counts.stale}, ` +
         `untrusted: ${sr.counts.untrusted}, duplicated: ${sr.counts.duplicated}, ` +
         `missing: ${sr.counts.missing}.`
     ));

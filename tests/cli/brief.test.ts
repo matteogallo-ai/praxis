@@ -1225,11 +1225,11 @@ describe("renderSourcingReportMarkdown — freshness", () => {
       warnings: [],
       missing_sources_count: 0,
     };
-    expect(renderSourcingReportMarkdown({ ...report, freshness_unknown: 4 })).toContain(
+    expect(renderSourcingReportMarkdown({ ...report, freshness_unknown: 4 }, "anthropic")).toContain(
       "Freshness unknown (no publication date): 4"
     );
-    expect(renderSourcingReportMarkdown(report)).not.toContain("Freshness unknown");
-    expect(renderSourcingReportMarkdown({ ...report, requester_provided: 3 })).toContain(
+    expect(renderSourcingReportMarkdown(report, "anthropic")).not.toContain("Freshness unknown");
+    expect(renderSourcingReportMarkdown({ ...report, requester_provided: 3 }, "anthropic")).toContain(
       "Requester-provided, not sourceable: 3"
     );
   });
@@ -1247,7 +1247,7 @@ describe("renderSourcingReportMarkdown — first-party claim is inert", () => {
       first_party_sources: [
         { stage: "research", item: "finding 1", organisation: "EFRAG", url: "https://efrag.org/a", claim: "![x](https://evil.example/p.png) <img src=x>" },
       ],
-    });
+    }, "anthropic");
     expect(md).not.toContain("![x]");
     expect(md).not.toContain("<img");
   });
@@ -1262,7 +1262,7 @@ describe("renderSourcingReportMarkdown — first-party", () => {
       warnings: [],
       missing_sources_count: 0,
       first_party_sources: [{ stage: "research" as const, item: "finding 2", organisation: "OECD", url: "https://www.oecd.org/x", claim: "The OECD revised its model rules in 2026." }],
-    });
+    }, "anthropic");
     expect(md).toContain("First-party (an organisation's own site, for its own facts): 1");
     expect(md).toContain("- [research] finding 2 — OECD's own site, for its own facts: <https://www.oecd.org/x> — claim: “The OECD revised its model rules in 2026.”");
   });
@@ -1277,7 +1277,7 @@ describe("renderSourcingReportMarkdown — citations", () => {
       warnings: [],
       missing_sources_count: 0,
       untrusted_citations: [{ stage: "options" as const, id: "OPT-B", url: "https://x.example/a", reason: "not in any tier" }],
-    });
+    }, "anthropic");
     expect(md).toContain("- [options] OPT-B cites an untrusted domain: `https://x.example/a` — `not in any tier`");
     expect(md).not.toContain("every inspected item passed");
   });
@@ -1297,7 +1297,7 @@ describe("renderSourcingReportMarkdown — URLs and hosts are inert text", () =>
       ]),
       untrusted_citations: [{ stage: "adversarial" as const, id: "CRIT-001", url: URL, reason: "host 'www.bracewell.com' matches no entry in allow-list" }],
     };
-    expect(autolinkable(renderSourcingReportMarkdown(report))).toEqual([]);
+    expect(autolinkable(renderSourcingReportMarkdown(report, "anthropic"))).toEqual([]);
   });
 });
 
@@ -1309,7 +1309,7 @@ describe("renderSourcingReportMarkdown — no model text becomes a link or an im
       ]),
       first_party_sources: [{ stage: "research" as const, item: HOSTILE, organisation: "OECD", url: "https://www.oecd.org/x", claim: HOSTILE }],
     };
-    const md = renderSourcingReportMarkdown(report);
+    const md = renderSourcingReportMarkdown(report, "anthropic");
     expect(md).toContain("attacker.example");
     expect(renderedTargets(md, "attacker.example")).toEqual([]);
     expect(liveTargets(md, "attacker.example")).toEqual([]);

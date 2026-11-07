@@ -5,12 +5,14 @@ provider: "mock"
 generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
-sourcing_summary: "total=32 ok=28 stale=0 untrusted=0 duplicated=2 missing=2 freshness_unknown=27 untrusted_citations=0"
+sourcing_summary: "mock, not verified: total=32 ok=0 unverified=28 stale=0 untrusted=0 duplicated=2 missing=2 freshness_unknown=27 untrusted_citations=0"
 critique_summary: "critiques=5 critical=1 material=2 minor=2 robustness=medium revised_needed=true"
 total_word_count: 372
 target_word_count: 1200
 word_deviation_pct: -69
 ---
+
+> **DONNÉES FICTIVES — mode mock** Fictitious data: fixture text from the mock provider. Its figures, organisations and URLs are invented, and no search verified its sources.
 
 # Should we consider strategic market entry into Southeast Asia?
 

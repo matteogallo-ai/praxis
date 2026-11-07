@@ -1,0 +1,115 @@
+{
+  "question": "Should we build a sodium-ion battery cell plant in Morocco to supply European carmakers?",
+  "format": "mckinsey-style-note",
+  "model": "claude-opus-5-5",
+  "started_at": "2026-11-07T11:28:59.229Z",
+  "provenance": {
+    "git_sha": "fac1f4e369ec8844e41c87df1bfd47ce00b086c1",
+    "git_dirty": false,
+    "prompts": {
+      "adversarial.prompt": {
+        "version": "4.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "c4933cba666098745eb068cc09ac7885e7835f64c68b1edf0da35b03d19b7722"
+      },
+      "options.prompt": {
+        "version": "3.0.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b45b994c42501a6a444976302944dd78eff58acc451c935ae1f91a0b913c1418"
+      },
+      "research.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "779e15013283913004526623ecc7218045320cbfe3b09f14b12187b90a2a9513"
+      },
+      "risk.prompt": {
+        "version": "3.1.1",
+        "model": "claude-sonnet-5-5",
+        "sha256": "4482a5c83850cbebcf693dda172ad076b395245a3dc45eb4b09876c913210008"
+      },
+      "scoping.prompt": {
+        "version": "2.1.0",
+        "model": "claude-opus-5-5",
+        "sha256": "b652767f30813ac6bc57a095a36d2ee80e67f2da2c3ae6dae93113a02cbedf86"
+      },
+      "stakeholder.prompt": {
+        "version": "3.1.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "ee69e7fb205854c4a29c20ecb5dc8afde1968261f8b824cbed9a47c054c95380"
+      },
+      "synthesis.prompt": {
+        "version": "2.2.0",
+        "model": "claude-sonnet-5-5",
+        "sha256": "728436124d9ceb65fbfd48931c963c1cb9b355e5fc700a33e9b9aee13b220fb9"
+      }
+    }
+  },
+  "finished_at": "2026-11-07T11:29:47.552Z",
+  "rounds": 1,
+  "stop_reason": "end_turn",
+  "usage": {
+    "stages": {
+      "single-call-baseline": {
+        "calls": 1,
+        "input_tokens": 83994,
+        "output_tokens": 4845,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "web_search_requests": 5,
+        "cost_usd": 0.48287599999999997,
+        "models": [
+          "claude-opus-5-5"
+        ]
+      }
+    },
+    "total": {
+      "calls": 1,
+      "input_tokens": 83994,
+      "output_tokens": 4845,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "web_search_requests": 5,
+      "cost_usd": 0.48287599999999997,
+      "models": [
+        "claude-opus-5-5"
+      ]
+    },
+    "simulated": false,
+    "max_cost_usd": 5
+  },
+  "counts": {
+    "sections": [
+      {
+        "title": "Situation",
+        "words": 147,
+        "links": 5
+      },
+      {
+        "title": "Complication",
+        "words": 149,
+        "links": 4
+      },
+      {
+        "title": "Key Question",
+        "words": 21,
+        "links": 0
+      },
+      {
+        "title": "Answer",
+        "words": 77,
+        "links": 1
+      },
+      {
+        "title": "Supporting Arguments",
+        "words": 266,
+        "links": 7
+      },
+      {
+        "title": "So What",
+        "words": 64,
+        "links": 0
+      }
+    ],
+    "distinct_urls": 13
+  }
+}

@@ -279,7 +279,7 @@ describe("renderMarkdownEnhanced — front-matter", () => {
     expect(md).toContain("format: \"executive-pre-read\"");
     expect(md).toContain("provider: \"mock\"");
     expect(md).toContain("recommended_option: \"OPT-A\"");
-    expect(md).toContain("sourcing_summary: \"total=5");
+    expect(md).toContain("sourcing_summary: \"mock, not verified: total=5 ok=0 unverified=5");
   });
 
   test("front-matter escapes embedded quotes in the question", () => {
