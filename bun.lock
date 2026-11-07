@@ -5,7 +5,7 @@
     "": {
       "name": "praxis",
       "dependencies": {
-        "@promptlang/core": "2.0.0",
+        "@promptlang/core": "3.0.0",
         "@promptlang/yaml-parser": "^1.0.0",
         "pdfkit": "^0.20.2",
       },
@@ -254,7 +254,7 @@
 
     "@oxc-resolver/binding-win32-x64-msvc": ["@oxc-resolver/binding-win32-x64-msvc@11.24.2", "", { "os": "win32", "cpu": "x64" }, "sha512-UqGPmo56KDfLlfXFAFIrNflHT8tFxWGEivWg3Zeyp4Uy2NlKN1FGPr6/BxcLGG3+kZ6Wp14g5Uj+n71boqZfiw=="],
 
-    "@promptlang/core": ["@promptlang/core@2.0.0", "", { "bin": { "promptlang": "dist/cli/cli.js" } }, "sha512-H+0xFOSHdYlW4zsDZLggEf6VtEkFhq2UkQUgfpW/fsjveoszRKwrsugRYGnDETL6lwLHmSjbgQB9KQzUOe7jeA=="],
+    "@promptlang/core": ["@promptlang/core@3.0.0", "", { "bin": { "promptlang": "dist/cli/cli.js" } }, "sha512-lSUqysFV8+SL8bium6RqEgt73v5/wpYZn9TlSbM0wTFIBfZj1v9hVwOPu1TEt8TZQK5UNrbge2r7hsH4iznyYw=="],
 
     "@promptlang/yaml-parser": ["@promptlang/yaml-parser@1.0.0", "", {}, "sha512-0+MdiNeGwlAWy0S4gWXHX1xAuyEK7spu9KYWB56r+LSFkDjIeOVazF92BgKKmAl0O3E9QxDcmYL+XnoGOEFPMQ=="],
 
