@@ -9,252 +9,118 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
-- Mock briefings printed figures attributed to real institutions, with
-  invented URLs, and counted their fixture sources as `ok` (the quickstart
-  said `ok=25`). Every mock output (CLI Markdown, enhanced Markdown, PDF,
-  DOCX) now opens with "DONNÉES FICTIVES — mode mock", and every printed
-  sourcing count shows `ok=0` and the fixture sources as `unverified`.
-- The system card's "6 of 13 | 23%–71% (Wilson)" pooled four versions of
-  the code and five attempts without a record. It now gives completions per
-  commit, from the run records, the 1.2.1 attempts apart, and no interval.
+- Mock briefings printed figures attributed to real institutions with
+  invented URLs and counted fixture sources as `ok`. Every mock output opens
+  with "DONNÉES FICTIVES — mode mock" and shows `ok=0`, sources `unverified`.
+- The system card's "6 of 13 | 23%–71% (Wilson)" pooled four code versions
+  and five unrecorded attempts; it gives completions per commit, no interval.
 - README said "nothing runs in parallel" while the synthesis sections run
-  concurrently; it says the latter. "McKinsey-style" is gone from the
-  tagline (the format id `mckinsey-style-note` is unchanged).
-- CLAUDE.md forbids comments that say when ("v0.8 additions."); 193 did,
-  118 of them under `src/`. They are rewritten to say what the code does,
-  and `check:stale-narrative` now fails on a release number in a `.ts`
-  comment under `src/`, `tests/`, `benchmarks/` or `scripts/`.
-- The seven stages each repeated the same JSON-answer reader; it is one
-  function, `parseAnswerObject()`. Scoping now refuses an empty answer as
-  "empty response", like the other stages, instead of a JSON parse error.
-- `bun run lint` (and the CI lint job) fails on any Biome warning. The 42
-  warnings in production code are fixed; tests may use non-null assertions.
-- A format's validation rule was checked with a regular expression whose
-  time grew with the square of a run of spaces. The check is linear and
-  refuses a rule whose value is only whitespace (CodeQL `js/polynomial-redos`).
+  concurrently; "McKinsey-style" is gone from the tagline.
+- Comments that said when ("v0.8 additions.") are rewritten, and
+  `check:stale-narrative` fails on a release number in a `.ts` comment.
+- The seven stages share one JSON-answer reader, `parseAnswerObject()`;
+  scoping refuses an empty answer as "empty response".
+- `bun run lint` fails on any Biome warning; tests may use non-null
+  assertions.
+- A format's validation-rule check took time quadratic in a run of spaces;
+  it is linear and refuses a whitespace-only rule (CodeQL
+  `js/polynomial-redos`).
 - A stakeholder name with backticks across lines could become a link in the
-  enhanced Markdown's stakeholder table: the cell joined its lines after
-  escaping, which changed how its backticks paired. It joins them first.
-- Tests wrote fixed or time-stamped names under the shared temp directory;
-  they use a fresh 0700 directory per run (CodeQL
+  enhanced Markdown's stakeholder table; the cell joins its lines before
+  escaping.
+- Tests use a fresh 0700 temp directory per run (CodeQL
   `js/insecure-temporary-file`).
-- SECURITY.md offered GitHub's private vulnerability reporting, which is
-  disabled on the repository; e-mail is the one channel it names.
-- `@promptlang/core` 3.0.0 (was 2.0.0). Praxis uses none of the APIs it
-  breaks; the prompts parse to identical ASTs.
-
-- The live-proof protocol and the live outputs' README no longer say question
-  10's amendment was recorded before the run. q10 added by the operator's GO
-  before step 1 started; the amendment was written down after step 1 had
-  started (commit 0417613, 13:02:53Z), 78 s before q10 itself ran. The
-  amendment row reads "added by the operator's GO before step 1 started" and
-  its test parses that form.
-
-- No model text in the Markdown outputs (the brief, `--render
-  md-enhanced`, the CLI's Markdown sourcing report) becomes a link, an
-  image or an autolink: `www.` addresses, URLs, e-mail addresses, links,
-  images and reference definitions are escaped outside code spans, so
-  nothing the model wrote is fetched or clickable when the briefing is
-  opened. A citation marker shows as `[1]`, written `\[1\]`; a host heading
-  of the Sources section is no longer an autolink. A backtick that may not
-  pair as a viewer pairs it is text, so a span across lines or in a table
-  row cannot hide a link. The model's own escapes (`\*`), task lists and
-  footnotes now show as text. PDF and DOCX unchanged.
-- Position paper 1.1.0: the rationale's strands end with the citation
-  marker `[n]` of each source, with no site name, host or URL in the text.
-  "Citations at the end of each strand" named no form and invited a host
-  name, which the synthesis refuses.
-
-- The human review of question 10's step 1 first-party sources is
-  published in `benchmarks/outputs/live/README.md`: 8 reviewed, 6 accepted,
-  2 refused (both a risk's likelihood). The rule now excludes a risk's
-  evidence and, by the maintainer's decision, a critique's counter-evidence,
-  which backs an argument (ADR 0003, amendments of 4 Nov 2026; see Added).
-- The URLs, hosts and searched-for queries of the "Insufficiently
-  sourced" section and of the CLI's Markdown sourcing report are code spans.
-  A Markdown viewer turned them into links: in question 10's step 1
-  briefing, the untrusted host `www.bracewell.com` showed as a link in the
-  line that reports it as untrusted.
-
+- SECURITY.md names e-mail as its one channel; GitHub's private
+  vulnerability reporting is disabled.
+- `@promptlang/core` 3.0.0 (was 2.0.0); the prompts parse to identical ASTs.
+- The live-proof protocol no longer says question 10's amendment was
+  recorded before the run: it was written down after step 1 had started.
+- No model text in the Markdown outputs becomes a link, an image or an
+  autolink; citation markers show as `[1]`. PDF and DOCX unchanged.
+- Position paper 1.1.0: the rationale's strands end with the marker `[n]`,
+  with no site name, host or URL in the text.
+- The human review of question 10's step 1 first-party sources is published
+  (8 reviewed, 6 accepted, 2 refused); the rule excludes a risk's evidence
+  and a critique's counter-evidence (ADR 0003).
+- URLs, hosts and queries of the "Insufficiently sourced" section and of the
+  CLI's Markdown sourcing report are code spans, not links.
 - PDF: a table row is as tall as its longest wrapped cell, and the header
-  is repeated after a page break. Rows were 20 points high whatever their
-  text, so long option titles and stakeholder names ran over the next row
-  (question 10's step 1 briefing, pages 14, 16 and 24).
-
-- PDF: the footer no longer opens pages of its own. It was drawn inside
-  the bottom margin, so pdfkit opened a new page for each footer line:
-  question 10's step 1 briefing has 96 pages, 32 of them with content.
-
+  repeats after a page break.
+- PDF: the footer no longer opens pages of its own (question 10's step 1
+  briefing has 96 pages, 32 of them with content).
 - A refused `www.` address in a synthesis section is quoted whole in the
-  error, cut at 200 characters (it was quoted as `'www.'`, which left
-  question 02's step 1 failure undiagnosable). Every refused text the prose
-  check quotes is cut at 200 characters.
-
-- Question 05 is no longer held-out. It is in the test split, but the
-  sourcing fixes (#31 to #39) were designed from its step 0 failures; the
-  benchmark README, the system card and the live comparison table say so,
-  and `tests/benchmarks/held-out.test.ts` requires it.
-
-- The judge prompt embedded the briefing bare, and expanded `$&`-style
-  patterns in it; the briefing is now delimited as untrusted content.
-- The project was described as feature-complete and as running live against
-  Anthropic. Until 4 Nov 2026 it had never completed a live briefing (5 of
-  5 aborted, see 1.2.1). README, ROADMAP and `docs/architecture.md` now say so.
-- The "AI-assisted qualitative scoring" of mock briefings is withdrawn: mock text
-  is fixture output chosen by format, so the scores graded the fixtures. The
-  v1.3.1 re-scoring plan is abandoned (`docs/benchmarking-methodology.md`).
-- README and the system card said every live run failed "5 of 5". There
-  have been 7 live attempts: 6 failed (5 in 1.2.1 without committed
-  records, 1 on 3 Nov 2026), 1 completed (4 Nov 2026). The count is
-  computed from the run records (`tests/docs/live-records.ts`) and checked
-  in `tests/docs/live-attempts.test.ts`. Live runs start from their own
-  worktree (`docs/live-proof-protocol.md`).
-- Source freshness was measured on `accessed_at`, the retrieval time, so a
-  live source was always fresh, and question 05's run of 4 Nov 2026
-  reported `stale: 0` without knowing any publication date (erratum in
-  `benchmarks/outputs/live/README.md`; the record is unchanged). Freshness
-  is now judged on an optional `published_at`; a source without a readable
-  one is counted in the report's `freshness_unknown`, never as fresh.
-  Briefings list each source's publication date or "publication date
-  unknown".
-- The citations of the options and adversarial stages escaped the format's
-  domain-trust rule. Options' citations now follow it like stages 2–4
-  (strict fails or degrades, permissive reports); critiques' are reported
-  without blocking. Both are listed in `SourcingReport.untrusted_citations`.
+  error, cut at 200 characters.
+- Question 05 is no longer held-out: the sourcing fixes were designed from
+  its step 0 failures.
+- The judge prompt delimits the briefing as untrusted content and no longer
+  expands `$&`-style patterns in it.
+- The project was described as feature-complete and running live; until 4
+  Nov 2026 it had never completed a live briefing (5 of 5 aborted, see
+  1.2.1).
+- The "AI-assisted qualitative scoring" of mock briefings is withdrawn: the
+  scores graded the fixtures. The v1.3.1 re-scoring plan is abandoned.
+- README and the system card said every live run failed "5 of 5"; the count
+  is computed from the run records (`tests/docs/live-attempts.test.ts`).
+- Source freshness was measured on `accessed_at`, so a live source was
+  always fresh; it is judged on an optional `published_at`, and a source
+  without one counts in `freshness_unknown`.
+- The options and adversarial citations follow the domain-trust rule
+  (critiques reported without blocking), listed in
+  `SourcingReport.untrusted_citations`.
 
 ### Added
 
-- A single-call baseline for question 12, pre-registered
-  (`docs/preregistration/single-call-baseline.md`), run once at $0.48, and
-  a blind A/B review pack with its grid (`benchmarks/review/`). The review
-  itself is the maintainer's.
-- `bun run hard-case:sources`: for question 12, the hard case, each
-  sodium-ion sentence of the latest live brief (in the model's sections,
-  cited or not, or a research finding) with each source it cites and that
-  source's chemistry, read from its title and URL: on sodium-ion, another
-  chemistry, unclear or no source. Sodium-sulfur and sodium-nickel chloride
-  count as another chemistry. It reads files only and fails nothing; a
-  human opens the unclear rows and tells an uncited claim from a
-  recommendation. On the 4 Nov 2026 record: 22 pairs, 9 on sodium-ion, 0 on
-  another chemistry, 1 unclear, 12 without a source.
-
+- A pre-registered single-call baseline for question 12, run once at $0.48,
+  and a blind A/B review pack (`benchmarks/review/`); the review is the
+  maintainer's.
+- `bun run hard-case:sources`: for question 12, each sodium-ion sentence of
+  the latest live brief with each source's chemistry, read from its title
+  and URL. It reads files only and fails nothing. On the 4 Nov 2026 record:
+  22 pairs, 9 on sodium-ion, 0 on another chemistry, 1 unclear, 12 without a
+  source.
 - `bun run results` writes `benchmarks/RESULTS.md` from the committed
-  artefacts: every completed live run and every recorded failure, with
-  cost, stages' time and sourcing counts, and the committed judgments with
-  the judge–human agreement that labels them indicative or unvalidated. CI
-  runs `bun run results -- --check`. The page it replaces still counted two
-  live briefings; the records hold six and two failures. `score:live`
-  writes each judgment to `benchmarks/judgments/` to be committed, instead
-  of editing `RESULTS.md`.
-
-- `bun run agreement`: the maintainer's blind scores, read back from the
-  annotation file, against the judge's cached scores for the same
-  briefings: exact and within-one agreement and quadratic-weighted kappa,
-  with the protocol's 0.6 threshold deciding whether the judge's scores are
-  called indicative or unvalidated. Each review is paired only with the
-  judgment of the run it reviewed: `export:annotation` records that run. It
-  reads files only.
-
-- The hostile-output tests render the Markdown with marked (GFM), a pinned
-  devDependency, and check that no `href` or `src` points at the hostile
-  host, in addition to the pattern check; the check reads any quoting
-  and case and decodes entities.
-
-- Every listing of a first-party source (Markdown, PDF, DOCX, CLI report)
-  shows the claim it was accepted for, cut at 160 characters on a word
-  boundary: a finding's claim, or a stakeholder's position and interest
-  (only those two stages can cite first-party sources). Without it the
-  human review of question 10's step 1 briefing could not check whether
-  each sentence states the organisation's own fact. `FirstPartySource.claim` is a new optional field; a report
-  stored without it reads "claim not recorded". In the CLI's Markdown
-  sourcing report the claim and label are made inert, as in the brief.
-
+  artefacts; CI runs it with `--check`. `score:live` writes each judgment to
+  `benchmarks/judgments/`.
+- `bun run agreement`: the maintainer's blind scores against the judge's
+  (exact, within-one, quadratic-weighted kappa; 0.6 threshold).
+- The hostile-output tests render the Markdown with marked (GFM) and check
+  that no `href` or `src` points at the hostile host.
+- Every listing of a first-party source shows the claim it was accepted for,
+  cut at 160 characters (`FirstPartySource.claim`, optional).
 - Step 1 live records (4 Nov 2026, `8df678f`): questions 08, 10, 11 and 12
   completed, all flagged insufficiently sourced; question 02 failed in
-  synthesis. $17.96 spent against a $30.23 central estimate. Compared in
-  `benchmarks/outputs/live/README.md`, with the estimate frozen in
-  `benchmarks/estimates/step-1.json`; `SHA256SUMS` lists every record.
-
-- First-party sources (ADR 0003, now implemented for its first decision).
-  A research or stakeholder source on an untrusted host (never a risk's or
-  a critique's: they back a judgement) counts as the organisation's own
-  source when the
-  stage marks it `first_party_for` an organisation of the reviewed list
-  `src/sourcing/first-party-organisations.ts`, the host is one of its
-  domains and the item names it. Such sources do not block under `strict`
-  and are listed apart (`SourcingReport.first_party_sources`, a
-  "First-party sources" section, every sourcing report). Prompts:
-  research and stakeholder 3.1.0, risk 3.1.1, adversarial 4.0.0; token
-  counts re-measured with count_tokens (question 05: $1.40 / $5.96 / $12.92).
-
-- The research, stakeholder, risk and options prompts (3.0.0: a new
-  required `source_guidance` parameter) name the format's trusted hosts by
-  tier and ask for each source's `published_at` as the page states it,
-  never a guess. The options' citations are judged by the same domain
-  check, so their stage gets the same guide. The list guides the search;
-  web search gets no `allowed_domains`. Prompt token counts re-measured
-  with count_tokens; the protocol's and the SLO page's estimates follow
-  (question 05: $1.40 / $5.97 / $12.95).
-
-- The scoping stage names the facts only the requester can supply
-  (`requester_provided`, scoping prompt 2.1.0). The briefing lists them under
-  "Requester-provided, not sourceable", written by code; the sourcing report
-  counts them apart (`requester_provided`), never as sourced (C24). Prompt
-  token counts re-measured with count_tokens.
-
-- The first completed live briefing: question 05, 4 Nov 2026, $3.51 and
-  7.8 minutes of stages, committed under
-  `benchmarks/outputs/live/05-supply-chain-acquisition/run-2026-11-04T08-33-09-131Z/`.
-  It is flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains.
-  `docs/SLO.md` reports cost, latency and the error rate (1/2 since the
-  records began) on n = 1, with no status. Its quality is not yet reviewed.
-- Part C preparation: `docs/live-proof-protocol.md` (five test-split
-  briefings, deterministic checks, a judge on a Claude model no stage uses
-  with its same-family limitation, the maintainer's blind review of two
-  briefings (`bun run export:annotation`), cost; one briefing first, capped
-  at $8, under its own GO) and `bun run estimate:cost`. `bench:live` needs
-  `--max-cost-usd` (per briefing), a key alone never makes `bun run bench` go
-  live, `--ids` selects questions; live artefacts record the commit and each
-  prompt's version, model and hash, are never overwritten, and a failure
-  leaves a redacted `error-<time>.json`.
-- A hard case in the evaluation set (question 12, manifest version 2) and a
-  frozen dev/test split of it (`benchmarks/split.yaml`, 4 / 8, stratified by
-  format, fixed seed), checked by the test suite against the manifest's
-  SHA-256; `run-all.ts --split dev|test`. The rule that capped the set at ten
-  questions is retired.
-- Property-based tests (fast-check) of the tolerant JSON extraction, the
-  source validators and `parseCitedSource`; mutation testing (Stryker,
-  `bun run mutation`) of the orchestrator and the validators, scored and
-  each surviving mutant explained in `docs/mutation-testing.md`.
+  synthesis. $17.96 spent against a $30.23 central estimate.
+- First-party sources (ADR 0003): a research or stakeholder source on an
+  untrusted host counts as an organisation's own when it is on the reviewed
+  list; such sources do not block under `strict` and are listed apart.
+- The research, stakeholder, risk and options prompts (3.0.0) name the
+  format's trusted hosts by tier and ask for each source's `published_at`.
+- Scoping names the facts only the requester can supply
+  (`requester_provided`); they are listed apart, never counted as sourced.
+- The first completed live briefing: question 05, 4 Nov 2026, $3.51, flagged
+  insufficiently sourced (`benchmarks/outputs/live/05-supply-chain-acquisition/`).
+- `docs/live-proof-protocol.md` and `bun run estimate:cost`; `bench:live`
+  needs `--max-cost-usd`, and live artefacts are never overwritten.
+- A hard case in the evaluation set (question 12) and a frozen dev/test split
+  (`benchmarks/split.yaml`); `run-all.ts --split dev|test`.
+- Property-based tests (fast-check) and mutation testing (Stryker,
+  `bun run mutation`, `docs/mutation-testing.md`).
 - CI: typecheck, tests, Biome, knip, `check:claims`, `check:stale-narrative`,
-  `bench:mock` drift check, Conventional Commits.
-- `docs/CLAIMS.md` and `scripts/check-claims.ts`; `CLAUDE.md`; `SECURITY.md`;
-  pull request and issue templates; `docs/ENGINEERING_STANDARDS.md`.
-- `docs/THREAT_MODEL.md` (OWASP LLM Top 10 2025, each mitigation with its
-  test, checked by `tests/docs/threat-model.test.ts`), `docs/SYSTEM_CARD.md`,
-  `docs/SLO.md`, `docs/RUNBOOK.md` (replaces the abandoned v1.3.1 runbook),
-  and the ADR index with what the author would do differently.
-- Supply chain (`docs/supply-chain.md`): actions pinned to commit SHAs,
-  Dependabot (bun, GitHub Actions), CodeQL and OSV-Scanner on every pull
-  request and weekly, OpenSSF Scorecard with its badge, and a release
-  workflow that publishes a tag's attested source archive with its Sigstore
-  bundle once the `release` environment's reviewer approves.
-- `PRAXIS_NOW` (a UTC date and time) freezes the CLI clock: freshness
-  verdicts and run ids no longer depend on the day a briefing runs. The test
-  suite sets it, and CI runs the suite with the in-process wall clock in 2029
-  and 2040.
-- Per-stage checkpoints and `praxis brief --resume <run-id>`; `--runs-dir`
-  (default `$PRAXIS_RUNS_DIR`, else `.praxis/runs`) (C16).
-- `UsageLedger`: tokens, web searches and cost per stage and per briefing,
-  written to `metadata.json`; `DEFAULT_PRICE_TABLE`, `loadPriceTable`,
-  `--price-table`; budget cap `maxCostUsd` / `--max-cost-usd`, raising
-  `BudgetExceededError` (C16).
-- `onSourcingFailure: "degrade"` and `--on-sourcing-failure`: a strict
-  sourcing failure adds an "Insufficiently sourced" section instead of
-  aborting (ADR 0002, C15).
-- Per-stage `max_tokens`, request timeout and web-search cap
-  (`src/agents/stage-limits.ts`); `timeout_ms` on provider calls (C15).
-- CI job `prompt-semver` running `promptlang semver-check`.
+  `bench:mock` drift check, Conventional Commits, `prompt-semver`.
+- `docs/CLAIMS.md` with `scripts/check-claims.ts`, `CLAUDE.md`,
+  `SECURITY.md`, PR and issue templates, `docs/ENGINEERING_STANDARDS.md`.
+- `docs/THREAT_MODEL.md`, `docs/SYSTEM_CARD.md`, `docs/SLO.md`,
+  `docs/RUNBOOK.md` and the ADR index.
+- Supply chain: SHA-pinned actions, Dependabot, CodeQL, OSV-Scanner, OpenSSF
+  Scorecard, and an attested, reviewer-approved release workflow.
+- `PRAXIS_NOW` freezes the CLI clock for freshness verdicts and run ids.
+- Per-stage checkpoints and `praxis brief --resume <run-id>`; `--runs-dir`.
+- `UsageLedger` (tokens, web searches, cost per stage), `--price-table`, and
+  the budget cap `maxCostUsd` / `--max-cost-usd` (`BudgetExceededError`).
+- `onSourcingFailure: "degrade"` / `--on-sourcing-failure`: a strict sourcing
+  failure adds an "Insufficiently sourced" section instead of aborting.
+- Per-stage `max_tokens`, request timeout and web-search cap; `timeout_ms` on
+  provider calls.
 
 ### Changed
 
