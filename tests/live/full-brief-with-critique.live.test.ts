@@ -5,9 +5,7 @@
  *
  * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set. When run, writes:
  *
- *   /tmp/praxis-live-brief-with-critique-<ts>.md
- *   /tmp/praxis-live-brief-with-critique-<ts>.docx
- *   /tmp/praxis-live-brief-with-critique-<ts>.pdf
+ *   <temp>/praxis-live-brief-with-critique-<random>/brief.{md,docx,pdf}
  *
  * for post-hoc human review across the three deliverable formats.
  */
@@ -15,7 +13,9 @@
 import { describe, expect, test } from "bun:test";
 
 import { liveTestsEnabled } from "../helpers/live-gate.ts";
+import { liveOutputDir } from "../helpers/live-output.ts";
 import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { FormatRegistry } from "../../src/registry/registry.ts";
 import { AnthropicLLMProvider } from "../../src/llm/anthropic-provider.ts";
@@ -45,7 +45,7 @@ describe.skipIf(!hasKey)("Full brief with critique + renderers (live)", () => {
 
     expect(out.adversarial.critiques.length).toBeGreaterThanOrEqual(3);
 
-    const ts = Date.now();
+    const dir = liveOutputDir("brief-with-critique");
     const format = registry.get("executive-pre-read");
 
     const md = await render(out, "md-enhanced", format, {
@@ -53,7 +53,7 @@ describe.skipIf(!hasKey)("Full brief with critique + renderers (live)", () => {
       include_toc: true,
       include_appendices: true,
     });
-    const mdPath = `/tmp/praxis-live-brief-with-critique-${ts}.md`;
+    const mdPath = join(dir, "brief.md");
     writeFileSync(mdPath, md);
     expect(md.length).toBeGreaterThan(1024);
 
@@ -63,7 +63,7 @@ describe.skipIf(!hasKey)("Full brief with critique + renderers (live)", () => {
       include_appendices: true,
       theme: "consulting",
     });
-    const pdfPath = `/tmp/praxis-live-brief-with-critique-${ts}.pdf`;
+    const pdfPath = join(dir, "brief.pdf");
     writeFileSync(pdfPath, pdf);
     expect(pdf.slice(0, 5).toString("ascii")).toBe("%PDF-");
 
@@ -78,7 +78,7 @@ describe.skipIf(!hasKey)("Full brief with critique + renderers (live)", () => {
     const docx = await render(outMk, "docx", formatMk, {
       include_critique: true,
     });
-    const docxPath = `/tmp/praxis-live-brief-with-critique-${ts}.docx`;
+    const docxPath = join(dir, "brief.docx");
     writeFileSync(docxPath, docx);
     // ZIP magic PK\x03\x04.
     expect(docx[0]).toBe(0x50);

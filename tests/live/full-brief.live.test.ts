@@ -3,13 +3,15 @@
  * Scoping → Research → Stakeholders → Risks → Options → Synthesis.
  *
  * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set. When run, writes a full
- * Markdown briefing to /tmp for human inspection.
+ * Markdown briefing to a fresh temp directory for human inspection.
  */
 
 import { describe, expect, test } from "bun:test";
 
 import { liveTestsEnabled } from "../helpers/live-gate.ts";
+import { liveOutputDir } from "../helpers/live-output.ts";
 import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { FormatRegistry } from "../../src/registry/registry.ts";
 import { AnthropicLLMProvider } from "../../src/llm/anthropic-provider.ts";
@@ -51,9 +53,9 @@ describe.skipIf(!hasKey)("Full brief pipeline (live, executive-pre-read)", () =>
     expect(recs).toHaveLength(1);
     expect(recs[0]!.id).toBe(out.options.recommended_option_id);
 
-    // Render and drop to /tmp for post-hoc human audit.
+    // Rendered for a human to read; the test checks only its shape.
     const md = renderFullBrief(out);
-    const path = `/tmp/praxis-live-brief-${Date.now()}.md`;
+    const path = join(liveOutputDir("brief"), "brief.md");
     writeFileSync(path, md, "utf-8");
     // No hard assertion beyond writability — a human reviews the Markdown.
     expect(md.startsWith("---\n")).toBe(true);

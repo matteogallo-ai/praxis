@@ -3,14 +3,16 @@
  * Scoping → Research → Stakeholders → Risks (with hardened sourcing).
  *
  * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set. When run, writes a JSON
- * report (all four outputs + the sourcing report) to /tmp for
+ * report (all four outputs + the sourcing report) to a fresh temp directory for
  * post-hoc inspection.
  */
 
 import { describe, expect, test } from "bun:test";
 
 import { liveTestsEnabled } from "../helpers/live-gate.ts";
+import { liveOutputDir } from "../helpers/live-output.ts";
 import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { FormatRegistry } from "../../src/registry/registry.ts";
 import { AnthropicLLMProvider } from "../../src/llm/anthropic-provider.ts";
@@ -41,8 +43,7 @@ describe.skipIf(!hasKey)("Full pipeline (live, executive-pre-read)", () => {
     expect(out.risks.risks.length).toBeGreaterThanOrEqual(3);
     expect(out.sourcing_report.total_items).toBeGreaterThan(0);
 
-    // Drop the whole payload to /tmp for post-hoc audit.
-    const path = "/tmp/praxis-live-full-pipeline-report.json";
+    const path = join(liveOutputDir("full-pipeline"), "report.json");
     writeFileSync(path, JSON.stringify(out, null, 2));
     // The test does not assert on file contents beyond writability.
   }, 600_000);

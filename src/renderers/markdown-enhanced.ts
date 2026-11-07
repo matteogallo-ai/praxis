@@ -185,7 +185,7 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
   parts.push("|---|---|---|---|---|\n");
   for (const s of brief.stakeholders.stakeholders) {
     parts.push(
-      `| ${mdCell(plainText(s.name))} | ${s.category} | ${s.position} | ${s.power} | ${s.priority} |\n`
+      `| ${mdCell(s.name)} | ${s.category} | ${s.position} | ${s.power} | ${s.priority} |\n`
     );
   }
   parts.push("\n");
@@ -290,9 +290,15 @@ function extractHost(url: string): string {
   }
 }
 
-/** Table-cell escaping (pipes need to be escaped in Markdown tables). */
+/**
+ * Model text as one Markdown table cell. The lines are joined before
+ * `plainText` because it pairs backticks line by line: joined after, a
+ * backtick it left as text could pair with another and expose a link.
+ * Outside code spans `plainText` escapes every backslash, so the pipe
+ * escape below stays one escape.
+ */
 function mdCell(v: string): string {
-  return v.replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ");
+  return plainText(v.replace(/[\r\n]+/g, " ")).replace(/\|/g, "\\|");
 }
 
 function slugify(v: string): string {
