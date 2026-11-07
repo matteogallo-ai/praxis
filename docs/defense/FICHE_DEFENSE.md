@@ -16,7 +16,7 @@
 
 | Chiffre | Source | Comment il a été mesuré |
 |---|---|---|
-| Notes réelles terminées : **6 sur 13** tentatives, IC 95 % 23 %–71 % | `docs/SYSTEM_CARD.md:75` | Wilson. 5 des 7 échecs datent de la 1.2.1 et n'ont pas d'enregistrement ; depuis les enregistrements, taux d'erreur 2/8 (`docs/SLO.md:17`). |
+| Briefings réels terminés, par commit : `fe09710` 0 sur 1, `7c75a06` 1 sur 1, `3a7ca6a` 1 sur 1, `8df678f` 4 sur 5 | `docs/SYSTEM_CARD.md`, « Measured performance » | Lu dans `error-*.json` et `metadata.json`, groupés par `provenance.git_sha`. Aucun taux poolé ni intervalle : quatre versions du code, au plus 5 tentatives chacune. Les 5 échecs de la 1.2.1 n'ont pas d'enregistrement et sont listés à part. |
 | Notes signalées « insufficiently sourced » : **6 sur 6** | `docs/SYSTEM_CARD.md:15-19` | Lu dans `metadata.json`. Par note : 6 à 15 éléments sans source, 16 à 32 sur des domaines non fiables, sur 41 à 49 éléments. |
 | Coût par note : **3,29 $ à 4,75 $** (n = 6) | `docs/SLO.md:18` | `usage.total.cost_usd` : tokens et recherches web renvoyés par l'API, multipliés par la table de prix. Ce n'est pas une facture. Palier 1 du protocole : 17,96 $ dépensés pour une estimation centrale de 30,23 $ (`benchmarks/outputs/live/README.md:106`). |
 | Durée : **7,7 à 11,9 min** (n = 6) | `docs/SLO.md:16` | Somme des durées des étapes du pipeline. La question 12 dépasse la cible de 10 minutes. n trop petit pour un p95. |

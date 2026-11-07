@@ -70,7 +70,7 @@ A human review (4 Nov 2026) covered only question 10's eight first-party
 sources, the ones the rule accepted: the reviewer accepted 6 and refused 2
 ([review](benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)).
 The quality of the briefings themselves is not reviewed, for any question.
-13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026 and 4 Nov 2026), 6 completed (4 Nov 2026). In
+Live attempts by commit, completed of attempted: fe09710 0 of 1, 7c75a06 1 of 1, 3a7ca6a 1 of 1, 8df678f 4 of 5 (3 Nov 2026 and 4 Nov 2026); 5 earlier attempts, in 1.2.1, failed and left no record. In
 [`CHANGELOG.md` § 1.2.1](CHANGELOG.md), three aborted on the
 `strict` sourcing policy because the model returned findings without
 source URLs, one on prose before the JSON, one on a 60 s timeout during

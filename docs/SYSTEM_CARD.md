@@ -16,7 +16,7 @@ result. Output: Markdown, PDF, DOCX.
 05, 08, 10, 11 and 12, 4 Nov 2026): question 05's step 0, flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains;
 question 05's rerun after the sourcing fixes, flagged insufficiently sourced: 8 of 47 items without a source, 17 from untrusted domains; question 08, flagged insufficiently sourced: 15 of 47 items without a source, 16 from untrusted domains;
 question 10, flagged insufficiently sourced: 6 of 46 items without a source, 19 from untrusted domains; question 11, flagged insufficiently sourced: 13 of 41 items without a source, 23 from untrusted domains; question 12,
-flagged insufficiently sourced: 6 of 49 items without a source, 32 from untrusted domains. A human review (4 Nov 2026) covered only question 10's eight first-party sources, the ones the rule accepted: the reviewer accepted 6 and refused 2 ([review](../benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)). The quality of the briefings themselves is not reviewed, for any question. 13 live attempts: 7 failed (5 in 1.2.1 without committed records, 2 on 3 Nov 2026 and 4 Nov 2026), 6 completed (4 Nov 2026). Every other result on this page comes from the mock provider,
+flagged insufficiently sourced: 6 of 49 items without a source, 32 from untrusted domains. A human review (4 Nov 2026) covered only question 10's eight first-party sources, the ones the rule accepted: the reviewer accepted 6 and refused 2 ([review](../benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)). The quality of the briefings themselves is not reviewed, for any question. Live attempts by commit, completed of attempted: fe09710 0 of 1, 7c75a06 1 of 1, 3a7ca6a 1 of 1, 8df678f 4 of 5 (3 Nov 2026 and 4 Nov 2026); 5 earlier attempts, in 1.2.1, failed and left no record. Every other result on this page comes from the mock provider,
 which replays hand-written fixtures.
 
 ## Owner
@@ -72,10 +72,19 @@ provider sends no sampling parameter.
 
 | What | n | Result | 95% interval |
 | --- | --- | --- | --- |
-| Live briefings completed | 13 attempts | 6 of 13 | 23%–71% (Wilson) |
+| Live briefings completed at `fe09710` | 1 | 0 of 1 | — |
+| Live briefings completed at `7c75a06` | 1 | 1 of 1 | — |
+| Live briefings completed at `3a7ca6a` | 1 | 1 of 1 | — |
+| Live briefings completed at `8df678f` | 5 | 4 of 5 | — |
+| Live attempts in 1.2.1, no record committed | 5 | failed, as stated in CHANGELOG 1.2.1 | — |
 | Live briefing quality | 0 | not measured | — |
 | Live cost and latency per briefing | 6 | $3.51, 7.8 min of stages; $3.69, 8.4 min of stages; $3.66, 7.9 min of stages; $3.92, 8.4 min of stages; $3.29, 7.7 min of stages; $4.75, 11.9 min of stages; n too small for the targets in [`docs/SLO.md`](SLO.md) | — |
 | Mock pipeline end to end | 12 benchmark questions | completes; outputs committed under `benchmarks/outputs/mock/` | not a quality measure |
+
+Each commit is a different version of the pipeline, so completions are
+counted per commit and no rate is pooled across them; with at most five
+attempts per commit, no interval is given. Question 05 ran at three of
+these commits: those are three attempts, not three questions.
 
 The mock row proves the wiring: stage order, validation, rendering,
 checkpoints, cost accounting with simulated usage. The text it produces is
