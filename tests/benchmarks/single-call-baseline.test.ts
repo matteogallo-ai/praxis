@@ -16,7 +16,7 @@ import { UsageLedger } from "../../src/orchestrator/ledger.ts";
 const yaml = readFileSync(`formats/${BASELINE.formatId}.yaml`, "utf-8");
 const prompt = baselinePrompt(BASELINE.question, yaml);
 
-function provider(answer: string, seen: { tools?: Tool[]; options?: CompleteWithToolsOptions } = {}): LLMProvider {
+function provider(answer: string, seen: { tools?: Tool[]; options?: CompleteWithToolsOptions | undefined } = {}): LLMProvider {
   return {
     name: "fake",
     acceptsSystemPrompt: true,
@@ -55,7 +55,7 @@ describe("single-call baseline", () => {
   });
 
   test("one call, with web search bounded, on the registered model", async () => {
-    const seen: { tools?: Tool[]; options?: CompleteWithToolsOptions } = {};
+    const seen: { tools?: Tool[]; options?: CompleteWithToolsOptions | undefined } = {};
     const run = await runBaseline(provider("## Situation\n\nText.", seen), new UsageLedger({ maxCostUsd: 5 }), prompt);
     expect(seen.tools).toEqual([{ type: "web_search", name: "web_search", max_uses: BASELINE.maxSearches }]);
     expect(seen.options?.model).toBe(BASELINE.model);

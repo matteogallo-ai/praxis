@@ -78,6 +78,7 @@ provider sends no sampling parameter.
 | Live briefings completed at `8df678f` | 5 | 4 of 5 | — |
 | Live attempts in 1.2.1, no record committed | 5 | failed, as stated in CHANGELOG 1.2.1 | — |
 | Live briefing quality | 0 | not measured | — |
+| Single-call baseline, question 12 | 1 per arm | one `claude-opus-5-5` call: $0.48, 13 cited URLs; Praxis at `8df678f`: $4.75; which is better is not reviewed ([protocol](preregistration/single-call-baseline.md), [grid](../benchmarks/review/REVIEW_GRID.md)) | — |
 | Live cost and latency per briefing | 6 | $3.51, 7.8 min of stages; $3.69, 8.4 min of stages; $3.66, 7.9 min of stages; $3.92, 8.4 min of stages; $3.29, 7.7 min of stages; $4.75, 11.9 min of stages; n too small for the targets in [`docs/SLO.md`](SLO.md) | — |
 | Mock pipeline end to end | 12 benchmark questions | completes; outputs committed under `benchmarks/outputs/mock/` | not a quality measure |
 

@@ -9,6 +9,17 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- Mock briefings printed figures attributed to real institutions, with
+  invented URLs, and counted their fixture sources as `ok` (the quickstart
+  said `ok=25`). Every mock output (CLI Markdown, enhanced Markdown, PDF,
+  DOCX) now opens with "DONNÉES FICTIVES — mode mock", and every printed
+  sourcing count shows `ok=0` and the fixture sources as `unverified`.
+- The system card's "6 of 13 | 23%–71% (Wilson)" pooled four versions of
+  the code and five attempts without a record. It now gives completions per
+  commit, from the run records, the 1.2.1 attempts apart, and no interval.
+- README said "nothing runs in parallel" while the synthesis sections run
+  concurrently; it says the latter. "McKinsey-style" is gone from the
+  tagline (the format id `mckinsey-style-note` is unchanged).
 - CLAUDE.md forbids comments that say when ("v0.8 additions."); 193 did,
   118 of them under `src/`. They are rewritten to say what the code does,
   and `check:stale-narrative` now fails on a release number in a `.ts`
@@ -100,6 +111,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- A single-call baseline for question 12, pre-registered
+  (`docs/preregistration/single-call-baseline.md`), run once at $0.48, and
+  a blind A/B review pack with its grid (`benchmarks/review/`). The review
+  itself is the maintainer's.
 - `bun run hard-case:sources`: for question 12, the hard case, each
   sodium-ion sentence of the latest live brief (in the model's sections,
   cited or not, or a research finding) with each source it cites and that
