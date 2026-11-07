@@ -8,6 +8,7 @@
   "checkers": [],
   "mutate": [
     "src/orchestrator/orchestrator.ts",
+    "src/orchestrator/rerun.ts",
     "src/sourcing/validator.ts",
     "src/sourcing/freshness.ts",
     "src/sourcing/domain-trust.ts",
