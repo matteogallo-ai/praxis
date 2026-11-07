@@ -185,7 +185,7 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
   parts.push("|---|---|---|---|---|\n");
   for (const s of brief.stakeholders.stakeholders) {
     parts.push(
-      `| ${mdCell(plainText(s.name))} | ${s.category} | ${s.position} | ${s.power} | ${s.priority} |\n`
+      `| ${mdCell(s.name)} | ${s.category} | ${s.position} | ${s.power} | ${s.priority} |\n`
     );
   }
   parts.push("\n");
@@ -290,9 +290,13 @@ function extractHost(url: string): string {
   }
 }
 
-/** Table-cell escaping (pipes need to be escaped in Markdown tables). */
+/**
+ * Model text as one Markdown table cell. `plainText` escapes backslashes
+ * first, so a `\|` in web text cannot turn the pipe escape below into an
+ * escaped backslash followed by a cell break.
+ */
 function mdCell(v: string): string {
-  return v.replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ");
+  return plainText(v).replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ");
 }
 
 function slugify(v: string): string {
