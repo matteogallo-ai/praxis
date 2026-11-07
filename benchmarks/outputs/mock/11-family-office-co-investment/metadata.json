@@ -32,11 +32,12 @@
   "sourcing": {
     "total_items": 26,
     "counts": {
-      "ok": 15,
+      "ok": 0,
       "stale": 0,
       "untrusted": 0,
       "duplicated": 9,
-      "missing": 2
+      "missing": 2,
+      "unverified": 15
     },
     "edited_after_critique": false,
     "insufficiently_sourced": false,
