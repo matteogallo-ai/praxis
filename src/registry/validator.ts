@@ -119,7 +119,7 @@ export function validateFormat(raw: YamlValue, source?: string): Format {
   const styleGuide = validateStyleGuide(raw["style_guide"], issues);
   const outputTargets = validateOutputTargets(raw["output_targets"], issues);
 
-  // v0.5 — optional. Absent → no rules; present → structurally validated.
+  // Optional. Absent → no rules; present → structurally validated.
   let sourcingRules: SourcingRules | undefined;
   const rulesRaw = raw["sourcing_rules"];
   if (rulesRaw !== undefined && rulesRaw !== null) {
@@ -534,7 +534,7 @@ function validateOutputTargets(
 }
 
 // ---------------------------------------------------------------------------
-// v0.5 — sourcing_rules validators
+// Sourcing_rules validators
 // ---------------------------------------------------------------------------
 
 function validateSourcingRules(

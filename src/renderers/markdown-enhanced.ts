@@ -1,7 +1,7 @@
 /**
- * Enhanced Markdown renderer (v0.7).
+ * Enhanced Markdown renderer.
  *
- * Extends the v0.6 `renderFullBrief()` plain-Markdown output with:
+ * Extends the `renderFullBrief()` plain-Markdown output with:
  *   - a table of contents (opt-in via `include_toc`)
  *   - a dedicated Sources section with de-duplicated,
  *     domain-sorted references

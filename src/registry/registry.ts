@@ -2,7 +2,7 @@
  * `FormatRegistry` — in-memory catalogue of validated `Format`s.
  *
  * The registry is the single lookup point used by every downstream layer
- * (CLI in v0.1, agents in v0.2+). It enforces one global invariant on top
+ * (CLI and agents). It enforces one global invariant on top
  * of per-file validation: **format ids are unique**.
  */
 

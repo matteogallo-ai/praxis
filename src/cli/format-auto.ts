@@ -1,5 +1,5 @@
 /**
- * v0.9 — `--format auto` — opinionated shortcut, not intelligence.
+ * `--format auto` — opinionated shortcut, not intelligence.
  *
  * Maps question keywords to one of the shipped formats:
  *

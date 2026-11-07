@@ -48,7 +48,7 @@ export const c = {
 };
 
 // ---------------------------------------------------------------------------
-// v0.9 — verbosity, symbols, progress, errorWithContext.
+// Verbosity, symbols, progress, errorWithContext.
 // ---------------------------------------------------------------------------
 
 export type Verbosity = "quiet" | "normal" | "verbose";
@@ -290,7 +290,7 @@ function truncateForDisplay(s: string, max: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Stakeholder Mapping renderer (v0.4).
+// Stakeholder Mapping renderer.
 // ---------------------------------------------------------------------------
 
 /** Cap for stakeholder name column in the compact table (chars). */
@@ -368,7 +368,7 @@ export function renderStakeholders(result: StakeholderMapResult): string {
 }
 
 // ---------------------------------------------------------------------------
-// Risk Analysis renderer (v0.5).
+// Risk Analysis renderer.
 // ---------------------------------------------------------------------------
 
 /** Cap for risk-description column in the compact table. */
@@ -475,7 +475,7 @@ export function renderRisks(result: RiskAnalysisResult): string {
 }
 
 // ---------------------------------------------------------------------------
-// Sourcing report renderer (v0.5, cross-agent aggregated).
+// Sourcing report renderer (cross-agent aggregated).
 // ---------------------------------------------------------------------------
 
 export function renderSourcingReport(report: SourcingReport): string {
@@ -530,7 +530,7 @@ function describeWarning(w: SourcingReport["warnings"][number]): string {
 }
 
 // ---------------------------------------------------------------------------
-// Full briefing renderer (v0.6) — YAML front-matter + Markdown sections.
+// Full briefing renderer — YAML front-matter + Markdown sections.
 // ---------------------------------------------------------------------------
 
 import type { BriefResult } from "../orchestrator/orchestrator.ts";
@@ -579,7 +579,7 @@ export function renderFullBrief(result: BriefResult): string {
 }
 
 // ---------------------------------------------------------------------------
-// Adversarial critique inline renderer (v0.7).
+// Adversarial critique inline renderer.
 // ---------------------------------------------------------------------------
 
 import type { AdversarialCritiqueResult } from "../agents/types.ts";

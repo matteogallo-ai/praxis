@@ -1,5 +1,5 @@
 /**
- * Options Generation agent — v0.6, the fifth Praxis agent.
+ * Options Generation agent, the fifth Praxis agent.
  *
  * First agent whose input includes ALL FOUR prior artefacts (Scoping +
  * Research + Stakeholders + Risks). Produces an

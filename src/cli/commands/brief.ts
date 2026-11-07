@@ -1,7 +1,7 @@
 /**
  * `praxis brief "<question>" --format <id> [flags]` — CLI entry point.
  *
- * v0.6 modes:
+ * Modes:
  *   default                 Scoping only.
  *   --with-research         Scoping → Research.
  *   --with-stakeholders     Scoping → Research → Stakeholder Mapping.
@@ -112,7 +112,7 @@ interface BriefCommandOptions {
   full: boolean;
   outputPath: string | null;
   critique: boolean;
-  /** v0.8 — enables the editorial re-run loop (implies --critique). */
+  /** Enables the editorial re-run loop (implies --critique). */
   withRerun: boolean;
   renderTarget: string | null;
   theme: string | null;
@@ -234,7 +234,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     } else if (a === "--full") {
       full = true;
     } else if (a === "--with-sourcing-report") {
-      // v0.6 alias — `--with-sourcing-report` appends the report to a
+      // `--with-sourcing-report` appends the report to a
       // `--full` briefing (as opposed to `--sourcing-report` which
       // shows ONLY the report and implies `--with-risks`).
       sourcingReport = true;
@@ -568,7 +568,7 @@ async function fullBrief(
     return 0;
   }
 
-  // No --render: plain Markdown / JSON stdout output (v0.6 behaviour).
+  // No --render: plain Markdown / JSON on stdout.
   if (opts.json) {
     const payload = `${JSON.stringify(result, null, 2)}\n`;
     writeOrEmit(payload, opts.outputPath);
@@ -927,7 +927,7 @@ export async function runBriefCli(
       run: extracted.run,
     });
   } catch (err) {
-    // v0.9: rich context for the most common actionable failures.
+    // Rich context for the most common actionable failures.
     if (err instanceof AnthropicAuthenticationError) {
       process.stderr.write(
         errorWithContext({

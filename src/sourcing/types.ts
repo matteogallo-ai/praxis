@@ -1,11 +1,7 @@
 /**
  * Sourcing & Verification Layer — types.
  *
- * v0.3 shipped `SourceReference | SourceMissing` and a simple
- * `strict|permissive` policy. v0.4 extended it to Stakeholder positions.
- *
- * v0.5 promotes the layer from "embryonic validator" to production-grade
- * checker. The layer now:
+ * Every cited item is a `SourceReference | SourceMissing`. The layer:
  *
  *   - enforces freshness (max source age),
  *   - checks the source domain against allow / deny / reputation-tier
@@ -17,7 +13,7 @@
  * `SourcingPolicy` (`strict` | `permissive`) is retained as the failure
  * mode: `strict` throws on the first error, `permissive` collects
  * everything and returns a full report. Formats that do not declare a
- * `sourcing_rules` block get v0.4 behaviour verbatim.
+ * `sourcing_rules` block are checked for missing sources only.
  */
 
 import type {
@@ -37,7 +33,7 @@ export type {
 };
 
 // ---------------------------------------------------------------------------
-// SourceReference / SourceMissing / SourceStatus (unchanged from v0.4).
+// SourceReference / SourceMissing / SourceStatus.
 // ---------------------------------------------------------------------------
 
 /** A resolved, human-verifiable source. */
@@ -76,7 +72,7 @@ export function isSourceMissing(s: SourceStatus): s is SourceMissing {
 }
 
 // ---------------------------------------------------------------------------
-// v0.5 — SourcingReport (enriched) and typed warnings.
+// SourcingReport (enriched) and typed warnings.
 // ---------------------------------------------------------------------------
 
 /**
@@ -98,9 +94,9 @@ export type SourcingAgentOrigin = "research" | "stakeholder" | "risk";
 /**
  * Typed warning surfaced by the hardened sourcing validator.
  *
- * - v0.4 shipped `missing_source` / `missing_stakeholder_evidence`.
- * - v0.5 adds `missing_risk_evidence`, `stale_source`,
- *   `untrusted_domain`, `duplicate_source`.
+ * Kinds: `missing_source`, `missing_stakeholder_evidence`,
+ * `missing_risk_evidence`, `stale_source`, `untrusted_domain`,
+ * `duplicate_source`.
  *
  * All variants carry enough context (index, agent origin, human-readable
  * reason) that the CLI can render them without additional lookups.
@@ -187,12 +183,11 @@ export interface SourcingReport {
    */
   warnings: SourcingWarning[];
 
-  // Convenience aliases used by v0.3/v0.4 consumers. Preserved verbatim
-  // so v0.4 tests / renderers keep working during the transition.
+  // Shorthand for the missing-source count; `SourcingValidationError` prints it.
   missing_sources_count: number;
 
   /**
-   * v0.8: `true` when the report describes a briefing that was
+   * `true` when the report describes a briefing that was
    * re-synthesised after the adversarial critique (i.e. the
    * `briefWithCritiqueAndRerun` path produced a second Synthesis
    * pass). Absent / `false` for `brief()` and `briefWithCritique()`

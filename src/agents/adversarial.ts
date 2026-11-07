@@ -1,6 +1,5 @@
 /**
- * Adversarial Critique agent — v0.7, the seventh and final Praxis
- * agent before v1.0.
+ * Adversarial Critique agent, the seventh and last stage.
  *
  * Reads a completed `BriefResult` (the six upstream agents' output)
  * and produces a bounded set of steelmanned critiques — the

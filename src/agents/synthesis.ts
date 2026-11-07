@@ -1,5 +1,5 @@
 /**
- * Synthesis agent — v0.6, the sixth Praxis agent.
+ * Synthesis agent, the sixth Praxis agent.
  *
  * Assembles the final briefing text one section at a time, respecting
  * the target format's tone directives, max_length, forbidden_terms,
@@ -131,7 +131,7 @@ export async function executeSynthesis(
     let acceptedParsed: ParsedSectionResponse | null = null;
     let acceptedAttempt = 0;
 
-    // In non-strict mode, we always run exactly one attempt (v0.7 behaviour).
+    // In non-strict mode, a section gets exactly one attempt.
     // In strict mode, up to `max_regeneration_attempts` total attempts.
     const maxAttempts = editorial.strict ? editorial.maxAttempts : 1;
 
@@ -307,13 +307,13 @@ function buildSectionInputs(
 }
 
 // ---------------------------------------------------------------------------
-// v0.8 — strict_editorial config, conformance gate, prompt blocks
+// `strict_editorial` config, conformance gate, prompt blocks
 // ---------------------------------------------------------------------------
 
 type EditorialReason = "forbidden_terms" | "over_length" | "validation_rule";
 
 interface EditorialConfig {
-  /** Master switch — false collapses every axis to "warn" (v0.7 behaviour). */
+  /** Master switch — false collapses every axis to "warn". */
   strict: boolean;
   /** Total attempts per section under strict mode (initial + retries combined). */
   maxAttempts: number;
@@ -404,7 +404,7 @@ function checkEditorialConformance(
 
 /**
  * Build the REVISION MODE prompt block. Returns "" when no revision
- * context is present (v0.7 behaviour). The block is per-section — it
+ * context is present. The block is per-section — it
  * filters `critiques_to_address` to those targeting this section (or
  * unscoped critiques), so the model gets only the load-bearing subset.
  */

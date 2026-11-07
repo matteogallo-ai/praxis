@@ -1,5 +1,5 @@
 /**
- * Scoping agent — v0.2, the first Praxis agent.
+ * Scoping agent, the first Praxis agent.
  *
  * Pipeline:
  *   1. Load `prompts/scoping.prompt` and parse it with PromptLang.

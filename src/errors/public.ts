@@ -1,5 +1,5 @@
 /**
- * Public error taxonomy for the Praxis library (v0.8+).
+ * Public error taxonomy for the Praxis library.
  *
  * This file re-exports every error class that is part of Praxis's
  * PUBLIC API surface — i.e. errors an embedder is expected to
@@ -14,7 +14,7 @@
  * parent class (e.g. `AgentExecutionError`, `LLMError`) which IS
  * re-exported.
  *
- * The v1.0 SemVer contract binds this file: removing an export or
+ * The SemVer contract (docs/SEMVER-CONTRACT.md) binds this file: removing an export or
  * changing an error's inheritance requires a major-version bump.
  */
 
@@ -67,7 +67,6 @@ export {
   AdversarialCritiqueError,
   InvalidCritiqueTargetError,
   MissingAlternativeError,
-  // v0.8 addition.
   EditorialFailureError,
   TruncatedOutputError,
 } from "../agents/errors.ts";

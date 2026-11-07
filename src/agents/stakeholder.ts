@@ -1,5 +1,5 @@
 /**
- * Stakeholder Mapping agent — v0.4, the third Praxis agent.
+ * Stakeholder Mapping agent, the third Praxis agent.
  *
  * First agent whose input includes BOTH the Scoping and Research
  * outputs. Produces a `StakeholderMapResult` that later agents will

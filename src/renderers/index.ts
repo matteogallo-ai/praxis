@@ -1,5 +1,5 @@
 /**
- * Renderers dispatcher (v0.7).
+ * Renderers dispatcher.
  *
  * Given a `Format` (from the registry) and a target string, this
  * dispatcher resolves the right renderer implementation OR throws
@@ -7,9 +7,8 @@
  * declared in the format's `output_targets[]`.
  *
  * Convention: the format's `output_targets` uses `"md"` for
- * Markdown (v0.1-v0.6 convention preserved), but the renderer
- * target is `"md-enhanced"` so callers can be explicit about the
- * v0.7 renderer feature set. The dispatcher accepts both spellings.
+ * Markdown, but the renderer target is `"md-enhanced"` so callers
+ * can be explicit about the renderer feature set. The dispatcher accepts both spellings.
  */
 
 import type { Format } from "../registry/schema.ts";
@@ -31,7 +30,7 @@ const REGISTRY: Record<RenderTarget, Renderer> = {
 };
 
 /**
- * Convert a `Format.output_targets[]` entry (which uses the v0.1
+ * Convert a `Format.output_targets[]` entry (which uses the
  * short vocabulary of "md" / "docx" / "pdf") into a renderer target
  * name. The dispatcher accepts both the short form ("md") and the
  * renderer-native form ("md-enhanced").

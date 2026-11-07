@@ -1,5 +1,5 @@
 /**
- * Research agent — v0.3, the second Praxis agent.
+ * Research agent, the second Praxis agent.
  *
  * Pipeline:
  *   1. Load `prompts/research.prompt` and parse it with PromptLang.

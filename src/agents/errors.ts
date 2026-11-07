@@ -62,7 +62,8 @@ export class ResearchAgentError extends AgentExecutionError {
  * Raised when the tool-use loop exceeds `max_tool_rounds` without the
  * model producing a final answer. Includes the cap value so the CLI
  * can suggest tuning it. Applies to any tool-using agent — the name
- * is kept from v0.3 for compatibility.
+ * dates from when Research was the only one, and is kept because it
+ * is part of the public error taxonomy.
  */
 export class MaxToolRoundsExceededError extends ResearchAgentError {
   readonly maxRounds: number;
@@ -143,7 +144,7 @@ export class RiskInflationError extends RiskAnalysisError {
 }
 
 // ---------------------------------------------------------------------------
-// v0.6 — Options Generation agent
+// Options Generation agent
 // ---------------------------------------------------------------------------
 
 /**
@@ -212,7 +213,7 @@ export class InvalidOptionRiskReference extends OptionsGenerationError {
 }
 
 // ---------------------------------------------------------------------------
-// v0.6 — Synthesis agent
+// Synthesis agent
 // ---------------------------------------------------------------------------
 
 /**
@@ -251,7 +252,7 @@ export class SynthesisValidationError extends SynthesisError {
 }
 
 /**
- * v0.8: raised when a section under `strict_editorial: true` still
+ * Raised when a section under `strict_editorial: true` still
  * fails an editorial rule after `max_regeneration_attempts` LLM
  * retries. Carries the section id, the failure reason (rule that
  * refused to be satisfied), and the full attempt history for the
@@ -288,7 +289,7 @@ export class EditorialFailureError extends SynthesisError {
 }
 
 // ---------------------------------------------------------------------------
-// v0.7 — Adversarial Critique agent
+// Adversarial Critique agent
 // ---------------------------------------------------------------------------
 
 /**

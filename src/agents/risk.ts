@@ -1,5 +1,5 @@
 /**
- * Risk Analysis agent — v0.5, the fourth Praxis agent.
+ * Risk Analysis agent, the fourth Praxis agent.
  *
  * First agent whose input includes THREE prior outputs (Scoping +
  * Research + Stakeholders). Produces a `RiskAnalysisResult` with

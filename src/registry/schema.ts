@@ -65,13 +65,13 @@ export interface FormatSection {
   required_agents: AgentId[];
   tone_directives: string;
   /**
-   * v1.3 optional override. When present, Synthesis treats it as the
+   * Optional override. When present, Synthesis treats it as the
    * ABSOLUTE FIRST PRIORITY for the section — used on opening sections
    * to force decision-first framing. See FRAMING CLARITY CHECK in
    * `prompts/synthesis.prompt`.
    */
   tone_hook?: string;
-  /** Optional declarative rules — free-form strings for v0.1. */
+  /** Optional declarative rules, as free-form strings. */
   validation_rules?: string[];
 }
 
@@ -91,11 +91,11 @@ export interface Format {
   sections: FormatSection[];
   sourcing_policy: SourcingPolicy;
   /**
-   * v0.5 optional block. When present, the hardened sourcing layer
+   * Optional block. When present, the hardened sourcing layer
    * uses these rules (freshness, domain trust, cross-agent dedupe) and
    * `sourcing_policy` is used only as the failure mode (`strict` throws
-   * on any error, `permissive` collects). When absent, v0.4 behaviour
-   * is preserved verbatim.
+   * on any error, `permissive` collects). When absent, only missing
+   * sources are checked: no freshness, domain-trust or dedupe rule.
    */
   sourcing_rules?: SourcingRules;
   style_guide: StyleGuide;
@@ -103,7 +103,7 @@ export interface Format {
 }
 
 // ---------------------------------------------------------------------------
-// v0.5 — Sourcing rules (freshness, domain trust, dedupe).
+// Sourcing rules (freshness, domain trust, dedupe).
 // ---------------------------------------------------------------------------
 
 /**
@@ -162,19 +162,19 @@ export interface SourcingRules {
   domain_trust?: DomainTrustRule;
   dedupe?: DedupeRule;
   /**
-   * v0.8 optional block. When present and `strict_editorial: true`,
+   * Optional block. When present and `strict_editorial: true`,
    * the Synthesis agent enforces `forbidden_terms`, `max_length`,
    * and `validation_rules` as HARD rejections rather than soft
    * warnings — a failing section is regenerated up to
    * `max_regeneration_attempts` times before `EditorialFailureError`
-   * is raised. Absent block or `strict_editorial: false` → v0.7
-   * behaviour verbatim (warnings only).
+   * is raised. Absent block or `strict_editorial: false` → warnings
+   * only.
    */
   editorial?: EditorialRules;
 }
 
 // ---------------------------------------------------------------------------
-// v0.8 — Editorial rules (strict_editorial mode).
+// Editorial rules (strict_editorial mode).
 // ---------------------------------------------------------------------------
 
 export const EDITORIAL_ACTIONS = ["reject", "warn"] as const;
@@ -182,7 +182,7 @@ export type EditorialAction = (typeof EDITORIAL_ACTIONS)[number];
 
 /**
  * Editorial conformance rules. Every field is optional; sensible
- * defaults preserve the v0.7 "warn only" behaviour.
+ * defaults are "warn only".
  *
  *   strict_editorial     — master switch. `false` → all actions
  *                          collapse to `"warn"` regardless of the
@@ -221,8 +221,8 @@ export const FORMAT_ALLOWED_KEYS: readonly string[] = [
   "output_targets",
 ] as const;
 
-// Allowed key lists for the v0.5 sourcing_rules sub-schemas (with
-// v0.8 addition of the editorial block).
+// Allowed key lists for the sourcing_rules sub-schemas and the editorial
+// block.
 export const SOURCING_RULES_ALLOWED_KEYS: readonly string[] = [
   "freshness",
   "domain_trust",

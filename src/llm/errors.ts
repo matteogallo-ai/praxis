@@ -16,7 +16,7 @@ export class LLMError extends PraxisError {
 
 /**
  * Raised when the requested provider name is not recognised by the CLI.
- * v0.3 supports `mock` and `anthropic`.
+ * Supported: `mock` and `anthropic`.
  */
 export class ProviderNotSupportedError extends LLMError {
   readonly provider: string;

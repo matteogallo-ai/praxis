@@ -1,12 +1,9 @@
 /**
  * Sourcing Layer error types.
  *
- * v0.3–v0.4 shipped `SourcingValidationError` — raised under `strict`
- * policy whenever an inspected item lacked a source.
- *
- * v0.5 keeps that top-level error and adds three domain-specific
- * subclasses for the hardened rules (freshness, domain trust, dedupe).
- * All new subclasses inherit from `SourcingValidationError` so callers
+ * `SourcingValidationError` is raised under `strict` policy whenever an
+ * inspected item fails a rule. Three domain-specific subclasses cover
+ * the hardened rules (freshness, domain trust, dedupe). They inherit from `SourcingValidationError` so callers
  * that catch the parent type keep working; typed handlers can narrow.
  */
 

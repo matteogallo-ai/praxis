@@ -5,7 +5,7 @@
  * Kept intentionally narrow so any backend (mock, Anthropic, OpenAI,
  * local Ollama, etc.) can plug in without touching agent code.
  *
- * v0.3 adds an optional `completeWithTools` method for agents that need
+ * `completeWithTools` is an optional method for agents that need
  * tool use (currently: Research via web search). Providers that do not
  * support tools simply omit the method; agents that need tools check
  * for its presence and throw a typed error otherwise.
