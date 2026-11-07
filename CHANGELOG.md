@@ -633,207 +633,56 @@ errors and produces a well-formed RESULTS.md.
 
 ## [1.2.0] — 2026-08-19
 
-### Fourth shipped format — family-office-memo
-
-Praxis 1.2 introduces the fourth shipped briefing format:
-`family-office-memo`. It is a discreet, three-page,
-institution-voiced memo calibrated for a family principal or a
-family council — the audience for which corporate briefings
-(`executive-pre-read`, `mckinsey-style-note`,
-`position-paper-corporate`) are not the right register.
-
-Typical use cases: co-investment authorisations, external
-private-banker or family-lawyer selection, generational
-transition governance, philanthropic vehicle structuring,
-response to a regulatory or supervisory inquiry.
+**Fourth shipped format: `family-office-memo`**, a discreet, three-page memo
+for a family principal or a family council.
 
 ### Added
 
-- **`formats/family-office-memo.yaml`** — six-section format
-  (Principal Summary, Context and Heritage, Stakeholders and
-  Alignment, Options and Tradeoffs, Risks and Preservation,
-  Recommended Next Step), 1200-word target, discreet
-  institutional voice. Enforces a roles-not-names vocabulary
-  (Principal, Successor Generation, External Trustee, Private
-  Banker, External Advisor, Family Lawyer) via the
-  `forbidden_terms` guard on `"the family"`.
-- **Strict-editorial by design.** Unlike the three prior
-  formats which ship with `strict_editorial: false` (warn-only),
-  `family-office-memo` sets `strict_editorial: true` with every
-  axis on `"reject"`. Synthesis regenerates a section that trips
-  forbidden terms, length caps, or validation rules — the memo
-  goes to the council in the tone it was authored for, or not
-  at all.
-- **Patrimonial sourcing profile.** `sourcing_rules.freshness`
-  admits sources up to 5 years old (warning after 3 years) —
-  patrimonial decisions digest over longer horizons than
-  corporate cycles. `sourcing_rules.domain_trust` uses a
-  reputation-only tiering with tier-1 anchors on FT, Reuters,
-  Bloomberg, WSJ, Economist, government / OECD / BIS / IMF,
-  Swiss admin.ch and finma.ch, and Campden FB. Tier-2 includes
-  Wealth Briefing, Family Officer, STEP, Law360. Tier-3
-  (Wikipedia) is excluded via `min_tier: 2`.
-- **12 mock-llm fixtures** under `tests/fixtures/mock-llm/`
-  covering the full seven-agent pipeline (scoping, research,
-  stakeholders, risks, options, adversarial, plus one synthesis
-  fixture per section). Content is calibrated to a realistic
-  co-investment authorisation scenario: "Should the council
-  approve the co-investment alongside the external advisor in
-  the Zurich-based fintech?". All stakeholders appear by role;
-  no named individuals; no invented families.
-- **11th benchmark** in `benchmarks/questions.yaml`
-  (`11-family-office-co-investment`). All 11 mock briefings are
-  scorable end-to-end (up from 10).
-- **Router keywords** in `src/cli/format-auto.ts`:
-  `--format auto` now routes questions containing
-  `family council`, `family principal`, `successor generation`,
-  `patrimonial`, or `family office` to `family-office-memo`.
-- **Format-integrity tests** in
-  `tests/formats/formats-integrity.test.ts` covering the
-  section order, tone directives, forbidden-term coverage,
-  strict-editorial posture, sourcing-rule freshness thresholds,
-  tier-1 and tier-2 domain lists, output targets, and fixture
-  presence on disk.
-- **`docs/formats/family-office-memo.md`** — full format
-  reference covering when to use, section structure, tone
-  conventions, discretion protocols (roles-not-names),
-  sourcing standards, and example use cases.
+- `formats/family-office-memo.yaml`: six sections, 1200-word target, a
+  roles-not-names vocabulary enforced by `forbidden_terms` on `"the family"`.
+- It sets `strict_editorial: true` with every axis on `"reject"`, unlike the
+  three other formats.
+- Sourcing profile: sources up to 5 years old (warning after 3 years),
+  reputation-only tiers with `min_tier: 2`.
+- 11th benchmark (`11-family-office-co-investment`) with its mock fixtures.
+- `--format auto` routes `family council`, `family principal`,
+  `successor generation`, `patrimonial` and `family office` to it.
+- `docs/formats/family-office-memo.md`.
 
 ### Changed
 
-- Root `package.json` version bumped to `1.2.0`.
-- `src/cli/version-constant.ts`: `PRAXIS_VERSION = "1.2.0"`.
-- `README.md`: format table now lists four shipped formats.
-- Structural invariant tests in
-  `tests/formats/formats-integrity.test.ts` and
-  `tests/cli/list.test.ts` /
-  `tests/cli/format-auto.test.ts` /
-  `tests/benchmarks/questions-schema.test.ts` /
-  `tests/benchmarks/run-all-mock.test.ts` updated to reflect
-  the 4-format / 11-benchmark set.
-- The old "every format ships with `strict_editorial: false`"
-  invariant relaxed to "every format declares the editorial
-  block explicitly" — both `false` (warn-only) and `true`
-  (reject-and-regenerate) are valid postures under v0.8's
-  editorial framework.
-
-### Notes
-
-- **No API change.** `src/index.ts` public surface is unchanged.
-  The frozen v1.0 SemVer contract is preserved verbatim.
-- **No new npm dependency.** The format is a data file plus
-  fixtures; no runtime code is added.
-- **Test count**: 1212 pass (up from 1188 in v1.1.1). +24 new
-  tests from the family-office-memo integrity block, fixture
-  presence loop, and the benchmark-schema and cli test updates.
-- The seven-agent pipeline (scoping → research → stakeholders →
-  risks → options → synthesis → adversarial critique + rerun)
-  operates on the new format identically to the prior three.
-  The only format-specific behaviour is the strict-editorial
-  regeneration loop.
+- `README.md` lists four shipped formats.
+- A format declares its editorial block explicitly; `strict_editorial` may be
+  `false` (warn-only) or `true` (reject and regenerate).
 
 ## [1.1.1] — 2026-08-19
 
 ### Fixed
 
-- **Benchmark artefact coverage** — `benchmarks/run-all.ts` now
-  always emits the full `brief.md` + `brief.pdf` + `brief.docx` +
-  `metadata.json` trifecta for every benchmark, regardless of the
-  format's `output_targets[]` declaration. Previously 6/10 mock
-  benchmark output directories were incomplete: 3
-  position-paper-corporate briefings (08/09/10) lacked `brief.md`
-  and 3 executive-pre-read briefings (02/03/04) lacked
-  `brief.docx`. As a result, the v0.10 scoring framework reported
-  only 7/10 mocks as scorable; it now reports 10/10.
-- **Root cause.** `run-all.ts` was gating each artefact write on
-  `format.output_targets.includes(target)` and then delegating to
-  the `render()` dispatcher, which enforces the same rule. This
-  is the correct behaviour for the user-facing CLI
-  (`praxis brief ... --render docx`) — a format that doesn't
-  declare a target shouldn't accept it. But a benchmark run is a
-  harness, not a user-facing artefact; scoring uniformity
-  requires the full trifecta on every entry. The fix bypasses the
-  dispatcher's guard by calling the individual renderer
-  implementations (`markdownEnhancedRenderer`, `pdfRenderer`,
-  `docxRenderer`) directly, all already exported from
-  `src/renderers/index.ts`. Zero change to the user-facing CLI or
-  the dispatcher itself.
+- `benchmarks/run-all.ts` writes `brief.md`, `brief.pdf`, `brief.docx` and
+  `metadata.json` for every benchmark, whatever the format's
+  `output_targets[]`. 6/10 mock output directories were incomplete, so the
+  scoring framework reported only 7/10 mocks as scorable; it now reports
+  10/10. The user-facing CLI and the `render()` dispatcher are unchanged.
 
 ### Added
 
-- `tests/benchmarks/coverage.test.ts` — regression test that
-  asserts every mock benchmark output directory carries all four
-  expected files (non-empty). Guards against silent
-  reintroduction of the gap on future changes to `run-all.ts` or
-  the format registry.
+- `tests/benchmarks/coverage.test.ts`: every mock benchmark directory carries
+  all four files, non-empty.
 
 ### Changed
 
-- `benchmarks/outputs/mock/*/` regenerated end-to-end via
-  `bun run bench:mock`. All 10 entries now carry the full
-  trifecta. Same content envelope, same size class, deterministic
-  under `MockLLMProvider`.
-
-### Notes
-
-- Empirical scoring coverage is now 10/10 mocks scorable (up from
-  7/10 in v0.10 / v1.1.0).
-- No API change, no functional change beyond the bug fix.
-- The 1146-test v1.1 baseline is preserved; 42 new tests come
-  from the coverage regression file (one per file × 10
-  directories, plus the two structural assertions). The
-  `enumerateBriefings` test in `score-all.test.ts` had to be
-  updated in place: it previously encoded the 7/10 gap as
-  expected behaviour, and now encodes the 10/10 fix.
-- `docs/benchmarking-methodology.md` updated: the known-limitation
-  bullet on the 7/10 gap now records the v1.1.1 resolution.
+- `benchmarks/outputs/mock/*/` regenerated with `bun run bench:mock`.
 
 ## [1.1.0] — 2026-08-19
 
-### npm dependency switch (yaml-parser)
-
-`@promptlang/yaml-parser` is now consumed as a versioned npm
-dependency (`^1.0.0`) instead of a workspace `file:` linking
-against `../promptlang/packages/yaml-parser`. `bun install` alone
-now resolves the parser from
-[npmjs.com/package/@promptlang/yaml-parser](https://www.npmjs.com/package/@promptlang/yaml-parser).
-
-**Scope note.** This release switches only the extracted
-`@promptlang/yaml-parser` sub-package. The `promptlang` **core**
-(lexer / parser / ast / runtime) imported by the agents is still
-consumed via TypeScript `paths` from the sibling
-`~/dev/promptlang/` checkout — publishing the core to npm is a
-follow-up release.
-
 ### Changed
 
-- `package.json` dependency:
-  `"@promptlang/yaml-parser": "file:../promptlang/packages/yaml-parser"`
-  → `"@promptlang/yaml-parser": "^1.0.0"`. Bun resolves and
-  downloads the package from the npm registry.
-- `bun.lock` regenerated to record the npm-resolved
-  `@promptlang/yaml-parser@1.0.0` (with sha512 integrity).
-- `README.md` and `CONTRIBUTING.md`: clarify that only the
-  yaml-parser sub-package is on npm as of v1.1; the sibling
-  PromptLang checkout is still required for the `promptlang` core
-  imports.
-- `ROADMAP.md`: v1.1 milestone marked as SHIPPED, follow-up entry
-  added for eventual core publication.
-- `src/cli/version-constant.ts`: `PRAXIS_VERSION = "1.1.0"`.
-
-### Notes
-
-- **Zero functional change.** Same public API, same 1146-test
-  baseline, same behaviour. The parser's API contract is unchanged —
-  same `parseYaml`, `YamlParseError`, and `YamlValue` exports.
-- One piece of technical debt from v1.0 is resolved: the
-  `@promptlang/yaml-parser` distribution path. The remaining
-  workspace linking (the `promptlang` core, via `tsconfig` paths)
-  is out of scope for this release.
-- Local development against an unpublished `@promptlang/yaml-parser`
-  change is still possible via `bun link` or by temporarily
-  switching the dependency back to a `file:` path — neither is
-  required for day-to-day work anymore.
+- `@promptlang/yaml-parser` is an npm dependency (`^1.0.0`) instead of a
+  `file:../promptlang/packages/yaml-parser` link. The `promptlang` core is
+  still read from the sibling `~/dev/promptlang/` checkout.
+- No functional change: same public API, and the parser keeps its
+  `parseYaml`, `YamlParseError` and `YamlValue` exports.
 
 ## [1.0.0] — 2026-08-18
 
