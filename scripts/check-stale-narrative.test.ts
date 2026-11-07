@@ -48,6 +48,31 @@ describe("scanText", () => {
   });
 });
 
+describe("version-history comments in code", () => {
+  // CLAUDE.md rule 6: a comment says why, never when. "Added in v0.8" is
+  // history, and git log already holds it.
+  test.each([
+    ["  // v0.8 additions."],
+    [" * Enhanced Markdown renderer (v0.7)."],
+    ["/** v0.8 — enables the editorial re-run loop. */"],
+    ["const x = 1; // kept from v0.3 for compatibility"],
+  ])("flags %p in a .ts file", (line) => {
+    expect(scanText("src/a.ts", line).map((f) => f.kind)).toEqual(["version-history"]);
+  });
+
+  test.each([
+    ['const fixture = "// v0.8 additions.";'],
+    ["// see https://example.com/v1.2/docs"],
+    ["  // Pinned to the SemVer contract in docs/SEMVER-CONTRACT.md."],
+  ])("does not flag %p", (line) => {
+    expect(scanText("src/a.ts", line)).toEqual([]);
+  });
+
+  test("leaves version numbers in prose files alone", () => {
+    expect(scanText("docs/x.md", "Released in v1.2.0, see CHANGELOG.")).toEqual([]);
+  });
+});
+
 describe("scanRepository", () => {
   test("scans the documented roots and skips the excluded files", async () => {
     const root = mkdtempSync(join(tmpdir(), "praxis-stale-"));
@@ -64,15 +89,22 @@ describe("scanRepository", () => {
     writeFileSync(join(root, "docs", "ENGINEERING_STANDARDS.md"), stale);
     writeFileSync(join(root, "CHANGELOG.md"), stale);
     writeFileSync(join(root, "tests", "t.ts"), stale);
+    for (const dir of ["tests", "benchmarks", "scripts"]) {
+      mkdirSync(join(root, dir), { recursive: true });
+      writeFileSync(join(root, dir, "v.ts"), "// Added in v0.9.\n");
+    }
 
     const files = (await scanRepository(root)).map((f) => f.file);
     expect(files).toEqual([
       "README.md",
       "benchmarks/RESULTS.md",
+      "benchmarks/v.ts",
       "docs/x.md",
       "formats/f.yaml",
       "prompts/p.prompt",
+      "scripts/v.ts",
       "src/a.ts",
+      "tests/v.ts",
     ]);
   });
 });

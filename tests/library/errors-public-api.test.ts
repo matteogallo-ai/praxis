@@ -1,5 +1,5 @@
 /**
- * v0.8 — Public error taxonomy contract.
+ * Public error taxonomy contract.
  *
  * Every error class re-exported from `src/index.ts` MUST inherit
  * from `PraxisError`. This test enforces that discipline so an

@@ -1,5 +1,5 @@
 /**
- * Renderer types (v0.7).
+ * Renderer types.
  *
  * A renderer takes a `BriefResult` or `BriefWithCritiqueResult` and
  * produces a Buffer in a target format. The dispatcher chooses the

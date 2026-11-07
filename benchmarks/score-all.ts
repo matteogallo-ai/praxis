@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * benchmarks/score-all.ts — v0.10 AI-assisted qualitative scoring.
+ * benchmarks/score-all.ts — AI-assisted qualitative scoring.
  *
  * For every briefing under `benchmarks/outputs/{mock,live}/*` this
  * script:
@@ -135,14 +135,15 @@ const MOCK_REFUSAL =
   "mock briefings are not scored: their text is fixture output, so a score measures nothing. Score live briefings only.";
 
 export function parseScoreArgs(argv: readonly string[]): ScoreAllOptions {
-  let mockOnly = false;
+  const mockOnly = false;
   let liveOnly = false;
   let refresh: string | null = null;
   let dryRun = false;
   let maxCostUsd: number | null = null;
   let root = resolve(import.meta.dir, "..");
   for (let i = 0; i < argv.length; i++) {
-    const a = argv[i]!;
+    const a = argv[i];
+    if (a === undefined) break;
     if (a === "--mock-only") throw new Error(MOCK_REFUSAL);
     else if (a === "--live-only") liveOnly = true;
     else if (a === "--dry-run") dryRun = true;
@@ -546,10 +547,7 @@ export async function scoreAll(opts: ScoreAllOptions): Promise<ScoreAllReport> {
   }
 
   // Non-dry-run: require the key.
-  if (
-    typeof process.env["ANTHROPIC_API_KEY"] !== "string" ||
-    process.env["ANTHROPIC_API_KEY"]!.length === 0
-  ) {
+  if ((process.env["ANTHROPIC_API_KEY"] ?? "").length === 0) {
     process.stderr.write(
       "✗ AI scoring requires ANTHROPIC_API_KEY. Set it in .env or export in shell. See docs/benchmarking-methodology.md.\n"
     );

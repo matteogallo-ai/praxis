@@ -8,11 +8,17 @@ import {
   callModel,
   loadPrompt,
   outputReader,
+  parseAnswerObject,
   renderPrompt,
   stampRetrievalTime,
   UNTRUSTED_CONTENT_RULE,
 } from "../../src/agents/prompt-runtime.ts";
-import { AgentExecutionError, MaxToolRoundsExceededError, TruncatedOutputError } from "../../src/agents/errors.ts";
+import {
+  AgentExecutionError,
+  InvalidAgentOutputError,
+  MaxToolRoundsExceededError,
+  TruncatedOutputError,
+} from "../../src/agents/errors.ts";
 import { isRecoverable } from "../../src/agents/retry.ts";
 import type { CompleteOptions, LLMProvider } from "../../src/llm/provider.ts";
 import type { CompleteWithToolsOptions, Tool } from "../../src/llm/types.ts";
@@ -390,5 +396,40 @@ describe("output reader refusals name the field and the rule", () => {
         expect.objectContaining({ published_at: day })
       );
     }
+  });
+});
+
+describe("parseAnswerObject: the one JSON reader every stage uses", () => {
+  const refusal = (raw: string, subject?: string): InvalidAgentOutputError => {
+    try {
+      parseAnswerObject("demo", raw, subject);
+    } catch (err) {
+      if (err instanceof InvalidAgentOutputError) return err;
+      throw err;
+    }
+    throw new Error("expected a refusal");
+  };
+
+  test("returns the object inside prose or a fence", () => {
+    expect(parseAnswerObject("demo", 'Here it is:\n```json\n{"a": 1}\n```')).toEqual({ a: 1 });
+  });
+
+  test.each([
+    ["", undefined, "empty response"],
+    ["   \n ", undefined, "empty response"],
+    ["", "section 'answer'", "empty response for section 'answer'"],
+    ["[1, 2]", undefined, "expected a JSON object at the top level"],
+    ["null", undefined, "expected a JSON object at the top level"],
+    ["[1]", "section 'answer'", "expected a JSON object for section 'answer'"],
+  ])("refuses %p (subject %p) with %p", (raw, subject, reason) => {
+    const err = refusal(raw, subject);
+    expect(err.reason).toBe(reason);
+    expect(err.agentId).toBe("demo");
+    expect(err.rawOutput).toBe(raw);
+  });
+
+  test("a parse failure names the subject and keeps the parser's message", () => {
+    expect(refusal('{"a": ', undefined).reason).toMatch(/^not valid JSON \(.+\)$/);
+    expect(refusal("{oops}", "section 'answer'").reason).toMatch(/^not valid JSON for section 'answer' \(.+\)$/);
   });
 });

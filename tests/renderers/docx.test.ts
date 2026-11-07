@@ -1,5 +1,5 @@
 /**
- * DOCX renderer tests (v0.7).
+ * DOCX renderer tests.
  *
  * The tests build a DOCX buffer from a synthetic brief and then
  * unzip it in-memory using a minimal ZIP reader (below) so we can

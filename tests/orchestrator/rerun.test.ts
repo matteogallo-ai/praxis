@@ -1,5 +1,5 @@
 /**
- * v0.8 — Orchestrator.briefWithCritiqueAndRerun() end-to-end tests.
+ * Orchestrator.briefWithCritiqueAndRerun() end-to-end tests.
  *
  * The editorial re-run loop is capped at ONE iteration. These tests
  * verify:

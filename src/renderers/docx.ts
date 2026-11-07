@@ -1,5 +1,5 @@
 /**
- * DOCX renderer (v0.7). From-scratch: no external dep.
+ * DOCX renderer. From-scratch: no external dep.
  *
  * A DOCX file is a ZIP (Open Packaging Convention) whose entries
  * are XML parts. Praxis emits the minimum set Word / LibreOffice

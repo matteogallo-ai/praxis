@@ -1,5 +1,5 @@
 /**
- * v0.9 — Structured error context tests.
+ * Structured error context tests.
  *
  * Verifies that the top-level catch in `runBriefCli` upgrades the
  * three highest-frequency actionable failures into structured
@@ -64,7 +64,7 @@ afterEach(() => {
 const stderr = (): string => stderrBuf.join("");
 
 // ---------------------------------------------------------------------------
-// FormatNotFoundError — v0.9 upgrades this to a structured block.
+// FormatNotFoundError — rendered as a structured block.
 // ---------------------------------------------------------------------------
 
 describe("runBriefCli — FormatNotFoundError becomes structured error", () => {
@@ -85,7 +85,7 @@ describe("runBriefCli — FormatNotFoundError becomes structured error", () => {
 });
 
 // ---------------------------------------------------------------------------
-// AnthropicAuthenticationError — v0.9 upgrades this to a structured block.
+// AnthropicAuthenticationError — rendered as a structured block.
 // ---------------------------------------------------------------------------
 
 describe("runBriefCli — AnthropicAuthenticationError becomes structured error", () => {
@@ -105,7 +105,7 @@ describe("runBriefCli — AnthropicAuthenticationError becomes structured error"
 });
 
 // ---------------------------------------------------------------------------
-// UnsupportedRenderTargetError — v0.9 upgrades this to a structured block.
+// UnsupportedRenderTargetError — rendered as a structured block.
 // ---------------------------------------------------------------------------
 
 describe("runBriefCli — UnsupportedRenderTargetError becomes structured error", () => {

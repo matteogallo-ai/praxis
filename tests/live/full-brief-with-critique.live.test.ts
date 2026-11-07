@@ -1,5 +1,5 @@
 /**
- * Live end-to-end integration test for the v0.7 seven-agent pipeline
+ * Live end-to-end integration test for the seven-agent pipeline
  * with critique, rendered to Markdown, DOCX, and PDF for human
  * inspection.
  *

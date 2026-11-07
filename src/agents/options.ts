@@ -1,5 +1,5 @@
 /**
- * Options Generation agent — v0.6, the fifth Praxis agent.
+ * Options Generation agent, the fifth Praxis agent.
  *
  * First agent whose input includes ALL FOUR prior artefacts (Scoping +
  * Research + Stakeholders + Risks). Produces an
@@ -27,7 +27,7 @@
  */
 
 import { sourceGuidance } from "../sourcing/guidance.ts";
-import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, parseAnswerObject, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -148,29 +148,7 @@ export function parseOptionsGenerationResult(
   stakeholders: StakeholderMapResult,
   risks: RiskAnalysisResult
 ): OptionsGenerationResult {
-  const stripped = extractJsonText(raw);
-  if (stripped.length === 0) {
-    throw new InvalidAgentOutputError(AGENT_ID, "empty response", raw);
-  }
-  let value: unknown;
-  try {
-    value = JSON.parse(stripped);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `not valid JSON (${message})`,
-      raw
-    );
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      "expected a JSON object at the top level",
-      raw
-    );
-  }
-  const obj = value as Record<string, unknown>;
+  const obj = parseAnswerObject(AGENT_ID, raw);
 
   const rawOptions = obj["options"];
   if (!Array.isArray(rawOptions)) {
@@ -206,11 +184,11 @@ export function parseOptionsGenerationResult(
     }
     seenIds.add(o.id);
   }
-  for (let i = 0; i < parsedOptions.length; i++) {
-    const expected = OPTION_ID_ALPHABET[i]!;
-    if (parsedOptions[i]!.id !== expected) {
+  for (const [i, option] of parsedOptions.entries()) {
+    const expected = OPTION_ID_ALPHABET[i];
+    if (option.id !== expected) {
       throw new OptionsGenerationError(
-        `option ids must be sequential 'OPT-A', 'OPT-B', … — got '${parsedOptions[i]!.id}' at index ${i}, expected '${expected}'`
+        `option ids must be sequential 'OPT-A', 'OPT-B', … — got '${option.id}' at index ${i}, expected '${expected}'`
       );
     }
   }

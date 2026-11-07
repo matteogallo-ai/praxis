@@ -4,8 +4,14 @@
  * moment it is merged, and readers take it as a statement about the code.
  *
  * Scanned: src/, prompts/, docs/, formats/, README.md, benchmarks/RESULTS.md.
- * Excluded: docs/ENGINEERING_STANDARDS.md (quotes the patterns as examples) and
- * CHANGELOG.md (history is its job).
+ * Excluded: docs/ENGINEERING_STANDARDS.md, this script and its tests (they
+ * quote the patterns as examples) and CHANGELOG.md (history is its job).
+ *
+ * Code comments in every .ts file under src/, tests/, benchmarks/ and
+ * scripts/ are also checked for release numbers ("added in v0.8"): a comment
+ * says why, never when (CLAUDE.md rule 6), and git log holds the history.
+ * Only that rule applies to tests/, benchmarks/ and scripts/, whose string
+ * fixtures quote stale prose on purpose.
  *
  * What it does NOT check: future tense phrased in ways no pattern covers,
  * version numbers hard-coded in prose, or whether a statement is true. Those
@@ -17,7 +23,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
 
-export type FindingKind = "future" | "sprint" | "todo-without-issue";
+export type FindingKind = "future" | "sprint" | "todo-without-issue" | "version-history";
 
 export interface Finding {
   file: string;
@@ -60,23 +66,41 @@ const PATTERNS: ReadonlyArray<{ kind: FindingKind; regex: RegExp }> = [
   { kind: "todo-without-issue", regex: /(?<!-)\b(?:TODO|FIXME|XXX)\b(?!\s*\(#\d+\))/ },
 ];
 
+// A line that is a comment, or ends in one. `//` must follow whitespace or
+// start the line, so a URL's `https://` does not open a comment.
+const COMMENT = /^\s*(?:\/\/|\/\*|\*)|(?:^|\s)\/\/\s/;
+const RELEASE_NUMBER = /\bv\d+\.\d+/;
+
+function isVersionHistory(file: string, line: string): boolean {
+  if (!file.endsWith(".ts") || !COMMENT.test(line)) return false;
+  return RELEASE_NUMBER.test(line.replace(/https?:\/\/\S+/g, ""));
+}
+
 /**
  * Scans one file's text. Reports at most one finding per line, using the first
  * matching pattern, so one stale sentence yields one actionable line of output.
  */
-export function scanText(file: string, text: string): Finding[] {
+export function scanText(file: string, text: string, { prose = true }: { prose?: boolean } = {}): Finding[] {
   const findings: Finding[] = [];
   const lines = text.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] ?? "";
-    const match = PATTERNS.find(({ regex }) => regex.test(line));
-    if (match) findings.push({ file, line: i + 1, kind: match.kind, excerpt: line.trim() });
+    const match = prose ? PATTERNS.find(({ regex }) => regex.test(line)) : undefined;
+    const kind = match?.kind ?? (isVersionHistory(file, line) ? "version-history" : undefined);
+    if (kind) findings.push({ file, line: i + 1, kind, excerpt: line.trim() });
   }
   return findings;
 }
 
 const ROOTS = ["src", "prompts", "docs", "formats", "README.md", "benchmarks/RESULTS.md"];
-const EXCLUDED = new Set(["docs/ENGINEERING_STANDARDS.md", "CHANGELOG.md"]);
+const CODE_ROOTS = ["src", "tests", "benchmarks", "scripts"];
+// This checker and its tests quote the patterns they look for.
+const EXCLUDED = new Set([
+  "docs/ENGINEERING_STANDARDS.md",
+  "CHANGELOG.md",
+  "scripts/check-stale-narrative.ts",
+  "scripts/check-stale-narrative.test.ts",
+]);
 
 async function* walk(dir: string): AsyncGenerator<string> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -89,9 +113,9 @@ async function* walk(dir: string): AsyncGenerator<string> {
   }
 }
 
-async function listTargets(repoRoot: string): Promise<string[]> {
+async function listTargets(repoRoot: string, roots: readonly string[]): Promise<string[]> {
   const files: string[] = [];
-  for (const root of ROOTS) {
+  for (const root of roots) {
     const abs = join(repoRoot, root);
     const info = await stat(abs).catch(() => null);
     if (info === null) continue;
@@ -110,10 +134,16 @@ async function listTargets(repoRoot: string): Promise<string[]> {
 /** Scans the repository and returns every finding, sorted by path. */
 export async function scanRepository(repoRoot: string): Promise<Finding[]> {
   const findings: Finding[] = [];
-  for (const file of await listTargets(repoRoot)) {
+  const proseFiles = await listTargets(repoRoot, ROOTS);
+  for (const file of proseFiles) {
     findings.push(...scanText(file, await readFile(join(repoRoot, file), "utf8")));
   }
-  return findings;
+  const prose = new Set(proseFiles);
+  for (const file of await listTargets(repoRoot, CODE_ROOTS)) {
+    if (prose.has(file) || !file.endsWith(".ts")) continue;
+    findings.push(...scanText(file, await readFile(join(repoRoot, file), "utf8"), { prose: false }));
+  }
+  return findings.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line));
 }
 
 if (import.meta.main) {

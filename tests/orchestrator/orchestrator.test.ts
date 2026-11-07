@@ -320,7 +320,7 @@ describe("Orchestrator.researchAfterScoping", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.4 — Orchestrator.mapStakeholdersAfterResearch
+// Orchestrator.mapStakeholdersAfterResearch
 // ---------------------------------------------------------------------------
 
 describe("Orchestrator.mapStakeholdersAfterResearch", () => {
@@ -623,7 +623,7 @@ describe("Orchestrator.mapStakeholdersAfterResearch", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.5 — Orchestrator.assessRisksAfterStakeholders
+// Orchestrator.assessRisksAfterStakeholders
 // ---------------------------------------------------------------------------
 
 describe("Orchestrator.assessRisksAfterStakeholders", () => {
@@ -740,7 +740,7 @@ describe("Orchestrator.assessRisksAfterStakeholders", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.6 — Orchestrator.brief() end-to-end (full six-agent pipeline)
+// Orchestrator.brief() end-to-end (full six-agent pipeline)
 // ---------------------------------------------------------------------------
 
 describe("Orchestrator.brief() — end-to-end", () => {
@@ -908,7 +908,7 @@ describe("Orchestrator.brief() — end-to-end", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.7 — Orchestrator.briefWithCritique() end-to-end
+// Orchestrator.briefWithCritique() end-to-end
 // ---------------------------------------------------------------------------
 
 describe("Orchestrator.briefWithCritique() — end-to-end", () => {

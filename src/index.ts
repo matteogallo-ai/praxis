@@ -1,8 +1,8 @@
 /**
- * Public API of the Praxis library (v0.8 — v1.0 preparation).
+ * Public API of the Praxis library.
  *
  * This module is the CONTRACT: every named export below is covered
- * by the v1.0 SemVer contract. Removing an export, changing its
+ * by the SemVer contract (docs/SEMVER-CONTRACT.md). Removing an export, changing its
  * shape, or altering an error class's inheritance is a breaking
  * change (major-version bump).
  *
@@ -25,7 +25,7 @@
  */
 
 // ---------------------------------------------------------------------------
-// Registry (v0.1) — the source of truth for briefing format contracts.
+// Registry — the source of truth for briefing format contracts.
 // ---------------------------------------------------------------------------
 
 export * from "./registry/schema.ts";
@@ -35,7 +35,7 @@ export { FormatRegistry, loadRegistry } from "./registry/registry.ts";
 export type { RegistryEntry, LoadDirectoryOptions } from "./registry/registry.ts";
 
 // ---------------------------------------------------------------------------
-// LLM provider layer (v0.2 / v0.3).
+// LLM provider layer.
 // ---------------------------------------------------------------------------
 
 export type { LLMProvider, CompleteOptions } from "./llm/provider.ts";
@@ -57,7 +57,7 @@ export type {
 } from "./llm/anthropic-provider.ts";
 
 // ---------------------------------------------------------------------------
-// Sourcing layer (v0.3 / v0.5 hardened).
+// Sourcing layer.
 // ---------------------------------------------------------------------------
 
 export type {
@@ -78,7 +78,7 @@ export {
 } from "./sourcing/validator.ts";
 
 // ---------------------------------------------------------------------------
-// Agent RESULT types (v0.2 through v0.8).
+// Agent RESULT types.
 //
 // These are the shapes callers reason about after a run. The
 // executeXxx() implementations that PRODUCE them are internal past
@@ -117,7 +117,7 @@ export {
 } from "./agents/stakeholder.ts";
 export type { ExecuteStakeholderMappingOptions } from "./agents/stakeholder.ts";
 
-// Risk analysis (v0.5) — RESULT type only. `executeRiskAnalysis` is
+// Risk analysis — RESULT type only. `executeRiskAnalysis` is
 // internal on purpose: it is reachable via
 // `Orchestrator.assessRisksAfterStakeholders()`.
 export type {
@@ -138,7 +138,7 @@ export {
   AGGREGATED_RISK_LEVELS,
 } from "./agents/types.ts";
 
-// Options generation (v0.6) — RESULT type only. Access via
+// Options generation — RESULT type only. Access via
 // `Orchestrator.brief()`.
 export type {
   OptionsContext,
@@ -150,9 +150,9 @@ export type {
 } from "./agents/types.ts";
 export { OPTION_RECOMMENDATION_LEVELS } from "./agents/types.ts";
 
-// Synthesis (v0.6, extended in v0.8) — RESULT type only.
+// Synthesis — RESULT type only.
 // `executeSynthesis` is internal on purpose: it is reachable via
-// `Orchestrator.brief()`. The v0.8 REVISION MODE inputs
+// `Orchestrator.brief()`. The REVISION MODE inputs
 // (`RevisionContext`) live inside `SynthesisContext` and are set
 // only by `Orchestrator.briefWithCritiqueAndRerun()`.
 export type {
@@ -162,12 +162,11 @@ export type {
   ForbiddenTermHit,
   FailedValidationRule,
   FormatConformance,
-  // v0.8 additions.
   EditorialAttempt,
   RevisionContext,
 } from "./agents/types.ts";
 
-// Adversarial critique (v0.7) — RESULT type only. Reachable via
+// Adversarial critique — RESULT type only. Reachable via
 // `Orchestrator.briefWithCritique()` /
 // `Orchestrator.briefWithCritiqueAndRerun()`.
 export type {
@@ -204,13 +203,12 @@ export type {
   AssessRisksAfterStakeholdersResult,
   BriefResult,
   BriefWithCritiqueResult,
-  // v0.8 additions.
   BriefWithCritiqueAndRerunResult,
   RerunMetadata,
 } from "./orchestrator/orchestrator.ts";
 
 // ---------------------------------------------------------------------------
-// Renderers dispatcher (v0.7).
+// Renderers dispatcher.
 // ---------------------------------------------------------------------------
 
 export {
@@ -230,7 +228,7 @@ export type {
 export { RENDER_TARGETS, RENDER_THEMES, hasCritique } from "./renderers/index.ts";
 
 // ---------------------------------------------------------------------------
-// Error taxonomy (v0.8 canonical public surface).
+// Error taxonomy (canonical public surface).
 //
 // The `errors/public.ts` barrel is the source of truth. Every error
 // class re-exported here inherits from `PraxisError` — consumers can

@@ -1,5 +1,5 @@
 /**
- * End-to-end integration test for the v0.5 hardened sourcing layer.
+ * End-to-end integration test for the hardened sourcing layer.
  *
  * Directly exercises `validateSourcing` / `validateStakeholderSourcing`
  * / `validateRiskSourcing` under a shipped format's `sourcing_rules`,

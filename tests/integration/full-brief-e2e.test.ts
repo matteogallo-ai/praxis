@@ -1,5 +1,5 @@
 /**
- * End-to-end integration test for the FULL v0.6 briefing pipeline
+ * End-to-end integration test for the full briefing pipeline
  * (mock provider). Spawns the CLI as a child process and asserts on
  * the Markdown-briefing observable contract, on file writing via
  * --output, on JSON emission via --json, and on the sourcing report

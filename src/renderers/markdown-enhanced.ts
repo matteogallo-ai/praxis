@@ -1,7 +1,7 @@
 /**
- * Enhanced Markdown renderer (v0.7).
+ * Enhanced Markdown renderer.
  *
- * Extends the v0.6 `renderFullBrief()` plain-Markdown output with:
+ * Extends the `renderFullBrief()` plain-Markdown output with:
  *   - a table of contents (opt-in via `include_toc`)
  *   - a dedicated Sources section with de-duplicated,
  *     domain-sorted references
@@ -255,13 +255,12 @@ function renderSourcesSection(
   const byDomain = new Map<string, SourceReference[]>();
   for (const src of seen.values()) {
     const host = extractHost(src.url);
-    if (!byDomain.has(host)) byDomain.set(host, []);
-    byDomain.get(host)!.push(src);
+    byDomain.set(host, [...(byDomain.get(host) ?? []), src]);
   }
-  const domains = [...byDomain.keys()].sort();
-  for (const domain of domains) {
+  const domains = [...byDomain.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  for (const [domain, sources] of domains) {
     parts.push(`### ${plainText(domain)}\n\n`);
-    for (const s of byDomain.get(domain)!.sort((a, b) => a.title.localeCompare(b.title))) {
+    for (const s of sources.sort((a, b) => a.title.localeCompare(b.title))) {
       parts.push(`- [${escapeMarkdownLinkText(s.title)}](${linkTarget(s.url)}) · ${sourceDates(s)}\n`);
     }
     parts.push("\n");

@@ -147,8 +147,8 @@ const CRC_TABLE = (() => {
 /** CRC32 (little-endian output). Used by both local + central headers. */
 export function computeCrc32(data: Buffer): number {
   let crc = 0xffffffff;
-  for (let i = 0; i < data.length; i++) {
-    const byte = data[i]!;
+  for (const byte of data) {
+    // biome-ignore lint/style/noNonNullAssertion: the index is masked to 0–255 and the table has 256 entries.
     crc = (CRC_TABLE[(crc ^ byte) & 0xff]! ^ (crc >>> 8)) >>> 0;
   }
   return (crc ^ 0xffffffff) >>> 0;

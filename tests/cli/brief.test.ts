@@ -162,7 +162,7 @@ describe("runBriefCli — nominal (scoping only, mock provider)", () => {
     expect(out).toContain("hidden_questions");
     expect(out).toContain("scope_boundaries");
     expect(out).toContain("assumptions_to_validate");
-    // v0.6: the trailer now points at --full instead of "coming in v0.6+".
+    // The trailer points at --full.
     expect(out).toContain("--full");
   });
 
@@ -443,7 +443,7 @@ describe("runBriefCli — error paths", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.5 — --with-risks and --sourcing-report
+// --with-risks and --sourcing-report
 // ---------------------------------------------------------------------------
 
 describe("parseBriefArgs — v0.5 flags", () => {
@@ -645,7 +645,7 @@ describe("briefCommand — --sourcing-report (v0.5)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.6 — --full, --output, --with-sourcing-report
+// --full, --output, --with-sourcing-report
 // ---------------------------------------------------------------------------
 
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -886,7 +886,7 @@ describe("briefCommand — --full (v0.6, mock provider)", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.7 — --critique, --render, --theme, --include-toc, --include-appendices
+// --critique, --render, --theme, --include-toc, --include-appendices
 // ---------------------------------------------------------------------------
 
 import { readFileSync as readFileSync_v07, rmSync as rmSync_v07 } from "node:fs";
@@ -987,7 +987,7 @@ describe("briefCommand — v0.7 --render", () => {
         CTX
       );
       expect(code).toBe(0);
-      // stdout empty (v0.7 --render writes stderr confirmation).
+      // stdout empty: --render writes its confirmation to stderr.
       expect(stdout()).toBe("");
       expect(stderr()).toContain(path);
       const md = readFileSync_v07(path, "utf-8");
@@ -1139,7 +1139,7 @@ describe("briefCommand — v0.7 --render", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.8 — --with-rerun flag (editorial re-run loop)
+// --with-rerun flag (editorial re-run loop)
 // ---------------------------------------------------------------------------
 
 describe("parseBriefArgs — v0.8 --with-rerun flag", () => {
