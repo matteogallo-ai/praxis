@@ -7,9 +7,10 @@ attestation, from `github.com/matteogallo-ai/promptlang`), it imported
 PromptLang's sources through `tsconfig.json` `paths` to a sibling
 `../promptlang` checkout, and CI checked that repository out next to it.
 
-`3.0.0` breaks code generation (`compile`), `analyze --strict` and
-`RoutingClient`; Praxis uses none of them, only `tokenize`, `parse`, the AST
-types and the `semver-check` CLI. Under `2.0.0` and `3.0.0` the seven files
+`3.0.0` breaks, among others, `compile` and the code it generates,
+`analyze --strict`, `expect schema` and `promptlang test`, `RoutingClient`
+and the clients' 404 error; Praxis uses none of them, only `tokenize`,
+`parse`, the AST types and the `semver-check` CLI. Under `2.0.0` and `3.0.0` the seven files
 in `prompts/` parse to identical ASTs (SHA-256 of each file's JSON AST),
 and `semver-check` passes.
 

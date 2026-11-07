@@ -746,7 +746,7 @@ describe("validateFormat — validation_rules shape check is linear", () => {
 
   // CodeQL js/polynomial-redos (#16): `\s*:\s*.+$` backtracked over a long
   // run of whitespace before an unmatched line end, in time quadratic in
-  // its length (8 000 spaces took 70 ms, 80 000 about 7 s).
+  // its length: ten times the spaces, about a hundred times the time.
   test("a rule of 60 000 spaces then two line ends is refused fast", () => {
     const started = performance.now();
     expect(() => validateFormat(withRule(`a:${" ".repeat(60_000)}\n\n`))).toThrow(ValidationError);

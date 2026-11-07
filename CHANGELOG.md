@@ -29,9 +29,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   "empty response", like the other stages, instead of a JSON parse error.
 - `bun run lint` (and the CI lint job) fails on any Biome warning. The 42
   warnings in production code are fixed; tests may use non-null assertions.
-- A format's validation rule was checked with a regular expression that
-  backtracked: 60 000 spaces took 2 915 ms (measured before the fix). The check is linear and
+- A format's validation rule was checked with a regular expression whose
+  time grew with the square of a run of spaces. The check is linear and
   refuses a rule whose value is only whitespace (CodeQL `js/polynomial-redos`).
+- A stakeholder name with backticks across lines could become a link in the
+  enhanced Markdown's stakeholder table: the cell joined its lines after
+  escaping, which changed how its backticks paired. It joins them first.
 - Tests wrote fixed or time-stamped names under the shared temp directory;
   they use a fresh 0700 directory per run (CodeQL
   `js/insecure-temporary-file`).
