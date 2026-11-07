@@ -5,7 +5,6 @@
 import type { AdversarialCritiqueResult, Critique, SynthesisResult, SynthesizedSection } from "../agents/types.ts";
 import { levenshtein } from "../sourcing/dedupe.ts";
 
-
 /**
  * "Substantial change" between two versions of a section:
  *   - absolute word-count delta > 20% of the OLD count, OR

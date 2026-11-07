@@ -76,7 +76,6 @@ import type {
 export type * from "./types.ts";
 export { computeReSynthesisDeviations, isSubstantiallyChanged } from "./rerun.ts";
 
-
 const NOTHING_TO_DO = {
   research: "nothing to research",
   stakeholder: "nothing to map",
