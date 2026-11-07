@@ -17,7 +17,8 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - README said "nothing runs in parallel" while the synthesis sections run
   concurrently; "McKinsey-style" is gone from the tagline.
 - Comments that said when ("v0.8 additions.") are rewritten, and
-  `check:stale-narrative` fails on a release number in a `.ts` comment.
+  `check:stale-narrative` fails on a release number in a `.ts` comment under
+  `src/`, `tests/`, `benchmarks/` or `scripts/`.
 - The seven stages share one JSON-answer reader, `parseAnswerObject()`;
   scoping refuses an empty answer as "empty response".
 - `bun run lint` fails on any Biome warning; tests may use non-null
@@ -60,13 +61,13 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - The "AI-assisted qualitative scoring" of mock briefings is withdrawn: the
   scores graded the fixtures. The v1.3.1 re-scoring plan is abandoned.
 - README and the system card said every live run failed "5 of 5"; the count
-  is computed from the run records (`tests/docs/live-attempts.test.ts`).
+  is computed from the run records (`tests/docs/live-records.ts`).
 - Source freshness was measured on `accessed_at`, so a live source was
   always fresh; it is judged on an optional `published_at`, and a source
   without one counts in `freshness_unknown`.
-- The options and adversarial citations follow the domain-trust rule
-  (critiques reported without blocking), listed in
-  `SourcingReport.untrusted_citations`.
+- The options' citations follow the domain-trust rule like stages 2–4
+  (strict fails or degrades); critiques' are reported without blocking. Both
+  are listed in `SourcingReport.untrusted_citations`.
 
 ### Added
 
@@ -91,8 +92,9 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   completed, all flagged insufficiently sourced; question 02 failed in
   synthesis. $17.96 spent against a $30.23 central estimate.
 - First-party sources (ADR 0003): a research or stakeholder source on an
-  untrusted host counts as an organisation's own when it is on the reviewed
-  list; such sources do not block under `strict` and are listed apart.
+  untrusted host counts as the organisation's own source when the stage marks
+  it `first_party_for` an organisation of the reviewed list, the host is one
+  of its domains and the item names it; such sources do not block under `strict` and are listed apart.
 - The research, stakeholder, risk and options prompts (3.0.0) name the
   format's trusted hosts by tier and ask for each source's `published_at`.
 - Scoping names the facts only the requester can supply
@@ -225,7 +227,7 @@ to make; three layers of the pipeline now push for a decision-first opening.
 
 ## [1.2.1] — 2026-08-20
 
-**First empirical scoring of the mock briefings, and the first live
+**Scoring of the mock briefings (withdrawn, see below), and the first live
 attempt.** No code changes (src/, prompts/, formats/ untouched).
 
 The first `bun run bench:live` attempt aborted every briefing before any
