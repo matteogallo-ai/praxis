@@ -5,7 +5,7 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/matteogallo-ai/praxis/badge)](https://scorecard.dev/viewer/?uri=github.com/matteogallo-ai/praxis) ([why some checks stay low](docs/supply-chain.md#scorecard-checks-that-stay-low))
 
 > A 7-stage LLM pipeline that turns a business question into an analytical
-> briefing shaped by a declared format (executive pre-read, McKinsey-style
+> briefing shaped by a declared format (executive pre-read, consulting-style
 > note, position paper, family-office memo), with sourcing checks, an
 > adversarial review and Markdown / PDF / DOCX output.
 
@@ -85,8 +85,10 @@ sample), is the work under [Roadmap](#roadmap).
 
 ## Architecture
 
-Seven LLM calls in a fixed order, each stage receiving the earlier stages'
-typed output. Stages run one after another; nothing runs in parallel today.
+Seven stages in a fixed order, each receiving the earlier stages' typed
+output. The stages run one after another; inside the synthesis stage, the
+format's sections are written by one call each, concurrently
+(`src/agents/synthesis.ts`).
 
 ```mermaid
 flowchart LR
