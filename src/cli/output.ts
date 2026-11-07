@@ -181,24 +181,21 @@ export function renderTable(
   columns: readonly TableColumn[],
   rows: readonly { [k: string]: string }[]
 ): string {
-  const widths = columns.map((col) => {
-    let w = Math.max(col.minWidth ?? 0, col.header.length);
+  const sized = columns.map((col) => {
+    let width = Math.max(col.minWidth ?? 0, col.header.length);
     for (const row of rows) {
       const cell = row[col.key] ?? "";
-      if (cell.length > w) w = cell.length;
+      if (cell.length > width) width = cell.length;
     }
-    return w;
+    return { col, width };
   });
 
   const pad = (s: string, w: number): string => s + " ".repeat(Math.max(0, w - s.length));
 
-  const headerCells = columns.map((col, i) => c.bold(pad(col.header, widths[i]!)));
-  const header = headerCells.join("  ");
-  const separator = widths.map((w) => "-".repeat(w)).join("  ");
+  const header = sized.map(({ col, width }) => c.bold(pad(col.header, width))).join("  ");
+  const separator = sized.map(({ width }) => "-".repeat(width)).join("  ");
   const body = rows
-    .map((row) =>
-      columns.map((col, i) => pad(row[col.key] ?? "", widths[i]!)).join("  ")
-    )
+    .map((row) => sized.map(({ col, width }) => pad(row[col.key] ?? "", width)).join("  "))
     .join("\n");
 
   return [header, c.dim(separator), body].filter((s) => s.length > 0).join("\n");

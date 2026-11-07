@@ -174,11 +174,11 @@ export function parseAdversarialCritiqueResult(
     }
     seenIds.add(c.id);
   }
-  for (let i = 0; i < critiques.length; i++) {
+  for (const [i, critique] of critiques.entries()) {
     const expected = `CRIT-${String(i + 1).padStart(3, "0")}`;
-    if (critiques[i]!.id !== expected) {
+    if (critique.id !== expected) {
       throw new AdversarialCritiqueError(
-        `critique ids must be sequential 'CRIT-001', 'CRIT-002', … — got '${critiques[i]!.id}' at index ${i}, expected '${expected}'`
+        `critique ids must be sequential 'CRIT-001', 'CRIT-002', … — got '${critique.id}' at index ${i}, expected '${expected}'`
       );
     }
   }

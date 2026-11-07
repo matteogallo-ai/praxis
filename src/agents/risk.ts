@@ -153,11 +153,11 @@ export function parseRiskAnalysisResult(
     }
     seenIds.add(r.id);
   }
-  const expected = risks.map((_, i) => `RISK-${String(i + 1).padStart(3, "0")}`);
-  for (let i = 0; i < risks.length; i++) {
-    if (risks[i]!.id !== expected[i]) {
+  for (const [i, risk] of risks.entries()) {
+    const expected = `RISK-${String(i + 1).padStart(3, "0")}`;
+    if (risk.id !== expected) {
       throw new RiskAnalysisError(
-        `risk ids must be sequential 'RISK-001', 'RISK-002', … — got '${risks[i]!.id}' at index ${i}, expected '${expected[i]}'`
+        `risk ids must be sequential 'RISK-001', 'RISK-002', … — got '${risk.id}' at index ${i}, expected '${expected}'`
       );
     }
   }

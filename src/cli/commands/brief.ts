@@ -191,7 +191,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   });
 
   for (let i = 0; i < args.length; i++) {
-    const a = args[i]!;
+    const a = args[i];
+    if (a === undefined) break;
     if (a === "--format") {
       const next = args[i + 1];
       if (next === undefined) {
@@ -281,7 +282,8 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
     }
   }
 
-  if (positional.length === 0) {
+  const [question] = positional;
+  if (question === undefined) {
     return errorReturn(
       "missing question. Usage: praxis brief \"<question>\" --format <id>"
     );
@@ -293,7 +295,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   }
   if (formatId === null) {
     return {
-      question: positional[0]!,
+      question,
       formatId: "",
       provider,
       json,
@@ -315,7 +317,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   }
   if (renderTarget !== null && !full) {
     return {
-      question: positional[0]!,
+      question,
       formatId,
       provider,
       json,
@@ -336,7 +338,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   }
   if (outputPath !== null && !full) {
     return {
-      question: positional[0]!,
+      question,
       formatId,
       provider,
       json,
@@ -358,7 +360,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   }
   if (renderTarget !== null && outputPath === null) {
     return {
-      question: positional[0]!,
+      question,
       formatId,
       provider,
       json,
@@ -380,7 +382,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   }
   if (withRerun && !full) {
     return {
-      question: positional[0]!,
+      question,
       formatId,
       provider,
       json,
@@ -402,7 +404,7 @@ export function parseBriefArgs(args: readonly string[]): ParsedBriefArgs {
   }
 
   return {
-    question: positional[0]!,
+    question,
     formatId,
     provider,
     json,
@@ -560,8 +562,10 @@ async function fullBrief(
       renderOpts.theme = themeArg as RenderTheme;
     }
     const buf = await dispatchRender(result, opts.renderTarget, format, renderOpts);
-    // opts.outputPath is guaranteed non-null (parser enforces it).
-    writeFileSync(opts.outputPath!, buf);
+    // The parser refuses --render without --output; this keeps that
+    // promise checked here too rather than asserted.
+    if (opts.outputPath === null) throw new PraxisError("--render requires --output <path>");
+    writeFileSync(opts.outputPath, buf);
     process.stderr.write(
       `${c.dim("wrote")} ${opts.outputPath} ${c.dim(`(${buf.length} bytes, ${opts.renderTarget})`)}\n`
     );

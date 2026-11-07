@@ -6,7 +6,7 @@
  * format recorded in the run, and `--full`, so a resumed run cannot drift
  * from the one it continues.
  */
-import { CheckpointStore } from "../orchestrator/checkpoint.ts";
+import type { CheckpointStore } from "../orchestrator/checkpoint.ts";
 
 export interface RunArgs {
   resume: string | null;
@@ -63,7 +63,8 @@ export function extractRunArgs(
   const values: Partial<Record<(typeof VALUE_FLAGS)[number], string>> = {};
   const rest: string[] = [];
   for (let i = 0; i < args.length; i++) {
-    const a = args[i]!;
+    const a = args[i];
+    if (a === undefined) break;
     const flag = VALUE_FLAGS.find((f) => a === f || a.startsWith(`${f}=`));
     if (flag === undefined) {
       rest.push(a);

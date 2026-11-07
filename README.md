@@ -214,7 +214,7 @@ Reference: [`docs/api.md`](docs/api.md).
 bun install --frozen-lockfile
 bun run typecheck                    # tsc --noEmit, strict
 bun test                             # mock provider only; live tests need PRAXIS_LIVE_TESTS=1
-bun run lint                         # Biome
+bun run lint                         # Biome; any warning fails
 bun run knip                         # unused files, exports, dependencies
 bun run check:claims                 # docs/CLAIMS.md ≡ passing tests ≡ this README
 bun run check:stale-narrative        # no future tense or untracked TODOs in shipped text

@@ -655,9 +655,9 @@ function buildFormatConformance(
   const failedRules: FailedValidationRule[] = [];
   for (const s of sections) {
     for (const issue of s.validation_issues) {
-      const m = issue.match(/^validation_rule not honoured: '([^']+)'/);
-      if (m !== null) {
-        failedRules.push({ section_id: s.section_id, rule: m[1]! });
+      const rule = issue.match(/^validation_rule not honoured: '([^']+)'/)?.[1];
+      if (rule !== undefined) {
+        failedRules.push({ section_id: s.section_id, rule });
       }
     }
   }

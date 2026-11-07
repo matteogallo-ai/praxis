@@ -77,7 +77,8 @@ export function parseRunAllArgs(argv: readonly string[]): RunAllOptions {
   let ids: string[] | undefined;
   let maxCostUsd: number | undefined;
   for (let i = 0; i < argv.length; i++) {
-    const a = argv[i]!;
+    const a = argv[i];
+    if (a === undefined) break;
     if (a === "--mock-only") mockOnly = true;
     else if (a === "--live-only") liveOnly = true;
     else if (a === "--dry-run") dryRun = true;
@@ -329,8 +330,7 @@ function decideModes(opts: RunAllOptions): readonly ("mock" | "live")[] {
   if (opts.mockOnly) return ["mock"];
   if (opts.liveOnly) return ["live"];
   const hasKey =
-    typeof process.env["ANTHROPIC_API_KEY"] === "string" &&
-    process.env["ANTHROPIC_API_KEY"]!.length > 0;
+    (process.env["ANTHROPIC_API_KEY"] ?? "").length > 0;
   return hasKey && opts.maxCostUsd !== undefined ? ["mock", "live"] : ["mock"];
 }
 
@@ -345,10 +345,7 @@ function makeProvider(mode: "mock" | "live", root: string): LLMProvider {
       fixturesDir: join(root, "tests", "fixtures", "mock-llm"),
     });
   }
-  if (
-    typeof process.env["ANTHROPIC_API_KEY"] !== "string" ||
-    process.env["ANTHROPIC_API_KEY"]!.length === 0
-  ) {
+  if ((process.env["ANTHROPIC_API_KEY"] ?? "").length === 0) {
     throw new Error(
       "--live-only requires ANTHROPIC_API_KEY in the environment"
     );

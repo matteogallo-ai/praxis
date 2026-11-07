@@ -184,11 +184,11 @@ export function parseOptionsGenerationResult(
     }
     seenIds.add(o.id);
   }
-  for (let i = 0; i < parsedOptions.length; i++) {
-    const expected = OPTION_ID_ALPHABET[i]!;
-    if (parsedOptions[i]!.id !== expected) {
+  for (const [i, option] of parsedOptions.entries()) {
+    const expected = OPTION_ID_ALPHABET[i];
+    if (option.id !== expected) {
       throw new OptionsGenerationError(
-        `option ids must be sequential 'OPT-A', 'OPT-B', … — got '${parsedOptions[i]!.id}' at index ${i}, expected '${expected}'`
+        `option ids must be sequential 'OPT-A', 'OPT-B', … — got '${option.id}' at index ${i}, expected '${expected}'`
       );
     }
   }
