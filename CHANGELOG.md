@@ -398,238 +398,55 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ## [1.3.0] — 2026-08-20
 
-### Framing clarity — structural prompt overhaul
-
-v1.2.1 empirical scoring identified **framing clarity** as the
-weakest criterion across all eleven mock briefings (1.9 / 5
-average, with 8 / 11 briefings scoring 1 or 2). The root cause
-was consistent: opening sections led with context or
-meta-commentary ("This memo examines...", "Germany presents both
-opportunities and challenges...") rather than with the decision
-the reader is being asked to make.
-
-v1.3.0 attacks the root cause at three layers of the pipeline —
-the format schema, the section directives, and the Synthesis
-prompt itself. Every layer pushes the model toward a
-decision-first opening on the section that determines whether the
-reader keeps reading or delegates.
+**Framing clarity — structural prompt overhaul.** Opening sections led with
+context or meta-commentary rather than with the decision the reader is asked
+to make; three layers of the pipeline now push for a decision-first opening.
 
 ### Added
 
-- **New optional `tone_hook` field on `FormatSection`** — a
-  short, opinionated override that Synthesis treats as the
-  ABSOLUTE FIRST PRIORITY for the section, overriding any
-  conflicting guidance from the section's `tone_directives` on
-  ordering and opening. Used exclusively on the opening section
-  of each format (`context`, `situation`, `issue-framing`,
-  `principal-summary`) with the same imperative payload:
-  _"Open with the decision. Not the context. Not the framing.
-  THE DECISION. Reader must know within 15 words whether to keep
-  reading or delegate."_
-- **FRAMING RULES block appended to every section's
-  `tone_directives`** across the four shipped formats. Each block
-  imposes three constraints: (1) the first sentence names the
-  decision (not the context, not "this report"); (2) the first
-  sentence carries the subject AND the temporality (immediate /
-  3-6 months / long-term); (3) the first paragraph enables a
-  triage decision in three lines or fewer (advantage / risk /
-  recommendation). Opening sections also carry a format-specific
-  ✓/✗ example pair to anchor the model on the target register.
-- **FRAMING CLARITY CHECK block in
-  `prompts/synthesis.prompt`** — a pre- and post-writing gate
-  that instructs the Synthesis agent to (a) verify the opening
-  sentence contains the decision and enables 15-second triage
-  before producing the section, and (b) re-read the opening
-  sentence in isolation after writing and rewrite if an
-  executive reading ONLY that sentence would not know what
-  action to take. When `section_tone_hook` is provided
-  (i.e. not `"(none)"`), the prompt treats it as the absolute
-  first priority.
+- Optional `tone_hook` on `FormatSection`, which Synthesis treats as the
+  section's absolute first priority. The opening section of each format
+  carries one: _"Open with the decision. Not the context. Not the framing.
+  THE DECISION. Reader must know within 15 words whether to keep reading or
+  delegate."_
+- A FRAMING RULES block in every section's `tone_directives` across the four
+  shipped formats.
+- A FRAMING CLARITY CHECK block in `prompts/synthesis.prompt`, applied before
+  and after writing a section.
 
 ### Changed
 
-- **`src/registry/schema.ts`** — `FormatSection` gains the
-  optional `tone_hook?: string` field. `SECTION_ALLOWED_KEYS`
-  gains `"tone_hook"`.
-- **`src/registry/validator.ts`** — validator accepts
-  `tone_hook` as an optional non-empty string on any section;
-  rejects empty strings with a clear message.
-- **`src/agents/synthesis.ts`** — `buildSectionInputs()` passes
-  the section's `tone_hook` (or the literal `"(none)"` when
-  absent) into the Synthesis prompt.
-- **`prompts/synthesis.prompt`** — new `section_tone_hook`
-  prompt parameter; new FRAMING CLARITY CHECK block in the
-  system message; new `Section tone hook:` line in the user
-  message.
-- **`formats/executive-pre-read.yaml`,
-  `formats/mckinsey-style-note.yaml`,
-  `formats/position-paper-corporate.yaml`,
-  `formats/family-office-memo.yaml`** — every section's
-  `tone_directives` extended with the FRAMING RULES block.
-  Opening sections (`context`, `situation`, `issue-framing`,
-  `principal-summary`) additionally carry `tone_hook` and a
-  format-specific ✓/✗ example pair.
-- **`tests/fixtures/mock-llm/synthesis-{format}-{opening}.json`**
-  (four fixtures) — rewritten to lead with the decision. The
-  original context-first phrasings ("This memo surfaces the
-  co-investment opportunity...", "Germany presents both
-  opportunities and challenges...") are replaced with imperative
-  openings that name the recommended action, the subject, and
-  the temporality inside the first sentence. `sources_cited`
-  arrays preserved verbatim so upstream sourcing validation is
-  unaffected.
-- **`benchmarks/outputs/mock/*/brief.{md,pdf,docx}` +
-  `metadata.json`** regenerated via `bun run bench:mock`. All
-  eleven mock briefings render cleanly under the new opening
-  fixtures.
-
-### Deferred — empirical re-scoring
-
-Empirical re-scoring of the eleven mocks against the improved
-prompts is deferred to **v1.3.1** (awaiting Anthropic API
-credits refill). The structural changes are shipped now to
-preserve the disciplined shipping cadence and to make the
-prompt improvements available to library consumers immediately.
-
-Expected direction of change (to be validated empirically in
-v1.3.1):
-
-- **`framing_clarity`** — meaningful lift from the 1.9 / 5
-  baseline. The specific magnitude is a v1.3.1 finding, not a
-  v1.3.0 claim; no synthetic numbers are recorded in this
-  release.
-- **Other criteria** (`non_hedging`, `decisive_recommendation`,
-  `concrete_tradeoffs`, `perceived_sourcing`,
-  `adversarial_usefulness`, `format_fidelity`) — no regression
-  expected, since the changes are additive to the sections'
-  directives and do not touch downstream agents or sources.
-
-`benchmarks/RESULTS.md` is intentionally NOT updated in this
-release. It will land in v1.3.1 alongside the empirical scores.
-
-### Notes
-
-- **No API surface change.** `src/index.ts` public exports are
-  unchanged. `tone_hook` is an optional field on a
-  data-only interface (`FormatSection`); adding it is additive
-  under the v1.0 SemVer contract.
-- **No new npm dependency.**
-- **Format registry compatibility.** Formats authored against
-  v1.2.x continue to load unchanged — `tone_hook` is optional
-  and defaults to absent.
-- **Test count**: 1221 pass (up from 1212 baseline). Zero
-  non-live regressions. Six pre-existing live tests continue to
-  require `ANTHROPIC_API_KEY` and are unaffected by this
-  release.
-- **Approximate API cost for this release: $0.** All work is
-  structural (schema, prompts, formats, fixtures). Empirical
-  scoring cost (~$0.30–0.80 for the eleven mocks) shifts to
-  v1.3.1.
-- **Follow-up in ROADMAP.md § v1.3.1**: empirical re-scoring
-  and RESULTS.md refresh.
+- The validator accepts `tone_hook` as an optional non-empty string and
+  rejects an empty one; formats without it load unchanged.
+- `prompts/synthesis.prompt` gains the `section_tone_hook` parameter.
+- The four opening-section mock fixtures lead with the decision, and the mock
+  briefings are regenerated with `bun run bench:mock`.
 
 ## [1.2.1] — 2026-08-20
 
-### First empirical qualitative scoring — mock briefings
+**First empirical scoring of the mock briefings, and the first live
+attempt.** No code changes (src/, prompts/, formats/ untouched).
 
-First empirical run of the v0.10 AI-assisted scoring framework
-against the eleven mock briefings shipped in v0.9 / v1.1.1 / v1.2.
-Every briefing scored by Claude Sonnet 4.5 through the calibrated
-seven-criterion rubric (`benchmarks/scoring-prompt.txt`, "3/5 is
-normal, 4-5 requires genuine excellence, do not inflate").
+The first `bun run bench:live` attempt aborted every briefing before any
+artefact was written:
 
-The live-side of the mock-vs-live comparison table is left blank
-in this release. The first `bun run bench:live` attempt exposed
-systematic gaps between the mock provider (which always synthesises
-well-sourced findings) and the real Anthropic API — see the
-"Deferred — live empirical run" note below. Those gaps are real
-product findings surfaced by the framework and will be addressed
-in a follow-up release; they do not invalidate the mock scoring,
-which is the empirical baseline against which the live results
-will eventually be compared.
+- 3 / 5 briefings — `SourcingValidationError: strict policy, 7-8 of 8 items
+  lack a source`: the model returned findings with `SOURCE_MISSING` markers
+  rather than extracting URLs from `web_search` results.
+- 1 / 5 — research agent raw output began with prose ("I …") before the
+  JSON, tripping `JSON.parse`.
+- 1 / 5 — `AnthropicTimeoutError` at the 60 000 ms default: the research
+  agent's tool-use loop (web search) exceeded the per-request timeout.
 
 ### Added
 
-- `benchmarks/RESULTS.md` now carries an `## AI-Assisted
-  Qualitative Scoring (2026-08-20)` section with an aggregate
-  table (7 criteria × mock, n=11), an 11-row per-briefing table,
-  and a systematic-observations block generated deterministically
-  by `benchmarks/score-all.ts`.
-- `benchmarks/.scoring-cache/` populated with eleven cached
-  scoring payloads (one per mock briefing, 24 h TTL). The cache
-  keeps future `bun run score` runs cheap and idempotent as long
-  as the mock briefings are unchanged.
-
-### Empirical results (mock, n=11)
+- `benchmarks/RESULTS.md` carries an `## AI-Assisted Qualitative Scoring
+  (2026-08-20)` section scoring the eleven mock briefings with Claude
+  Sonnet 4.5.
 
 > **Withdrawn (2026-11-02).** These scores graded mock briefings whose text is
 > hand-written fixture output, so they measure the fixtures, not a model. See
 > Unreleased › Corrected and `benchmarks/RESULTS.md`.
-
-- **Total score:** 25.7 / 35 average (73 %), range 24 – 28.
-- **Strongest criterion across the set:** Adversarial usefulness
-  — perfect 5.0 / 5 on every briefing. The critique regeneration
-  loop consistently produces steelmanned counter-arguments that
-  the scorer flags as genuinely challenging.
-- **Weakest criterion across the set:** Framing clarity —
-  1.9 / 5 average, with 8 / 11 briefings scoring 1 or 2. Root
-  cause: the mock synthesis fixtures do not open with a crisp
-  reformulated question. The framework surfaces this as
-  actionable: "add an executive summary box with decision,
-  magnitude, timing up-front" is the recurring `improvement`
-  suggestion.
-- **Top three briefings:**
-  `11-family-office-co-investment` (28 / 35, family-office-memo),
-  `01-german-market-entry` (27 / 35, mckinsey-style-note),
-  `10-esg-position` (27 / 35, position-paper-corporate).
-- **Bottom briefing:** `06-market-entry-southeast-asia`
-  (24 / 35, mckinsey-style-note) — flagged for weakest framing
-  and thinnest concrete tradeoffs.
-- **Format ranking by mean score:**
-  family-office-memo 28.0 (n=1),
-  position-paper-corporate 26.0 (n=3),
-  mckinsey-style-note 25.5 (n=4),
-  executive-pre-read 25.0 (n=3).
-
-### Deferred — live empirical run
-
-The intended mock-vs-live delta table remains unpopulated. The
-first `bun run bench:live` attempt aborted every briefing before
-any artefact was written:
-
-- 3 / 5 briefings — `SourcingValidationError: strict policy, 7-8
-  of 8 items lack a source`. The real Anthropic model, given the
-  research prompt, returned findings with `SOURCE_MISSING`
-  markers rather than extracting URLs from `web_search` results.
-  The mock provider hides this because its fixtures always carry
-  four verified source fields.
-- 1 / 5 — research agent raw output began with prose ("I …")
-  before the JSON, tripping `JSON.parse`.
-- 1 / 5 — `AnthropicTimeoutError` at the 60 000 ms default. The
-  research agent's tool-use loop exceeded the per-request timeout
-  on a corporate-strategy question.
-
-These are genuine live-pipeline gaps, not scoring-framework
-gaps, and warrant a dedicated fix rather than a config workaround
-inside this chore release. The scoring framework itself is
-validated: it runs to completion on eleven inputs with zero
-errors and produces a well-formed RESULTS.md.
-
-### Notes
-
-- No code changes (src/, prompts/, formats/ untouched).
-- No API surface change; the v1.x additive-only contract is
-  preserved.
-- Baseline test count preserved verbatim (only the
-  `version-constant` string and its dispatch-test assertions
-  change).
-- Approximate API cost for this release: under $2 (11 scoring
-  calls at ~$0.05 each, plus 5 partial live briefing attempts).
-- Follow-up work tracked in ROADMAP.md § "Post-1.2 (planned)":
-  live-pipeline hardening (research JSON extraction, per-agent
-  timeout, permissive-fallback under strict policy) is the
-  precondition for the still-outstanding "empirical mock-vs-live
-  delta" line.
 
 ## [1.2.0] — 2026-08-19
 
