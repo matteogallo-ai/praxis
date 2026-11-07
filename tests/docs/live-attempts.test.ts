@@ -38,6 +38,16 @@ describe("live attempt count", () => {
     });
   }
 
+  test("the defence sheet states the attempts by commit, without a pooled rate or interval", () => {
+    const sheet = flat("docs/defense/FICHE_DEFENSE.md").replace(/`/g, "");
+    for (const g of byCommit()) expect(sheet).toContain(`${g.sha} ${g.completed} sur ${g.attempts}`);
+    expect(sheet).not.toMatch(/intervalle de \d+ % à \d+ %/);
+  });
+
+  test("the sentence dates the attempts before it lists them, so no date reads as one commit's", () => {
+    expect(sentence).toMatch(/^Live attempts by commit \([^)]*\d{4}\), completed of attempted: /);
+  });
+
   test("the system card has one completion row per commit, without an interval", () => {
     const card = flat("docs/SYSTEM_CARD.md");
     for (const g of byCommit()) {

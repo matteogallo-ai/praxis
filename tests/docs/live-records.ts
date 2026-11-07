@@ -97,7 +97,7 @@ export function attemptsSentence(): string {
   const rows = byCommit()
     .map((g) => `${g.sha} ${g.completed} of ${g.attempts}`)
     .join(", ");
-  return `Live attempts by commit, completed of attempted: ${rows} (${days([...failures, ...completions])}); ${UNRECORDED_FAILURES} earlier attempts, in 1.2.1, failed and left no record`;
+  return `Live attempts by commit (${days([...failures, ...completions])}), completed of attempted: ${rows}; ${UNRECORDED_FAILURES} earlier attempts, in 1.2.1, failed and left no record`;
 }
 
 /** "two", for the sentences that say how many briefings completed. */

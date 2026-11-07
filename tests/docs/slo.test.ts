@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { estimateRun } from "../../benchmarks/estimate-cost.ts";
 import { stageLimits } from "../../src/agents/stage-limits.ts";
 import { DEFAULT_PRICE_TABLE } from "../../src/llm/pricing.ts";
-import { countWord, days, liveRecords, questionsOf } from "./live-records.ts";
+import { byCommit, countWord, days, liveRecords, questionsOf } from "./live-records.ts";
 import { protocolParts } from "../benchmarks/protocol-plan.ts";
 
 const doc = readFileSync("docs/SLO.md", "utf-8");
@@ -62,11 +62,14 @@ describe("docs/SLO.md", () => {
       );
     });
 
-    test("error rate: failures over started briefings since the records began", () => {
-      const started = failures.length + completions.length;
+    test("error rate: failures by commit of the code, never pooled across commits", () => {
+      const rows = byCommit()
+        .map((g) => `${g.sha} ${g.attempts - g.completed} of ${g.attempts}`)
+        .join(", ");
       expect(doc).toContain(
-        `| Error rate | ≤ 10% of started briefings end in an error | ${failures.length}/${started} since run records began (failed ${days(failures)}: ${failures.map((f) => f.type).join(", ")}; completed ${days(completions)}); the five aborted runs of 1.2.1 predate the records; n too small, no status |`
+        `| Error rate | ≤ 10% of started briefings end in an error | errors by commit, failed of started: ${rows} (failed ${days(failures)}: ${failures.map((f) => f.type).join(", ")}); the five aborted runs of 1.2.1 predate the records; n too small, no status |`
       );
+      expect(doc).not.toContain("since run records began");
     });
   });
 

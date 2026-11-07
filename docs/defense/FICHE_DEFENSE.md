@@ -41,7 +41,7 @@
 
 **7. Questions pièges**
 1. *« 6 notes sur 6 signalées : l'outil ne marche pas. »* → Le drapeau dit que la politique stricte n'est pas tenue. C'est le comportement voulu (ADR 0002), et la note liste chaque élément en cause. Ce que je ne peux pas dire, c'est que les notes sont bonnes : leur qualité n'a pas été évaluée.
-2. *« 6 sur 13, c'est un taux de réussite de 46 %. »* → Sur 13 tentatives, avec un intervalle de 23 % à 71 %. 5 des échecs datent d'une version antérieure aux enregistrements ; depuis, 2 échecs sur 8, dont la question 02 (section 5). Sa cause probable est corrigée sur `main` (#44), sans relance payante pour le vérifier.
+2. *« 6 sur 13, c'est un taux de réussite de 46 %. »* → Ce taux mélange quatre versions du code et cinq tentatives sans enregistrement : il ne décrit aucune version. Par commit : `fe09710` 0 sur 1, `7c75a06` 1 sur 1, `3a7ca6a` 1 sur 1, `8df678f` 4 sur 5 ; l'échec de `8df678f` est la question 02 (section 5). Les 5 tentatives de la 1.2.1 ont échoué sans enregistrement. Aucun intervalle : au plus 5 tentatives par version. Sa cause probable est corrigée sur `main` (#44), sans relance payante pour le vérifier.
 3. *« Pourquoi ne pas laisser le modèle juger la fiabilité d'une source ? »* → Il noterait ses propres sources. Le modèle peut proposer qu'une source est first-party ; le code vérifie l'organisation, le domaine et le sujet, et un humain juge la phrase.
 4. *« Tu as écrit le code ? »* → J'ai dirigé des agents de code. Ma part :
    - les critères de « done » et les contrôles CI (claims ↔ tests, récit périmé, commits, versions des prompts) ;
