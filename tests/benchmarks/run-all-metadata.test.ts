@@ -87,4 +87,18 @@ describe("buildMetadata", () => {
     ) as { sourcing: object };
     expect(without.sourcing).not.toHaveProperty("untrusted_citations");
   });
+  test("a mock run's record counts no fixture source as ok", () => {
+    const counts = { ok: 28, source_missing: 2 };
+    const record = (provider_name: string) =>
+      (
+        buildMetadata(
+          { id: "01-x", question: "Q?", format: "f", tags: [] } as never,
+          provider_name === "mock" ? "mock" : "live",
+          { ...RESULT, provider_name, sourcing_report: { total_items: 30, counts } } as never,
+          null
+        ) as { sourcing: { counts: Record<string, number> } }
+      ).sourcing.counts;
+    expect(record("mock")).toEqual({ ok: 0, unverified: 28, source_missing: 2 });
+    expect(record("anthropic")).toEqual(counts);
+  });
 });

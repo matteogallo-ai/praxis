@@ -474,7 +474,7 @@ async function briefCommand(opts: BriefCommandOptions): Promise<number> {
       });
     }
   }
-  return stagedBrief(opts, orchestrator, runOptions);
+  return stagedBrief(opts, orchestrator, runOptions, llm.name);
 }
 
 /**
@@ -604,7 +604,8 @@ async function fullBrief(
 async function stagedBrief(
   opts: BriefCommandOptions,
   orchestrator: Orchestrator,
-  runOptions: BriefWithCritiqueOptions
+  runOptions: BriefWithCritiqueOptions,
+  providerName: string
 ): Promise<number> {
   // --sourcing-report (alone, without --full) implies --with-risks
   // (the full pipeline is what produces the aggregated report).
@@ -623,7 +624,7 @@ async function stagedBrief(
       );
     }
     if (opts.sourcingReport && !opts.withRisks) {
-      printSourcingReportOnly(result.sourcing_report, opts.provider, opts.json);
+      printSourcingReportOnly(result.sourcing_report, providerName, opts.json);
     } else {
       printFullPipelineWithRisks(
         result.scoping,
@@ -631,7 +632,7 @@ async function stagedBrief(
         result.stakeholders,
         result.risks,
         result.sourcing_report,
-        opts.provider,
+        providerName,
         opts.json
       );
     }
