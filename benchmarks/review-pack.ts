@@ -4,12 +4,12 @@
  * the Praxis briefing and the single-call baseline for question 12, reduced
  * to the format's sections in one layout, labelled A and B.
  *
- * What gives an arm away is removed: front matter, table of contents, the
- * sections only Praxis writes (insufficiently sourced, critique, appendices),
- * validation notes, and the two citation styles (Praxis's "([source](url))"
- * plus a per-section list, the baseline's "([Publisher](url))"). Every link becomes
- * a numbered marker and every section ends with its numbered sources. The
- * prose style stays: that limit is in the protocol.
+ * What gives an arm away is removed: front matter, table of contents,
+ * sections outside the format's six, HTML comments, and citation layout
+ * (parenthesised links, link text, source lists): every link becomes a
+ * numbered marker and every section ends with its numbered sources. Bold,
+ * list markers and the order of day and month in dates are made uniform.
+ * The wording stays: that limit is in the protocol.
  *
  * Which arm is A is decided by the parity of the first byte of SHA-256 over
  * both inputs, so the assignment is reproducible and fixed before anyone
@@ -23,6 +23,15 @@ import { join, resolve } from "node:path";
 
 const LINK = /\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/g;
 const PAREN_LINK = /\(\s*\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)\s*\)/g;
+const MONTH_FIRST = /\b(January|February|March|April|May|June|July|August|September|October|November|December) (\d{1,2}), (\d{4})\b/g;
+
+/** Layout either arm may use, written one way: no bold, no list markers, "20 October 2026". */
+function uniformLayout(line: string): string {
+  return line
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/^(\s*)[-*] /, "$1")
+    .replace(MONTH_FIRST, "$2 $1 $3");
+}
 
 /** One section, blinded: prose with numbered markers, then its numbered sources. */
 export function blindSection(title: string, body: string): string {
@@ -37,7 +46,7 @@ export function blindSection(title: string, body: string): string {
   for (const line of body.replace(/<!--[\s\S]*?-->/g, "").split("\n")) {
     const trimmed = line.trim();
     if (trimmed === "**Sources:**") continue;
-    // A Praxis per-section source list item: its URL is listed, the line is not prose.
+    // A source list item: its URL is listed, the line is not prose.
     const listed = /^- \[[^\]]*\]\((https?:\/\/[^)\s]+)\)$/.exec(trimmed);
     if (listed !== null) {
       number(listed[1] as string);
@@ -47,7 +56,7 @@ export function blindSection(title: string, body: string): string {
     // a publisher's name): it becomes a bare marker. A link inside a sentence
     // keeps its words.
     prose.push(
-      line
+      uniformLayout(line)
         .replace(PAREN_LINK, (_m, _text: string, url: string) => `[${number(url)}]`)
         .replace(LINK, (_m, text: string, url: string) => `${text} [${number(url)}]`)
     );

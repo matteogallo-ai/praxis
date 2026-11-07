@@ -84,3 +84,14 @@ The grid is `benchmarks/review/REVIEW_GRID.md`. The reviewer fills
   above ("at most 3 rounds") is superseded by this line. The pipeline's
   four searching stages are not bounded the same way, so the baseline
   searches less than Praxis did.
+- 7 Nov 2026, after the run, before any review: an independent review of
+  the pack found layout that differs between the arms. The pack now writes
+  bold, list markers and dates one way for both (`uniformLayout` in
+  `benchmarks/review-pack.ts`); the wording is unchanged, as above. The
+  same review corrected the first amendment's reason: the ledger enforces a
+  $5.00 cap whatever the bounds, by stopping the run; with 3 rounds of 8
+  searches the run could have been stopped at the cap before it finished,
+  and the lower bounds keep its worst case under it. A further limit: the
+  arms can be told apart from the repository (the scripts, the run
+  directories, `key.json`); the blinding holds only if the review is made
+  from `A.md` and `B.md` alone.

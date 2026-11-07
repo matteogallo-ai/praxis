@@ -19,6 +19,16 @@ describe("review pack", () => {
     expect(praxis).not.toContain("Validation");
   });
 
+  test("layout either arm may use comes out one way: no bold, no list markers, day-month-year dates", () => {
+    const out = blindSection("Answer", "**Build it.** Demand rose on October 20, 2026.\n- first point\n* second point\nOn 3 March 2026 it fell.\n");
+    expect(out).toBe("## Answer\n\nBuild it. Demand rose on 20 October 2026.\nfirst point\nsecond point\nOn 3 March 2026 it fell.\n\nSources:\n\n(none)\n");
+  });
+
+  test("the script's description of what it removes names no arm", () => {
+    const header = readFileSync("benchmarks/review-pack.ts", "utf-8").split("*/")[0] ?? "";
+    expect(header).not.toMatch(/Praxis's|baseline's/);
+  });
+
   test("keeps the format's sections in order, drops the rest, marks a missing one", () => {
     const md = "---\nprovider: x\n---\n## Table of Contents\n\n- a\n\n## So What\n\nB.\n\n## Situation\n\nA.\n\n## Insufficiently sourced\n\nlist\n";
     const out = blindBriefing(md, ["Situation", "Answer", "So What"]);
