@@ -77,4 +77,10 @@ The grid is `benchmarks/review/REVIEW_GRID.md`. The reviewer fills
 
 ## Amendments
 
-None.
+- 7 Nov 2026, before the run, while writing the script: the ledger's worst
+  case for 3 rounds of up to 8 searches is $22.16, over the $5.00 cap, so
+  the cap could not be enforced with those bounds. The baseline gets at
+  most **5 searches per round and 2 rounds** (worst case $4.69). The text
+  above ("at most 3 rounds") is superseded by this line. The pipeline's
+  four searching stages are not bounded the same way, so the baseline
+  searches less than Praxis did.
