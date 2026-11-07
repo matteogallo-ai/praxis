@@ -837,212 +837,37 @@ follow-up release.
 
 ## [1.0.0] — 2026-08-18
 
-### SemVer stability release
+**SemVer stability release.** Every public export from `src/index.ts` is
+bound by SemVer: removing or renaming an export, or changing an error class's
+inheritance chain, requires a major version bump. Contract text:
+`docs/SEMVER-CONTRACT.md`.
 
-Praxis 1.0 is the frozen public API contract. Every public
-export from `src/index.ts` is now bound by SemVer: removing an
-export, renaming one, or changing an error class's inheritance
-chain requires a major version bump. Additive changes (new
-exports, new optional fields, new methods) land in minor
-releases. Bug fixes and internal refactors are patches.
-
-This release is **symbolic**: no new functional code, no new
-tests, no new dependencies. The 1146-test v0.10 baseline is
-preserved verbatim. The only src/ change is the
-`PRAXIS_VERSION` constant.
-
-See `docs/SEMVER-CONTRACT.md` for the full contract text.
-
-### The journey — v0.1 → v1.0
-
-- **v0.1** Format Registry — declarative catalog of professional
-  briefing formats, YAML schema, in-memory registry.
-- **v0.2** Scoping agent + Orchestrator scaffold + PromptLang
-  integration + first `MockLLMProvider`.
-- **v0.3** Real `AnthropicLLMProvider` + Research agent +
-  embryonic sourcing (SourceReference / SourceMissing).
-- **v0.4** Stakeholder Mapping agent (first multi-input agent).
-- **v0.5** Risk Analysis agent + hardened Sourcing layer
-  (freshness, domain trust, cross-agent dedupe).
-- **v0.6** Options Generation + Synthesis + `brief()` complete
-  (first full briefing end to end).
-- **v0.7** Adversarial Critique agent + PDF/DOCX/MD renderers
-  (first executive-ready deliverables). Introduced `pdfkit` —
-  the sole external runtime dep.
-- **v0.8** Editorial re-run loop (hard cap 1) + strict_editorial
-  retry mode + PraxisError base + `src/index.ts` refactored as
-  the stable library API surface.
-- **v0.9** Benchmarks framework (10 calibrated questions) + CLI
-  polish (`--verbose`, `--quiet`, `--format auto`, structured
-  error blocks) + refreshed v1.0-ready docs (getting-started,
-  cookbook, troubleshooting, api, embedding).
-- **v0.10** AI-assisted scoring framework
-  (`benchmarks/score-all.ts` + anti-complaisance prompt + 41
-  unit tests + methodology doc). Empirical mock-vs-live run
-  deferred to v1.0.1.
-
-### What v1.0 guarantees
-
-- **Seven agents** — Scoping, Research, Stakeholder, Risk,
-  Options, Synthesis, Adversarial Critique. Pipeline is final.
-- **Three rendering targets** — PDF (via `pdfkit`), DOCX
-  (from-scratch, no `docx` npm), enhanced Markdown.
-- **Three shipped briefing formats** — executive-pre-read,
-  position-paper-corporate, mckinsey-style-note.
-- **Sourcing layer** — freshness / domain-trust / cross-agent
-  dedupe.
-- **Editorial re-run loop** with hard cap 1 iteration + opt-in
-  `strict_editorial` reject/regenerate.
-- **Stable public API** — `PraxisError` taxonomy + every
-  typed export from `src/index.ts` covered by SemVer.
-- **1146 tests + 11 optional live tests** (`tests/live/` skip
-  when `ANTHROPIC_API_KEY` is absent).
-- **One external npm dependency** — `pdfkit`, the planned
-  exception listed at v0.1.
-- **Ten mock briefings shipped as empirical evidence** —
-  `benchmarks/outputs/mock/*` under 800 KB, reproducible
-  bit-for-bit.
-- **Scoring framework ready** — `bun run score:dry` runs
-  offline, `bun run score` runs against Sonnet 4.5.
-
-### Compatibility commitment (v1.x)
-
-- **Additive** changes only to the public API surface.
-- New agents, formats, renderers, providers — all additive.
-- Breaking changes require **v2.0**. Every proposed break goes
-  through a proposal template with a migration guide.
-
-### Known limitations (documented, not blocking)
-
-- **Live benchmarks empirical run deferred to v1.0.1.** The
-  scoring framework is complete and tested against fixtures;
-  the mock-vs-live delta table lands when a maintainer with
-  API credits runs `bun run bench:live && bun run score`.
-- **position-paper-corporate scoring gap** — v0.10.0's
-  `enumerateBriefings` covers 7 of 10 mock briefings because
-  that format does not declare `md` in `output_targets[]`.
-  Documented in `docs/benchmarking-methodology.md`; a v1.0.1
-  or v1.1 patch adds a scoring-source text artefact.
-- **`@promptlang/yaml-parser` workspace dependency** — still
-  a `file:../promptlang/…` link. v1.1 publishes PromptLang to
-  npm and Praxis switches to `"promptlang": "^1.x"`.
+- No new functional code, no new tests, no new dependencies; the only `src/`
+  change is the `PRAXIS_VERSION` constant.
+- v1.x makes additive changes only to the public API; breaking changes
+  require v2.0.
+- `@promptlang/yaml-parser` is still a `file:../promptlang/…` link.
 
 ---
 
 ## [0.10.0] — 2026-08-18
 
-**AI-assisted qualitative scoring — framework release (empirical
-results deferred to v0.10.1).**
+**AI-assisted qualitative scoring — framework release.** No empirical
+results in this release, no new npm dependency, no breaking API change.
 
-Ships the entire scoring infrastructure end to end — script,
-calibrated anti-complaisance prompt, cache, aggregation,
-RESULTS.md rewriter, unit tests, methodology docs — but the
-**empirical mock-vs-live delta table lands in v0.10.1** when a
-maintainer with API credits runs `bun run score`. The
-framework is otherwise complete, tested, and ready.
+### Added
 
-No new npm dependencies. No breaking API change. No API calls
-during `bun test`. The v0.9 baseline of 1105 tests is preserved
-verbatim; v0.10 adds 41 new scoring-framework tests, all
-fixture-driven.
-
-### Added — scoring framework
-
-- **`benchmarks/score-all.ts`** — the runner. Reads every
-  `brief.md` + `metadata.json` under
-  `benchmarks/outputs/{mock,live}/*`, interpolates the
-  calibrated prompt, calls `AnthropicLLMProvider.complete()` on
-  `claude-sonnet-4-5`, validates the JSON payload, caches it,
-  and rewrites the "AI-Assisted Qualitative Scoring" block in
-  `benchmarks/RESULTS.md`.
-- **`benchmarks/scoring-prompt.txt`** — the calibrated prompt.
-  7 criteria × 1–5 scale, anti-complaisance framing ("You are
-  NOT the author", "A score of 3/5 is NORMAL. Do NOT inflate.",
-  "Executives who read weak briefings make bad decisions").
-  Per-criterion: score + 5–10 word example + concrete
-  improvement to raise +1. Free-text: weakest_aspect,
-  strongest_aspect, comparative_note vs a competent human
-  analyst.
-- **Cache** under `benchmarks/.scoring-cache/{slug}-{mode}.json`
-  (gitignored). 24h TTL by default; `--refresh <slug>`
-  bypasses. Malformed cache files are silently ignored.
-- **CLI flags**: `--mock-only`, `--live-only`, `--refresh <slug>`,
-  `--dry-run` (enumerate without touching the API), `--root
-  <path>` (test-only).
-- **Failure model**: missing `ANTHROPIC_API_KEY` on a non-dry
-  run emits a structured error pointing at
-  `docs/benchmarking-methodology.md`. `--dry-run` never
-  requires the key.
-- **New public exports from `benchmarks/score-all.ts`**:
-  `parseScoreArgs`, `enumerateBriefings`,
-  `interpolateScoringPrompt`, `parseScoringPayload`,
-  `ScoringParseError`, `extractJsonBody`, `aggregate`,
-  `computeObservations`, `insertScoringSection`,
-  `renderScoringSection`, `readCache`, `writeCache`,
-  `scoreAll`, `SCORING_CRITERIA`, `CRITERION_LABELS`. Types:
-  `ScoringPayload`, `CriterionScore`, `Aggregates`,
-  `CriterionAggregate`, `SystematicObservations`,
-  `ScoreAllOptions`, `BriefingRef`, `ScoringMode`.
-
-### Added — tests
-
-- `tests/benchmarks/score-all.test.ts` — 41 unit tests
-  covering flag parsing, payload validation (happy path +
-  malformed + edge cases: score 0, score 6, missing criterion,
-  total mismatch, unknown provider, non-object input), JSON
-  extraction (plain, fenced, embedded in prose, garbage),
-  prompt interpolation, aggregation, observation computation,
-  section rewriting (idempotent), rendering, cache round-trip
-  + TTL enforcement, enumeration (7 of the 10 mock briefings —
-  see limitations below), and `--dry-run` end-to-end.
-- **All tests use fixtures under
-  `tests/fixtures/scoring/`** — `valid-scoring.json`,
-  `malformed-scoring.json`, `edge-cases.json` (5 variants),
-  `aggregates-synthetic.json` (10 scorings, 5 mock + 5 live).
-  **Zero real API calls in `bun test`.**
-
-### Added — documentation
-
-- `docs/benchmarking-methodology.md` — the full methodology
-  document. Rubric with score bands, prompt design choices,
-  model choice rationale, known biases (same-family scoring,
-  deterministic mock content, position-paper coverage gap),
-  reproduction instructions, budget ($5–7 per full pass), and
-  how to interpret the numbers.
-- `docs/cookbook.md` — new recipe "Score your own briefings
-  against the calibrated rubric" with the four `score:*`
-  invocations and notes on the same-family bias.
-- `benchmarks/README.md` — v0.10 additions listed (score-all,
-  scoring-prompt, .scoring-cache).
-
-### Added — package.json scripts
-
-- `bun run score`, `score:mock`, `score:live`, `score:dry`.
-
-### Notes — v0.10.0 vs v0.10.1
-
-**Empirical validation results deferred to v0.10.1.** The
-framework is shipped and tested against fixtures. When a
-maintainer with `ANTHROPIC_API_KEY` and ~$10 credit runs
-`bun run bench:live && bun run score`, the resulting
-`benchmarks/RESULTS.md` diff lands as v0.10.1 (chore commit,
-no code change).
-
-### Known limitations
-
-- **v0.10.0 scoring covers 7 of the 10 mock briefings.** The
-  three `position-paper-corporate` briefings (08–10) do not
-  emit `brief.md` (that format does not declare `md` in
-  `output_targets[]`). Documented in
-  `docs/benchmarking-methodology.md`. v0.10.1 will emit a
-  scoring-source text artefact to close the gap.
-
-### Not changed (v0.8+ API frozen)
-
-- Every v0.8/v0.9 public API export unchanged. `Orchestrator`
-  and the seven agents behave identically.
-- Dependencies: `@promptlang/yaml-parser` + `pdfkit`. No
-  additions.
+- `benchmarks/score-all.ts`: scores each briefing under
+  `benchmarks/outputs/{mock,live}/*` on `claude-sonnet-4-5` and rewrites the
+  scoring block of `benchmarks/RESULTS.md`.
+- `benchmarks/scoring-prompt.txt`: 7 criteria on a 1–5 scale with
+  anti-complaisance framing ("A score of 3/5 is NORMAL. Do NOT inflate.").
+- Cache under `benchmarks/.scoring-cache/` (24h TTL, `--refresh <slug>`);
+  flags `--mock-only`, `--live-only`, `--dry-run`.
+- Scripts `score`, `score:mock`, `score:live`, `score:dry`; docs
+  `docs/benchmarking-methodology.md` and a cookbook recipe.
+- Scoring covers 7 of the 10 mock briefings: the `position-paper-corporate`
+  briefings emit no `brief.md`.
 
 ---
 
