@@ -56,7 +56,7 @@ describe("praxis dispatch", () => {
     const code = await run(["help"]);
     expect(code).toBe(0);
     expect(stdout()).toContain("praxis brief");
-    // v0.6 implements the full pipeline — help should advertise --full.
+    // Help advertises the full pipeline's --full.
     expect(stdout()).toContain("--full");
   });
 

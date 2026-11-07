@@ -151,7 +151,7 @@ describe("validateSourcing — permissive", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.4 — validateStakeholderSourcing
+// ValidateStakeholderSourcing
 // ---------------------------------------------------------------------------
 
 function stakeholder(overrides: Partial<Stakeholder> = {}): Stakeholder {
@@ -258,7 +258,7 @@ describe("validateStakeholderSourcing — permissive", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.5 — hardened rules (freshness, domain trust, dedupe) + Risk sourcing.
+// Hardened rules (freshness, domain trust, dedupe) + Risk sourcing.
 // ---------------------------------------------------------------------------
 
 const NOW = new Date("2026-08-18T00:00:00Z");
@@ -528,7 +528,7 @@ describe("validateSourcing — cross-agent dedupe", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.5 — validateRiskSourcing (Risk agent, both evidence fields).
+// ValidateRiskSourcing (Risk agent, both evidence fields).
 // ---------------------------------------------------------------------------
 
 function risk(overrides: Partial<Risk> = {}): Risk {

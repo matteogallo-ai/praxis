@@ -4,8 +4,8 @@
  * moment it is merged, and readers take it as a statement about the code.
  *
  * Scanned: src/, prompts/, docs/, formats/, README.md, benchmarks/RESULTS.md.
- * Excluded: docs/ENGINEERING_STANDARDS.md (quotes the patterns as examples) and
- * CHANGELOG.md (history is its job).
+ * Excluded: docs/ENGINEERING_STANDARDS.md, this script and its tests (they
+ * quote the patterns as examples) and CHANGELOG.md (history is its job).
  *
  * Code comments in every .ts file under src/, tests/, benchmarks/ and
  * scripts/ are also checked for release numbers ("added in v0.8"): a comment
@@ -94,7 +94,13 @@ export function scanText(file: string, text: string, { prose = true }: { prose?:
 
 const ROOTS = ["src", "prompts", "docs", "formats", "README.md", "benchmarks/RESULTS.md"];
 const CODE_ROOTS = ["src", "tests", "benchmarks", "scripts"];
-const EXCLUDED = new Set(["docs/ENGINEERING_STANDARDS.md", "CHANGELOG.md"]);
+// This checker and its tests quote the patterns they look for.
+const EXCLUDED = new Set([
+  "docs/ENGINEERING_STANDARDS.md",
+  "CHANGELOG.md",
+  "scripts/check-stale-narrative.ts",
+  "scripts/check-stale-narrative.test.ts",
+]);
 
 async function* walk(dir: string): AsyncGenerator<string> {
   for (const entry of await readdir(dir, { withFileTypes: true })) {

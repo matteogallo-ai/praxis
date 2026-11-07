@@ -1,5 +1,5 @@
 /**
- * v0.9 — Runner unit tests for `benchmarks/run-all.ts`.
+ * Runner unit tests for `benchmarks/run-all.ts`.
  *
  * These tests cover the pure surface of the runner:
  *   - `parseRunAllArgs` interprets --mock-only, --live-only,

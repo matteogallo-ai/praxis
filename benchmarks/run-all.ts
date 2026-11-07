@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * benchmarks/run-all.ts — v0.9 benchmark runner.
+ * benchmarks/run-all.ts — benchmark runner.
  *
  * Runs every entry in `benchmarks/questions.yaml` against the
  * chosen provider(s) and writes the artefacts under

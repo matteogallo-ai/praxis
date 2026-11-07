@@ -1,5 +1,5 @@
 /**
- * Unit tests for the v0.7 `renderCritiqueInline` helper.
+ * Unit tests for the `renderCritiqueInline` helper.
  *
  * The tests build synthetic `AdversarialCritiqueResult` values and
  * inspect the rendered text (ANSI stripped) for the load-bearing

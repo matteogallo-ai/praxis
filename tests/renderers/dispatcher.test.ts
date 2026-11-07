@@ -1,5 +1,5 @@
 /**
- * Renderers dispatcher tests (v0.7).
+ * Renderers dispatcher tests.
  *
  * The dispatcher's job is target normalisation + format
  * cross-check. It should:

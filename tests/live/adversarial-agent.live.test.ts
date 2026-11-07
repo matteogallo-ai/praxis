@@ -1,5 +1,5 @@
 /**
- * Live integration test for the Adversarial Critique agent (v0.7).
+ * Live integration test for the Adversarial Critique agent.
  *
  * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set. Uses a small synthetic
  * `BriefResult` as the critique input so the test does not spend

@@ -1,5 +1,5 @@
 /**
- * v0.9 — `--format auto` keyword detector.
+ * `--format auto` keyword detector.
  *
  * Verifies:
  *   - Each shipped format is picked when its canonical keywords fire.

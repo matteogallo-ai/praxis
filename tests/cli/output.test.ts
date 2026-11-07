@@ -1,6 +1,5 @@
 /**
- * Unit tests for the CLI output helpers introduced or extended in
- * v0.6, mainly `renderFullBrief` (YAML front-matter + Markdown
+ * Unit tests for the CLI output helpers, mainly `renderFullBrief` (YAML front-matter + Markdown
  * assembly). Colour is disabled globally so assertions can inspect
  * raw text.
  */

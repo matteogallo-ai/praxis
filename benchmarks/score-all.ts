@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * benchmarks/score-all.ts — v0.10 AI-assisted qualitative scoring.
+ * benchmarks/score-all.ts — AI-assisted qualitative scoring.
  *
  * For every briefing under `benchmarks/outputs/{mock,live}/*` this
  * script:

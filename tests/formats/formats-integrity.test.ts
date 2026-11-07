@@ -147,7 +147,7 @@ describe("shipped formats — structural invariants", () => {
   });
 
   // -------------------------------------------------------------------------
-  // v0.5 — every shipped format now declares a sourcing_rules block that
+  // Every shipped format now declares a sourcing_rules block that
   // covers freshness, domain trust, and dedupe. This locks the format
   // authoring convention in place: any new shipped format must repeat it.
   // -------------------------------------------------------------------------
@@ -184,7 +184,7 @@ describe("shipped formats — structural invariants", () => {
   });
 
   // -------------------------------------------------------------------------
-  // v0.6 — every shipped format must support the six-agent pipeline
+  // Every shipped format must support the six-agent pipeline
   // (Scoping, Research, Stakeholder, Risk, Options, Synthesis). This is
   // the pre-flight check for `Orchestrator.brief()`.
   // -------------------------------------------------------------------------
@@ -228,9 +228,9 @@ describe("shipped formats — structural invariants", () => {
     }
   });
 
-  // v0.8: every shipped format declares an editorial block explicitly.
+  // Every shipped format declares an editorial block explicitly.
   // The default `strict_editorial: false` opts into warn-only behaviour;
-  // v1.2 introduces family-office-memo with `strict_editorial: true`
+  // family-office-memo declares `strict_editorial: true`
   // (patrimonial memos reject-and-regenerate on rule violations rather
   // than surfacing warnings). Both postures remain valid — the invariant
   // is that the block is declared, not the value it carries.
@@ -252,7 +252,7 @@ describe("shipped formats — structural invariants", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v1.2 — family-office-memo — dedicated integrity assertions.
+// Family-office-memo — dedicated integrity assertions.
 //
 // Locks the discretion protocols, sourcing tiers, and mock-fixture
 // coverage that make the format usable end-to-end. Any regression on

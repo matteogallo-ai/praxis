@@ -1,5 +1,5 @@
 /**
- * End-to-end integration tests for the renderer pipeline (v0.7).
+ * End-to-end integration tests for the renderer pipeline.
  *
  * Drives `praxis brief ... --full --render <target> --output <path>`
  * as a real child process for every combination of shipped format

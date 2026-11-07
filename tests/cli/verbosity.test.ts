@@ -1,5 +1,5 @@
 /**
- * v0.9 — Verbosity dispatcher tests.
+ * Verbosity dispatcher tests.
  *
  * Verifies:
  *   - `stripVerbosityFlags` extracts --verbose / --quiet regardless of position.
