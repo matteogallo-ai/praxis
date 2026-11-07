@@ -124,139 +124,74 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- `pdfkit` 0.19.1 → 0.20.2 and `@types/pdfkit` 0.17.6 → 0.17.7. pdfkit
-  0.20 breaks its virtual file system, AcroForm and annotation options,
-  named exports and standard-font loading in browser builds; Praxis uses
-  the first three nowhere, and its four standard fonts still load lazily
-  under Bun, which resolves the Node build. The mock PDFs are byte for
-  byte the same (`bun run bench:mock` leaves the tree clean). `@types/bun`
-  stays at 1.3.14, the Bun version CI runs: types of a newer Bun would
-  let code typecheck against APIs the runtime lacks.
-
-- A synthesis section cites a source in its text by the marker `[n]`, the
-  n-th entry of its `sources_cited`; each section's source list is numbered
-  `[n]` in Markdown, PDF and DOCX. `executive-pre-read` 1.1.0 asks its
-  supporting-evidence paragraphs to end with that marker, with no site name,
-  host or URL, where it asked for the "source in parentheses" (the likely
-  cause of question 02's step 1 failure). A marker pointing at no listed
-  source is refused; `every_paragraph_ends_with_citation` is checked by
-  code. Synthesis prompt 2.2.0; token counts re-measured (question 05:
-  $1.40 / $5.97 / $12.96).
-
-- The live-proof protocol has a dated "Amendments" section: question 10
-  was added to step 1 by the operator's GO before step 1 started
-  (2026-11-04), as the only test
-  question the first-party list covers. The original plan is unchanged;
-  its test accepts the original commands plus declared amendments only.
-  Held-out test questions left: 03 and 07.
-
-- A benchmark run's `metadata.json` names the sections over their length
-  cap (`synthesis.sections_over_length_ids`) beside their count; the count
-  alone did not say which section to check.
-- A question run live again is no longer refused once it has a completed
-  run: each completed run is kept in `live/<id>/run-<start time>/`, never
-  over an earlier one, and a failed run leaves no partial directory.
-  Scoring and `export:annotation` read a question's latest completed run;
-  a cached score is keyed by the run it scored.
-- The risk stage's `max_tokens` rises from 16 000 to 32 000 (timeout
-  15 minutes). The first live run cut its answer at 16 000; a cut answer
-  gives only a lower bound, so the ceiling is twice it. Question 05's
-  estimate moves to $1.37 / $5.87 / $12.78. The run record is committed
-  under `benchmarks/outputs/live/05-supply-chain-acquisition/`.
-- `docs/SLO.md` publishes each target's status, met or not met only from
-  live measurements; no target has a status yet. The cost target is p95 ≤
-  $10.00 per briefing: less than 10 minutes of an analyst at $60 an hour
-  (the earlier $2.50 assumed $15 an hour). Question 05's estimate ($5.87
-  central, $12.78 high) is shown beside it, not as a status, pinned by
-  `tests/docs/slo.test.ts`.
-  The advice to run with `--max-cost-usd 5`, below that estimate, is gone.
-- The judge is Claude Opus 5 (`claude-opus-5`), sent as one Message Batch
-  at half price (`benchmarks/judge-batch.ts`). A paid scoring run needs
-  `--max-cost-usd`. The batch's worst case is reserved before it is
-  submitted: each prompt at 2.5 characters per token (an allowance, as for
-  the pipeline) plus 8 000 `max_tokens`, effort `medium`. A batch whose
-  worst case does not fit is not sent; a spend past the cap fails the run. `refusal` and `max_tokens` answers fail their briefing. A
-  submitted batch is resumed, never sent twice. `--dry-run` prints the
-  worst case.
-- The live-proof protocol judges each briefing once. The judge's noise
-  band and planted-error detection are roadmap (CLAIMS C23), and the
-  judge's scores are checked against the human only.
+- `pdfkit` 0.19.1 → 0.20.2 and `@types/pdfkit` 0.17.6 → 0.17.7; the mock PDFs
+  are byte for byte the same. `@types/bun` stays at 1.3.14, the Bun version
+  CI runs.
+- A synthesis section cites a source by the marker `[n]`, the n-th entry of
+  its `sources_cited`; a marker pointing at no listed source is refused.
+  `executive-pre-read` 1.1.0 asks for that marker, synthesis prompt 2.2.0.
+- The live-proof protocol has a dated "Amendments" section (question 10 added
+  to step 1); its test accepts the original commands plus declared
+  amendments only.
+- A benchmark run's `metadata.json` names the sections over their length cap
+  (`synthesis.sections_over_length_ids`).
+- Each completed live run is kept in `live/<id>/run-<start time>/`, never over
+  an earlier one; a failed run leaves no partial directory.
+- The risk stage's `max_tokens` rises from 16 000 to 32 000 (timeout 15
+  minutes).
+- `docs/SLO.md` publishes each target's status only from live measurements;
+  the cost target is p95 ≤ $10.00 per briefing.
+- The judge is Claude Opus 5 (`claude-opus-5`), sent as one Message Batch; a
+  paid scoring run needs `--max-cost-usd`, and its worst case is reserved
+  before the batch is submitted.
+- The live-proof protocol judges each briefing once; the judge's scores are
+  checked against the human only.
 - The cost estimate reads prompt sizes at the 2.73 characters per token
-  Anthropic's count_tokens endpoint measured on the prompts of questions
-  02, 05, 08 and 11, one per format (`benchmarks/token-counts/`,
-  `benchmarks/count-tokens.ts`), not the mock's 4; 05's estimate rises to
-  $1.33 / $5.75 / $12.54. The cap's floor drops
-  from 3 to 2.5 characters per token, below every measured request.
-- The budget cap is a limit. Under `--max-cost-usd` (or `maxCostUsd`),
-  each request reserves its worst case before it is sent: its whole
-  `max_tokens`, every search its `max_uses` allows with 15 000 tokens of
-  context each, its prompt at 2.5 characters per token. It is sent only if
-  the spend, the reservations of requests in flight and its worst case fit
-  in the cap. A request that fails or reports no usage, a timeout included,
-  stays charged at its worst case (`unreported_usd`); an HTTP error answer
-  is not charged. When a synthesis section fails, the sections in flight
-  are awaited, so `metadata.json` records them. `estimate:cost
-  --cap-usd` walks each question through the reservations instead of
-  printing an overshoot ceiling. Opus 5 is in the price table.
-- When the cost cap is reached during the synthesis rerun, the complete
-  pre-rerun brief is returned instead of being discarded with the run;
-  `rerun_skipped` (a new optional field of the result, and `rerun.skipped`
-  in benchmark metadata) says why.
-- An answer the model stopped at `max_tokens` is refused with
-  `TruncatedOutputError` (new public export, a subclass of
-  `InvalidAgentOutputError`) before JSON extraction, which could return a
-  complete first object of a cut answer. It is not retried: a second sample
-  bills the whole ceiling again. Providers that implement only `complete()`
-  report no stop reason and are not covered.
-- `--max-cost-usd` (`praxis brief`, `run-all.ts`) and `--cap-usd`
-  (`estimate:cost`) take plain decimal digits only; `0x10`, `1e3`, `+8`,
-  `.5` and padded values are refused instead of read by `Number()`.
+  count_tokens measured, not the mock's 4; the cap's floor drops from 3 to
+  2.5 characters per token.
+- The budget cap is a limit: each request reserves its worst case before it
+  is sent, and a request that reports no usage stays charged at it
+  (`unreported_usd`).
+- When the cost cap is reached during the synthesis rerun, the pre-rerun
+  brief is returned (`rerun_skipped`).
+- An answer stopped at `max_tokens` is refused with `TruncatedOutputError`
+  (new public export, a subclass of `InvalidAgentOutputError`), not retried.
+- `--max-cost-usd` and `--cap-usd` take plain decimal digits only.
 - Live tests run only with `PRAXIS_LIVE_TESTS=1`; a key in `.env` no longer
   makes `bun test` call the paid API.
-- `bun run bench:mock` is reproducible (fixed clock in mock runs, PDF creation
-  date taken from the brief); `duration_ms` is omitted from mock metadata.
+- `bun run bench:mock` is reproducible; `duration_ms` is omitted from mock
+  metadata.
 - `benchmarks/score-all.ts` refuses mock briefings; `score:mock` is removed.
-- Anthropic API version `2026-10-21`: no `temperature` is sent (a 400 on that
-  version); the default model is `claude-sonnet-5-5` (`claude-sonnet-4-5` is
-  deprecated). `temperature` in the call options is ignored.
+- Anthropic API version `2026-10-21`: no `temperature` is sent; the default
+  model is `claude-sonnet-5-5`.
 - System text goes in the `system` field and each stage's `@model` is sent;
-  stage models are chosen per stage (`prompts/README.md`). Prompts are 2.0.0.
-- A `pause_turn` continuation resends the paused assistant content unchanged
-  (it dropped `tool_use_id`, the search results and the citations).
+  prompts are 2.0.0.
+- A `pause_turn` continuation resends the paused assistant content unchanged.
 - The JSON answer is read past prose, fences and citation splits; Praxis
-  stamps `accessed_at` instead of asking the model for it.
+  stamps `accessed_at` itself.
 - The orchestrator's four staged entry points share one implementation, and
   the seven agents share one prompt runtime.
-- Each stage is retried once on a timeout, rate limit, 5xx or malformed JSON
-  (synthesis per section), so a failing stage can cost two calls; minor
-  behaviour change under `docs/SEMVER-CONTRACT.md`, turned off with
-  `stageAttempts: 1`.
-- A checkpoint is validated on load by its stage's own output parser; a
-  corrupt one (or a corrupt `metadata.json` on resume) raises
-  `OrchestrationError` naming the file. `CheckpointStore.load(stage,
-  validate)` takes the validator. A resume under another provider, sourcing
-  mode, prompts or format is refused.
-- `callModel` prefers `completeWithTools` (with no tools for scoping and
-  synthesis) because only it returns usage; a custom provider implementing
-  both now receives tool-less calls there.
+- Each stage is retried once on a timeout, rate limit, 5xx or malformed JSON,
+  so a failing stage can cost two calls; `stageAttempts: 1` turns it off.
+- A checkpoint is validated on load by its stage's parser; a resume under
+  another provider, sourcing mode, prompts or format is refused.
+- `callModel` prefers `completeWithTools`, so a custom provider implementing
+  both receives tool-less calls there.
 - Synthesis sections are written concurrently.
-- Earlier stages' output enters prompts inside `<untrusted_data>` blocks, every
-  system text carries an untrusted-content rule, and an answer repeating the
-  system text is rejected (C17).
-- The API key is held in a private field and CLI stderr is redacted (C20).
+- Earlier stages' output enters prompts inside `<untrusted_data>` blocks with
+  an untrusted-content rule; an answer repeating the system text is rejected.
+- The API key is held in a private field and CLI stderr is redacted.
 
 ### Security
 
-- A cited source URL must be an absolute `http(s)` URL; a synthesis
-  section's prose may hold no image and no link or URL other than an
-  upstream source's; the Markdown renderer writes model text inert (raw HTML,
-  `-->` in a validation issue, link targets). OWASP LLM05, in
-  `docs/THREAT_MODEL.md`.
+- A cited source URL must be an absolute `http(s)` URL; synthesis prose may
+  hold no image, link or URL other than an upstream source's; the Markdown
+  renderer writes model text inert (OWASP LLM05).
 
 ### Deprecated
 
 - `NotImplementedError`: nothing throws it. It remains exported for 1.x
-  compatibility; removal is scheduled for the next major release.
+  compatibility.
 
 ### Removed
 
