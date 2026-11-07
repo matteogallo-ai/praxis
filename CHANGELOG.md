@@ -29,6 +29,16 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
   "empty response", like the other stages, instead of a JSON parse error.
 - `bun run lint` (and the CI lint job) fails on any Biome warning. The 42
   warnings in production code are fixed; tests may use non-null assertions.
+- A format's validation rule was checked with a regular expression that
+  backtracked: 60 000 spaces took 2 915 ms (measured before the fix). The check is linear and
+  refuses a rule whose value is only whitespace (CodeQL `js/polynomial-redos`).
+- Tests wrote fixed or time-stamped names under the shared temp directory;
+  they use a fresh 0700 directory per run (CodeQL
+  `js/insecure-temporary-file`).
+- SECURITY.md offered GitHub's private vulnerability reporting, which is
+  disabled on the repository; e-mail is the one channel it names.
+- `@promptlang/core` 3.0.0 (was 2.0.0). Praxis uses none of the APIs it
+  breaks; the prompts parse to identical ASTs.
 
 - The live-proof protocol and the live outputs' README no longer say question
   10's amendment was recorded before the run. q10 added by the operator's GO
