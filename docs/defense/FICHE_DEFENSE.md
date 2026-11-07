@@ -43,10 +43,8 @@
 1. *« 6 notes sur 6 signalées : l'outil ne marche pas. »* → Le drapeau dit que la politique stricte n'est pas tenue. C'est le comportement voulu (ADR 0002), et la note liste chaque élément en cause. Ce que je ne peux pas dire, c'est que les notes sont bonnes : leur qualité n'a pas été évaluée.
 2. *« 6 sur 13, c'est un taux de réussite de 46 %. »* → Ce taux mélange quatre versions du code et cinq tentatives sans enregistrement : il ne décrit aucune version. Par commit : `fe09710` 0 sur 1, `7c75a06` 1 sur 1, `3a7ca6a` 1 sur 1, `8df678f` 4 sur 5 ; l'échec de `8df678f` est la question 02 (section 5). Les 5 tentatives de la 1.2.1 ont échoué sans enregistrement. Aucun intervalle : au plus 5 tentatives par version. Sa cause probable est corrigée sur `main` (#44), sans relance payante pour le vérifier.
 3. *« Pourquoi ne pas laisser le modèle juger la fiabilité d'une source ? »* → Il noterait ses propres sources. Le modèle peut proposer qu'une source est first-party ; le code vérifie l'organisation, le domaine et le sujet, et un humain juge la phrase.
-4. *« Tu as écrit le code ? »* → J'ai dirigé des agents de code. Ma part :
+4. *« Tu as écrit le code ? »* → Développement assisté par agents de code : je spécifie, je relis les PR et leurs tests, et je réponds de ce qui est fusionné. Ce que cela recouvre ici :
    - les critères de « done » et les contrôles CI (claims ↔ tests, récit périmé, commits, versions des prompts) ;
    - les décisions de fond, par exemple refuser un `www.` nu plutôt que l'accepter, ou exclure les estimations et les critiques du first-party (PR #47) ;
    - la relecture humaine des sources first-party, et un relecteur à contexte neuf avant chaque remise.
-
-   Je peux expliquer `ledger.ts` et le contrôle de la prose de `synthesis.ts` ligne par ligne.
 5. *« Combien coûte une note ? »* → De 3,29 $ à 4,75 $ sur 6 notes. Les notes terminées du palier 1 ont coûté 0,56 à 0,80 de leur estimation centrale. Chacune des 8 exécutions enregistrées (depuis le 3 nov. 2026) a été précédée d'une estimation (bas, central, haut) et d'un accord explicite, avec un plafond par note tenu par le code, sauf le dépassement documenté des grosses recherches web.

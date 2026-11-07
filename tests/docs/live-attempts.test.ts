@@ -62,12 +62,8 @@ describe("live attempt count", () => {
     const [step0] = completions;
     const count = countWord(completions.length);
 
-    test("README: each one's cost and sourcing flag", () => {
+    test("README: how many completed; each one's cost and flag is the system card's", () => {
       expect(flat("README.md")).toContain(`Praxis has completed **${count} briefings against a real model**`);
-      const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\$]/g, "\\$&");
-      for (const c of completions) {
-        expect(flat("README.md")).toMatch(new RegExp(`question ${c.id.slice(0, 2)}[^:;]*: ${esc(`${usd(c.cost_usd)}, ${sourcingFlag(c)}`)}`));
-      }
     });
 
     test("system card: each one's flag, and the cost and latency row", () => {
