@@ -736,3 +736,30 @@ describe("validateFormat — v0.8 sourcing_rules.editorial", () => {
     expect(f.sourcing_rules?.editorial?.strict_editorial).toBe(false);
   });
 });
+
+describe("validateFormat — validation_rules shape check is linear", () => {
+  const withRule = (rule: string) => {
+    const raw = clone();
+    (raw["sections"] as { [k: string]: YamlValue }[])[0]!["validation_rules"] = [rule];
+    return raw;
+  };
+
+  // CodeQL js/polynomial-redos (#16): `\s*:\s*.+$` backtracked over a long
+  // run of whitespace before an unmatched line end, in time quadratic in
+  // its length (8 000 spaces took 70 ms, 80 000 about 7 s).
+  test("a rule of 60 000 spaces then two line ends is refused fast", () => {
+    const started = performance.now();
+    expect(() => validateFormat(withRule(`a:${" ".repeat(60_000)}\n\n`))).toThrow(ValidationError);
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
+  test("a rule whose value is only whitespace is refused", () => {
+    expect(() => validateFormat(withRule("max_words:   "))).toThrow(ValidationError);
+  });
+
+  test("the declared shapes still pass", () => {
+    for (const rule of ["must_contain_recommendation: false", "max_words:300", "tone : formal, direct"]) {
+      expect(() => validateFormat(withRule(rule))).not.toThrow();
+    }
+  });
+});

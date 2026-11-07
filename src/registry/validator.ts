@@ -340,7 +340,9 @@ function validateSection(
             message: "must be a non-empty string",
           });
           ok = false;
-        } else if (!/^[a-z_][a-z0-9_]*\s*:\s*.+$/i.test(r)) {
+        } else if (!/^[a-z_][a-z0-9_]*\s*:\s*\S.*$/i.test(r)) {
+          // `\s*\S`, not `\s*.+`: both quantifiers could match a space, so
+          // a long blank value backtracked in quadratic time.
           issues.push({
             path: `${path}.validation_rules[${j}]`,
             message: `must be 'key: value' shape (declarative rule), got '${r}'`,
