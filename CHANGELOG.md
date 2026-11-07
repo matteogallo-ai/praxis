@@ -129,10 +129,10 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 - README fits one page; the live excerpt is in `benchmarks/outputs/live/README.md`
   and the per-briefing figures in the system card. Authorship is stated in one
   sentence, the same in the README, the standards and the defence sheet.
-- `orchestrator.ts` (1 068 lines) keeps the `Orchestrator` class; its option and
+- `orchestrator.ts` (1 068 lines before, 819 after) keeps the `Orchestrator` class; its option and
   result types are in `orchestrator/types.ts` and the rerun heuristic in
   `orchestrator/rerun.ts`, re-exported, so no import path changes.
-- This CHANGELOG keeps one line per user-visible change; the detail is in the
+- This CHANGELOG keeps one entry per user-visible change; the detail is in the
   git history.
 - `pdfkit` 0.19.1 → 0.20.2 and `@types/pdfkit` 0.17.6 → 0.17.7; the mock PDFs
   are byte for byte the same. `@types/bun` stays at 1.3.14, the Bun version

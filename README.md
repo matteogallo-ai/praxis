@@ -6,9 +6,15 @@
 
 A 7-stage LLM pipeline that turns a business question into an analytical
 briefing shaped by a format declared in YAML (executive pre-read,
-consulting-style note, position paper, family-office memo). Code, not the
-model, checks that every cited item has a source the search returned,
-dated and on a trusted domain. Output: Markdown, PDF, DOCX.
+consulting-style note, position paper, family-office memo). Output:
+Markdown, PDF, DOCX.
+
+An LLM-written briefing looks sourced even when it is not. In Praxis, code,
+not the model, checks that each sourced item has a URL on a trusted domain
+and is not stale by its stated publication date (an undated source is
+counted apart), and the briefing lists every item that fails. It does not
+check that a page says what the claim says, nor that the URL came from the
+search.
 
 ## Status
 
@@ -22,8 +28,8 @@ A human review (4 Nov 2026) covered only question 10's eight first-party
 sources, the ones the rule accepted: the reviewer accepted 6 and refused 2
 ([review](benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)).
 The quality of the briefings themselves is not reviewed, for any question.
-On question 12, one model call given the same format and search tool cost
-$0.48 against the pipeline's $4.75; the blind comparison of the two is
+On question 12, one model call given the same format and search tool, with
+fewer searches, cost $0.48 against the pipeline's $4.75; the blind comparison of the two is
 prepared ([`benchmarks/review/`](benchmarks/review/REVIEW_GRID.md)), not done.
 
 ## Quick start
@@ -35,7 +41,8 @@ git clone https://github.com/matteogallo-ai/praxis.git && cd praxis && bun insta
 ```
 
 That runs on the mock provider: no key, no network, fixture text chosen by
-format, and every output opens with « DONNÉES FICTIVES — mode mock ». The CI
+format; each briefing (Markdown, PDF, DOCX) carries the banner
+« DONNÉES FICTIVES — mode mock ». The CI
 job `clean-clone` runs these steps in an empty directory.
 `--provider anthropic` with `ANTHROPIC_API_KEY` set calls the real API and
 is paid; `--max-cost-usd` caps a briefing.
@@ -51,8 +58,8 @@ Each stage reads the typed output of the earlier ones and runs after them;
 only the synthesis sections, one model call each, run concurrently. The
 adversarial review may trigger one synthesis rerun. Under a `strict`
 sourcing policy a missing, stale or untrusted source makes the CLI degrade
-the briefing, which then lists every such item; the library aborts unless
-asked to degrade (ADR 0002). Module map: [`docs/architecture.md`](docs/architecture.md).
+the briefing, which then lists every such item, unless no research finding
+has a source at all; the library aborts unless asked to degrade (ADR 0002). Module map: [`docs/architecture.md`](docs/architecture.md).
 
 ## Features
 
@@ -66,6 +73,7 @@ asked to degrade (ADR 0002). Module map: [`docs/architecture.md`](docs/architect
 - `bench:mock` reproducible (C12); paid tests only on opt-in (C13); installs from a clean clone (C19).
 
 Each `Cnn` is a row of [`docs/CLAIMS.md`](docs/CLAIMS.md) naming the tests that prove it; CI fails if one does not pass.
+Those tests run on the mock provider and hand-written fixtures: they prove the wiring, not the quality of a model's output.
 
 ## Roadmap
 

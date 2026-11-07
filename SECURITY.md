@@ -38,7 +38,8 @@ covers them. Whether a live model resists injection has not been measured.
 
 What limits the damage today: the output is a document for a human reader,
 not an action; Praxis executes no tool other than web search and writes only
-to the output path you give it; under the `strict` sourcing policy every
+to the output path you give it (any path the process may write: the CLI does
+not restrict it, so a caller that automates it validates the path); under the `strict` sourcing policy every
 source cited by the research, stakeholder and risk stages must pass the
 format's freshness and domain-trust checks. The options stage's citations
 pass the domain-trust check (blocking under `strict`); the adversarial
