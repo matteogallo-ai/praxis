@@ -1,5 +1,5 @@
 /**
- * Synthesis agent — v0.6, the sixth Praxis agent.
+ * Synthesis agent, the sixth Praxis agent.
  *
  * Assembles the final briefing text one section at a time, respecting
  * the target format's tone directives, max_length, forbidden_terms,
@@ -33,7 +33,7 @@
 import { withRetry } from "./retry.ts";
 import {
   callModel,
-  extractJsonText,
+  parseAnswerObject,
   loadPrompt,
   renderPrompt,
   untrusted,
@@ -131,7 +131,7 @@ export async function executeSynthesis(
     let acceptedParsed: ParsedSectionResponse | null = null;
     let acceptedAttempt = 0;
 
-    // In non-strict mode, we always run exactly one attempt (v0.7 behaviour).
+    // In non-strict mode, a section gets exactly one attempt.
     // In strict mode, up to `max_regeneration_attempts` total attempts.
     const maxAttempts = editorial.strict ? editorial.maxAttempts : 1;
 
@@ -307,13 +307,13 @@ function buildSectionInputs(
 }
 
 // ---------------------------------------------------------------------------
-// v0.8 — strict_editorial config, conformance gate, prompt blocks
+// `strict_editorial` config, conformance gate, prompt blocks
 // ---------------------------------------------------------------------------
 
 type EditorialReason = "forbidden_terms" | "over_length" | "validation_rule";
 
 interface EditorialConfig {
-  /** Master switch — false collapses every axis to "warn" (v0.7 behaviour). */
+  /** Master switch — false collapses every axis to "warn". */
   strict: boolean;
   /** Total attempts per section under strict mode (initial + retries combined). */
   maxAttempts: number;
@@ -404,7 +404,7 @@ function checkEditorialConformance(
 
 /**
  * Build the REVISION MODE prompt block. Returns "" when no revision
- * context is present (v0.7 behaviour). The block is per-section — it
+ * context is present. The block is per-section — it
  * filters `critiques_to_address` to those targeting this section (or
  * unscoped critiques), so the model gets only the load-bearing subset.
  */
@@ -487,33 +487,7 @@ function parseSectionResponse(
   section: FormatSection,
   knownSources: KnownSourcesIndex
 ): ParsedSectionResponse {
-  const stripped = extractJsonText(raw);
-  if (stripped.length === 0) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `empty response for section '${section.id}'`,
-      raw
-    );
-  }
-  let value: unknown;
-  try {
-    value = JSON.parse(stripped);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `not valid JSON for section '${section.id}' (${message})`,
-      raw
-    );
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `expected a JSON object for section '${section.id}'`,
-      raw
-    );
-  }
-  const obj = value as Record<string, unknown>;
+  const obj = parseAnswerObject(AGENT_ID, raw, `section '${section.id}'`);
 
   const content = obj["content_markdown"];
   if (typeof content !== "string" || content.length === 0) {
@@ -681,9 +655,9 @@ function buildFormatConformance(
   const failedRules: FailedValidationRule[] = [];
   for (const s of sections) {
     for (const issue of s.validation_issues) {
-      const m = issue.match(/^validation_rule not honoured: '([^']+)'/);
-      if (m !== null) {
-        failedRules.push({ section_id: s.section_id, rule: m[1]! });
+      const rule = issue.match(/^validation_rule not honoured: '([^']+)'/)?.[1];
+      if (rule !== undefined) {
+        failedRules.push({ section_id: s.section_id, rule });
       }
     }
   }

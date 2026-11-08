@@ -1,5 +1,5 @@
 /**
- * Stakeholder Mapping agent — v0.4, the third Praxis agent.
+ * Stakeholder Mapping agent, the third Praxis agent.
  *
  * First agent whose input includes BOTH the Scoping and Research
  * outputs. Produces a `StakeholderMapResult` that later agents will
@@ -22,7 +22,7 @@
  * verbatim.
  */
 
-import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, parseAnswerObject, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -114,29 +114,7 @@ export async function executeStakeholderMapping(
 }
 
 export function parseStakeholderMapResult(raw: string): StakeholderMapResult {
-  const stripped = extractJsonText(raw);
-  if (stripped.length === 0) {
-    throw new InvalidAgentOutputError(AGENT_ID, "empty response", raw);
-  }
-  let value: unknown;
-  try {
-    value = JSON.parse(stripped);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `not valid JSON (${message})`,
-      raw
-    );
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      "expected a JSON object at the top level",
-      raw
-    );
-  }
-  const obj = value as Record<string, unknown>;
+  const obj = parseAnswerObject(AGENT_ID, raw);
 
   const rawList = obj["stakeholders"];
   if (!Array.isArray(rawList)) {

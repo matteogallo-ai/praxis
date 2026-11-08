@@ -72,12 +72,11 @@ async function dispatch(argv: readonly string[]): Promise<number> {
   // command line. Strip them first so downstream parsers stay simple.
   const args = stripVerbosityFlags(argv);
 
-  if (args.length === 0 || args[0] === "help" || args[0] === "--help" || args[0] === "-h") {
+  const command = args.shift();
+  if (command === undefined || command === "help" || command === "--help" || command === "-h") {
     printHelp();
     return 0;
   }
-
-  const command = args.shift()!;
 
   if (command === "version" || command === "--version" || command === "-v") {
     return versionCommand();

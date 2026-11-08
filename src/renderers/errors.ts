@@ -1,5 +1,5 @@
 /**
- * Renderer error hierarchy (v0.7).
+ * Renderer error hierarchy.
  */
 
 import { PraxisError } from "../registry/errors.ts";

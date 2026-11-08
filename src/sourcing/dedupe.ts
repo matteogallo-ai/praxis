@@ -98,6 +98,7 @@ export function levenshtein(a: string, b: string): number {
   for (let j = 0; j <= n; j++) prev[j] = j;
   for (let i = 1; i <= m; i++) {
     curr[0] = i;
+    // biome-ignore-start lint/style/noNonNullAssertion: prev and curr hold n + 1 entries, filled before they are read; j stays in 0..n.
     for (let j = 1; j <= n; j++) {
       const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
       const deletion = prev[j]! + 1;
@@ -105,10 +106,12 @@ export function levenshtein(a: string, b: string): number {
       const substitution = prev[j - 1]! + cost;
       curr[j] = Math.min(deletion, insertion, substitution);
     }
+    // biome-ignore-end lint/style/noNonNullAssertion: end of the bounded loop.
     const swap = prev;
     prev = curr;
     curr = swap;
   }
+  // biome-ignore lint/style/noNonNullAssertion: prev has n + 1 entries.
   return prev[n]!;
 }
 

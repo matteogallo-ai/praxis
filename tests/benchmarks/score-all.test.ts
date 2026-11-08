@@ -1,5 +1,5 @@
 /**
- * v0.10 — Unit tests for benchmarks/score-all.ts.
+ * Unit tests for benchmarks/score-all.ts.
  *
  * ZERO real API calls. Every scenario is driven by fixture JSON
  * under tests/fixtures/scoring/ so the suite runs offline and
@@ -312,7 +312,7 @@ describe("readCache / writeCache", () => {
 });
 
 // ---------------------------------------------------------------------------
-// enumerateBriefings — reads the shipped v0.9 mock outputs
+// enumerateBriefings — reads the committed mock outputs
 // ---------------------------------------------------------------------------
 
 describe("enumerateBriefings", () => {

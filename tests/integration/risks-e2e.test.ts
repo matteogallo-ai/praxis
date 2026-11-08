@@ -1,5 +1,5 @@
 /**
- * End-to-end integration test for `praxis brief --with-risks` (v0.5).
+ * End-to-end integration test for `praxis brief --with-risks`.
  *
  * Spawns the CLI as a real child process (via bun) with the mock
  * provider and verifies the observable contract:

@@ -252,7 +252,7 @@ describe("MissingAlternativeError", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.8 — EditorialFailureError
+// EditorialFailureError
 // ---------------------------------------------------------------------------
 
 describe("EditorialFailureError", () => {

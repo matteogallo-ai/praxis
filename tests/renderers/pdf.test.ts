@@ -1,5 +1,5 @@
 /**
- * PDF renderer tests (v0.7).
+ * PDF renderer tests.
  *
  * pdfkit is the SOLE external dependency of Praxis, so we test both
  * the invocation (buffer > 1 KiB, valid PDF header) and the content

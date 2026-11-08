@@ -438,7 +438,7 @@ describe("validateFormat — misc fields", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.5 — sourcing_rules (optional, retro-compatible)
+// Sourcing_rules (optional, retro-compatible)
 // ---------------------------------------------------------------------------
 
 describe("validateFormat — v0.5 sourcing_rules retrocompatibility", () => {
@@ -661,7 +661,7 @@ describe("validateFormat — sourcing_rules.dedupe", () => {
 });
 
 // ---------------------------------------------------------------------------
-// v0.8 — editorial rules
+// Editorial rules
 // ---------------------------------------------------------------------------
 
 describe("validateFormat — v0.8 sourcing_rules.editorial", () => {

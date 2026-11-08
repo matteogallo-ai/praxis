@@ -66,7 +66,7 @@ next to it: the CI job `clean-clone` proves it.
 bun install --frozen-lockfile                 # install
 bun run typecheck                             # tsc --noEmit, strict
 bun test                                      # all tests; tests/live/ skip unless PRAXIS_LIVE_TESTS=1
-bun run lint                                  # Biome (lint only)
+bun run lint                                  # Biome lint; any warning fails (tests may use `!`)
 bun run knip                                  # unused files, exports, dependencies
 bun run check:claims                          # docs/CLAIMS.md ≡ passing tests ≡ README Features/Roadmap
 bun run check:claims -- --no-run              # same, without running the tests

@@ -1,5 +1,5 @@
 /**
- * End-to-end integration test for the Synthesis agent (v0.6, mock
+ * End-to-end integration test for the Synthesis agent (mock
  * provider). Drives the full pipeline through --full so the
  * per-section synthesis fixtures are exercised and format-conformance
  * checks (forbidden_terms, max_length, no-invention) run against

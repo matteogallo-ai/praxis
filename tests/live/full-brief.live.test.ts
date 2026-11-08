@@ -1,5 +1,5 @@
 /**
- * Live end-to-end integration test for the v0.6 full brief pipeline:
+ * Live end-to-end integration test for the full brief pipeline:
  * Scoping → Research → Stakeholders → Risks → Options → Synthesis.
  *
  * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set. When run, writes a full

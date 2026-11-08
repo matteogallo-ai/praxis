@@ -119,7 +119,7 @@ export function validateFormat(raw: YamlValue, source?: string): Format {
   const styleGuide = validateStyleGuide(raw["style_guide"], issues);
   const outputTargets = validateOutputTargets(raw["output_targets"], issues);
 
-  // v0.5 — optional. Absent → no rules; present → structurally validated.
+  // Optional. Absent → no rules; present → structurally validated.
   let sourcingRules: SourcingRules | undefined;
   const rulesRaw = raw["sourcing_rules"];
   if (rulesRaw !== undefined && rulesRaw !== null) {
@@ -260,9 +260,8 @@ function validateSections(
   const sections: FormatSection[] = [];
   let anyInvalid = false;
 
-  for (let i = 0; i < raw.length; i++) {
+  for (const [i, item] of raw.entries()) {
     const path = `sections[${i}]`;
-    const item = raw[i]!;
     const parsed = validateSection(item, path, issues);
     if (parsed === null) {
       anyInvalid = true;
@@ -334,8 +333,7 @@ function validateSection(
     } else {
       const rules: string[] = [];
       let ok = true;
-      for (let j = 0; j < validationRulesRaw.length; j++) {
-        const r = validationRulesRaw[j]!;
+      for (const [j, r] of validationRulesRaw.entries()) {
         if (typeof r !== "string" || r.trim() === "") {
           issues.push({
             path: `${path}.validation_rules[${j}]`,
@@ -424,8 +422,7 @@ function validateRequiredAgents(
   const seen = new Set<string>();
   const agents: AgentId[] = [];
   let ok = true;
-  for (let j = 0; j < raw.length; j++) {
-    const v = raw[j]!;
+  for (const [j, v] of raw.entries()) {
     if (!isAgentId(v)) {
       issues.push({
         path: `${path}[${j}]`,
@@ -474,8 +471,7 @@ function validateStyleGuide(
   } else {
     const terms: string[] = [];
     let ok = true;
-    for (let j = 0; j < forbiddenRaw.length; j++) {
-      const t = forbiddenRaw[j]!;
+    for (const [j, t] of forbiddenRaw.entries()) {
       if (typeof t !== "string" || t === "") {
         issues.push({
           path: `style_guide.forbidden_terms[${j}]`,
@@ -512,8 +508,7 @@ function validateOutputTargets(
   const seen = new Set<string>();
   const targets: OutputTarget[] = [];
   let ok = true;
-  for (let j = 0; j < raw.length; j++) {
-    const v = raw[j]!;
+  for (const [j, v] of raw.entries()) {
     if (!isOutputTarget(v)) {
       issues.push({
         path: `output_targets[${j}]`,
@@ -534,7 +529,7 @@ function validateOutputTargets(
 }
 
 // ---------------------------------------------------------------------------
-// v0.5 — sourcing_rules validators
+// Sourcing_rules validators
 // ---------------------------------------------------------------------------
 
 function validateSourcingRules(
@@ -823,8 +818,7 @@ function optionalStringArray(
   }
   const out: string[] = [];
   let ok = true;
-  for (let i = 0; i < raw.length; i++) {
-    const v = raw[i]!;
+  for (const [i, v] of raw.entries()) {
     if (typeof v !== "string" || v.trim() === "") {
       issues.push({ path: `${path}[${i}]`, message: "must be a non-empty string" });
       ok = false;
@@ -852,8 +846,7 @@ function requireStringArrayAllowEmpty(
   }
   const out: string[] = [];
   let ok = true;
-  for (let i = 0; i < raw.length; i++) {
-    const v = raw[i]!;
+  for (const [i, v] of raw.entries()) {
     if (typeof v !== "string" || v.trim() === "") {
       issues.push({ path: `${path}[${i}]`, message: "must be a non-empty string" });
       ok = false;

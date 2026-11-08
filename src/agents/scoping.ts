@@ -1,5 +1,5 @@
 /**
- * Scoping agent — v0.2, the first Praxis agent.
+ * Scoping agent, the first Praxis agent.
  *
  * Pipeline:
  *   1. Load `prompts/scoping.prompt` and parse it with PromptLang.
@@ -16,7 +16,7 @@
  * Any deviation surfaces as one of the typed errors in `./errors.ts`.
  */
 
-import { callModel, loadPrompt, renderPrompt, extractJsonText } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, parseAnswerObject } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { AgentContext, ScopingResult } from "./types.ts";
 import {
@@ -77,22 +77,7 @@ export async function executeScoping(
 }
 
 export function parseScopingResult(raw: string): ScopingResult {
-  const stripped = extractJsonText(raw);
-  let value: unknown;
-  try {
-    value = JSON.parse(stripped);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new InvalidAgentOutputError(AGENT_ID, `not valid JSON (${message})`, raw);
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      "expected a JSON object at the top level",
-      raw
-    );
-  }
-  const obj = value as Record<string, unknown>;
+  const obj = parseAnswerObject(AGENT_ID, raw);
   const reformulated = obj["reformulated_question"];
   if (typeof reformulated !== "string" || reformulated.length === 0) {
     throw new InvalidAgentOutputError(

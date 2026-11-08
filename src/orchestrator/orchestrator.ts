@@ -1,13 +1,10 @@
 /**
  * `Orchestrator` — the Praxis pipeline coordinator.
  *
- * v0.2 shipped `scope()`. v0.3 added `researchAfterScoping()`.
- * v0.4 added `mapStakeholdersAfterResearch()`. v0.5 added
- * `assessRisksAfterStakeholders()` and the hardened sourcing
- * pipeline.
+ * Partial runs: `scope()`, `researchAfterScoping()`,
+ * `mapStakeholdersAfterResearch()`, `assessRisksAfterStakeholders()`.
  *
- * v0.6 finally implements `brief()` — the full six-agent pipeline
- * that produces a complete, formatted briefing (Scoping → Research
+ * `brief()` is the full six-agent pipeline that produces a complete, formatted briefing (Scoping → Research
  * → Stakeholders → Risks → Options → Synthesis) with the aggregated
  * cross-agent sourcing report attached.
  */
@@ -165,7 +162,7 @@ export interface AssessRisksAfterStakeholdersResult {
   research: ResearchResult;
   stakeholders: StakeholderMapResult;
   risks: RiskAnalysisResult;
-  /** Aggregated cross-agent sourcing report (v0.5). */
+  /** Aggregated cross-agent sourcing report. */
   sourcing_report: SourcingReport;
 }
 
@@ -202,7 +199,7 @@ export interface BriefWithCritiqueResult extends BriefResult {
 }
 
 /**
- * v0.8 payload returned by `Orchestrator.briefWithCritiqueAndRerun()`.
+ * Payload returned by `Orchestrator.briefWithCritiqueAndRerun()`.
  * Superset of `BriefWithCritiqueResult` that records whether the
  * editorial re-run loop fired, which critiques triggered it, the
  * pre-rerun synthesis (audit trail), and which sections changed
@@ -551,8 +548,8 @@ export class Orchestrator {
   }
 
   /**
-   * Runs the v0.6 six-agent `brief()` pipeline, then feeds the
-   * complete `BriefResult` to the Adversarial Critique agent (v0.7)
+   * Runs the six-agent `brief()` pipeline, then feeds the
+   * complete `BriefResult` to the Adversarial Critique agent
    * for stress-testing. Returns the enriched payload.
    *
    * The pipeline is:
@@ -563,7 +560,7 @@ export class Orchestrator {
    * the critique's counter_evidence sources as well as the six
    * upstream agents' sources.
    *
-   * `brief()` itself is UNCHANGED — API-compatible with v0.6.
+   * `brief()` does not run the critique.
    * `briefWithCritique()` is the opt-in path.
    *
    * Throws:
@@ -597,7 +594,7 @@ export class Orchestrator {
   }
 
   /**
-   * v0.8 — Runs `briefWithCritique()`. If the critique output signals
+   * Runs `briefWithCritique()`. If the critique output signals
    * `revised_recommendation_needed: true`, runs the Synthesis agent
    * ONE MORE TIME in REVISION MODE and returns the post-rerun brief;
    * otherwise returns the initial brief unchanged. Hard cap: exactly
@@ -988,7 +985,7 @@ function formatRequiresAgent(format: Format, agentId: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// v0.8 — rerun deviation heuristic + reason builder
+// Rerun deviation heuristic + reason builder
 // ---------------------------------------------------------------------------
 
 /**

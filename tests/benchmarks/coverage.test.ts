@@ -1,5 +1,5 @@
 /**
- * v1.1.1 — Regression test for benchmark artefact coverage.
+ * Regression test for benchmark artefact coverage.
  *
  * Guarantees that every committed mock benchmark output directory
  * carries the full trifecta the scoring framework relies on:
@@ -9,15 +9,11 @@
  *   brief.docx    — human-review artefact
  *   metadata.json — run metadata (question, format, timing, ...)
  *
- * v0.10 shipped `benchmarks/score-all.ts` and surfaced that
- * `benchmarks/run-all.ts` was gating each artefact emission on
- * the format's `output_targets` field. The three formats declare
- * different subsets, so three of the ten mock briefings lacked
- * `brief.md` (position-paper-corporate: 08/09/10) and three
- * lacked `brief.docx` (executive-pre-read: 02/03/04). v1.1.1
- * removes the gating — the benchmark harness now always emits
- * the trifecta regardless of the format's user-facing target
- * declaration.
+ * The formats declare different `output_targets` subsets; the
+ * benchmark harness emits all three files regardless, so every
+ * briefing can be compared in every format. Gating on
+ * `output_targets` once left some mock briefings without
+ * `brief.md` or `brief.docx`.
  *
  * This test guards against the regression on the committed
  * outputs. A silent revert of the run-all.ts change would drop

@@ -1,6 +1,6 @@
 /**
  * End-to-end integration test — spawns the `praxis` CLI as a real
- * child process and verifies the observable contract of the v0.2
+ * child process and verifies the observable contract of the
  * `brief` command:
  *
  *   - `praxis brief "<question>" --format <id>` exits 0 and prints the
@@ -47,7 +47,7 @@ describe("integration — praxis brief (v0.2 scoping-only)", () => {
     expect(res.stdout).toContain("hidden_questions");
     expect(res.stdout).toContain("scope_boundaries");
     expect(res.stdout).toContain("assumptions_to_validate");
-    // v0.6: the trailer points at --full (was "coming in v0.6+" pre-v0.6).
+    // The trailer points at --full.
     expect(res.stdout).toContain("--full");
   });
 

@@ -1,8 +1,7 @@
 /**
  * Shared types for the LLM provider layer.
  *
- * v0.3 introduces tool use (specifically Anthropic's server-side
- * `web_search_20250305`). These types describe the request/response
+ * Tool use is Anthropic's server-side `web_search_20250305`. These types describe the request/response
  * shape at the Praxis boundary — providers are free to translate them
  * to whatever their backend expects.
  *

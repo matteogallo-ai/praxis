@@ -27,5 +27,14 @@
       }
     }
   },
+  "overrides": [
+    {
+      // In a test, `fixture.items[0]!` that turns out undefined throws and the
+      // test fails, which is the signal wanted; narrowing it first would only
+      // restate the assertion that follows. Production code gets no such pass.
+      "includes": ["tests/**"],
+      "linter": { "rules": { "style": { "noNonNullAssertion": "off" } } }
+    }
+  ],
   "assist": { "enabled": false }
 }

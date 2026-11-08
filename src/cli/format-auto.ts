@@ -1,5 +1,5 @@
 /**
- * v0.9 — `--format auto` — opinionated shortcut, not intelligence.
+ * `--format auto` — opinionated shortcut, not intelligence.
  *
  * Maps question keywords to one of the shipped formats:
  *
@@ -92,8 +92,8 @@ export function detectFormatFromQuestion(question: string): AutoFormatResult {
   }
 
   if (matches.length === 0) return { kind: "no-match" };
-  if (matches.length === 1) {
-    const m = matches[0]!;
+  const [m] = matches;
+  if (matches.length === 1 && m !== undefined) {
     return { kind: "matched", id: m.id, matched_keywords: m.matched_keywords };
   }
   return { kind: "ambiguous", matches };

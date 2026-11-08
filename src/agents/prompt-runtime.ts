@@ -340,6 +340,35 @@ export function extractJsonText(raw: string): string {
   return best ?? trimmed;
 }
 
+/**
+ * The JSON object a stage answered, or the stage's typed refusal.
+ *
+ * Every stage expects one object; a model that answers nothing, prose, an
+ * array or a truncated object is refused here with the raw answer attached,
+ * so the retry and error paths see one error shape whatever the stage.
+ * `subject` names what was asked for ("section 'answer'") in the reason.
+ */
+export function parseAnswerObject(agentId: string, raw: string, subject?: string): Record<string, unknown> {
+  const forSubject = subject === undefined ? "" : ` for ${subject}`;
+  const stripped = extractJsonText(raw);
+  if (stripped.length === 0) {
+    throw new InvalidAgentOutputError(agentId, `empty response${forSubject}`, raw);
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(stripped);
+  } catch (err) {
+    // JSON.parse throws only SyntaxError; its message says where the text broke.
+    const message = err instanceof Error ? err.message : String(err);
+    throw new InvalidAgentOutputError(agentId, `not valid JSON${forSubject} (${message})`, raw);
+  }
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    const where = subject === undefined ? "at the top level" : forSubject.trim();
+    throw new InvalidAgentOutputError(agentId, `expected a JSON object ${where}`, raw);
+  }
+  return value as Record<string, unknown>;
+}
+
 /** Text that starts with `{` and parses can only be an object. */
 function isJsonObject(text: string): boolean {
   if (!text.startsWith("{")) return false;

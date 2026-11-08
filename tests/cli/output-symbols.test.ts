@@ -1,5 +1,5 @@
 /**
- * v0.9 — Unit tests for the new src/cli/output.ts helpers:
+ * Unit tests for the src/cli/output.ts helpers:
  * `symbols`, `styledSymbols`, `log`, `progress`, and
  * `errorWithContext`.
  */

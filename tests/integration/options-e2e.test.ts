@@ -1,6 +1,6 @@
 /**
  * End-to-end integration test for the Options Generation agent
- * (v0.6, mock provider).
+ * (mock provider).
  *
  * Spawns the CLI as a real child process and drives the full pipeline
  * through --full so the mock Options fixture is exercised in-context

@@ -1,14 +1,10 @@
 /**
- * Sourcing validators — unified dispatcher (v0.5).
+ * Sourcing validators — unified dispatcher.
  *
- * v0.4 shipped two agent-specific validators (`validateSourcing` for
- * Research findings, `validateStakeholderSourcing` for Stakeholder
- * positions) that only knew about `strict|permissive` policy.
- *
- * v0.5 keeps both entry points (source-compatible with v0.4) and adds
- * a third (`validateRiskSourcing`) for Risk evidence. Under the hood
- * they all funnel through a common pipeline that also runs the new
- * hardened rules (freshness, domain trust, cross-agent dedupe) when
+ * Three entry points: `validateSourcing` (Research findings),
+ * `validateStakeholderSourcing` (Stakeholder positions) and
+ * `validateRiskSourcing` (Risk evidence). They all funnel through a
+ * common pipeline that also runs the hardened rules (freshness, domain trust, cross-agent dedupe) when
  * the format declares a `sourcing_rules` block.
  *
  * Failure mode:
@@ -55,11 +51,11 @@ import { NoopSourcingAccumulator } from "./dedupe.ts";
 import { buildReport } from "./report.ts";
 
 // ---------------------------------------------------------------------------
-// Public entry points (source-compatible with v0.4).
+// Public entry points.
 // ---------------------------------------------------------------------------
 
 export interface ValidateOptions {
-  /** v0.5 rules — freshness/trust/dedupe. Absent → legacy v0.4 behaviour. */
+  /** Freshness / trust / dedupe rules. Absent → only missing sources are checked. */
   rules?: SourcingRules;
   /** Optional cross-agent accumulator. Defaults to a per-call no-op. */
   accumulator?: SourcingAccumulator;
@@ -359,7 +355,7 @@ function finalize(
     if (w.kind === "untrusted_domain") {
       throw new UntrustedDomainError(report, w.url, w.reason);
     }
-    // Missing-source variants collapse to the base error, matching v0.4.
+    // Missing-source variants raise the base error, which callers already catch.
     throw new SourcingValidationError(report);
   }
   return report;

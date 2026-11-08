@@ -9,6 +9,16 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- CLAUDE.md forbids comments that say when ("v0.8 additions."); 193 did,
+  118 of them under `src/`. They are rewritten to say what the code does,
+  and `check:stale-narrative` now fails on a release number in a `.ts`
+  comment under `src/`, `tests/`, `benchmarks/` or `scripts/`.
+- The seven stages each repeated the same JSON-answer reader; it is one
+  function, `parseAnswerObject()`. Scoping now refuses an empty answer as
+  "empty response", like the other stages, instead of a JSON parse error.
+- `bun run lint` (and the CI lint job) fails on any Biome warning. The 42
+  warnings in production code are fixed; tests may use non-null assertions.
+
 - The live-proof protocol and the live outputs' README no longer say question
   10's amendment was recorded before the run. q10 added by the operator's GO
   before step 1 started; the amendment was written down after step 1 had

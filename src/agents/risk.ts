@@ -1,5 +1,5 @@
 /**
- * Risk Analysis agent — v0.5, the fourth Praxis agent.
+ * Risk Analysis agent, the fourth Praxis agent.
  *
  * First agent whose input includes THREE prior outputs (Scoping +
  * Research + Stakeholders). Produces a `RiskAnalysisResult` with
@@ -24,7 +24,7 @@
  * only validates SHAPE and CROSS-REFERENCES.
  */
 
-import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, parseAnswerObject, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -122,29 +122,7 @@ export function parseRiskAnalysisResult(
   raw: string,
   stakeholders: StakeholderMapResult
 ): RiskAnalysisResult {
-  const stripped = extractJsonText(raw);
-  if (stripped.length === 0) {
-    throw new InvalidAgentOutputError(AGENT_ID, "empty response", raw);
-  }
-  let value: unknown;
-  try {
-    value = JSON.parse(stripped);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `not valid JSON (${message})`,
-      raw
-    );
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      "expected a JSON object at the top level",
-      raw
-    );
-  }
-  const obj = value as Record<string, unknown>;
+  const obj = parseAnswerObject(AGENT_ID, raw);
 
   const rawRisks = obj["risks"];
   if (!Array.isArray(rawRisks)) {
@@ -175,11 +153,11 @@ export function parseRiskAnalysisResult(
     }
     seenIds.add(r.id);
   }
-  const expected = risks.map((_, i) => `RISK-${String(i + 1).padStart(3, "0")}`);
-  for (let i = 0; i < risks.length; i++) {
-    if (risks[i]!.id !== expected[i]) {
+  for (const [i, risk] of risks.entries()) {
+    const expected = `RISK-${String(i + 1).padStart(3, "0")}`;
+    if (risk.id !== expected) {
       throw new RiskAnalysisError(
-        `risk ids must be sequential 'RISK-001', 'RISK-002', … — got '${risks[i]!.id}' at index ${i}, expected '${expected[i]}'`
+        `risk ids must be sequential 'RISK-001', 'RISK-002', … — got '${risk.id}' at index ${i}, expected '${expected}'`
       );
     }
   }

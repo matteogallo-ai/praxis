@@ -1,8 +1,8 @@
 /**
- * v0.8 — Public API surface guard.
+ * Public API surface guard.
  *
- * These tests pin the exports of `src/index.ts` so that a v1.0
- * SemVer commitment can be maintained: adding a public export is
+ * These tests pin the exports of `src/index.ts` so that the SemVer
+ * contract (docs/SEMVER-CONTRACT.md) can be kept: adding a public export is
  * a MINOR bump, removing/renaming one is a MAJOR bump. The list
  * below is the CONTRACT; every new export lands here.
  *
@@ -40,10 +40,10 @@ const EXPECTED_VALUE_EXPORTS = [
   "isKebabCase",
   "isValidSemver",
   "isValidIsoDate",
-  // v0.5 sourcing rule schema helpers.
+  // Sourcing rule schema helpers.
   "DOMAIN_TRUST_MODES",
   "isDomainTrustMode",
-  // v0.8 editorial rules.
+  // Editorial rules.
   "EDITORIAL_ACTIONS",
   "DEFAULT_MAX_REGENERATION_ATTEMPTS",
   "MAX_REGENERATION_ATTEMPTS_CEILING",
@@ -143,7 +143,7 @@ describe("Public API — v0.8 value exports", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The Orchestrator methods v0.8 promises.
+// The Orchestrator methods the contract promises.
 // ---------------------------------------------------------------------------
 
 describe("Public API — Orchestrator methods", () => {
@@ -153,18 +153,18 @@ describe("Public API — Orchestrator methods", () => {
       unknown
     >;
     // Enumerated with the pipeline version each ships in.
-    expect(typeof proto["scope"]).toBe("function"); // v0.2
-    expect(typeof proto["researchAfterScoping"]).toBe("function"); // v0.3
-    expect(typeof proto["mapStakeholdersAfterResearch"]).toBe("function"); // v0.4
-    expect(typeof proto["assessRisksAfterStakeholders"]).toBe("function"); // v0.5
-    expect(typeof proto["brief"]).toBe("function"); // v0.6
-    expect(typeof proto["briefWithCritique"]).toBe("function"); // v0.7
-    expect(typeof proto["briefWithCritiqueAndRerun"]).toBe("function"); // v0.8
+    expect(typeof proto["scope"]).toBe("function");
+    expect(typeof proto["researchAfterScoping"]).toBe("function");
+    expect(typeof proto["mapStakeholdersAfterResearch"]).toBe("function");
+    expect(typeof proto["assessRisksAfterStakeholders"]).toBe("function");
+    expect(typeof proto["brief"]).toBe("function");
+    expect(typeof proto["briefWithCritique"]).toBe("function");
+    expect(typeof proto["briefWithCritiqueAndRerun"]).toBe("function");
   });
 });
 
 // ---------------------------------------------------------------------------
-// Sanity: the executeXxx() functions for v0.5+ agents are NOT public.
+// Sanity: the executeXxx() functions for Risks onwards are NOT public.
 // The Orchestrator owns their sequencing.
 // ---------------------------------------------------------------------------
 

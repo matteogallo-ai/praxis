@@ -1,5 +1,5 @@
 /**
- * Live end-to-end integration test for the v0.5 full pipeline:
+ * Live end-to-end integration test for the full pipeline:
  * Scoping → Research → Stakeholders → Risks (with hardened sourcing).
  *
  * SKIPPED unless `PRAXIS_LIVE_TESTS=1` and `ANTHROPIC_API_KEY` are set. When run, writes a JSON

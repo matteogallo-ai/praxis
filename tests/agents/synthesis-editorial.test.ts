@@ -1,10 +1,10 @@
 /**
- * v0.8 — Synthesis strict_editorial retry loop + revision mode tests.
+ * Synthesis strict_editorial retry loop + revision mode tests.
  *
  * These exercise the two new Phase 4 capabilities in isolation from
  * the orchestrator:
  *
- *   1. strict_editorial: false → v0.7 behaviour verbatim (one attempt,
+ *   1. strict_editorial: false → warn only (one attempt,
  *      empty attempt history, final_attempt_number: 1).
  *   2. strict_editorial: true → per-axis reject/warn actions, up to
  *      `max_regeneration_attempts` total LLM calls per section, with
@@ -259,10 +259,10 @@ function sequencedLLM(perSection: Record<string, AttemptSpec[]>): SequencedLLM {
 }
 
 // ---------------------------------------------------------------------------
-// strict_editorial: false → v0.7 behaviour preserved.
+// strict_editorial: false → warn only, one attempt.
 // ---------------------------------------------------------------------------
 
-describe("executeSynthesis — strict_editorial: false (default v0.7 behaviour)", () => {
+describe("executeSynthesis — strict_editorial: false (default, warn only)", () => {
   test("no editorial block → 1 attempt, empty attempts array, final=1", async () => {
     const ctx: SynthesisContext = { ...CTX_BASE, format: makeFormat() };
     const llm = sequencedLLM({

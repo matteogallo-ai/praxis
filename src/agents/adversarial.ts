@@ -1,6 +1,5 @@
 /**
- * Adversarial Critique agent — v0.7, the seventh and final Praxis
- * agent before v1.0.
+ * Adversarial Critique agent, the seventh and last stage.
  *
  * Reads a completed `BriefResult` (the six upstream agents' output)
  * and produces a bounded set of steelmanned critiques — the
@@ -28,7 +27,7 @@
  *          must be a non-empty string
  */
 
-import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, extractJsonText, outputReader, untrustedJson } from "./prompt-runtime.ts";
+import { callModel, loadPrompt, renderPrompt, stampRetrievalTime, parseAnswerObject, outputReader, untrustedJson } from "./prompt-runtime.ts";
 import type { LLMProvider } from "../llm/provider.ts";
 import type { Tool } from "../llm/types.ts";
 import { ToolUseNotSupportedError } from "../llm/errors.ts";
@@ -141,29 +140,7 @@ export function parseAdversarialCritiqueResult(
   raw: string,
   ctx: AdversarialContext
 ): AdversarialCritiqueResult {
-  const stripped = extractJsonText(raw);
-  if (stripped.length === 0) {
-    throw new InvalidAgentOutputError(AGENT_ID, "empty response", raw);
-  }
-  let value: unknown;
-  try {
-    value = JSON.parse(stripped);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      `not valid JSON (${message})`,
-      raw
-    );
-  }
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    throw new InvalidAgentOutputError(
-      AGENT_ID,
-      "expected a JSON object at the top level",
-      raw
-    );
-  }
-  const obj = value as Record<string, unknown>;
+  const obj = parseAnswerObject(AGENT_ID, raw);
 
   const rawCritiques = obj["critiques"];
   if (!Array.isArray(rawCritiques)) {
@@ -197,11 +174,11 @@ export function parseAdversarialCritiqueResult(
     }
     seenIds.add(c.id);
   }
-  for (let i = 0; i < critiques.length; i++) {
+  for (const [i, critique] of critiques.entries()) {
     const expected = `CRIT-${String(i + 1).padStart(3, "0")}`;
-    if (critiques[i]!.id !== expected) {
+    if (critique.id !== expected) {
       throw new AdversarialCritiqueError(
-        `critique ids must be sequential 'CRIT-001', 'CRIT-002', … — got '${critiques[i]!.id}' at index ${i}, expected '${expected}'`
+        `critique ids must be sequential 'CRIT-001', 'CRIT-002', … — got '${critique.id}' at index ${i}, expected '${expected}'`
       );
     }
   }

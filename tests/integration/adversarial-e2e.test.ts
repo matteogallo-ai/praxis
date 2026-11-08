@@ -1,5 +1,5 @@
 /**
- * End-to-end integration tests for `briefWithCritique` (v0.7).
+ * End-to-end integration tests for `briefWithCritique`.
  *
  * Spawns the CLI as a real child process (via bun), like the other
  * integration tests, so we exercise the full argv path: parser →
@@ -72,7 +72,7 @@ describe("adversarial-e2e — briefWithCritique via --full --critique", () => {
       "--critique",
     ]);
     // The --critique flag is only wired inside the --full branch;
-    // without --full the CLI stays on the v0.5 pipeline. The exit
+    // without --full the CLI runs a partial pipeline. The exit
     // code stays 0 (no error) and the critique is NOT rendered.
     expect(res.code).toBe(0);
     expect(res.stdout).not.toContain("Adversarial Critique");

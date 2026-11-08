@@ -59,7 +59,8 @@ const TOOL_TYPE_MAP: Readonly<Record<string, string>> = {
 };
 
 /** Retry sequence in milliseconds — indexed by attempt number. */
-const RETRY_BACKOFF_MS: readonly number[] = [1_000, 2_000, 4_000];
+const MAX_BACKOFF_MS = 4_000;
+const RETRY_BACKOFF_MS: readonly number[] = [1_000, 2_000, MAX_BACKOFF_MS];
 
 /** Minimal fetch signature Praxis needs — a subset of `typeof fetch`. */
 export type FetchLike = (
@@ -264,7 +265,7 @@ export class AnthropicLLMProvider implements LLMProvider {
       if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
         lastRetriableBody = errBody;
         if (attempt < this.maxAttempts) {
-          const backoff = RETRY_BACKOFF_MS[attempt - 1] ?? RETRY_BACKOFF_MS[RETRY_BACKOFF_MS.length - 1]!;
+          const backoff = RETRY_BACKOFF_MS[attempt - 1] ?? MAX_BACKOFF_MS;
           await this.sleepFn(backoff);
           continue;
         }

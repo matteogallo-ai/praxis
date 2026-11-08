@@ -1,5 +1,5 @@
 /**
- * Unit tests for the enhanced Markdown renderer (v0.7).
+ * Unit tests for the enhanced Markdown renderer.
  *
  * The tests build synthetic `BriefResult` / `BriefWithCritiqueResult`
  * fixtures rather than driving the full pipeline — they exercise the

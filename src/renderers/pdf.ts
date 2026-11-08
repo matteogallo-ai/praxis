@@ -1,9 +1,9 @@
 /**
- * PDF renderer (v0.7) — via pdfkit.
+ * PDF renderer — via pdfkit.
  *
- * pdfkit is the SOLE external runtime dependency of Praxis. See
- * CHANGELOG v0.7 for the justification. Every other renderer in
- * this release is from-scratch.
+ * pdfkit is the only renderer that uses an external library; README
+ * ("Why `pdfkit`?") gives the reason. The other renderers are written
+ * from scratch.
  *
  * Layout:
  *
