@@ -33,25 +33,21 @@ describe("live review status wording", () => {
   }
 });
 
-describe("README excerpt: 39 flagged items against the Status counts", () => {
+describe("briefing excerpt: 39 flagged items against the run record's counts", () => {
   const RUN = "benchmarks/outputs/live/12-sodium-ion-plant-morocco/run-2026-11-04T13-20-16-572Z";
   const meta = JSON.parse(readFileSync(`${RUN}/metadata.json`, "utf-8")) as {
     sourcing: { counts: { untrusted: number; missing: number }; untrusted_citations: { stage: string; id: string }[] };
   };
   const options = meta.sourcing.untrusted_citations.filter((c) => c.stage === "options");
 
-  test("the flag's count is missing + untrusted + options citations, as the README explains", () => {
+  test("the flag's count is missing + untrusted + options citations, as the excerpt explains", () => {
     const { untrusted, missing } = meta.sourcing.counts;
     const flagged = untrusted + missing + options.length;
     expect(readFileSync(`${RUN}/brief.md`, "utf-8")).toContain(`The ${flagged} item(s) below did not meet it.`);
-    expect(flat("README.md")).toContain(
-      `The flag lists ${flagged} items where the Status below counts ${missing} without a source and ${untrusted} from untrusted domains: ` +
+    expect(flat(REVIEW)).toContain(
+      `The flag lists ${flagged} items where the run record counts ${missing} without a source and ${untrusted} from untrusted domains: ` +
         `the remaining item is option ${options[0]?.id}'s citation on an untrusted host`
     );
     expect(options).toHaveLength(1);
-    // The Status line the sentence refers to carries the same two counts.
-    expect(flat("README.md")).toContain(
-      `question 12 (step 1): $4.75, flagged insufficiently sourced: ${missing} of 49 items without a source, ${untrusted} from untrusted domains`
-    );
   });
 });
