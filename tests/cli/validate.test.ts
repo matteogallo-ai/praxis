@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { resolve } from "node:path";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 import { validateCommand } from "../../src/cli/commands/validate.ts";
 import { setColorEnabled } from "../../src/cli/output.ts";
@@ -104,15 +106,15 @@ describe("praxis formats validate — failure cases", () => {
   });
 
   test("returns 1 for a YAML syntax error", () => {
-    const tmp = require("node:os").tmpdir();
-    const path = require("node:path").join(tmp, "praxis-syntax.yaml");
-    require("node:fs").writeFileSync(path, "id: sample\n  bad_indent: 1\n");
+    const dir = mkdtempSync(join(tmpdir(), "praxis-validate-"));
+    const path = join(dir, "syntax.yaml");
+    writeFileSync(path, "id: sample\n  bad_indent: 1\n");
     try {
       const code = validateCommand({ filePath: path });
       expect(code).toBe(1);
       expect(stderr()).toContain("YAML syntax error");
     } finally {
-      require("node:fs").rmSync(path, { force: true });
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 

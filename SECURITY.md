@@ -2,9 +2,8 @@
 
 ## Reporting a vulnerability
 
-Email matteogallo.office@gmail.com, or use GitHub's private vulnerability
-reporting on this repository. Do not open a public issue. Expect a reply
-within a week.
+Email matteogallo.office@gmail.com, the only channel for security reports.
+Do not open a public issue. Expect a reply within a week.
 
 ## Supported versions
 

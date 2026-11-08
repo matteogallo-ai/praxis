@@ -29,7 +29,7 @@ PRAXIS_LIVE_TESTS=1 bun test tests/live/
   to the supplied stakeholders and sourced on likelihood or impact.
 - `full-pipeline.live.test.ts` — runs the four-agent v0.5 pipeline
   (Scoping → Research → Stakeholders → Risks with the hardened
-  sourcing layer) end-to-end and writes the payload to `/tmp` for
+  sourcing layer) end-to-end and writes the payload to a fresh temp directory for
   post-hoc inspection.
 - `options-agent.live.test.ts` — runs the Options Generation agent
   with a real `web_search` tool and verifies the cross-artefact
@@ -39,9 +39,9 @@ PRAXIS_LIVE_TESTS=1 bun test tests/live/
   tightly-scoped 2-section format and verifies the no-invention
   rule (no cited URL outside the supplied artefacts) holds
   end-to-end.
-- `full-brief.live.test.ts` — runs the FULL v0.6 six-agent
+- `full-brief.live.test.ts` — runs the full six-agent
   pipeline (Scoping → Research → Stakeholders → Risks → Options →
   Synthesis) and writes the assembled Markdown brief to
-  `/tmp/praxis-live-brief-<ts>.md` for post-hoc human review.
+  `<temp>/praxis-live-brief-<random>/brief.md` (the path is printed) for post-hoc human review.
 
 CI never sets `PRAXIS_LIVE_TESTS`, so these tests are skipped there.

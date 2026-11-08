@@ -1,11 +1,18 @@
 # PromptLang from npm
 
-Praxis reads its `.prompt` files with `@promptlang/core`, pinned to `2.0.0`
-in `package.json`, with its integrity hash in `bun.lock`. Until that
-version was published (2026-11-03, 11:21 UTC, with an SLSA provenance
+Praxis reads its `.prompt` files with `@promptlang/core`, pinned to `3.0.0`
+in `package.json`, with its integrity hash in `bun.lock`. Until the first
+published version, `2.0.0` (2026-11-03, 11:21 UTC, with an SLSA provenance
 attestation, from `github.com/matteogallo-ai/promptlang`), it imported
 PromptLang's sources through `tsconfig.json` `paths` to a sibling
 `../promptlang` checkout, and CI checked that repository out next to it.
+
+`3.0.0` breaks, among others, `compile` and the code it generates,
+`analyze --strict`, `expect schema` and `promptlang test`, `RoutingClient`
+and the clients' 404 error; Praxis uses none of them, only `tokenize`,
+`parse`, the AST types and the `semver-check` CLI. Under `2.0.0` and `3.0.0` the seven files
+in `prompts/` parse to identical ASTs (SHA-256 of each file's JSON AST),
+and `semver-check` passes.
 
 ## What the switch changed
 
