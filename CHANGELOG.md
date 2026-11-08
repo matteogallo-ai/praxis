@@ -71,6 +71,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- On question 12 the blind review preferred the single call ($0.48) to the
+  pipeline ($4.75); 3 of 4 checked claims (one per section) in the pipeline's briefing and 2 of
+  4 in the single call's were unsupported. Applying the pre-registered rule,
+  README and the system card state that Praxis's value over a single call is
+  not demonstrated (n = 1 question, 1 reviewer), and that briefing quality
+  is reviewed for question 12 only.
 - A pre-registered single-call baseline for question 12, run once at $0.48,
   and a blind A/B review pack (`benchmarks/review/`); the review is the
   maintainer's.

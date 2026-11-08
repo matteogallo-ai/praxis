@@ -2,7 +2,7 @@
 
 **1. Pourquoi, pour qui.** Une note d'analyse (entrée sur un marché, rachat d'actions, position publique) écrite par un LLM a l'air sourcée même quand elle ne l'est pas. Praxis vise un lecteur qui doit savoir ce qui, dans la note, repose sur une source vérifiable et ce qui n'y repose pas. À ma connaissance, personne ne s'en sert en production.
 
-**2. En une phrase.** Un pipeline LLM en 7 étapes qui transforme une question business en note d'analyse au format déclaré en YAML, et dont le code, pas le modèle, vérifie que chaque élément sourcé a une URL sur un domaine de confiance et n'est pas périmé selon sa date de publication (une source sans date est comptée à part). Il ne vérifie ni que l'URL vient de la recherche, ni que la source dise ce que dit l'affirmation (`docs/SYSTEM_CARD.md:88-90`).
+**2. En une phrase.** Un pipeline LLM en 7 étapes qui transforme une question business en note d'analyse au format déclaré en YAML, et dont le code, pas le modèle, vérifie que chaque élément sourcé a une URL sur un domaine de confiance et n'est pas périmé selon sa date de publication (une source sans date est comptée à part). Il ne vérifie ni que l'URL vient de la recherche, ni que la source dise ce que dit l'affirmation (`docs/SYSTEM_CARD.md`, « Known limits »).
 
 **3. Trois décisions clés**
 
@@ -20,7 +20,7 @@
 | Notes signalées « insufficiently sourced » : **6 sur 6** | `docs/SYSTEM_CARD.md:15-19` | Lu dans `metadata.json`. Par note : 6 à 15 éléments sans source, 16 à 32 sur des domaines non fiables, sur 41 à 49 éléments. |
 | Coût par note : **3,29 $ à 4,75 $** (n = 6) | `docs/SLO.md:18` | `usage.total.cost_usd` : tokens et recherches web renvoyés par l'API, multipliés par la table de prix. Ce n'est pas une facture. Palier 1 du protocole : 17,96 $ dépensés pour une estimation centrale de 30,23 $ (`benchmarks/outputs/live/README.md:106`). |
 | Durée : **7,7 à 11,9 min** (n = 6) | `docs/SLO.md:16` | Somme des durées des étapes du pipeline. La question 12 dépasse la cible de 10 minutes. n trop petit pour un p95. |
-| Qualité des notes : **non évaluée** | `docs/SYSTEM_CARD.md:19` | Aucun juge n'a tourné sur les notes réelles (`score:live` est payant, non approuvé). Les sorties mock sont du texte de fixture : `score-all.ts` refuse de les noter. |
+| Qualité des notes : question 12 seulement, relecture à l'aveugle face à un appel unique ; **l'appel unique est préféré** | `docs/SYSTEM_CARD.md`, « Summary » ; `benchmarks/review/q12/grades.md` | J'ai noté les deux notes, étiquetées A et B, avant d'ouvrir `key.json` ; je suis l'auteur de Praxis. Une affirmation sourcée vérifiée par section : 3 sur 4 non étayées par leur source pour Praxis, 2 sur 4 pour l'appel unique. Coût : 4,75 $ contre 0,48 $. Aucun juge modèle n'a tourné (`score:live` est payant, non approuvé). |
 
 **Pourquoi 6 notes sur 6 sont signalées.**
 - Les trois formats de ces six notes, comme les quatre formats livrés, sont en `sourcing_policy: strict` (par exemple `formats/mckinsey-style-note.yaml:97`). Un seul élément sans source, sur un domaine non fiable ou plus vieux que la limite du format fait échouer le contrôle (`src/sourcing/errors.ts:109-117`). La note est alors dégradée.
@@ -40,7 +40,7 @@
 - Garder dans l'enregistrement d'erreur la réponse refusée, pas seulement la dernière raison.
 
 **7. Questions pièges**
-1. *« 6 notes sur 6 signalées : l'outil ne marche pas. »* → Le drapeau dit que la politique stricte n'est pas tenue. C'est le comportement voulu (ADR 0002), et la note liste chaque élément en cause. Ce que je ne peux pas dire, c'est que les notes sont bonnes : leur qualité n'a pas été évaluée.
+1. *« 6 notes sur 6 signalées : l'outil ne marche pas. »* → Le drapeau dit que la politique stricte n'est pas tenue. C'est le comportement voulu (ADR 0002), et la note liste chaque élément en cause. Ce que je ne peux pas dire, c'est que les notes sont bonnes : sur la question 12, ma relecture à l'aveugle a préféré un appel unique à 0,48 $ à la note du pipeline à 4,75 $. Selon la règle pré-enregistrée, la valeur de Praxis face à un appel unique n'est pas démontrée (n = 1 question, 1 relecteur, l'auteur). Prochaine étape : plus de questions et une ablation des étapes du pipeline.
 2. *« 6 sur 13, c'est un taux de réussite de 46 %. »* → Ce taux mélange quatre versions du code et cinq tentatives sans enregistrement : il ne décrit aucune version. Par commit : `fe09710` 0 sur 1, `7c75a06` 1 sur 1, `3a7ca6a` 1 sur 1, `8df678f` 4 sur 5 ; l'échec de `8df678f` est la question 02 (section 5). Les 5 tentatives de la 1.2.1 ont échoué sans enregistrement. Aucun intervalle : au plus 5 tentatives par version. Sa cause probable est corrigée sur `main` (#44), sans relance payante pour le vérifier.
 3. *« Pourquoi ne pas laisser le modèle juger la fiabilité d'une source ? »* → Il noterait ses propres sources. Le modèle peut proposer qu'une source est first-party ; le code vérifie l'organisation, le domaine et le sujet, et un humain juge la phrase.
 4. *« Tu as écrit le code ? »* → Développement assisté par agents de code : je spécifie, je relis les PR et leurs tests, et je réponds de ce qui est fusionné. Ce que cela recouvre ici :
