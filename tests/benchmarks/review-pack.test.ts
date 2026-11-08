@@ -29,6 +29,14 @@ describe("review pack", () => {
     expect(header).not.toMatch(/Praxis's|baseline's/);
   });
 
+  test("no HTML reaches the reviewer: comments are dropped, every other '<' is text", () => {
+    for (const body of ["a <!<!---->-- hidden --> b", "a <!-- never closed\nb", "a <!-<!-- x -->- y --> b", "a <<!-!-- b", "a <!-- x --!> b"]) {
+      expect(blindSection("Answer", body)).not.toContain("<");
+    }
+    expect(blindSection("Answer", "a <img src=x> b")).toContain("a &lt;img src=x> b");
+    expect(blindSection("Answer", "a <!-- x --!> b")).toContain("a  b");
+  });
+
   test("keeps the format's sections in order, drops the rest, marks a missing one", () => {
     const md = "---\nprovider: x\n---\n## Table of Contents\n\n- a\n\n## So What\n\nB.\n\n## Situation\n\nA.\n\n## Insufficiently sourced\n\nlist\n";
     const out = blindBriefing(md, ["Situation", "Answer", "So What"]);
