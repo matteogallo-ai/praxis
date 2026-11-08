@@ -232,6 +232,7 @@ import type { SourcingReport } from "../sourcing/types.ts";
 import { isSourceMissing } from "../sourcing/types.ts";
 import { describeFirstParty, uncategorisedLines } from "../renderers/source-dates.ts";
 import { describeUntrustedCitation } from "../sourcing/citations.ts";
+import { shownCounts } from "../renderers/mock.ts";
 
 export function renderScopingResult(result: ScopingResult): string {
   const parts: string[] = [];
@@ -475,7 +476,8 @@ export function renderRisks(result: RiskAnalysisResult): string {
 // Sourcing report renderer (cross-agent aggregated).
 // ---------------------------------------------------------------------------
 
-export function renderSourcingReport(report: SourcingReport): string {
+export function renderSourcingReport(report: SourcingReport, providerName: string): string {
+  const { ok, unverified } = shownCounts(report, providerName);
   const parts: string[] = [];
   parts.push(`\n${c.bold(c.cyan("Sourcing report"))}\n`);
   parts.push(`${c.dim("=".repeat(15))}\n`);
@@ -483,7 +485,8 @@ export function renderSourcingReport(report: SourcingReport): string {
     `${c.dim(
       `Policy: ${report.policy}  |  ` +
         `Total items: ${report.total_items}  |  ` +
-        `OK: ${report.counts.ok}  |  ` +
+        `OK: ${ok}  |  ` +
+        (unverified === null ? "" : `Unverified (mock fixtures): ${unverified}  |  `) +
         `Stale: ${report.counts.stale}  |  ` +
         `Untrusted: ${report.counts.untrusted}  |  ` +
         `Duplicated: ${report.counts.duplicated}  |  ` +
@@ -534,6 +537,7 @@ import type { BriefResult } from "../orchestrator/orchestrator.ts";
 import {
   escapeMarkdownHeading,
   inert,
+  mockBannerMarkdown,
   plainText,
   renderSynthesisSections,
   sourcingSummary,
@@ -560,7 +564,7 @@ export function renderFullBrief(result: BriefResult): string {
   parts.push(`generated_at: ${yamlString(result.generated_at)}\n`);
   parts.push(`recommended_option: ${yamlString(result.options.recommended_option_id)}\n`);
   parts.push(`aggregated_risk: ${yamlString(result.risks.aggregated_risk_score.overall)}\n`);
-  parts.push(sourcingSummary(result.sourcing_report));
+  parts.push(sourcingSummary(result.sourcing_report, result.provider_name));
   parts.push(`total_word_count: ${result.synthesis.total_word_count}\n`);
   parts.push(
     `target_word_count: ${result.synthesis.format_conformance.target_words}\n`
@@ -569,6 +573,7 @@ export function renderFullBrief(result: BriefResult): string {
     `word_deviation_pct: ${result.synthesis.format_conformance.deviation_pct}\n`
   );
   parts.push("---\n\n");
+  parts.push(mockBannerMarkdown(result.provider_name));
 
   parts.push(inert(`# ${plainText(escapeMarkdownHeading(result.question))}\n\n`));
   parts.push(renderSynthesisSections(result.synthesis.sections));

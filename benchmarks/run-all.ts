@@ -52,6 +52,7 @@ import {
   docxRenderer,
 } from "../src/renderers/index.ts";
 import type { BriefWithCritiqueAndRerunResult } from "../src/orchestrator/orchestrator.ts";
+import { isMockProvider, shownCounts } from "../src/renderers/mock.ts";
 import { FIXTURE_CLOCK } from "../tests/fixtures/clock.ts";
 
 // ---------------------------------------------------------------------------
@@ -395,7 +396,11 @@ export function buildMetadata(
     },
     sourcing: {
       total_items: result.sourcing_report.total_items,
-      counts: result.sourcing_report.counts,
+      // Fixture sources pass the rules but no search returned them: the
+      // record sets them apart from ok, as every rendered mock output does.
+      counts: isMockProvider(result.provider_name)
+        ? { ...result.sourcing_report.counts, ...shownCounts(result.sourcing_report, result.provider_name) }
+        : result.sourcing_report.counts,
       edited_after_critique:
         result.sourcing_report.edited_after_critique === true,
       insufficiently_sourced:

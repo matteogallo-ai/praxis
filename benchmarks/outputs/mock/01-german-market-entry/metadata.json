@@ -32,11 +32,12 @@
   "sourcing": {
     "total_items": 32,
     "counts": {
-      "ok": 28,
+      "ok": 0,
       "stale": 0,
       "untrusted": 0,
       "duplicated": 2,
-      "missing": 2
+      "missing": 2,
+      "unverified": 28
     },
     "edited_after_critique": true,
     "insufficiently_sourced": false,
@@ -159,8 +160,8 @@
     "max_cost_usd": null
   },
   "artefacts": {
-    "brief.md": 17594,
-    "brief.pdf": 28742,
-    "brief.docx": 7814
+    "brief.md": 17806,
+    "brief.pdf": 28954,
+    "brief.docx": 7940
   }
 }

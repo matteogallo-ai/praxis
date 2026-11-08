@@ -5,12 +5,14 @@ provider: "mock"
 generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "medium"
-sourcing_summary: "total=26 ok=15 stale=0 untrusted=0 duplicated=9 missing=2 freshness_unknown=22 untrusted_citations=0"
+sourcing_summary: "mock, not verified: total=26 ok=0 unverified=15 stale=0 untrusted=0 duplicated=9 missing=2 freshness_unknown=22 untrusted_citations=0"
 critique_summary: "critiques=4 critical=0 material=2 minor=2 robustness=medium revised_needed=false"
 total_word_count: 864
 target_word_count: 1200
 word_deviation_pct: -28
 ---
+
+> **DONNÉES FICTIVES — mode mock** Fictitious data: fixture text from the mock provider. Its figures, organisations and URLs are invented, and no search verified its sources.
 
 # Should the family council approve the co-investment opportunity in the Zurich-based fintech proposed by our external advisor?
 

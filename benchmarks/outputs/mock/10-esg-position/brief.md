@@ -5,12 +5,14 @@ provider: "mock"
 generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
-sourcing_summary: "total=33 ok=28 stale=0 untrusted=0 duplicated=3 missing=2 freshness_unknown=28 untrusted_citations=0"
+sourcing_summary: "mock, not verified: total=33 ok=0 unverified=28 stale=0 untrusted=0 duplicated=3 missing=2 freshness_unknown=28 untrusted_citations=0"
 critique_summary: "critiques=5 critical=1 material=3 minor=1 robustness=medium revised_needed=true"
 total_word_count: 500
 target_word_count: 1600
 word_deviation_pct: -68.8
 ---
+
+> **DONNÉES FICTIVES — mode mock** Fictitious data: fixture text from the mock provider. Its figures, organisations and URLs are invented, and no search verified its sources.
 
 # Publish our updated position on Scope 3 emissions disclosure requirements.
 

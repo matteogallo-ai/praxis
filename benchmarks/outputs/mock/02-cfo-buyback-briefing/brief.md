@@ -5,12 +5,14 @@ provider: "mock"
 generated_at: "2026-08-20T00:00:00.000Z"
 recommended_option: "OPT-A"
 aggregated_risk: "high"
-sourcing_summary: "total=34 ok=31 stale=0 untrusted=0 duplicated=1 missing=2 freshness_unknown=29 untrusted_citations=0"
+sourcing_summary: "mock, not verified: total=34 ok=0 unverified=31 stale=0 untrusted=0 duplicated=1 missing=2 freshness_unknown=29 untrusted_citations=0"
 critique_summary: "critiques=5 critical=1 material=2 minor=2 robustness=medium revised_needed=true"
 total_word_count: 347
 target_word_count: 800
 word_deviation_pct: -56.6
 ---
+
+> **DONNÉES FICTIVES — mode mock** Fictitious data: fixture text from the mock provider. Its figures, organisations and URLs are invented, and no search verified its sources.
 
 # Prepare the board briefing on the proposed share buyback.
 

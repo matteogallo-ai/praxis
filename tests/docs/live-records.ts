@@ -17,6 +17,8 @@ export const UNRECORDED_FAILURES = 5;
 interface Completion {
   id: string;
   at: string;
+  /** The commit the run executed, abbreviated. */
+  sha: string;
   cost_usd: number;
   stages_ms: number;
   searches: number;
@@ -24,7 +26,7 @@ interface Completion {
   sourcing: { total_items: number; counts: { missing: number; untrusted: number }; insufficiently_sourced: boolean };
 }
 
-export function liveRecords(): { failures: { type: string; at: string }[]; completions: Completion[] } {
+export function liveRecords(): { failures: { type: string; at: string; sha: string }[]; completions: Completion[] } {
   const dirs = readdirSync(LIVE, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => join(LIVE, d.name));
@@ -32,10 +34,17 @@ export function liveRecords(): { failures: { type: string; at: string }[]; compl
     .flatMap((dir) =>
       readdirSync(dir)
         .filter((f) => /^error-.*\.json$/.test(f))
-        .map((f) => JSON.parse(readFileSync(join(dir, f), "utf-8")) as { error_type: string; failed_at: string })
+        .map(
+          (f) =>
+            JSON.parse(readFileSync(join(dir, f), "utf-8")) as {
+              error_type: string;
+              failed_at: string;
+              provenance: { git_sha: string };
+            }
+        )
     )
     .filter((r) => r.error_type !== "BudgetExceededError")
-    .map((r) => ({ type: r.error_type, at: r.failed_at }));
+    .map((r) => ({ type: r.error_type, at: r.failed_at, sha: r.provenance.git_sha.slice(0, 7) }));
   const completions = dirs.flatMap(completedLiveRuns).map((run) => {
     const meta = JSON.parse(readFileSync(join(run, "metadata.json"), "utf-8")) as {
       id: string;
@@ -43,10 +52,12 @@ export function liveRecords(): { failures: { type: string; at: string }[]; compl
       usage: { total: { cost_usd: number; web_search_requests: number }; stages: Record<string, { duration_ms: number }> };
       adversarial: Completion["adversarial"];
       sourcing: Completion["sourcing"];
+      provenance: { git_sha: string };
     };
     return {
       id: meta.id,
       at: meta.generated_at,
+      sha: meta.provenance.git_sha.slice(0, 7),
       searches: meta.usage.total.web_search_requests,
       adversarial: meta.adversarial,
       sourcing: meta.sourcing,
@@ -60,6 +71,33 @@ export function liveRecords(): { failures: { type: string; at: string }[]; compl
   failures.sort((a, b) => a.at.localeCompare(b.at));
   completions.sort((a, b) => a.at.localeCompare(b.at));
   return { failures, completions };
+}
+
+/**
+ * Attempts grouped by the commit they ran on, oldest first. Each commit is
+ * a different version of the pipeline, so a completion rate pooled across
+ * them would describe no version.
+ */
+export function byCommit(): { sha: string; completed: number; attempts: number; at: string }[] {
+  const { failures, completions } = liveRecords();
+  const groups = new Map<string, { sha: string; completed: number; attempts: number; at: string }>();
+  const all = [...failures.map((f) => ({ ...f, ok: false })), ...completions.map((c) => ({ ...c, ok: true }))];
+  for (const a of all.sort((x, y) => x.at.localeCompare(y.at))) {
+    const g = groups.get(a.sha) ?? { sha: a.sha, completed: 0, attempts: 0, at: a.at };
+    g.attempts += 1;
+    if (a.ok) g.completed += 1;
+    groups.set(a.sha, g);
+  }
+  return [...groups.values()];
+}
+
+/** The sentence README and the system card use for the attempts, by commit. */
+export function attemptsSentence(): string {
+  const { failures, completions } = liveRecords();
+  const rows = byCommit()
+    .map((g) => `${g.sha} ${g.completed} of ${g.attempts}`)
+    .join(", ");
+  return `Live attempts by commit (${days([...failures, ...completions])}), completed of attempted: ${rows}; ${UNRECORDED_FAILURES} earlier attempts, in 1.2.1, failed and left no record`;
 }
 
 /** "two", for the sentences that say how many briefings completed. */
@@ -80,17 +118,6 @@ export function days(records: readonly { at: string }[]): string {
     new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   const all = [...new Set(records.map((r) => fmt(r.at)))];
   return all.length < 2 ? all.join("") : `${all.slice(0, -1).join(", ")} and ${all[all.length - 1]}`;
-}
-
-/** Wilson score interval at 95%, in whole percent. */
-export function wilson(successes: number, n: number): string {
-  const z = 1.96;
-  const p = successes / n;
-  const denom = 1 + (z * z) / n;
-  const centre = (p + (z * z) / (2 * n)) / denom;
-  const half = (z * Math.sqrt((p * (1 - p)) / n + (z * z) / (4 * n * n))) / denom;
-  const pct = (x: number) => `${Math.round(Math.max(0, Math.min(1, x)) * 100)}%`;
-  return `${pct(centre - half)}–${pct(centre + half)}`;
 }
 
 /** How a completed briefing's sourcing flag reads wherever it is reported. */
