@@ -63,7 +63,10 @@ describe("renderResults", () => {
   });
 
   test("no judgment committed: no score", () => {
-    expect(renderResults(root)).toContain("No score is published: no live briefing has been judged");
+    const md = renderResults(root);
+    expect(md).toContain("No judge score is published: no live briefing has been judged by a model.");
+    // The human blind comparison is a different measure; this page points to it rather than hide it.
+    expect(md).toContain("[`review/q12/grades.md`](review/q12/grades.md)");
   });
 
   test("judgments without a human review: scores labelled unvalidated", () => {
