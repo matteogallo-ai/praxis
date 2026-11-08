@@ -27,10 +27,15 @@ Live attempts by commit (3 Nov 2026 and 4 Nov 2026), completed of attempted: fe0
 A human review (4 Nov 2026) covered only question 10's eight first-party
 sources, the ones the rule accepted: the reviewer accepted 6 and refused 2
 ([review](benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)).
-The quality of the briefings themselves is not reviewed, for any question.
-On question 12, one model call given the same format and search tool, with
-fewer searches, cost $0.48 against the pipeline's $4.75; the blind comparison of the two is
-prepared ([`benchmarks/review/`](benchmarks/review/REVIEW_GRID.md)), not done.
+The quality of the briefings themselves is reviewed for question 12 only, in one blind comparison with a single model call.
+On question 12, a blind review (8 Nov 2026, one reviewer;
+[grades](benchmarks/review/q12/grades.md), [key](benchmarks/review/q12/key.json))
+preferred one model call given the same format and search tool, with fewer
+searches, at $0.48 to the pipeline's briefing at $4.75. Of the sourced claims
+checked, 3 of 4 in the pipeline's briefing and 2 of 4 in the single call's
+were not supported by their source. Praxis's value over a single call is not
+demonstrated: n = 1 question, 1 reviewer, one run per arm. Next step: more
+questions, and an ablation of the pipeline's stages.
 
 ## Quick start
 

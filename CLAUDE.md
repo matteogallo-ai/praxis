@@ -15,7 +15,7 @@ Read this first. `docs/ENGINEERING_STANDARDS.md` is the full standard;
    A human review (4 Nov 2026) covered only question 10's eight first-party
    sources, the ones the rule accepted: the reviewer accepted 6 and refused 2
    ([review](benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)).
-   The quality of the briefings themselves is not reviewed, for any question.
+   The quality of the briefings themselves is reviewed for question 12 only, in one blind comparison with a single model call.
 
 ## Pipeline
 

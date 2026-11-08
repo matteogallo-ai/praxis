@@ -15,7 +15,7 @@ const flat = (p: string) => readFileSync(p, "utf-8").replace(/\s+/g, " ");
 const wording = (link: string) =>
   "A human review (4 Nov 2026) covered only question 10's eight first-party sources, the ones the rule accepted: " +
   `the reviewer accepted 6 and refused 2 ([review](${link})). ` +
-  "The quality of the briefings themselves is not reviewed, for any question.";
+  "The quality of the briefings themselves is reviewed for question 12 only, in one blind comparison with a single model call.";
 
 describe("live review status wording", () => {
   test("the counts are the published review's", () => {

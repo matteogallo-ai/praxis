@@ -9,6 +9,12 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- On question 12 the blind review preferred the single call ($0.48) to the
+  pipeline ($4.75); 3 of 4 checked claims in the pipeline's briefing and 2 of
+  4 in the single call's were unsupported. Applying the pre-registered rule,
+  README and the system card state that Praxis's value over a single call is
+  not demonstrated (n = 1 question, 1 reviewer), and that briefing quality
+  is reviewed for question 12 only.
 - Mock briefings printed figures attributed to real institutions with
   invented URLs and counted fixture sources as `ok`. Every mock output opens
   with "DONNÉES FICTIVES — mode mock" and shows `ok=0`, sources `unverified`.

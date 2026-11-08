@@ -2,7 +2,7 @@
 
 **1. Pourquoi, pour qui.** Une note d'analyse (entrée sur un marché, rachat d'actions, position publique) écrite par un LLM a l'air sourcée même quand elle ne l'est pas. Praxis vise un lecteur qui doit savoir ce qui, dans la note, repose sur une source vérifiable et ce qui n'y repose pas. À ma connaissance, personne ne s'en sert en production.
 
-**2. En une phrase.** Un pipeline LLM en 7 étapes qui transforme une question business en note d'analyse au format déclaré en YAML, et dont le code, pas le modèle, vérifie que chaque élément sourcé a une URL sur un domaine de confiance et n'est pas périmé selon sa date de publication (une source sans date est comptée à part). Il ne vérifie ni que l'URL vient de la recherche, ni que la source dise ce que dit l'affirmation (`docs/SYSTEM_CARD.md:88-90`).
+**2. En une phrase.** Un pipeline LLM en 7 étapes qui transforme une question business en note d'analyse au format déclaré en YAML, et dont le code, pas le modèle, vérifie que chaque élément sourcé a une URL sur un domaine de confiance et n'est pas périmé selon sa date de publication (une source sans date est comptée à part). Il ne vérifie ni que l'URL vient de la recherche, ni que la source dise ce que dit l'affirmation (`docs/SYSTEM_CARD.md`, « Known limits »).
 
 **3. Trois décisions clés**
 
