@@ -16,14 +16,15 @@ result. Output: Markdown, PDF, DOCX.
 05, 08, 10, 11 and 12, 4 Nov 2026): question 05's step 0, flagged insufficiently sourced: 11 of 44 items without a source, 24 from untrusted domains;
 question 05's rerun after the sourcing fixes, flagged insufficiently sourced: 8 of 47 items without a source, 17 from untrusted domains; question 08, flagged insufficiently sourced: 15 of 47 items without a source, 16 from untrusted domains;
 question 10, flagged insufficiently sourced: 6 of 46 items without a source, 19 from untrusted domains; question 11, flagged insufficiently sourced: 13 of 41 items without a source, 23 from untrusted domains; question 12,
-flagged insufficiently sourced: 6 of 49 items without a source, 32 from untrusted domains. A human review (4 Nov 2026) covered only question 10's eight first-party sources, the ones the rule accepted: the reviewer accepted 6 and refused 2 ([review](../benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)). The quality of the briefings themselves is reviewed for question 12 only, in one blind comparison with a single model call. Live attempts by commit (3 Nov 2026 and 4 Nov 2026), completed of attempted: fe09710 0 of 1, 7c75a06 1 of 1, 3a7ca6a 1 of 1, 8df678f 4 of 5; 5 earlier attempts, in 1.2.1, failed and left no record. On question 12, a blind review (8 Nov 2026, one reviewer;
+flagged insufficiently sourced: 6 of 49 items without a source, 32 from untrusted domains. A human review (4 Nov 2026) covered only question 10's eight first-party sources, the ones the rule accepted: the reviewer accepted 6 and refused 2 ([review](../benchmarks/outputs/live/README.md#question-10-human-review-of-its-first-party-sources)). The quality of the briefings themselves is reviewed for question 12 only, in one blind comparison with a single model call. Live attempts by commit (3 Nov 2026 and 4 Nov 2026), completed of attempted: fe09710 0 of 1, 7c75a06 1 of 1, 3a7ca6a 1 of 1, 8df678f 4 of 5; 5 earlier attempts, in 1.2.1, failed and left no record. On question 12, a blind review (8 Nov 2026, by Praxis's author;
 [grades](../benchmarks/review/q12/grades.md), [key](../benchmarks/review/q12/key.json))
 preferred one model call given the same format and search tool, with fewer
-searches, at $0.48 to the pipeline's briefing at $4.75. Of the sourced claims
-checked, 3 of 4 in the pipeline's briefing and 2 of 4 in the single call's
-were not supported by their source. Praxis's value over a single call is not
-demonstrated: n = 1 question, 1 reviewer, one run per arm. Next step: more
-questions, and an ablation of the pipeline's stages.
+searches, at $0.48 to the pipeline's briefing at $4.75. Of one sourced claim
+checked per section, 3 of 4 in the pipeline's briefing and 2 of 4 in the
+single call's were not supported by their source. Praxis's value over a
+single call is not demonstrated: n = 1 question, 1 reviewer who wrote
+Praxis, one run per arm, the two runs three days apart on a changing web.
+Next step: more questions, and an ablation of the pipeline's stages.
 Every other result on this page comes from the mock provider,
 which replays hand-written fixtures.
 
@@ -85,7 +86,7 @@ provider sends no sampling parameter.
 | Live briefings completed at `3a7ca6a` | 1 | 1 of 1 | — |
 | Live briefings completed at `8df678f` | 5 | 4 of 5 | — |
 | Live attempts in 1.2.1, no record committed | 5 | failed, as stated in CHANGELOG 1.2.1 | — |
-| Live briefing quality | 1 question, 1 reviewer | question 12 only, blind, against a single call: see the next row | — |
+| Live briefing quality | 1 question | question 12 only, one blind reviewer, against a single call: see the next row | — |
 | Single-call baseline, question 12 | 1 per arm | one `claude-opus-5-5` call: $0.48, 13 cited URLs; Praxis at `8df678f`: $4.75; the blind review preferred the single call ([protocol](preregistration/single-call-baseline.md), [grid](../benchmarks/review/REVIEW_GRID.md)) | — |
 | Live cost and latency per briefing | 6 | $3.51, 7.8 min of stages; $3.69, 8.4 min of stages; $3.66, 7.9 min of stages; $3.92, 8.4 min of stages; $3.29, 7.7 min of stages; $4.75, 11.9 min of stages; n too small for the targets in [`docs/SLO.md`](SLO.md) | — |
 | Mock pipeline end to end | 12 benchmark questions | completes; outputs committed under `benchmarks/outputs/mock/` | not a quality measure |
@@ -99,7 +100,7 @@ The mock row proves the wiring: stage order, validation, rendering,
 checkpoints, cost accounting with simulated usage. The text it produces is
 fixture text chosen by format, so scoring it would grade the fixtures
 (`docs/benchmarking-methodology.md`). The live rows are the ones that
-matter, and they are empty or failing.
+matter: completions per commit, and one blind comparison on one question.
 
 ## Known limits
 

@@ -24,7 +24,7 @@ Cost is the tokens and searches the API reported, at the price table in `src/llm
 
 ## Scores
 
-No score is published: no live briefing has been judged. The judge (`bun run score:live`, paid, run only on approval) writes each judgment to `benchmarks/judgments/`; this page publishes them once they are committed.
+No judge score is published: no live briefing has been judged by a model. One human blind comparison exists, on question 12 against a single model call: [`review/q12/grades.md`](review/q12/grades.md), verdict in [`docs/SYSTEM_CARD.md`](../docs/SYSTEM_CARD.md). The judge (`bun run score:live`, paid, run only on approval) writes each judgment to `benchmarks/judgments/`; this page publishes them once they are committed.
 
 ## Renderer smoke test (no model involved)
 
