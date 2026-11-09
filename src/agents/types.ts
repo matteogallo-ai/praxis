@@ -33,7 +33,7 @@ export interface ScopingResult {
    * Facts the briefing needs that concern only the requester (its own
    * finances, strategy, board, shareholders or customers): no public source
    * can establish them, so the requester supplies them. Listed in the
-   * briefing as not sourceable and counted apart, never as sourced.
+   * briefing as not sourceable and counted separately, never as sourced.
    */
   requester_provided?: string[];
 }

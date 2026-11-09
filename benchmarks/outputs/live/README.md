@@ -105,7 +105,7 @@ What the rerun shows that step 0 could not:
 - 23 of its cited items have a source that states no publication date.
   Their age is unknown, and none of them is counted fresh.
 - 7 facts concern only the requester (its budget, footprint, hurdle rate).
-  The briefing lists them apart and counts none as sourced.
+  The briefing lists them separately and counts none as sourced.
 - Its options cite three untrusted hosts; under `strict` they are listed
   among the 29 entries of "Insufficiently sourced" with the 17 untrusted
   and 8 missing items. The one source past the age limit is also
@@ -208,7 +208,7 @@ never accepts a risk's likelihood or impact evidence (ADR 0003, amendment
 of 4 Nov 2026). The review also found that the section shows no claim
 beside each source, which leaves a reviewer nothing to check, and that a
 Markdown viewer turned a host in the "Insufficiently sourced" text into a
-link; both are fixed apart.
+link; both are fixed separately.
 
 ## Errata
 

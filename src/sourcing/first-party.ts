@@ -7,7 +7,7 @@
  * its domains, and the organisation is the item's subject. Nothing is
  * inferred from a name inside a domain: a look-alike host never matches.
  * Whether the sentence states the organisation's own fact is the model's
- * judgment, so accepted items are counted and listed apart.
+ * judgment, so accepted items are counted and listed separately.
  */
 
 import { extractHost } from "./domain-trust.ts";

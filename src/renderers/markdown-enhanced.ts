@@ -205,7 +205,7 @@ function renderAppendices(brief: BriefResult | BriefWithCritiqueResult): string 
 }
 
 /**
- * Sources accepted as an organisation's own (ADR 0003), listed apart in
+ * Sources accepted as an organisation's own (ADR 0003), listed separately in
  * every briefing so a reader sees what rests on self-reporting.
  */
 function renderFirstPartySection(brief: BriefResult | BriefWithCritiqueResult): string {

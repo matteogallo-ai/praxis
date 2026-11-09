@@ -2,7 +2,7 @@
  * Domain trust for the citations of the options and adversarial stages.
  *
  * Those stages cite sources after the research stages, so the per-item
- * validators never saw them. Their results are listed apart from the
+ * validators never saw them. Their results are listed separately from the
  * warnings because a warning's `agent` names one of the three research
  * stages, and widening that public union would break consumers that
  * switch over it (docs/SEMVER-CONTRACT.md).
