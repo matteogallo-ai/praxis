@@ -98,6 +98,24 @@ describe("single-call baseline verdict", () => {
     });
   }
 
+  test("README's Status section opens with the verdict and the claim counts", () => {
+    const { v } = committed();
+    const status = /^## Status\n\n([\s\S]*?)\n## /m.exec(readFileSync("README.md", "utf-8"))?.[1] ?? "";
+    const first = status.replace(/\s+/g, " ").split(/(?<=\.) /)[0] ?? "";
+    expect(first).toContain("Praxis's value over a single model call is not demonstrated");
+    expect(first).toContain(v.preferred === "baseline" ? "preferred the single call" : "UNREACHABLE");
+    expect(first).toContain(`${v.unsupported.praxis} of ${v.checked.praxis}`);
+    expect(first).toContain(`${v.unsupported.baseline} of ${v.checked.baseline}`);
+  });
+
+  for (const path of ["README.md", "docs/SYSTEM_CARD.md"]) {
+    test(`${path} names who held the key and which way the bias ran`, () => {
+      expect(flat(path)).toContain("key generated and committed by the reviewer the day before grading");
+      expect(flat(path)).toContain("blinding is self-enforced");
+      expect(flat(path)).toContain("The bias would have favoured Praxis; the result went against it.");
+    });
+  }
+
   test("the defence sheet no longer says quality is unreviewed, and gives the verdict", () => {
     const sheet = flat("docs/defense/FICHE_DEFENSE.md");
     expect(sheet).not.toMatch(/Qualité des notes : \*\*non évaluée\*\*|leur qualité n'a pas été évaluée/);
