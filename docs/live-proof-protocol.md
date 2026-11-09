@@ -352,7 +352,7 @@ allowances hold**. They are assumptions, not bounds the API enforces:
   the next request is then refused.
 - Text that tokenizes below 2.5 characters per token (base64, CJK) is
   sized low the same way. The tool definitions and message framing the API
-  adds are not counted apart: on the measured prompts, the margin between
+  adds are not counted separately: on the measured prompts, the margin between
   2.5 and the measured 2.61 or more is at least 204 tokens on the shortest
   (scoping, which has no tools) and 219 on the shortest search stage
   (research).

@@ -14,7 +14,7 @@
  * synthesis sections cannot all pass the check together. Once it answers it
  * is charged the usage it reports; a request that fails or reports no usage
  * (a timeout, a dropped connection, a body that cannot be read) may have been
- * billed, so it stays charged at its worst case, counted apart as
+ * billed, so it stays charged at its worst case, counted separately as
  * `unreported_usd`. An HTTP error answer (4xx, 429, 5xx) is not billed and
  * not charged. The spend passes the cap only if a request costs more
  * than its worst case: searches that add more than the allowance, or text

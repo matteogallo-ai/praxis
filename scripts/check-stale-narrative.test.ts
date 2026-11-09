@@ -86,6 +86,7 @@ describe("scanRepository", () => {
     writeFileSync(join(root, "formats", "f.yaml"), stale);
     writeFileSync(join(root, "benchmarks", "RESULTS.md"), stale);
     writeFileSync(join(root, "README.md"), stale);
+    writeFileSync(join(root, "ROADMAP.md"), `${stale}\n## Release history (August 2026)\n${stale}\n`);
     writeFileSync(join(root, "docs", "ENGINEERING_STANDARDS.md"), stale);
     writeFileSync(join(root, "CHANGELOG.md"), stale);
     writeFileSync(join(root, "tests", "t.ts"), stale);
@@ -94,9 +95,13 @@ describe("scanRepository", () => {
       writeFileSync(join(root, dir, "v.ts"), "// Added in v0.9.\n");
     }
 
-    const files = (await scanRepository(root)).map((f) => f.file);
+    const findings = await scanRepository(root);
+    // ROADMAP.md's release history is kept as written; only its status is current text.
+    expect(findings.filter((f) => f.file === "ROADMAP.md").map((f) => f.line)).toEqual([1]);
+    const files = findings.map((f) => f.file);
     expect(files).toEqual([
       "README.md",
+      "ROADMAP.md",
       "benchmarks/RESULTS.md",
       "benchmarks/v.ts",
       "docs/x.md",

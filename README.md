@@ -5,18 +5,25 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/matteogallo-ai/praxis/badge)](https://scorecard.dev/viewer/?uri=github.com/matteogallo-ai/praxis) ([why some checks stay low](docs/supply-chain.md#scorecard-checks-that-stay-low))
 
 A 7-stage LLM pipeline that turns a business question into an analytical
-briefing shaped by a format declared in YAML (executive pre-read,
-consulting-style note, position paper, family-office memo). Output:
-Markdown, PDF, DOCX.
+briefing.
+
+Each briefing follows a format declared in YAML (executive pre-read,
+consulting-style note, position paper, family-office memo) and is written
+as Markdown, PDF and DOCX.
 
 An LLM-written briefing looks sourced even when it is not. In Praxis, code,
 not the model, checks that each sourced item has a URL on a trusted domain
 and is not stale by its stated publication date (an undated source is
-counted apart), and the briefing lists every item that fails. It does not
-check that a page says what the claim says, nor that the URL came from the
-search.
+counted separately), and the briefing lists every item that fails. It does
+not check that a page says what the claim says, nor that the URL came from
+the search.
 
 ## Status
+
+Praxis's value over a single model call is not demonstrated: in a blind
+review of one question, the reviewer preferred the single call, and 3 of 4
+checked claims in Praxis's briefing were not supported by their source,
+against 2 of 4 in the single call's.
 
 Praxis has completed **six briefings against a real model** (4 Nov 2026,
 `benchmarks/outputs/live/`), each $3.29 to $4.75 and each flagged
@@ -37,6 +44,10 @@ single call's were not supported by their source. Praxis's value over a
 single call is not demonstrated: n = 1 question, 1 reviewer who wrote
 Praxis, one run per arm, the two runs three days apart on a changing web.
 Next step: more questions, and an ablation of the pipeline's stages.
+Known limit of that review: key generated and committed by the reviewer
+the day before grading ([6e5ed72](https://github.com/matteogallo-ai/praxis/commit/6e5ed72),
+then [1d13a80](https://github.com/matteogallo-ai/praxis/commit/1d13a80)); blinding is self-enforced.
+The bias would have favoured Praxis; the result went against it.
 
 ## Quick start
 
@@ -71,7 +82,7 @@ has a source at all; the library aborts unless asked to degrade (ADR 0002). Modu
 
 - Briefing formats as YAML files checked against a typed schema (C01); four ship (C02).
 - The seven stages run end to end on the mock provider, a wiring test, not a quality measure (C03); every stage's answer is validated into typed records, malformed output is a typed error (C04).
-- Sourcing checks: `SOURCE_MISSING`, freshness, domain trust, duplicates, `strict` or `permissive` (C05); requester-only facts listed apart (C24); an organisation's own site counts only for its own facts, from a reviewed list (C25).
+- Sourcing checks: `SOURCE_MISSING`, freshness, domain trust, duplicates, `strict` or `permissive` (C05); requester-only facts listed separately (C24); an organisation's own site counts only for its own facts, from a reviewed list (C25).
 - One bounded synthesis rerun after the adversarial review (C06); `strict_editorial` sections regenerated when they break their rules (C07).
 - Markdown, PDF and DOCX renderers (C08); CLI with `--format auto` (C09); library entry point with a typed error hierarchy (C10).
 - Anthropic provider with the `web_search` tool loop and bounded retries, tested on API-shaped fixtures (C11); the observed live failures handled, tested on fixtures (C15); checkpoints, `--resume`, cost per stage and a `--max-cost-usd` cap (C16).
@@ -83,7 +94,7 @@ Those tests run on the mock provider and hand-written fixtures: they prove the w
 
 ## Roadmap
 
-- Live briefings that complete against Anthropic, with committed run artefacts (C14).
+- All five protocol questions completing live, with committed run artefacts (02 failed in synthesis, 4 Nov 2026) (C14).
 - Live-output quality scored by a judge validated against human labels (C18), with its noise band and planted-error detection (C23).
 - Freshness from each page's own age (C21); web search with dynamic filtering, evaluated against the basic tool (C22).
 

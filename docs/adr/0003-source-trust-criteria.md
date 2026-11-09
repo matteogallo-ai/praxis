@@ -75,7 +75,7 @@ What code checks, and what it cannot:
   fact (DSV's reported revenue) or something else (DSV's view of DHL;
   a regulator's decision about a DHL joint venture reported on
   `group.dhl.com`) is the model's judgment; code cannot verify it. First-party
-  items are therefore counted apart in the sourcing report and listed apart
+  items are therefore counted separately in the sourcing report and listed separately
   in the briefing, so a reader sees how much rests on what companies say
   about themselves.
 

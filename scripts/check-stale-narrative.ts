@@ -3,7 +3,8 @@
  * TODOs (rule 2 of docs/ENGINEERING_STANDARDS.md). Such text goes stale the
  * moment it is merged, and readers take it as a statement about the code.
  *
- * Scanned: src/, prompts/, docs/, formats/, README.md, benchmarks/RESULTS.md.
+ * Scanned: src/, prompts/, docs/, formats/, README.md, benchmarks/RESULTS.md,
+ * and ROADMAP.md up to its release history, which is kept as written.
  * Excluded: docs/ENGINEERING_STANDARDS.md, this script and its tests (they
  * quote the patterns as examples) and CHANGELOG.md (history is its job).
  *
@@ -92,7 +93,16 @@ export function scanText(file: string, text: string, { prose = true }: { prose?:
   return findings;
 }
 
-const ROOTS = ["src", "prompts", "docs", "formats", "README.md", "benchmarks/RESULTS.md"];
+const ROOTS = ["src", "prompts", "docs", "formats", "README.md", "ROADMAP.md", "benchmarks/RESULTS.md"];
+// Text from this heading on is a dated record, not a statement about the code.
+const HISTORY_FROM: Readonly<Record<string, string>> = { "ROADMAP.md": "\n## Release history" };
+
+function currentText(file: string, text: string): string {
+  const heading = HISTORY_FROM[file];
+  const at = heading === undefined ? -1 : text.indexOf(heading);
+  return at === -1 ? text : text.slice(0, at);
+}
+
 const CODE_ROOTS = ["src", "tests", "benchmarks", "scripts"];
 // This checker and its tests quote the patterns they look for.
 const EXCLUDED = new Set([
@@ -136,7 +146,7 @@ export async function scanRepository(repoRoot: string): Promise<Finding[]> {
   const findings: Finding[] = [];
   const proseFiles = await listTargets(repoRoot, ROOTS);
   for (const file of proseFiles) {
-    findings.push(...scanText(file, await readFile(join(repoRoot, file), "utf8")));
+    findings.push(...scanText(file, currentText(file, await readFile(join(repoRoot, file), "utf8"))));
   }
   const prose = new Set(proseFiles);
   for (const file of await listTargets(repoRoot, CODE_ROOTS)) {

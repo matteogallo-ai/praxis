@@ -9,6 +9,11 @@ and Praxis adheres to [Semantic Versioning](https://semver.org/).
 
 ### Corrected
 
+- README's Status opens with the single-call verdict; its Roadmap no longer
+  lists live completion as missing when six briefings completed (CLAIMS C14);
+  README and the system card state that the question 12 review's blinding is
+  self-enforced. ROADMAP.md's dated status is a pointer to README and the
+  system card, and `check:stale-narrative` scans it up to its release history.
 - Mock briefings printed figures attributed to real institutions with
   invented URLs and counted fixture sources as `ok`. Every mock output opens
   with "DONNÉES FICTIVES — mode mock" and shows `ok=0`, sources `unverified`.
