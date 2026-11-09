@@ -23,7 +23,7 @@ the search.
 Praxis's value over a single model call is not demonstrated: in a blind
 review of one question, the reviewer preferred the single call, and 3 of 4
 checked claims in Praxis's briefing were not supported by their source,
-against 2 of 4 in the single call's. The detail follows.
+against 2 of 4 in the single call's.
 
 Praxis has completed **six briefings against a real model** (4 Nov 2026,
 `benchmarks/outputs/live/`), each $3.29 to $4.75 and each flagged

@@ -102,6 +102,7 @@ function currentText(file: string, text: string): string {
   const at = heading === undefined ? -1 : text.indexOf(heading);
   return at === -1 ? text : text.slice(0, at);
 }
+
 const CODE_ROOTS = ["src", "tests", "benchmarks", "scripts"];
 // This checker and its tests quote the patterns they look for.
 const EXCLUDED = new Set([

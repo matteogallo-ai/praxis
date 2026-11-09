@@ -125,7 +125,7 @@ matter: completions per commit, and one blind comparison on one question.
   freshness unknown, never as fresh. Nothing checks that date against the
   page's own age (C21), and no live run has measured how often it is given
   or wrong.
-- **The question 12 review is blinded by the reviewer alone.** A/B key
+- **The question 12 review's blinding rests on the reviewer alone.** A/B key
   generated and committed by the reviewer the day before grading
   ([6e5ed72](https://github.com/matteogallo-ai/praxis/commit/6e5ed72), then
   [1d13a80](https://github.com/matteogallo-ai/praxis/commit/1d13a80));

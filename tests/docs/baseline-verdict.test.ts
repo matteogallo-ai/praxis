@@ -103,7 +103,8 @@ describe("single-call baseline verdict", () => {
     const status = /^## Status\n\n([\s\S]*?)\n## /m.exec(readFileSync("README.md", "utf-8"))?.[1] ?? "";
     const first = status.replace(/\s+/g, " ").split(/(?<=\.) /)[0] ?? "";
     expect(first).toContain("Praxis's value over a single model call is not demonstrated");
-    expect(first).toContain(v.preferred === "baseline" ? "preferred the single call" : "UNREACHABLE");
+    expect(v.preferred).toBe("baseline");
+    expect(first).toContain("preferred the single call");
     expect(first).toContain(`${v.unsupported.praxis} of ${v.checked.praxis}`);
     expect(first).toContain(`${v.unsupported.baseline} of ${v.checked.baseline}`);
   });
